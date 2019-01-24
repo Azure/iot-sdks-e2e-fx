@@ -1,0 +1,69 @@
+parameters:
+  index: '1'
+  forced_image: ''
+
+jobs:
+- job: 'iothub_mqtt_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: ${{ parameters.forced_image }}
+  - template: iothub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: mqtt
+  - template: post-test-steps.yaml
+
+- job: 'iothub_mqttws_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: ${{ parameters.forced_image }}
+  - template: iothub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: mqttws
+  - template: post-test-steps.yaml
+  condition: and(succeeded(),not(in(variables['TARGET_SDK'], 'pythonpreview')))
+
+- job: 'iothub_amqp_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: ${{ parameters.forced_image }}
+  - template: iothub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: amqp
+  - template: post-test-steps.yaml
+  condition: and(succeeded(),not(in(variables['TARGET_SDK'], 'pythonpreview')))
+
+- job: 'iothub_amqpws_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: ${{ parameters.forced_image }}
+  - template: iothub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: amqpws
+  - template: post-test-steps.yaml
+  condition: and(succeeded(),not(in(variables['TARGET_SDK'], 'pythonpreview')))
+
+

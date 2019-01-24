@@ -1,0 +1,37 @@
+steps:
+- script: |
+   python3 test-runner/remove_edgehub_device.py
+  displayName: 'remove devices'
+  env:
+    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+  condition: always()
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results **/TEST-*.xml'
+  condition: always()
+
+- script: |
+   mkdir $(Build.SourcesDirectory)/results
+   docker logs edgeAgent &> $(Build.SourcesDirectory)/results/$(Agent.JobName).edgeAgent.log
+   sudo journalctl -u iotedge -n 500 -e  &> $(Build.SourcesDirectory)/results/$(Agent.JobName).iotedge.log
+  displayName: 'grab agent logs'
+  condition: always()
+
+- task: CopyFiles@2
+  displayName: 'Copy result files to artifact staging'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)/results'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  condition: always()
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'Edge E2E Result for $(Build.DefinitionName) $(Build.BuildId)'
+  condition: always()
+
+

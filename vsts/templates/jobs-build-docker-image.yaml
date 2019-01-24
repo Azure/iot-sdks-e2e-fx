@@ -1,0 +1,13 @@
+jobs:
+- job: 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: build-docker-image-steps.yaml 
+    parameters:
+      language: $(TARGET_SDK)
+      repo: $(REPO)
+      branch: $(TARGET_BRANCH)
+      commit: $(CHANGESET)
+      forced_image: $(FORCED_IMAGE)
+

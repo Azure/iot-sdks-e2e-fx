@@ -1,0 +1,63 @@
+parameters:
+      forced_image: ''
+steps:
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
+    architecture: 'x64'
+
+- script: |
+    scripts/setup-python36.sh
+  displayName: 'install python libs'
+
+- script: |
+    scripts/setup-iotedge.sh
+  displayName: 'install iotedge packages'
+
+- script: |
+    docker login -u ${IOTHUB_E2E_REPO_USER} -p ${IOTHUB_E2E_REPO_PASSWORD} ${IOTHUB_E2E_REPO_ADDRESS}
+    docker pull mcr.microsoft.com/azureiotedge-agent:1.0.5
+    docker pull mcr.microsoft.com/azureiotedge-hub:1.0.5
+    docker pull ${IOTHUB_E2E_REPO_ADDRESS}/edge-e2e-node6
+  displayName: 'pre-cache common docker images'
+  env:
+    TARGET_SDK: $(TARGET_SDK)
+    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+
+- script: |
+    docker pull ${IOTHUB_E2E_REPO_ADDRESS}/${TARGET_SDK}-e2e:vsts-$(Build.BuildId)
+  displayName: 'pre-cache newly-built image'
+  env:
+    TARGET_SDK: $(TARGET_SDK)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+  condition: and(succeeded(),eq(variables['forced_image'], ''))
+
+- script: |
+    docker pull ${IOTHUB_E2E_REPO_ADDRESS}/$(forced_image)
+  displayName: 'pre-cache forced docker image'
+  env:
+    TARGET_SDK: $(TARGET_SDK)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+  condition: and(succeeded(),ne(variables['forced_image'], ''))
+
+- script: |
+    scripts/create-new-edgehub-device.sh 
+    scripts/ci-deploy-image.sh --language $TARGET_SDK --repo $REPO --branch $TARGET_BRANCH --commit $CHANGESET --forced_image $(forced_image)
+  displayName: 'Create and deploy edgehub device'
+  env:
+    TARGET_SDK: $(TARGET_SDK)
+    CHANGESET: $(CHANGESET)
+    TARGET_BRANCH: $(TARGET_BRANCH)
+    REPO: $(REPO)
+    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
+    Build.BuildId: $(Build.BuildId)
+
+

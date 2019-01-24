@@ -1,0 +1,33 @@
+resources:
+- repo: self
+variables:
+  language: $(TARGET_SDK)
+jobs:
+
+- job: 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: templates/build-docker-image-steps.yaml 
+    parameters:
+      language: $(TARGET_SDK)
+      repo: $(REPO)
+      branch: $(TARGET_BRANCH)
+      commit: $(CHANGESET)
+
+- job: 'edgehub_fi_mqtt'
+  strategy:
+      parallel: 8
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: templates/pre-test-steps.yaml
+  - template: templates/edgehub-fi-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: mqtt
+      tag: edgehub_fi_$(Agent.JobName)
+  - template: templates/post-test-steps.yaml
+

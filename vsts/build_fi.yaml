@@ -1,0 +1,43 @@
+resources:
+- repo: self
+queue:
+  name: aziotbld-edge-e2e
+  timeoutInMinutes: 100
+steps:
+- script: |
+   scripts/ci-pre-run.sh
+   scripts/create-new-edgehub-device.sh 
+   scripts/ci-e2e-toplevel-fi.sh --language $TARGET_SDK --repo $REPO --branch $TARGET_BRANCH --commit $CHANGESET
+  displayName: 'All tests'
+  env:
+    TARGET_SDK: $(TARGET_SDK)
+    CHANGESET: $(CHANGESET)
+    TARGET_BRANCH: $(TARGET_BRANCH)
+    REPO: $(REPO)
+    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    IOTHUB_E2E_EDGE_PRIVATE_REGISTRY: $(IOTHUB-E2E-EDGE-PRIVATE-REGISTRY)
+    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results **/TEST-*.xml'
+  condition: always()
+
+- task: CopyFiles@2
+  displayName: 'Copy result files to artifact staging'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)/results'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  condition: always()
+
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'Edge E2E Result for $(Build.DefinitionName) $(Build.BuildId)'
+  condition: always()
+
+

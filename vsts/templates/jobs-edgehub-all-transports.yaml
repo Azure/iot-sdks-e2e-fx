@@ -1,0 +1,67 @@
+parameters:
+  index: '1'
+
+jobs:
+- job: 'edgehub_mqtt_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: $(FORCED_IMAGE)
+  - template: edgehub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: mqtt
+  - template: post-test-steps.yaml
+
+- job: 'edgehub_mqttws_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: $(FORCED_IMAGE)
+  - template: edgehub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: mqttws
+  - template: post-test-steps.yaml
+  condition: and(succeeded(),not(in(variables['TARGET_SDK'], 'pythonpreview', 'python')))
+
+- job: 'edgehub_amqp_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: $(FORCED_IMAGE)
+  - template: edgehub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: amqp
+  - template: post-test-steps.yaml
+  condition: and(succeeded(),not(in(variables['TARGET_SDK'], 'python', 'c', 'pythonpreview')))
+
+- job: 'edgehub_amqpws_${{ parameters.index }}'
+  dependsOn:
+    - 'build_linux_containers'
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - template: pre-test-steps.yaml
+    parameters:
+      forced_image: $(FORCED_IMAGE)
+  - template: edgehub-test-steps.yaml
+    parameters:
+      language: $(TARGET_SDK)
+      transport: amqpws
+  - template: post-test-steps.yaml
+  condition: and(succeeded(),not(in(variables['TARGET_SDK'], 'python', 'c', 'pythonpreview')))
+

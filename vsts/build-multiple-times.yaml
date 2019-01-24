@@ -1,0 +1,28 @@
+jobs:
+- template: templates/jobs-build-docker-image.yaml
+- template: templates/jobs-edgehub-all-transports.yaml
+  parameters:
+    index: 1
+- template: templates/jobs-iothub-all-transports.yaml
+  parameters:
+    index: 1
+- template: templates/jobs-edgehub-all-transports.yaml
+  parameters:
+    index: 2
+- template: templates/jobs-iothub-all-transports.yaml
+  parameters:
+    index: 2
+- template: templates/jobs-edgehub-all-transports.yaml
+  parameters:
+    index: 3
+- template: templates/jobs-iothub-all-transports.yaml
+  parameters:
+    index: 3
+- template: templates/jobs-edgehub-all-transports.yaml
+  parameters:
+    index: 4
+- template: templates/jobs-iothub-all-transports.yaml
+  parameters:
+    index: 4
+
+
