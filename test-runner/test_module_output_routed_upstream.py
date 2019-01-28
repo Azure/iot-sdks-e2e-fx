@@ -8,7 +8,6 @@ import pytest
 import connections
 import random
 import test_utilities
-import wrapper_api
 import environment
 
 output_name = "telemetry"

@@ -9,8 +9,7 @@ import connections
 import random
 import time
 import test_utilities
-import wrapper_api
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 
 output_name = "loopout"
 input_name = "loopin"

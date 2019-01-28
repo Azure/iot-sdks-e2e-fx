@@ -11,14 +11,13 @@ import pytest
 import connections
 import environment
 import test_utilities
-import wrapper_api
 from edgehub_control import (
     connect_edgehub,
     disconnect_edgehub,
     edgeHub,
     restart_edgehub,
 )
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 
 local_timeout = 60  # Seconds
 

@@ -8,7 +8,7 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
     AzureIOTEndToEndTestWrapperRestApi,
 )
 from multiprocessing.pool import ThreadPool
-from decorators import log_entry_and_exit, add_timeout
+from ..decorators import log_entry_and_exit, add_timeout
 
 # Amount of time to wait after submitting async request.  Gives server time to call API before calling the next API.
 wait_time_for_async_start = 5
@@ -64,7 +64,7 @@ class ModuleApi:
 
     """
     *NOTE FOR C SDK*
-    get_twin is not fully implemented in C SDK, so this function is just glue code 
+    get_twin is not fully implemented in C SDK, so this function is just glue code
     that wraps the twin snippet and returns it, never calling into the SDK itself.
     """
 
@@ -140,7 +140,7 @@ class ModuleApi:
 
     """
     roundtrip_method_async
-    Description: This is a poorly named method. It is essentially create a 
+    Description: This is a poorly named method. It is essentially create a
     method callback and then wait for a method call.
     """
 

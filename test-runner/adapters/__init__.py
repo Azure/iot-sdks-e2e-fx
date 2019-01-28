@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for
+# full license information.
+import sys
+from .decorators import *
+from . import rest as rest_api_adapters
+from .print_message import print_message
+
+this_module = sys.modules[__name__]
+
+'''
+This file implements an uncommon way of creating objects. Instead of exporting object
+constructor functions from this module, we export functions that "add adapters".  These
+adapter objects are objects that let you call code under test using _some_ RPC mechanism
+depending on the type of adapter, or no RPC mechanism if you want to call the test code
+directly.  By adding an adapter using a given type of RPC, you are basically adding 
+a factory that can create that adapter. This way, functions like add_rest_adapter are
+like factory factories.  That is, when you call add_rest_adapter, you're creating an
+object factory and exporting it from this module.
+
+This may feel like a strange way of creating objects, but this allows us to dynamically
+add test objects based on runtime configuration.  As of today, the only kind of adapter
+is a REST adapter, but more types of adapters will be added soon, and this pattern will
+allow us to make the type of wrapper opaque to the test code.  The data-driven way that
+this function creates factories allows us to easily add more test objects in the future,
+based entirely on configuration data.
+'''
+
+
+def add_rest_adapter(name, api_surface, uri):
+    '''
+    Adds a REST adapter with the given name, using the given surface, at the given URI.
+    `name` is the name of the adapter factory that will be exported from this module,
+            so if `name` is "ModuleApiClient", this function will add a factory function
+            called "ModuleApiClient" to this module's list of exports.  This way, after
+            an adapter called "ModuleApiClient" is added using this function, "callers
+            will be able to create an adapter by importing adapters.ModuleApiClient and
+            calling the returned funciton.
+    `api_surface` is the name of the api object exported from the `REST` package.  If 
+            `api_surface` is "module_api" then the factory will return a module_api object.
+    `uri` is the uri for the REST endpoint that implements the given api
+    '''
+    print(
+        "Adding REST adapter for {} using the {} api at uri {}".format(
+            name, api_surface, uri
+        )
+    )
+    AdapterClass = getattr(rest_api_adapters, api_surface)
+
+    def factory():
+        object = AdapterClass(uri)
+        return object
+
+    setattr(this_module, name, factory)
+    rest_api_adapters.add_rest_uri(uri)
+
+
+def cleanup_test_objects():
+    '''
+    Function to call into all adapter objects and perform cleanup on the test objects
+    that those adapters are responsible for.
+    '''
+    rest_api_adapters.cleanup_test_objects()

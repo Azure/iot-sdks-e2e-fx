@@ -8,7 +8,7 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
     AzureIOTEndToEndTestWrapperRestApi,
 )
 from multiprocessing.pool import ThreadPool
-from decorators import log_entry_and_exit, add_timeout
+from ..decorators import log_entry_and_exit, add_timeout
 
 # Amount of time to wait after submitting async request.  Gives server time to call API before calling the next API.
 wait_time_for_async_start = 1

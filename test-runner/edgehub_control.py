@@ -1,6 +1,7 @@
 import docker
-import sys, os
-from wrapper_api import print_message as log_message
+import sys
+import os
+from adapters import print_message as log_message
 from time import sleep
 
 # Create Global Variables
@@ -102,4 +103,3 @@ def restart_edgehub(hard=False):
     except Exception as e:
         log_message("Error: {}".format(sys.exc_info()[0]))
         raise e
-

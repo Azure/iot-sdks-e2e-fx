@@ -5,14 +5,12 @@
 # full license information.
 
 import pytest
-import fakes
 import connections
 import json
-import wrapper_api
 import multiprocessing
 import time
 import environment
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
 import docker
 
@@ -55,7 +53,7 @@ def do_module_method_call(
 
     # start listening for method calls on the destination side
     log_message("starting to listen from destination module")
-    request_thread = destination_module.roundtrip_method_async(
+    destination_module.roundtrip_method_async(
         method_name, status_code, method_invoke_parameters, method_response_body
     )
     log_message(
@@ -86,6 +84,7 @@ def do_module_method_call(
     if isinstance(response["payload"], str):
         response["payload"] = json.loads(response["payload"])
     assert response["payload"] == method_response_body
+
 
 @pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_fault_injection

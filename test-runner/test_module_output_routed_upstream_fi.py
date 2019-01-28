@@ -8,7 +8,6 @@ import pytest
 import connections
 import random
 import test_utilities
-import wrapper_api
 import environment
 from edgehub_control import (
     disconnect_edgehub,
@@ -16,7 +15,7 @@ from edgehub_control import (
     edgeHub,
     restart_edgehub,
 )
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 
 output_name = "telemetry"
 
@@ -47,4 +46,3 @@ def test_module_output_routed_upstream_fi():
         eventhub_client.disconnect()
     finally:
         restart_edgehub(hard=True)
-

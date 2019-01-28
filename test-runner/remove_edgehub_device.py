@@ -4,8 +4,6 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from edgehub_factory import createNewHubInstance
-from connection_string import parseConnectionString
 from config_yaml import ConfigFile
 from get_environment_variables import verifyEnvironmentVariables
 from service_helper import Helper
@@ -16,7 +14,7 @@ print("Removing edgehub device")
 
 verifyEnvironmentVariables()
 
-if not "IOTHUB_E2E_CONNECTION_STRING" in os.environ:
+if "IOTHUB_E2E_CONNECTION_STRING" not in os.environ:
     print(
         "ERROR: Iothub connection string not set in IOTHUB_E2E_CONNECTION_STRING environment variable."
     )
@@ -35,9 +33,7 @@ if "IOTHUB_E2E_EDGEHUB_DEVICE_ID" in os.environ:
 
     print("updating config.yaml to remove strings")
     config_file = ConfigFile()
-    config_file.contents["provisioning"][
-        "device_connection_string"
-    ] = ""
+    config_file.contents["provisioning"]["device_connection_string"] = ""
 
     config_file.save()
     print("config.yaml updated")

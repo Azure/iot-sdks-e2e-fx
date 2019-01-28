@@ -9,7 +9,6 @@ import connections
 import random
 import time
 import test_utilities
-import wrapper_api
 import environment
 from edgehub_control import connect_edgehub, disconnect_edgehub, restart_edgehub
 
@@ -70,6 +69,7 @@ def test_friend_to_module_routing_fi():
     friend_client.disconnect()
     test_client.disconnect()
 
+
 @pytest.mark.skip
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.callsSendOutputEvent
@@ -102,4 +102,3 @@ def test_module_test_to_friend_and_back_fi():
         test_client.disconnect()
     finally:
         restart_edgehub(hard=True)
-

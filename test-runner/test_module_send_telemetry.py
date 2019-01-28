@@ -8,9 +8,8 @@ import pytest
 import connections
 import random
 import test_utilities
-import wrapper_api
 import environment
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 
 
 @pytest.mark.testgroup_edgehub_module_client

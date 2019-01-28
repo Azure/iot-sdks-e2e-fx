@@ -7,12 +7,12 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
     AzureIOTEndToEndTestWrapperRestApi,
 )
 from multiprocessing.pool import ThreadPool
-from decorators import log_entry_and_exit, add_timeout
+from ..decorators import log_entry_and_exit, add_timeout
 
 
-class ServiceApi:
+class EventHubApi:
     def __init__(self, hostname):
-        self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).service
+        self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).event_hub
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
         self.pool = ThreadPool()
@@ -37,16 +37,13 @@ class ServiceApi:
 
     @log_entry_and_exit
     @add_timeout
-    def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
-        return self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.invoke_module_method),
-            (self.connection_id, device_id, module_id, method_invoke_parameters),
-        )
+    def enable_telemetry(self):
+        self.rest_endpoint.enable_telemetry(self.connection_id)
 
     @log_entry_and_exit
     @add_timeout
-    def call_device_method_async(self, device_id, method_invoke_parameters):
+    def wait_for_event_async(self, device_id):
         return self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.invoke_device_method),
-            (self.connection_id, device_id, method_invoke_parameters),
+            log_entry_and_exit(self.rest_endpoint.wait_for_telemetry),
+            (self.connection_id, device_id),
         )

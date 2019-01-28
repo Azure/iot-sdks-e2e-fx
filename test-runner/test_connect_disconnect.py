@@ -6,7 +6,7 @@
 
 import pytest
 import connections
-import wrapper_api
+
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
