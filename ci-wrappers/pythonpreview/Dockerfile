@@ -23,7 +23,7 @@ ARG BASE_BRANCH
 
 WORKDIR /sdk
 RUN git clone https://github.com/$AZURE_REPO -b $BASE_BRANCH .
-RUN python dev_setup.py
+RUN python env_setup.py --no_dev
 
 # now check the latest SHA.  If it's changed, fetch and rebuild.
 # this seems redundant, but we're setting another baseline here
@@ -53,7 +53,7 @@ RUN \
     git fetch $PR_SOURCE_URL $PR_SOURCE_REF:pullsource && \
     git merge --ff --strategy=recursive pullsource ; \
   fi
-RUN python dev_setup.py
+RUN python env_setup.py --no_dev
 
 WORKDIR /wrapper
 COPY ./wrapper .
