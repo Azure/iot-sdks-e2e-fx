@@ -7,8 +7,7 @@
 import sys
 import pytest
 import connections
-import wrapper_api
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 import urllib
 from edgehub_control import (
     disconnect_edgehub,
@@ -19,12 +18,12 @@ from edgehub_control import (
 
 """
 Test: test_module_client_connect_enable_twin_disconnect
-Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect. 
+Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
 
 Success:
 Module Twin can reconnect to edgeHub after disconnection.
 
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
 """
 
 
@@ -47,7 +46,7 @@ Test: test_module_client_connect_enable_methods_disconnect
 Success:
 Module Twin can reconnect to edgeHub after disconnection.
 
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
 """
 
 
@@ -64,12 +63,12 @@ def test_module_client_connect_enable_methods_disconnect_fi():
 
 
 """
-Test: 
+Test:
 
 Success: test_module_client_connect_enable_input_messages_disconnect
 Module Twin can reconnect to edgeHub after disconnection.
 
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
 """
 
 
@@ -87,12 +86,12 @@ def test_module_client_connect_enable_input_messages_disconnect_fi():
 
 """
 Test: test_registry_client_connect_disconnect
-Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect. 
+Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
 
 Success:
 Module Twin can reconnect to edgeHub after disconnection.
 
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
 """
 
 
@@ -107,12 +106,12 @@ def test_registry_client_connect_disconnect_fi():
 
 
 """
-Test: test_service_client_connect_disconnect 
+Test: test_service_client_connect_disconnect
 
 Success: test_service_client_connect_disconnect
 Module Twin can reconnect to edgeHub after disconnection.
 
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
 """
 
 
@@ -127,49 +126,13 @@ def test_service_client_connect_disconnect_fi():
 
 
 """
-Test: test_eventhub_connect_disconnect
+Test:
+Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
 
 Success:
 Module Twin can reconnect to edgeHub after disconnection.
 
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
-"""
-
-
-@pytest.mark.testgroup_edgehub_fault_injection
-@pytest.mark.module_under_test_has_eventhub_wrapper
-def test_eventhub_connect_disconnect_fi():
-    eventhub_client = connections.connect_eventhub_client()
-    eventhub_client.disconnect()
-
-
-"""
-Test: 
-Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect. 
-
-Success:
-Module Twin can reconnect to edgeHub after disconnection.
-
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
-"""
-
-
-@pytest.mark.testgroup_edgehub_fault_injection
-@pytest.mark.module_under_test_has_eventhub_wrapper
-def test_eventhub_connect_enable_telemetry_disconnect_fi():
-    eventhub_client = connections.connect_eventhub_client()
-    eventhub_client.enable_telemetry()
-    eventhub_client.disconnect()
-
-
-"""
-Test: 
-Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect. 
-
-Success:
-Module Twin can reconnect to edgeHub after disconnection.
-
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
 """
 
 
@@ -181,13 +144,13 @@ def test_device_client_connect_disconnect_fi():
 
 
 """
-Test: 
-Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect. 
+Test:
+Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
 
 Success:
 Module Twin can reconnect to edgeHub after disconnection.
 
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect. 
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
 """
 
 
@@ -197,4 +160,3 @@ def test_device_client_connect_enable_methods_disconnect_fi():
     device_client = connections.connect_leaf_device_client()
     device_client.enable_methods()
     device_client.disconnect()
-

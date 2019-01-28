@@ -8,16 +8,10 @@ import pytest
 import random
 import connections
 import time
-import wrapper_api
 import environment
 import json
-from wrapper_api import print_message as log_message
-from edgehub_control import (
-    edgeHub,
-    connect_edgehub,
-    disconnect_edgehub,
-    restart_edgehub,
-)
+from adapters import print_message as log_message
+from edgehub_control import connect_edgehub, disconnect_edgehub, restart_edgehub
 from time import sleep
 import docker
 
@@ -124,18 +118,25 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         # this happens relatively rarely.  Maybe 1/20, maybe 1/100 times
 
         if "properties" in patch_received:
-            log_message("desired properties received: " + str(patch_received["properties"]["desired"]["foo"]))
+            log_message(
+                "desired properties received: "
+                + str(patch_received["properties"]["desired"]["foo"])
+            )
             assert (
                 twin_sent["properties"]["desired"]["foo"]
                 == patch_received["properties"]["desired"]["foo"]
             )
         elif "desired" in patch_received:
-            log_message("desired properties recieved: " + str(patch_received["desired"]["foo"]))
-            assert twin_sent["properties"]["desired"]["foo"] == patch_received["desired"]["foo"]
+            log_message(
+                "desired properties recieved: " + str(patch_received["desired"]["foo"])
+            )
+            assert (
+                twin_sent["properties"]["desired"]["foo"]
+                == patch_received["desired"]["foo"]
+            )
         else:
             log_message("desired properties recieved: " + str(patch_received["foo"]))
             assert twin_sent["properties"]["desired"]["foo"] == patch_received["foo"]
 
     registry_client.disconnect()
     module_client.disconnect()
-

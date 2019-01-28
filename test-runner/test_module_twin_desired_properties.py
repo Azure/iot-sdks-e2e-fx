@@ -8,10 +8,9 @@ import pytest
 import random
 import connections
 import time
-import wrapper_api
 import environment
 import json
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
@@ -56,7 +55,10 @@ def test_service_can_set_desired_properties_and_module_can_retrieve_them():
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.supportsTwin
-@pytest.mark.skipif(environment.language == "java", reason="java tests after this test are failing.  I suspect the wrapper isn't cleaning itself up correctly")
+@pytest.mark.skipif(
+    environment.language == "java",
+    reason="java tests after this test are failing.  I suspect the wrapper isn't cleaning itself up correctly",
+)
 def test_service_can_set_multiple_desired_property_patches_and_module_can_retrieve_them_as_events():
 
     log_message("connecting registry client")
@@ -98,7 +100,10 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         # this happens relatively rarely.  Maybe 1/20, maybe 1/100 times
 
         if "properties" in patch_received:
-            log_message("desired properties received: " + str(patch_received["properties"]["desired"]["foo"]))
+            log_message(
+                "desired properties received: "
+                + str(patch_received["properties"]["desired"]["foo"])
+            )
             assert (
                 twin_sent["properties"]["desired"]["foo"]
                 == patch_received["properties"]["desired"]["foo"]

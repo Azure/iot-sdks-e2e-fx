@@ -10,6 +10,7 @@ import base64
 import edgehub_factory as edgehub_factory
 from containers import all_containers
 from get_environment_variables import verifyEnvironmentVariables
+import adapters
 
 verifyEnvironmentVariables()
 
@@ -39,19 +40,19 @@ friend_module_connect_from_environment = True
 # execution settings that come directly from environment variables.
 # --------------------------------------------------------------------------------------
 
-if not "IOTHUB_E2E_CONNECTION_STRING" in os.environ:
+if "IOTHUB_E2E_CONNECTION_STRING" not in os.environ:
     print(
         "ERROR: Iothub connection string not set in IOTHUB_E2E_CONNECTION_STRING environment variable."
     )
     sys.exit(1)
 
-if not "IOTHUB_E2E_EDGEHUB_DEVICE_ID" in os.environ:
+if "IOTHUB_E2E_EDGEHUB_DEVICE_ID" not in os.environ:
     print(
         "ERROR: Edge device ID not set in IOTHUB_E2E_EDGEHUB_DEVICE_ID environment variable.  You can use CreateNewEdgeHubDevice.cmd/sh to create a new device"
     )
     sys.exit(1)
 
-if not "IOTHUB_E2E_EDGEHUB_DNS_NAME" in os.environ:
+if "IOTHUB_E2E_EDGEHUB_DNS_NAME" not in os.environ:
     print(
         "ERROR: DNS name of edge service VM not set in IOTHUB_E2E_EDGEHUB_DNS_NAME environment variable."
     )
@@ -122,9 +123,6 @@ registry_uri = None
 # URI to use for the service client API under test
 service_client_uri = None
 
-# URI for the eventHub API
-eventhub_uri = None
-
 # language being tested
 language = None
 
@@ -139,7 +137,7 @@ def setupExecutionEnvironment():
     global module_id, test_module_connection_string
     global friend_module_id, friend_module_connection_string
     global test_module_uri, friend_module_uri, leaf_device_uri
-    global registry_uri, service_client_uri, eventhub_uri
+    global registry_uri, service_client_uri
     global test_module_connect_from_environment, friend_module_connect_from_environment
     global ca_certificate
     global test_module_transport, friend_module_transport
@@ -163,13 +161,13 @@ def setupExecutionEnvironment():
 
     leaf_device_connection_string = hub.leaf_device_connection_string
 
-    if test_module_connection_string == None or test_module_connection_string == "":
+    if test_module_connection_string is None or test_module_connection_string == "":
         raise Exception(
             "test module has not been deployed.  You need to deploy your langauge module (even if you're testing locally)"
         )
-    if friend_module_connection_string == None or friend_module_connection_string == "":
+    if friend_module_connection_string is None or friend_module_connection_string == "":
         raise Exception("friend module has not been deployed.")
-    if leaf_device_connection_string == None or leaf_device_connection_string == "":
+    if leaf_device_connection_string is None or leaf_device_connection_string == "":
         raise Exception(
             "Leaf device does not appear to have an iothub identity.  You may need to re-run create-new-edgehub-device.sh"
         )
@@ -208,18 +206,16 @@ def setupExecutionEnvironment():
     friend_module_uri = edge_friend_container
 
     leaf_device_uri = edge_test_container
-    if container_under_test.deviceImpl == False:
+    if container_under_test.deviceImpl is False:
         leaf_device_uri = edge_friend_container
 
     registry_uri = edge_test_container
-    if container_under_test.registryImpl == False:
+    if container_under_test.registryImpl is False:
         registry_uri = edge_friend_container
 
     service_client_uri = edge_test_container
-    if container_under_test.serviceImpl == False:
+    if container_under_test.serviceImpl is False:
         service_client_uri = edge_friend_container
-
-    eventhub_uri = edge_friend_container
 
     if conftest.test_module_use_connection_string:
         test_module_connect_from_environment = False
@@ -237,17 +233,28 @@ def setupExecutionEnvironment():
 
     language = conftest.language
 
+    adapters.add_rest_adapter(
+        name="TestModuleClient", api_surface="ModuleApi", uri=test_module_uri
+    )
+    adapters.add_rest_adapter(
+        name="FriendModuleClient", api_surface="ModuleApi", uri=friend_module_uri
+    )
+    adapters.add_rest_adapter(
+        name="LeafDeviceClient", api_surface="DeviceApi", uri=leaf_device_uri
+    )
+    adapters.add_rest_adapter(
+        name="RegistryClient", api_surface="RegistryApi", uri=registry_uri
+    )
+    adapters.add_rest_adapter(
+        name="ServiceClient", api_surface="ServiceApi", uri=service_client_uri
+    )
+    adapters.add_direct_eventhub_adapter()
+
     print("Run Parameters:")
     print("  language:             {}".format(language))
     print("  module_id:            {}".format(module_id))
     print("  friend_module_id:     {}".format(friend_module_id))
     print("  leaf_device_id:       {}".format(leaf_device_id))
-    print("  test_module_uri:      {}".format(friendly_uri(test_module_uri)))
-    print("  friend_module_uri:    {}".format(friendly_uri(friend_module_uri)))
-    print("  leaf_device_uri:      {}".format(friendly_uri(leaf_device_uri)))
-    print("  registry_uri:         {}".format(friendly_uri(registry_uri)))
-    print("  service_client_uri:   {}".format(friendly_uri(service_client_uri)))
-    print("  eventhub_uri:         {}".format(friendly_uri(eventhub_uri)))
     print("  using environment:    {}".format(test_module_connect_from_environment))
     print("  test transport:       {}".format(test_module_transport))
     print("  friend transport:     {}".format(friend_module_transport))

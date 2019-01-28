@@ -8,7 +8,7 @@
 import pytest
 import signal
 import environment
-import wrapper_api
+import adapters
 from docker_log_watcher import DockerLogWatcher
 from get_environment_variables import verifyEnvironmentVariables
 
@@ -98,19 +98,12 @@ valid_transports = ["mqtt", "mqttws", "amqp", "amqpws"]
 
 skip_for_node = set([])
 
-skip_for_csharp = set(
-    [
-        "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
-        "handlesLoopbackMethods",
-    ]
-)
+skip_for_csharp = set(["module_under_test_has_device_wrapper"])
 
 
 skip_for_python = set(
     [
         "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",
     ]
@@ -124,20 +117,12 @@ skip_for_pythonpreview = set(
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",
         "supportsTwin",
-        "handlesLoopbackMethods",
         "handlesLoopbackMessages",
         "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
     ]
 )
 
-skip_for_c = set(
-    [
-        "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
-        "handlesLoopbackMethods",
-    ]
-)
+skip_for_c = set(["module_under_test_has_device_wrapper"])
 
 skip_for_c_amqp = set(["receivesInputMessages", "callsSendOutputEvent"])
 
@@ -147,13 +132,7 @@ skip_for_c_connection_string = set(
     ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"]
 )
 
-skip_for_java = set(
-    [
-        "module_under_test_has_eventhub_wrapper",
-        "module_under_test_has_device_wrapper",
-        "supportsTwin",
-    ]
-)
+skip_for_java = set(["module_under_test_has_device_wrapper", "supportsTwin"])
 
 
 def skip_tests_by_marker(items, skiplist, reason):
@@ -262,15 +241,15 @@ def pytest_collection_modifyitems(config, items):
 
 
 def log_enter(message):
-    wrapper_api.print_message("".join(">" for _ in range(80)))
-    wrapper_api.print_message(message)
-    wrapper_api.print_message("".join(">" for _ in range(80)))
+    adapters.print_message("".join(">" for _ in range(80)))
+    adapters.print_message(message)
+    adapters.print_message("".join(">" for _ in range(80)))
 
 
 def log_exit(message):
-    wrapper_api.print_message("".join("<" for _ in range(80)))
-    wrapper_api.print_message(message)
-    wrapper_api.print_message("".join("<" for _ in range(80)))
+    adapters.print_message("".join("<" for _ in range(80)))
+    adapters.print_message(message)
+    adapters.print_message("".join("<" for _ in range(80)))
 
 
 # from https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
@@ -296,19 +275,13 @@ def function_log_fixture(request):
     def fin():
         print("")
         if hasattr(request.node, "rep_setup"):
-            wrapper_api.print_message(
-                "setup:      " + str(request.node.rep_setup.outcome)
-            )
+            adapters.print_message("setup:      " + str(request.node.rep_setup.outcome))
         if hasattr(request.node, "rep_call"):
-            wrapper_api.print_message(
-                "call:       " + str(request.node.rep_call.outcome)
-            )
+            adapters.print_message("call:       " + str(request.node.rep_call.outcome))
         if hasattr(request.node, "rep_teardown"):
-            wrapper_api.print_message(
-                "teardown:   " + str(request.node.rep_call.outcome)
-            )
+            adapters.print_message("teardown:   " + str(request.node.rep_call.outcome))
         log_enter("Cleaning up after function {}".format(request.function.__name__))
-        wrapper_api.cleanup_after_test_case()
+        adapters.cleanup_test_objects()
         log_exit("Exiting function {}".format(request.function.__name__))
         log_watcher.flush_and_disable()
 
@@ -331,13 +304,13 @@ def module_log_fixture(request):
 def session_log_fixture(request):
     print("")
     log_enter("Preforming pre-session cleanup")
-    wrapper_api.session_start()
+    adapters.cleanup_test_objects()
     log_exit("pre-session cleanup complete")
 
     def fin():
         print("")
         log_enter("Preforming post-session cleanup")
-        wrapper_api.session_end()
+        adapters.cleanup_test_objects()
         log_exit("post-session cleanup complete")
         if log_watcher:
             log_watcher.terminate()

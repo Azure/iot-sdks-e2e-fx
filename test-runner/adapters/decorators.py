@@ -4,8 +4,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import functools
-import wrapper_api
+
 from multiprocessing.pool import ThreadPool
+from .print_message import print_message
 
 
 def log_entry_and_exit(_func=None, *, print_args=True):
@@ -29,9 +30,9 @@ def log_entry_and_exit(_func=None, *, print_args=True):
                 func_name = args[0].__class__.__name__ + "." + func.__name__
             else:
                 func_name = func.__name__
-            wrapper_api.print_message(f"Callng {func_name!r}({signature})")
+            print_message(f"Callng {func_name!r}({signature})")
             value = func(*args, **kwargs)
-            wrapper_api.print_message(f"{func_name!r} returned {value!r}")
+            print_message(f"{func_name!r} returned {value!r}")
             return value
 
         return wrapper_log_entry_and_exit

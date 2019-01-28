@@ -7,9 +7,8 @@
 import pytest
 import random
 import connections
-import wrapper_api
 import environment
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 
 
 @pytest.mark.timeout(180)

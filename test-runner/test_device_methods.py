@@ -5,13 +5,11 @@
 # full license information.
 
 import pytest
-import fakes
 import environment
 import connections
 import json
 import time
-import wrapper_api
-from wrapper_api import print_message as log_message
+from adapters import print_message as log_message
 
 # How long do we have to wait after a module registers to receive
 # method calls until we can actually call a method.
@@ -40,7 +38,7 @@ def do_device_method_call(source_module, destination_module, destination_device_
 
     # start listening for method calls on the destination side
     log_message("starting to listen from destination module")
-    request_thread = destination_module.roundtrip_method_async(
+    destination_module.roundtrip_method_async(
         method_name, status_code, method_invoke_parameters, method_response_body
     )
     time.sleep(time_for_method_to_fully_register)
