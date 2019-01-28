@@ -9,12 +9,13 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 )
 from multiprocessing.pool import ThreadPool
 from ..decorators import log_entry_and_exit, add_timeout
+from ..abstract_module_api import AbstractModuleApi
 
 # Amount of time to wait after submitting async request.  Gives server time to call API before calling the next API.
 wait_time_for_async_start = 5
 
 
-class ModuleApi:
+class ModuleApi(AbstractModuleApi):
     def __init__(self, hostname):
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).module
         self.rest_endpoint.config.retry_policy.retries = 0
