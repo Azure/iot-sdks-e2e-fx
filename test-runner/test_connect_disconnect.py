@@ -57,23 +57,6 @@ def test_service_client_connect_disconnect():
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
-@pytest.mark.module_under_test_has_eventhub_wrapper
-def test_eventhub_connect_disconnect():
-    eventhub_client = connections.connect_eventhub_client()
-    eventhub_client.disconnect()
-
-
-@pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.testgroup_iothub_module_client
-@pytest.mark.module_under_test_has_eventhub_wrapper
-def test_eventhub_connect_enable_telemetry_disconnect():
-    eventhub_client = connections.connect_eventhub_client()
-    eventhub_client.enable_telemetry()
-    eventhub_client.disconnect()
-
-
-@pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.testgroup_iothub_module_client
 @pytest.mark.module_under_test_has_device_wrapper
 def test_device_client_connect_disconnect():
     device_client = connections.connect_leaf_device_client()

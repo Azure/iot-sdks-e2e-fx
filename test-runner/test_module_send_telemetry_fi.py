@@ -29,10 +29,6 @@ def test_module_send_event_iothub_fi():
         module_client = connections.connect_test_module_client()
         log_message("connecting eventhub client")
         eventhub_client = connections.connect_eventhub_client()
-        log_message("enabling telemetry on eventhub client")
-        eventhub_client.enable_telemetry()
-        log_message("start waiting for events on eventhub")
-        input_thread = eventhub_client.wait_for_event_async(environment.edge_device_id)
         sent_message = test_utilities.random_string_in_json()
         disconnect_edgehub()  # DISCONNECT EDGEHUB
         log_message("sending event " + " async: " + str(sent_message))
@@ -41,10 +37,14 @@ def test_module_send_event_iothub_fi():
         log_message("getting result with timeout: " + str(local_timeout))
         thread.wait(local_timeout)  # Result is None if successful
         log_message("wait for event to arrive at eventhub")
-        received_message = input_thread.get(test_utilities.default_eventhub_timeout)
-        log_message("expected event: " + str(sent_message))
-        log_message("received event: " + str(received_message))
-        test_utilities.assert_json_equality(received_message, sent_message)
+        received_message = eventhub_client.wait_for_next_event(
+            environment.edge_device_id,
+            test_utilities.default_eventhub_timeout,
+            expected=sent_message,
+        )
+        if not received_message:
+            log_message("Message not received")
+            assert False
         log_message("disconnecting module client")
         module_client.disconnect()
         log_message("disconnecting eventhub client")

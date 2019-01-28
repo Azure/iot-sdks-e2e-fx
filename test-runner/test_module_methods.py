@@ -135,21 +135,3 @@ def test_module_method_from_friend_to_test():
 
     module_client.disconnect()
     friend_client.disconnect()
-
-
-@pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.invokesModuleMethodCalls
-@pytest.mark.receivesMethodCalls
-@pytest.mark.handlesLoopbackMethods
-def test_module_method_from_test_to_test_loopback():
-    """
-    invoke a method call from the test module and respond to it from the same test module
-    """
-
-    module_client = connections.connect_test_module_client()
-
-    do_module_method_call(
-        module_client, module_client, environment.edge_device_id, environment.module_id
-    )
-
-    module_client.disconnect()

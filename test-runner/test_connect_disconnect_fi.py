@@ -126,42 +126,6 @@ def test_service_client_connect_disconnect_fi():
 
 
 """
-Test: test_eventhub_connect_disconnect
-
-Success:
-Module Twin can reconnect to edgeHub after disconnection.
-
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
-"""
-
-
-@pytest.mark.testgroup_edgehub_fault_injection
-@pytest.mark.module_under_test_has_eventhub_wrapper
-def test_eventhub_connect_disconnect_fi():
-    eventhub_client = connections.connect_eventhub_client()
-    eventhub_client.disconnect()
-
-
-"""
-Test:
-Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
-
-Success:
-Module Twin can reconnect to edgeHub after disconnection.
-
-Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
-"""
-
-
-@pytest.mark.testgroup_edgehub_fault_injection
-@pytest.mark.module_under_test_has_eventhub_wrapper
-def test_eventhub_connect_enable_telemetry_disconnect_fi():
-    eventhub_client = connections.connect_eventhub_client()
-    eventhub_client.enable_telemetry()
-    eventhub_client.disconnect()
-
-
-"""
 Test:
 Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
 

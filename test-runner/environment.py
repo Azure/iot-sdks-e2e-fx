@@ -123,9 +123,6 @@ registry_uri = None
 # URI to use for the service client API under test
 service_client_uri = None
 
-# URI for the eventHub API
-eventhub_uri = None
-
 # language being tested
 language = None
 
@@ -140,7 +137,7 @@ def setupExecutionEnvironment():
     global module_id, test_module_connection_string
     global friend_module_id, friend_module_connection_string
     global test_module_uri, friend_module_uri, leaf_device_uri
-    global registry_uri, service_client_uri, eventhub_uri
+    global registry_uri, service_client_uri
     global test_module_connect_from_environment, friend_module_connect_from_environment
     global ca_certificate
     global test_module_transport, friend_module_transport
@@ -220,8 +217,6 @@ def setupExecutionEnvironment():
     if container_under_test.serviceImpl is False:
         service_client_uri = edge_friend_container
 
-    eventhub_uri = edge_friend_container
-
     if conftest.test_module_use_connection_string:
         test_module_connect_from_environment = False
 
@@ -253,9 +248,7 @@ def setupExecutionEnvironment():
     adapters.add_rest_adapter(
         name="ServiceClient", api_surface="ServiceApi", uri=service_client_uri
     )
-    adapters.add_rest_adapter(
-        name="EventHubClient", api_surface="EventHubApi", uri=eventhub_uri
-    )
+    adapters.add_direct_eventhub_adapter()
 
     print("Run Parameters:")
     print("  language:             {}".format(language))

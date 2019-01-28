@@ -98,19 +98,12 @@ valid_transports = ["mqtt", "mqttws", "amqp", "amqpws"]
 
 skip_for_node = set([])
 
-skip_for_csharp = set(
-    [
-        "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
-        "handlesLoopbackMethods",
-    ]
-)
+skip_for_csharp = set(["module_under_test_has_device_wrapper"])
 
 
 skip_for_python = set(
     [
         "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",
     ]
@@ -124,20 +117,12 @@ skip_for_pythonpreview = set(
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",
         "supportsTwin",
-        "handlesLoopbackMethods",
         "handlesLoopbackMessages",
         "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
     ]
 )
 
-skip_for_c = set(
-    [
-        "module_under_test_has_device_wrapper",
-        "module_under_test_has_eventhub_wrapper",
-        "handlesLoopbackMethods",
-    ]
-)
+skip_for_c = set(["module_under_test_has_device_wrapper"])
 
 skip_for_c_amqp = set(["receivesInputMessages", "callsSendOutputEvent"])
 
@@ -147,13 +132,7 @@ skip_for_c_connection_string = set(
     ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"]
 )
 
-skip_for_java = set(
-    [
-        "module_under_test_has_eventhub_wrapper",
-        "module_under_test_has_device_wrapper",
-        "supportsTwin",
-    ]
-)
+skip_for_java = set(["module_under_test_has_device_wrapper", "supportsTwin"])
 
 
 def skip_tests_by_marker(items, skiplist, reason):
