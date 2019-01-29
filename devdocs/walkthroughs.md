@@ -94,7 +94,7 @@ To run this walkthrough, we will use the bash scripts in `edge-e2e/scripts` to d
 This script will also automatically deploy the friend module, which is always used for testing module-to-module communication.  Note: if this is the first time you're using a particular LKG module, it may take a while for the edgeAgent to download and start the module (perhaps up to 10 minutes).  You should not continue with the next step until you use the `iotedge` or `docker` CLI tools to verify that the module is running.
 
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/scripts$ ./deploy-test-containers.sh --c
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ ./deploy-test-containers.sh --c
 Operating with device bertk-edge-ga-6_bertk_550 on on hub bertk-edge.azure-devices.net
 
 Deploying the following containers:
@@ -110,7 +110,7 @@ Deploying the following containers:
 `iotedge list`
 
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/scripts$ iotedge list
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ iotedge list
 NAME             STATUS           DESCRIPTION      CONFIG
 cMod             running          Up 14 minutes    bertkcontainers.azurecr.io/edge-e2e-gcc
 friendMod        running          Up 2 days        bertkcontainers.azurecr.io/edge-e2e-node6
@@ -121,7 +121,7 @@ edgeAgent        running          Up 2 days        mcr.microsoft.com/azureiotedg
 1) run pytest inside the edge-e2e/test-runner folder.  Here are some examples:
 
 | command line | meaning |
-|-|-|
+|---|---|
 | `pytest --csharp-wrapper` | Use the csharp module to run against `edgeHub` (the default) using MQTT (the default). |
 | `pytest --c-wrapper--direct-to-iothub --transport=amqpws` | Use the C module to test against IoTHub using AMQP with websockets |
 | `pytest --java-wrapper --transport=amqp` | Use the Java module to test against edgeHub (the default) using AMQP |
@@ -129,11 +129,11 @@ edgeAgent        running          Up 2 days        mcr.microsoft.com/azureiotedg
 At the end of the run, you will see your results.
 
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/test-runner$ pytest --node-wrapper --transport=amqp
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/test-runner$ pytest --node-wrapper --transport=amqp
 ========================== test session starts ==========================
 platform linux -- Python 3.6.5, pytest-3.8.0, py-1.6.0, pluggy-0.7.1 -- /usr/bin/python3
 cachedir: .pytest_cache
-rootdir: /home/bertk/repos/internals/edge-e2e/test-runner, inifile: pytest.ini
+rootdir: /home/bertk/repos/iot-sdks-e2e-fx/test-runner, inifile: pytest.ini
 plugins: timeout-1.3.2
 <--snip-->
 test_module_twin_reported_properties.py::test_module_can_set_reported_properties_and_service_can_retrieve_them PASSED       [100%]
@@ -155,7 +155,7 @@ This walkthrough is the most simple.  It uses the toplevel Jenkins (actually VST
 To run this, call `edge-e2e/scripts/ci-e2e-toplevel.sh` and pass your build parameters.  You can call this script with no parameters for usage instructions.  One of the benefits of his script is that it will build, deploy, wait for deployment, and run all scenarios without any interaction.
 
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/scripts$ ./ci-e2e-toplevel.sh --language node --repo Azure/azure-iot-sdk-node --branch master --commit master
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ ./ci-e2e-toplevel.sh --language node --repo Azure/azure-iot-sdk-node --branch master --commit master
 AZURE_REPO=Azure/azure-iot-sdk-node
 BRANCH_TO_MERGE_TO=master
 Building with commit master
@@ -197,7 +197,7 @@ All of the tests are inside the `edge-e2e/test-runner` folder.  All modules with
 
 If you want to run the tests in a single .py module, you would call `pytest` passing the name of the .py file as follows
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/test-runner$ pytest --node-wrapper --transport=amqp test_module_send_telemetry.py
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/test-runner$ pytest --node-wrapper --transport=amqp test_module_send_telemetry.py
 ================================================= test session starts ==================================================
 <--snip-->
 test_module_send_telemetry.py::test_module_send_event_to_iothub PASSED                                           [100%]
@@ -207,7 +207,7 @@ test_module_send_telemetry.py::test_module_send_event_to_iothub PASSED          
 
 If you want to run a single test, use the test_file_name.py::test_function_name syntax as follows:
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/test-runner$ pytest --node-wrapper --transport=amqp test_module_twin_desired_properties.py::test_service_can_set_multiple_desired_property_patches_and_module_can_retrieve_them_as_events
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/test-runner$ pytest --node-wrapper --transport=amqp test_module_twin_desired_properties.py::test_service_can_set_multiple_desired_property_patches_and_module_can_retrieve_them_as_events
 ================================================= test session starts ==================================================
 <--snip-->
 test_module_twin_desired_properties.py::test_service_can_set_multiple_desired_property_patches_and_module_can_retrieve_them_as_events PASSED [100%]
@@ -238,19 +238,18 @@ These steps assuming you've already called `create-new-edgehub-device.sh` to con
    If you need to verify your Python install, you should verify both python and pip as follows.  The version of python might be slightly different, but it should be OK as long as it's 3.6.x+.  The version of pip is less important, but it should have the `(python 3.6)` info at the end.
 
 ```
-F:\repos\internals\edge-e2e\test-runner>python --version
+F:\repos\iot-sdks-e2e-fx\test-runner>python --version
 Python 3.6.3
 
-F:\repos\internals\edge-e2e\test-runner>pip --version
+F:\repos\iot-sdks-e2e-fx\test-runner>pip --version
 pip 18.0 from c:\python36\lib\site-packages\pip (python 3.6)
 ```
 
-1. Clone the internals repo on your Windows machine
-2. On your Windows machine, run `pip install -r requirements.txt`.  This will grab the various python libraries that the test runner needs.
-3. On your Linux machine, run `edge-e2e/scripts/get-environment.sh windows`.  This gives you some handy text that you can copy/paste into your Windows environment to point the test runner at your Linux IoTEdge instance.
-
+2. Clone the `iot-sdks-e2e-fx` repo on your Windows machine. 
+3. On your Windows machine, go to the `test-runner` folder. Run `pip install -r requirements.txt`.  This will grab the various python libraries that the test runner needs.
+4. On your Linux machine, run `edge-e2e/scripts/get-environment.sh windows`.  This gives you some handy text that you can copy/paste into your Windows environment to point the test runner at your Linux IoTEdge instance.
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/scripts$ ./get-environment.sh windows
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ ./get-environment.sh windows
 @rem Set the following values in your environment:
 @rem Environment for with device bertk-edge-ga-6_bertk_550 on on hub bertk-edge.azure-devices.net
 @rem device_connection_string: "<REDACTED>"
@@ -267,7 +266,7 @@ set IOTHUB_E2E_EDGEHUB_CA_CERT=<REDACTED>
 6.  On you Linux machine, make sure the container for your SDK is deployed.  Again, this container is inert, but it still needs to be present because the test runner needs it to exist as a module in the IoTHub registry.  Again, it may take a while to download the Docker container image if this is the first time using it.  Don't continue until your module (e.g. `javaMod`) shows up as `running` when you run `iotedge list`.
 
 ```
-bertk@bertk-edge-ga-6:~/repos/internals/edge-e2e/scripts$ ./deploy-test-containers.sh --java
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ ./deploy-test-containers.sh --java
 Operating with device bertk-edge-ga-6_bertk_550 on on hub bertk-edge.azure-devices.net
 
 Deploying the following containers:
