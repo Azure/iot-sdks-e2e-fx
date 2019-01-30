@@ -23,9 +23,9 @@ def get_patch_received():
     foo_val = ""
     if "properties" in patch_received:
         foo_val = str(patch_received["properties"]["desired"]["foo"])
-    else if "desired" in patch_received:
+    elif "desired" in patch_received:
         foo_val = str(patch_received["desired"]["foo"])
-    else if "foo" in patch_recieved:
+    elif "foo" in patch_recieved:
         foo_val = str(patch_recieved["foo"])
     return foo_val
 
