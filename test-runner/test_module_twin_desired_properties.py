@@ -15,7 +15,7 @@ from adapters import print_message as log_message
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
 
-def get_patch_received():
+def get_patch_received(patch_received):
     """
     Helper function to take in recieved patch and extract the value of foo without returning error.
     If the patch_received is not of the correct format foo_val will be set as a blank string and returned.
