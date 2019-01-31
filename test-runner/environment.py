@@ -143,7 +143,10 @@ def setupExecutionEnvironment():
     global test_module_transport, friend_module_transport
     global language
 
-    container_under_test = all_containers[conftest.language]
+    if conftest.language == "ppdirect":
+        container_under_test = all_containers["pythonpreview"]
+    else:
+        container_under_test = all_containers[conftest.language]
 
     hub = edgehub_factory.useExistingHubInstance(
         service_connection_string, edge_device_id
@@ -233,9 +236,14 @@ def setupExecutionEnvironment():
 
     language = conftest.language
 
-    adapters.add_rest_adapter(
-        name="TestModuleClient", api_surface="ModuleApi", uri=test_module_uri
-    )
+    if language == "ppdirect":
+        adapters.add_direct_iot_sdk_adapter(
+            name="TestModuleClient", api_surface="ModuleApi"
+        )
+    else:
+        adapters.add_rest_adapter(
+            name="TestModuleClient", api_surface="ModuleApi", uri=test_module_uri
+        )
     adapters.add_rest_adapter(
         name="FriendModuleClient", api_surface="ModuleApi", uri=friend_module_uri
     )

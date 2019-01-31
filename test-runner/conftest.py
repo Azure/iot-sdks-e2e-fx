@@ -76,6 +76,12 @@ def pytest_addoption(parser):
         default=False,
         help="run tests for the python preview wrapper",
     )
+    parser.addoption(
+        "--ppdirect-wrapper",
+        action="store_true",
+        default=False,
+        help="run tests for the python preview wrapper in-proc",
+    )
 
 
 # langauge that we're running against
@@ -111,7 +117,6 @@ skip_for_python = set(
 
 skip_for_pythonpreview = set(
     [
-        "callsSendOutputEvent",
         "receivesInputMessages",
         "receivesMethodCalls",
         "invokesModuleMethodCalls",
@@ -227,6 +232,14 @@ def pytest_collection_modifyitems(config, items):
     elif config.getoption("--pythonpreview-wrapper"):
         print("Using python-preview wrapper")
         language = "pythonpreview"
+        skip_tests_by_marker(
+            items,
+            skip_for_pythonpreview,
+            "it isn't implemented in the new python wrapper",
+        )
+    elif config.getoption("--ppdirect-wrapper"):
+        print("Using python-preview wrapper in-proc")
+        language = "ppdirect"
         skip_tests_by_marker(
             items,
             skip_for_pythonpreview,

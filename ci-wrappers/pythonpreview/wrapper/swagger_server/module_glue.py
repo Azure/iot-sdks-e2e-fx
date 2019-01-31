@@ -31,7 +31,9 @@ class ModuleGlue:
     def connect_from_environment(self, transport_type):
         print("connecting from environment")
         auth_provider = from_environment()
-        client = ModuleClientSync.from_authentication_provider(auth_provider, transport_type)
+        client = ModuleClientSync.from_authentication_provider(
+            auth_provider, transport_type
+        )
         return self._finish_connection(client)
 
     def connect(self, transport_type, connection_string, ca_certificate):
@@ -39,7 +41,9 @@ class ModuleGlue:
         auth_provider = from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
             auth_provider.ca_cert = ca_certificate.cert
-        client = ModuleClientSync.from_authentication_provider(auth_provider, transport_type)
+        client = ModuleClientSync.from_authentication_provider(
+            auth_provider, transport_type
+        )
         return self._finish_connection(client)
 
     def disconnect(self, connection_id):
@@ -61,7 +65,7 @@ class ModuleGlue:
     def send_event(self, connection_id, event_body):
         print("sending event on " + connection_id)
         client = self.object_map[connection_id]
-        client.send_event(json.dumps(event_body.decode("utf-8")))
+        client.send_event(event_body.decode("utf-8"))
         print("send confirmation received")
 
     def wait_for_input_message(self, connection_id, input_name):
@@ -79,7 +83,10 @@ class ModuleGlue:
         raise NotImplementedError()
 
     def send_output_event(self, connection_id, output_name, event_body):
-        raise NotImplementedError()
+        print("sending event on " + connection_id)
+        client = self.object_map[connection_id]
+        client.send_to_output(event_body.decode("utf-8"), output_name)
+        print("send confirmation received")
 
     def wait_for_desired_property_patch(self, connection_id):
         raise NotImplementedError()

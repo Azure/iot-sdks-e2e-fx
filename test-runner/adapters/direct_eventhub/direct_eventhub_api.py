@@ -4,6 +4,8 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import time
+import json
+import ast
 from azure.eventhub import EventHubClient
 from azure.eventhub.common import Offset
 from ..print_message import print_message
@@ -13,6 +15,16 @@ from ..print_message import print_message
 RECEIVE_CYCLE_TIME = 0.25
 
 object_list = []
+
+
+def json_is_same(a, b):
+    # If either parameter is a string, convert it to an object.
+    # use ast.literal_eval because they might be single-quote delimited which fails with json.loads.
+    if isinstance(a, str):
+        a = ast.literal_eval(a)
+    if isinstance(b, str):
+        b = ast.literal_eval(b)
+    return a == b
 
 
 class EventHubApi:
@@ -55,12 +67,12 @@ class EventHubApi:
                     print_message(
                         "EventHubApi: received event: {}".format(batch[0].body_as_str())
                     )
-                    obj = batch[0].body_as_json()
+                    received = batch[0].body_as_json()
                     if expected:
-                        if expected == obj:
+                        if json_is_same(expected, received):
                             print_message("EventHubApi: message received as expected")
-                            return obj
+                            return received
                         else:
                             print_message("EventHubApi: unexpected message.  skipping")
                     else:
-                        return obj
+                        return received

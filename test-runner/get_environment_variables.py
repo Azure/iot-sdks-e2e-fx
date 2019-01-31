@@ -29,13 +29,6 @@ def print_env(env):
             print("set {}={}".format(env, os.environ[env]))
 
 
-def print_comment(str):
-    if linux:
-        print("# " + str)
-    else:
-        print("@rem " + str)
-
-
 def verifyEnvironmentVariables():
     if not "IOTHUB_E2E_CONNECTION_STRING" in os.environ:
         print(
@@ -70,9 +63,6 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         if ("OS" in os.environ) and (os.environ["OS"] == "Windows_NT"):
             linux = False
-            print_comment("autodetecting Windows")
-        else:
-            print_comment("autodetecting Linux")
     elif len(sys.argv) == 2:
         if sys.argv[1] == "linux":
             linux = True
@@ -88,12 +78,10 @@ if __name__ == "__main__":
     hub = useExistingHubInstance(service_connection_string, edge_hub_device_id)
     host = parseConnectionString(service_connection_string)["host"]
 
-    print_comment("Set the following values in your environment:")
-
     print_env("IOTHUB_E2E_CONNECTION_STRING")
     print_env("IOTHUB_E2E_EDGEHUB_DNS_NAME")
     print_env("IOTHUB_E2E_EDGEHUB_DEVICE_ID")
-    # print_env('IOTHUB_E2E_REPO_ADDRESS')
+    print_env('IOTHUB_E2E_REPO_ADDRESS')
     # print_env('IOTHUB_E2E_REPO_USER')
     # print_env('IOTHUB_E2E_REPO_PASSWORD')
     print_env("IOTHUB_E2E_EDGEHUB_CA_CERT")
