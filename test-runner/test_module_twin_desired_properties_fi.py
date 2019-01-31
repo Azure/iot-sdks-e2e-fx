@@ -20,18 +20,19 @@ client = docker.from_env()
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
 
-def get_patch_received():
+def get_patch_received(patch_received):
     """
     Helper function to take in recieved patch and extract the value of foo without returning error.
     If the patch_received is not of the correct format foo_val will be set as a blank string and returned.
     """
-    foo_val = ""
     if "properties" in patch_received:
-        foo_val = str(patch_received["properties"]["desired"]["foo"])
+        foo_val = patch_received["properties"]["desired"]["foo"]
     elif "desired" in patch_received:
-        foo_val = str(patch_received["desired"]["foo"])
+        foo_val = patch_received["desired"]["foo"]
     elif "foo" in patch_received:
-        foo_val = str(patch_received["foo"])
+        foo_val = patch_received["foo"]
+    else:
+        foo_val = -1
     return foo_val
 
 @pytest.mark.timeout(180)
@@ -130,10 +131,10 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         # I don't know if this is happening in the SDK or in the glue.
         # this happens relatively rarely.  Maybe 1/20, maybe 1/100 times
         foo_val = get_patch_received(patch_received)
-        if (foo_val == ""):
+        if (foo_val == -1):
             log_message("patch received of invalid format!")
             assert 0
-        log_message("desired properties recieved: " + foo_val)
+        log_message("desired properties recieved: " + str(foo_val))
         assert twin_sent["properties"]["desired"]["foo"] == foo_val
 
     registry_client.disconnect()
