@@ -30,7 +30,7 @@ def get_patch_received():
         foo_val = str(patch_received["properties"]["desired"]["foo"])
     elif "desired" in patch_received:
         foo_val = str(patch_received["desired"]["foo"])
-    elif "foo" in patch_recieved:
+    elif "foo" in patch_received:
         foo_val = str(patch_received["foo"])
     return foo_val
 
