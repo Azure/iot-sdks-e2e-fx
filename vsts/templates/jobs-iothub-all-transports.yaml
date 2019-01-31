@@ -12,6 +12,8 @@ jobs:
   - template: pre-test-steps.yaml
     parameters:
       forced_image: ${{ parameters.forced_image }}
+      language: $(TARGET_SDK)
+      imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml
     parameters:
       language: $(TARGET_SDK)
@@ -27,6 +29,8 @@ jobs:
   - template: pre-test-steps.yaml
     parameters:
       forced_image: ${{ parameters.forced_image }}
+      language: $(TARGET_SDK)
+      imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml
     parameters:
       language: $(TARGET_SDK)
@@ -43,6 +47,8 @@ jobs:
   - template: pre-test-steps.yaml
     parameters:
       forced_image: ${{ parameters.forced_image }}
+      language: $(TARGET_SDK)
+      imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml
     parameters:
       language: $(TARGET_SDK)
@@ -59,6 +65,8 @@ jobs:
   - template: pre-test-steps.yaml
     parameters:
       forced_image: ${{ parameters.forced_image }}
+      language: $(TARGET_SDK)
+      imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml
     parameters:
       language: $(TARGET_SDK)

@@ -1,12 +1,6 @@
 jobs:
 - template: templates/jobs-build-docker-image.yaml
-  parameters:
-    forced_image: $(FORCED_IMAGE)
 - template: templates/jobs-edgehub-all-transports.yaml
-  parameters:
-    forced_image: $(FORCED_IMAGE)
 - template: templates/jobs-iothub-all-transports.yaml
-  parameters:
-    forced_image: $(FORCED_IMAGE)
 
 

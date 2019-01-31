@@ -24,6 +24,8 @@ jobs:
     vmImage: 'Ubuntu-16.04'
   steps:
   - template: templates/pre-test-steps.yaml
+      language: $(TARGET_SDK)
+      imagetag: 'vsts-$(Build.BuildId)'
   - template: templates/edgehub-fi-test-steps.yaml
     parameters:
       language: $(TARGET_SDK)
