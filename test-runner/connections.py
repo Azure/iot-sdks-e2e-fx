@@ -23,6 +23,22 @@ def connect_test_module_client():
     return client
 
 
+async def connect_test_module_client_async():
+    """
+    connect the module client for the code-under-test and return the client object
+    """
+    client = adapters.TestModuleClientAsync()
+    if environment.test_module_connect_from_environment:
+        await client.connect_from_environment(environment.test_module_transport)
+    else:
+        await client.connect(
+            environment.test_module_transport,
+            environment.test_module_connection_string,
+            environment.ca_certificate,
+        )
+    return client
+
+
 def connect_friend_module_client():
     """
     connect the module client for the friend module and return the client object
@@ -77,3 +93,20 @@ def connect_leaf_device_client():
         environment.ca_certificate,
     )
     return client
+
+
+async def connect_leaf_device_client_async():
+    """
+    connect the device client for the leaf device and return the client object
+    """
+    client = adapters.LeafDeviceClientAsync()
+    await client.connect(
+        environment.leaf_device_transport,
+        environment.leaf_device_connection_string,
+        environment.ca_certificate,
+    )
+    return client
+
+
+
+

@@ -128,7 +128,6 @@ skip_for_pythonpreview = set(
         "invokesDeviceMethodCalls",
         "supportsTwin",
         "handlesLoopbackMessages",
-        "module_under_test_has_device_wrapper",
     ]
 )
 

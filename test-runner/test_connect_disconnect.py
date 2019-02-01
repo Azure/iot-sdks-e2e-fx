@@ -8,11 +8,19 @@ import pytest
 import connections
 
 
-@pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
+@pytest.mark.module_under_test_has_device_wrapper
 def test_module_client_connect_disconnect():
     module_client = connections.connect_test_module_client()
     module_client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.testgroup_iothub_module_client
+@pytest.mark.module_under_test_has_device_wrapper
+async def test_module_client_connect_disconnect_async():
+    module_client_async = await connections.connect_test_module_client_async()
+    await module_client_async.disconnect()
 
 
 @pytest.mark.testgroup_edgehub_module_client
@@ -55,7 +63,6 @@ def test_service_client_connect_disconnect():
     service_client.disconnect()
 
 
-@pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.module_under_test_has_device_wrapper
 def test_device_client_connect_disconnect():
@@ -63,10 +70,9 @@ def test_device_client_connect_disconnect():
     device_client.disconnect()
 
 
-@pytest.mark.testgroup_edgehub_module_client
+@pytest.mark.asyncio
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.module_under_test_has_device_wrapper
-def test_device_client_connect_enable_methods_disconnect():
-    device_client = connections.connect_leaf_device_client()
-    device_client.enable_methods()
-    device_client.disconnect()
+async def test_device_client_connect_disconnect_async():
+    device_client_async = await connections.connect_leaf_device_client_async()
+    await device_client_async.disconnect()
