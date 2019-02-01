@@ -1,6 +1,13 @@
 parameters:
   imagetag: 'vsts-$(Build.BuildId)'
   language: ''
+  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
+  repo_user: $(IOTHUB-E2E-REPO-USER)
+  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
+  image_edgeHub: mcr.microsoft.com/azureiotedge-hub:1.0.5
+  image_edgeAgent: mcr.microsoft.com/azureiotedge-agent:1.0.5
+  image_friendMod: $(IOTHUB-E2E-REPO-ADDRESS)/edge-e2e-node6
+  forced_image: ''
 
 steps:
 
@@ -18,21 +25,25 @@ steps:
   displayName: 'install iotedge packages'
 
 - script: |
-    docker login -u ${IOTHUB_E2E_REPO_USER} -p ${IOTHUB_E2E_REPO_PASSWORD} ${IOTHUB_E2E_REPO_ADDRESS}
-    docker pull mcr.microsoft.com/azureiotedge-agent:1.0.5
-    docker pull mcr.microsoft.com/azureiotedge-hub:1.0.5
-    docker pull ${IOTHUB_E2E_REPO_ADDRESS}/edge-e2e-node6
-    docker pull ${IOTHUB_E2E_REPO_ADDRESS}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
-  displayName: 'pre-cache docker images'
-  env:
-    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
-    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
-    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
-    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }}
+    docker pull ${{ parameters.image_edgeAgent }}
+    docker pull ${{ parameters.image_edgeHub }}
+    docker pull ${{ parameters.image_friendmod }}
+  displayName: 'pre-cache common docker images'
+
+- script: |
+    docker pull ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
+  displayName: 'pre-cache newly-built ${{ parameters.language }}Mod image (${{ parameters.imagetag }})'
+  condition: and(succeeded(),eq(variables['forced_image'], ''))
+
+- script: |
+    docker pull ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.forced_image }}
+  displayName: 'pre-cache previously built ${{ parameters.language }}Mod image (${{ parameters.forced_image }})'
+  condition: and(succeeded(),ne(variables['forced_image'], ''))
 
 - script: |
     scripts/create-new-edgehub-device.sh 
-  displayName: 'Create new edgehub device'
+  displayName: 'Create new edgehub identity'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -41,22 +52,46 @@ steps:
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
 
 - script: |
-    python3 test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${IOTHUB_E2E_REPO_ADDRESS}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
-  displayName: 'Deploy new container'
+    python3 test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
+  displayName: 'Deploy manifest with newly built image (${{ parameters.imagetag }})'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
+  condition: and(succeeded(),eq(variables['forced_image'], ''))
 
 - script: |
-    scripts/verify-deployment.sh ${{ parameters.language }}Mod ${IOTHUB_E2E_REPO_ADDRESS}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
-  displayName: 'Verify deployment'
+    python3 test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.forced_image }}
+  displayName: 'Deploy manifest with previously built image (${{ parameters.forced_image }})'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
+  condition: and(succeeded(),ne(variables['forced_image'], ''))
+
+- script: |
+    scripts/verify-deployment.sh edgeHub ${{ parameters.image_edgeHub }}
+  displayName: 'Verify edgeHub deployment'
+
+- script: |
+    scripts/verify-deployment.sh edgeAgent ${{ parameters.image_edgeAgent }}
+  displayName: 'Verify edgeAgent deployment'
+
+- script: |
+    scripts/verify-deployment.sh friendMod ${{ parameters.image_friendMod }}
+  displayName: 'Verify friendMod deployment'
+
+- script: |
+    scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
+  displayName: 'Verify ${{ parameters.language }}Mod deployment (${{ parameters.imagetag }})'
+  condition: and(succeeded(),eq(variables['forced_image'], ''))
+
+- script: |
+    scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.forced_image }}
+  displayName: 'Verify ${{ parameters.language }}Mod deployment (${{ parameters.forced_image }})'
+  condition: and(succeeded(),ne(variables['forced_image'], ''))
 

@@ -1,6 +1,5 @@
 parameters:
   index: '1'
-  forced_image: ''
 
 jobs:
 - job: 'iothub_mqtt_${{ parameters.index }}'
@@ -11,7 +10,7 @@ jobs:
   steps:
   - template: pre-test-steps.yaml
     parameters:
-      forced_image: ${{ parameters.forced_image }}
+      forced_image: $(FORCED_IMAGE)
       language: $(TARGET_SDK)
       imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml
@@ -28,7 +27,7 @@ jobs:
   steps:
   - template: pre-test-steps.yaml
     parameters:
-      forced_image: ${{ parameters.forced_image }}
+      forced_image: $(FORCED_IMAGE)
       language: $(TARGET_SDK)
       imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml
@@ -46,7 +45,7 @@ jobs:
   steps:
   - template: pre-test-steps.yaml
     parameters:
-      forced_image: ${{ parameters.forced_image }}
+      forced_image: $(FORCED_IMAGE)
       language: $(TARGET_SDK)
       imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml
@@ -64,7 +63,7 @@ jobs:
   steps:
   - template: pre-test-steps.yaml
     parameters:
-      forced_image: ${{ parameters.forced_image }}
+      forced_image: $(FORCED_IMAGE)
       language: $(TARGET_SDK)
       imagetag: 'vsts-$(Build.BuildId)'
   - template: iothub-test-steps.yaml

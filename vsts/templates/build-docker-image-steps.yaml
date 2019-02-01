@@ -11,6 +11,7 @@ steps:
   inputs:
     versionSpec: '3.x'
     architecture: 'x64'
+  condition: and(succeeded(),eq(variables['forced_image'], ''))
 
 - script: |
     python3 -m pip install -r pyscripts/requirements.txt
