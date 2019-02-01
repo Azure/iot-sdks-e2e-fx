@@ -137,7 +137,7 @@ Which then goes over an HTTP pipe to the NodeJS wrapper app, where it gets deser
 
 Because the test code needs to call into this client object, it needs to be able to refer to it, so the NodeJS wrapper app puts the client into a dictionary and returns a name for it, called the `connectionId`.  Lets say the test code calls the `client` object above by the name `module_01`.  It can return the string `module_01` to the test code, and when the test code needs to refer to this `client` object, it can call it by the name `module_01`.  If the NodeJS wrapper opens a second `ModuleClient` instance, it could assign it the name `module_02`, and the test code could use that name to disambiguate between the two client objects.
 
-When the node.js wrapper app returns the GET call, it returns status 200 to indicate success with a `connectionId` value in the return body that can be used in future calls into the node wrapper:
+When the node.js wrapper app returns the PUT call, it returns status 200 to indicate success with a `connectionId` value in the return body that can be used in future calls into the node wrapper:
 ```
 {
   "connectionId": "module_01"
@@ -214,7 +214,7 @@ For example, the subset of the swagger file that deals with connecting a module,
 Each SDK has their own wrapper app, and each wrapper app is based on on code that gets generated from tools published at http://swagger.io.  Because we're using REST for interop, that means that each wrapper app is running a RESTAPI server that exposes itself over some local port (usually 8080 or thereabouts).
 
 | language | REST server | link |
-|-|-|-|
+|---|---|---|
 | C | RestBed (C++) | https://github.com/Corvusoft/restbed |
 | Node | | connect | https://www.npmjs.com/package/connect |
 | Python | Flask | https://pypi.org/project/Flask/ |
@@ -255,7 +255,7 @@ The REST endpoints that we test through are grouped by functionality based rough
 The endpoint groups are as follows
 
 | group | meaning |
-|-|-|
+|---|---|
 | module | functions in the iothub moduleClient |
 | registry | functions for the service SDK that interact with the iotHub registry |
 | service | functions for the service SDK that interact with the iotHub serviceClient surface |
