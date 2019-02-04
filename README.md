@@ -18,6 +18,12 @@ If you need more details, you can see the following:
 * [Hacks](./devdocs/hacks.md) - Hacks in case things aren't working super well
 * [Langauge Independent Tests](./language-independent-tests.md) - Explanation of testing framework from 10,000 feet high level overview down to lower level explanation of architecture
 
+## What to Do if it Won't Do What You Want it to Do
+
+* [Troubleshooting Guide](./devdocs/troubleshooting.md) <- Check this out.
+* [Submit Issue](https://github.com/Azure/iot-sdks-e2e-fx/issues) <- Tell us about it.
+* [Submit a PR](https://github.com/Azure/iot-sdks-e2e-fx/pulls) <- Need it done yesterday? Can't trust nobody but yourself, so submit a PR!
+
 # Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
