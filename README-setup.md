@@ -29,6 +29,13 @@ Reference: https://docs.microsoft.com/en-us/azure/iot-edge/quickstart-linux#inst
 ## Step 3: Create an edgehub instance in your iothub registry.
 5. Set the `IOTHUB_E2E_CONNECTION_STRING` environment variable to the IoTHub instance which you are going to use for your tests. I also put this into my `~/.bashrc`.
    * _This can be the connection string for iothub owner._
+
+
+```bash
+    export IOTHUB_E2E_CONNECTION_STRING="Hostname=foo.net;SharedAccessKeyName=fooowner;SharedAccessKey=a19JMdfy3yCrBiYE/gSSk3sUtHLKgoo000vTt3LUFJs="
+```
+
+
 6. Run `scripts/create-new-edgehub-device.sh`.  This will create an edge device on your hub, and it will create a "friend device" which will be used for tests that require a device identity.
 
 If this step is successful, you should see your edgeAgent and edgeHub containers created along with friendMod and nodeMod modules.
