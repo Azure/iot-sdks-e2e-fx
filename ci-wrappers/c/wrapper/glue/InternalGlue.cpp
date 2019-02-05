@@ -124,7 +124,9 @@ string InternalGlue::Connect(const char *transportType, std::string connectionSt
         sprintf(address, "%p", client);
         cout << "InternalGlue::Connect Client Pointer: " << address << endl;
         bool traceOn = true;
-        IoTHubModuleClient_SetOption(client, OPTION_LOG_TRACE, &traceOn);
+        bool rawTraceOn = true;
+        IoTHubModuleClient_SetOption(client, "logtrace", &traceOn);
+        IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
 
         string clientId = getNextClientId();
         this->clientMap[clientId] = (void *)client;
@@ -149,7 +151,10 @@ string InternalGlue::ConnectFromEnvironment(const char *transportType)
     else
     {
         bool traceOn = true;
-        IoTHubModuleClient_SetOption(client, OPTION_LOG_TRACE, &traceOn);
+        bool rawTraceOn = true;
+        IoTHubModuleClient_SetOption(client, "logtrace", &traceOn);
+        IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
+
         string clientId = getNextClientId();
         this->clientMap[clientId] = (void *)client;
 

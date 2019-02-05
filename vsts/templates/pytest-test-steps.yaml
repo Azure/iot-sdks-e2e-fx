@@ -1,0 +1,32 @@
+parameters:
+  language: ''
+  testgroup: ''
+  repeat_count: 1
+  transport: ''
+  testcase: '.'
+  job_name: ''
+  extra_args: ''
+
+steps:
+
+- script: |
+    docker restart edgeHub ${{ parameters.language }}Mod
+    cd $(Build.SourcesDirectory)
+    export IOTHUB_E2E_EDGEHUB_CA_CERT=$(sudo cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0)
+    mkdir results
+    cd test-runner
+    python3 -u -m pytest -v -m ${{ parameters.testgroup }} --transport=${{ parameters.transport }} --${{ parameters.language }}-wrapper --junitxml=../results/TEST-${{ parameters.job_name }}.xml -o junit_suite_name=${{ parameters.job_name }} --count=${{ parameters.repeat_count }} ${{ parameters.testcase }} ${{ parameters.extra_args }}
+
+  displayName: 'run tests ${{ parameters.testgroup }} ${{ parameters.language }} ${{ parameters.transport }}'
+  condition: succeededOrFailed()
+  env:
+    TARGET_SDK: $(TARGET_SDK)
+    CHANGESET: $(CHANGESET)
+    TARGET_BRANCH: $(TARGET_BRANCH)
+    REPO: $(REPO)
+    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
+

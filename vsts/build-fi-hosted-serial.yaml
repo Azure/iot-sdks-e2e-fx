@@ -67,4 +67,6 @@ jobs:
       transport: mqtt
       tag: edgehub_fi_8
   - template: templates/post-test-steps.yaml
+    parameters:
+    - job_name: $(Agent.JobName)
 

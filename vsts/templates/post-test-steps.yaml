@@ -1,3 +1,7 @@
+parameters:
+  job_name: $(Agent.JobName)
+  language: ''
+
 steps:
 - script: |
    python3 test-runner/remove_edgehub_device.py
@@ -14,10 +18,10 @@ steps:
   condition: always()
 
 - script: |
-   mkdir $(Build.SourcesDirectory)/results
-   docker logs edgeAgent &> $(Build.SourcesDirectory)/results/$(Agent.JobName).edgeAgent.log
-   sudo journalctl -u iotedge -n 500 -e  &> $(Build.SourcesDirectory)/results/$(Agent.JobName).iotedge.log
-  displayName: 'grab agent logs'
+   scripts/fetch-logs.sh ${{ parameters.language }}
+   mkdir $(Build.SourcesDirectory)/results/__${{ parameters.job_name }}
+   mv $(Build.SourcesDirectory)/results/logs/* $(Build.SourcesDirectory)/results/__${{ parameters.job_name }}/
+  displayName: 'Fetch logs'
   condition: always()
 
 - task: CopyFiles@2
@@ -31,7 +35,7 @@ steps:
   displayName: 'Publish Artifact'
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'Edge E2E Result for $(Build.DefinitionName) $(Build.BuildId)'
+    ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
   condition: always()
 
 
