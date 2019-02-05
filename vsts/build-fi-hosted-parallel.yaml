@@ -2,6 +2,7 @@ resources:
 - repo: self
 variables:
   language: $(TARGET_SDK)
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
 jobs:
 
 - job: 'build_linux_containers'
@@ -34,5 +35,5 @@ jobs:
       tag: edgehub_fi_$(Agent.JobName)
   - template: templates/post-test-steps.yaml
     parameters:
-    - job_name: $(Agent.JobName)
+      job_name: $(Agent.JobName)
 

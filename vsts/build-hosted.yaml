@@ -1,3 +1,5 @@
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
 jobs:
 - template: templates/jobs-build-docker-image.yaml
 - template: templates/jobs-edgehub-all-transports.yaml

@@ -4,7 +4,7 @@ parameters:
 
 steps:
 - script: |
-   python3 test-runner/remove_edgehub_device.py
+   python3 $(Horton.FrameworkRoot)/test-runner/remove_edgehub_device.py
   displayName: 'remove devices'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
@@ -18,16 +18,16 @@ steps:
   condition: always()
 
 - script: |
-   scripts/fetch-logs.sh ${{ parameters.language }}
-   mkdir $(Build.SourcesDirectory)/results/__${{ parameters.job_name }}
-   mv $(Build.SourcesDirectory)/results/logs/* $(Build.SourcesDirectory)/results/__${{ parameters.job_name }}/
+    $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }}
+    mkdir $(Horton.FrameworkRoot)/results/__${{ parameters.job_name }}
+    mv $(Horton.FrameworkRoot)/results/logs/* $(Horton.FrameworkRoot)/results/__${{ parameters.job_name }}/
   displayName: 'Fetch logs'
   condition: always()
 
 - task: CopyFiles@2
   displayName: 'Copy result files to artifact staging'
   inputs:
-    SourceFolder: '$(Build.SourcesDirectory)/results'
+    SourceFolder: '$(Horton.FrameworkRoot)/results'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: always()
 

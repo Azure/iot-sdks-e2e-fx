@@ -17,11 +17,11 @@ steps:
     architecture: 'x64'
 
 - script: |
-    scripts/setup-python36.sh
+    $(Horton.FrameworkRoot)/scripts/setup-python36.sh
   displayName: 'install python libs'
 
 - script: |
-    scripts/setup-iotedge.sh
+    $(Horton.FrameworkRoot)/scripts/setup-iotedge.sh
   displayName: 'install iotedge packages'
 
 - script: |
@@ -42,7 +42,7 @@ steps:
   condition: and(succeeded(),ne(variables['forced_image'], ''))
 
 - script: |
-    scripts/create-new-edgehub-device.sh 
+    $(Horton.FrameworkRoot)/scripts/create-new-edgehub-device.sh 
   displayName: 'Create new edgehub identity'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
@@ -52,7 +52,7 @@ steps:
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
 
 - script: |
-    python3 test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
+    python3 $(Horton.FrameworkRoot)/test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
   displayName: 'Deploy manifest with newly built image (${{ parameters.imagetag }})'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
@@ -63,7 +63,7 @@ steps:
   condition: and(succeeded(),eq(variables['forced_image'], ''))
 
 - script: |
-    python3 test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.forced_image }}
+    python3 $(Horton.FrameworkRoot)/test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.forced_image }}
   displayName: 'Deploy manifest with previously built image (${{ parameters.forced_image }})'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
@@ -74,24 +74,24 @@ steps:
   condition: and(succeeded(),ne(variables['forced_image'], ''))
 
 - script: |
-    scripts/verify-deployment.sh edgeHub ${{ parameters.image_edgeHub }}
+    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh edgeHub ${{ parameters.image_edgeHub }}
   displayName: 'Verify edgeHub deployment'
 
 - script: |
-    scripts/verify-deployment.sh edgeAgent ${{ parameters.image_edgeAgent }}
+    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh edgeAgent ${{ parameters.image_edgeAgent }}
   displayName: 'Verify edgeAgent deployment'
 
 - script: |
-    scripts/verify-deployment.sh friendMod ${{ parameters.image_friendMod }}
+    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh friendMod ${{ parameters.image_friendMod }}
   displayName: 'Verify friendMod deployment'
 
 - script: |
-    scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
+    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.imagetag }}
   displayName: 'Verify ${{ parameters.language }}Mod deployment (${{ parameters.imagetag }})'
   condition: and(succeeded(),eq(variables['forced_image'], ''))
 
 - script: |
-    scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.forced_image }}
+    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e:${{ parameters.forced_image }}
   displayName: 'Verify ${{ parameters.language }}Mod deployment (${{ parameters.forced_image }})'
   condition: and(succeeded(),ne(variables['forced_image'], ''))
 

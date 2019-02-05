@@ -5,7 +5,7 @@ parameters:
 
 steps:
 
-- script: scripts/ci-run-single-scenario.sh ${{ parameters.tag }} ${{ parameters.transport }} ${{ parameters.language }} testgroup_edgehub_fault_injection
+- script: $(Horton.FrameworkRoot)/scripts/ci-run-single-scenario.sh ${{ parameters.tag }} ${{ parameters.transport }} ${{ parameters.language }} testgroup_edgehub_fault_injection
   displayName: 'run tests -fi ${{ parameters.language }} ${{ parameters.transport }}'
   condition: succeededOrFailed()
   env:
