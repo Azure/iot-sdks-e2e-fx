@@ -8,6 +8,7 @@ jobs:
   pool:
     vmImage: 'Ubuntu-16.04'
   steps:
+  - template: steps-ensure-e2e-fx-repo.yaml
   - template: pre-test-steps.yaml
     parameters:
       forced_image: $(FORCED_IMAGE)
@@ -30,6 +31,7 @@ jobs:
   pool:
     vmImage: 'Ubuntu-16.04'
   steps:
+  - template: steps-ensure-e2e-fx-repo.yaml
   - template: pre-test-steps.yaml
     parameters:
       forced_image: $(FORCED_IMAGE)
@@ -53,6 +55,7 @@ jobs:
   pool:
     vmImage: 'Ubuntu-16.04'
   steps:
+  - template: steps-ensure-e2e-fx-repo.yaml
   - template: pre-test-steps.yaml
     parameters:
       forced_image: $(FORCED_IMAGE)
@@ -76,6 +79,7 @@ jobs:
   pool:
     vmImage: 'Ubuntu-16.04'
   steps:
+  - template: steps-ensure-e2e-fx-repo.yaml
   - template: pre-test-steps.yaml
     parameters:
       forced_image: $(FORCED_IMAGE)

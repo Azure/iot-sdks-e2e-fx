@@ -9,7 +9,7 @@ jobs:
   pool:
     vmImage: 'Ubuntu-16.04'
   steps:
-  - template: templates/build-docker-image-steps.yaml 
+  - template: templates/steps-build-docker-image.yaml 
     parameters:
       language: $(TARGET_SDK)
       repo: $(REPO)

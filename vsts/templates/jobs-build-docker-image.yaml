@@ -3,7 +3,8 @@ jobs:
   pool:
     vmImage: 'Ubuntu-16.04'
   steps:
-  - template: build-docker-image-steps.yaml 
+  - template: steps-ensure-e2e-fx-repo.yaml
+  - template: steps-build-docker-image.yaml 
     parameters:
       language: $(TARGET_SDK)
       repo: $(REPO)

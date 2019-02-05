@@ -95,3 +95,12 @@ steps:
   displayName: 'Verify ${{ parameters.language }}Mod deployment (${{ parameters.forced_image }})'
   condition: and(succeeded(),ne(variables['forced_image'], ''))
 
+- script: |
+   python3 $(Horton.FrameworkRoot)/pyscripts/ensure-container.py ${{ parameters.language }}Mod
+  displayName: 'Verify that ${{ parameters.language }}Mod is responding'
+
+- script: |
+   python3 $(Horton.FrameworkRoot)/pyscripts/ensure-container.py friendMod
+  displayName: 'Verify that friendMod is responding'
+
+
