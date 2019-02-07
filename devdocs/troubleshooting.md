@@ -127,3 +127,30 @@ for variable in os.environ:
 ```
 
 Be sure you have run `./set-environment.sh` and `./set-ubuntu.sh` if you are running Ubuntu. 
+
+## Selecting a specific version of C SDK from Azure Pipelines for Local Debugging 
+
+Select a reference build for the C SDK on the edge-e2e-c pipeline.
+
+```
+https://azure-iot-sdks.visualstudio.com/azure-iot-sdks/_build/results?buildId=8948
+```
+
+To get this build running we would then use the tag vsts-8948.
+
+We login to the docker registry so we can pull from the command line -- this way we know we have the container and we don't have to wait for edge to download it (which seems slower than doing it ourselves)
+
+`docker login -u $IOTHUB_E2E_REPO_USER -p $IOTHUB_E2E_REPO_PASSWORD $IOTHUB_E2E_REPO_ADDRESS`
+
+Then we pull the image to get it into our local image cache
+
+`docker pull iotsdke2e.azurecr.io/c-e2e:vsts-8948`
+
+Then, to get it running, we deploy it
+
+`scripts/deploy-test-containers.sh --friend --c iotsdke2e.azurecr.io/c-e2e:vsts-8948`
+
+If that works, `docker ps` or `iotedge list` should show the cMod container existing "since a few secodns ago" or something similar. 
+
+
+
