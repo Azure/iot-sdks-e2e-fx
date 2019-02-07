@@ -81,16 +81,9 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
     module_client = connections.connect_test_module_client()
     log_message("enabling twin")
     module_client.enable_twin()
-    log_message("getting initial twin patch")
-    twin_thread = module_client.wait_for_desired_property_patch_async()    
-    log_message("waiting for twin to arrive at module client")
-    twin_received = patch_thread.get()
-    log_message("twin received:" + json.dumps(patch_received))
 
     base = random.randint(1, 9999) * 100
     for i in range(1, 4):
-        log_message("start waiting for patch #" + str(i))
-        patch_thread = module_client.wait_for_desired_property_patch_async()
 
         log_message("sending patch #" + str(i) + " through registry client")
         twin_sent = {"properties": {"desired": {"foo": base + i}}}
@@ -99,6 +92,8 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         )
         log_message("patch " + str(i) + " sent")
 
+        log_message("start waiting for patch #" + str(i))
+        patch_thread = module_client.wait_for_desired_property_patch_async()
         log_message("waiting for patch " + str(i) + " to arrive at module client")
         patch_received = patch_thread.get()
         log_message("patch received:" + json.dumps(patch_received))
