@@ -128,7 +128,7 @@ string InternalGlue::Connect(const char *transportType, std::string connectionSt
         bool rawTraceOn = true;
         
         IoTHubModuleClient_SetOption(client, OPTION_LOG_TRACE, &traceOn);
-        IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn)
+        IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
         size_t sasTime = 10;
         IoTHubModuleClient_SetOption(client, OPTION_SAS_TOKEN_LIFETIME, &sasTime);
 
