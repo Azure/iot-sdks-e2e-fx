@@ -19,6 +19,7 @@
 #include "iothubtransportmqtt_websockets.h"
 #include "iothub.h"
 #include "parson.h"
+#include "iothub_client_options.h"
 
 #include "GlueUtils.h"
 #include "InternalGlue.h"
@@ -125,8 +126,11 @@ string InternalGlue::Connect(const char *transportType, std::string connectionSt
         cout << "InternalGlue::Connect Client Pointer: " << address << endl;
         bool traceOn = true;
         bool rawTraceOn = true;
-        IoTHubModuleClient_SetOption(client, "logtrace", &traceOn);
-        IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
+        
+        IoTHubModuleClient_SetOption(client, OPTION_LOG_TRACE, &traceOn);
+        IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn)
+        size_t sasTime = 10;
+        IoTHubModuleClient_SetOption(client, OPTION_SAS_TOKEN_LIFETIME, &sasTime);
 
         string clientId = getNextClientId();
         this->clientMap[clientId] = (void *)client;
@@ -152,8 +156,10 @@ string InternalGlue::ConnectFromEnvironment(const char *transportType)
     {
         bool traceOn = true;
         bool rawTraceOn = true;
-        IoTHubModuleClient_SetOption(client, "logtrace", &traceOn);
+        IoTHubModuleClient_SetOption(client, OPTION_LOG_TRACE, &traceOn);
         IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
+        size_t sasTime = 10;
+        IoTHubModuleClient_SetOption(client, OPTION_SAS_TOKEN_LIFETIME, &sasTime);
 
         string clientId = getNextClientId();
         this->clientMap[clientId] = (void *)client;
