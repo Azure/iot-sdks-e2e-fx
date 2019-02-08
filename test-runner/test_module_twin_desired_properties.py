@@ -84,8 +84,6 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
 
     base = random.randint(1, 9999) * 100
     for i in range(1, 4):
-        log_message("start waiting for patch #" + str(i))
-        patch_thread = module_client.wait_for_desired_property_patch_async()
 
         log_message("sending patch #" + str(i) + " through registry client")
         twin_sent = {"properties": {"desired": {"foo": base + i}}}
@@ -94,6 +92,12 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         )
         log_message("patch " + str(i) + " sent")
 
+        log_message("start waiting for patch #" + str(i))
+        patch_thread = module_client.wait_for_desired_property_patch_async()
+        log_message("resend patch just in case")
+        registry_client.patch_module_twin(
+            environment.edge_device_id, environment.module_id, twin_sent
+        )
         log_message("waiting for patch " + str(i) + " to arrive at module client")
         patch_received = patch_thread.get()
         log_message("patch received:" + json.dumps(patch_received))
