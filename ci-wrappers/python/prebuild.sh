@@ -10,7 +10,3 @@ cd /sdk
 ./c/build_all/linux/build.sh --build-python 3.6 --use-edge-modules --no-make
 [ $? -eq 0 ] || { echo "build.sh failed"; exit 1; }
 
-${script_dir}/rebuild.sh
-[ $? -eq 0 ] || { echo "rebuild.sh failed"; exit 1; }
-
-

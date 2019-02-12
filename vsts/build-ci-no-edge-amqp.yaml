@@ -1,0 +1,5 @@
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
+
+jobs:
+- template: templates/jobs-build-ci-no-edge-amqp.yaml

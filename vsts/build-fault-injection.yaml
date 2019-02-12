@@ -1,0 +1,4 @@
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
+jobs:
+- template: templates/jobs-build-fault-injection.yaml

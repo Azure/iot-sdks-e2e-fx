@@ -1,9 +1,9 @@
 steps:
 - script: |
-    mkdir ${HORTON_FRAMEWORKROOT}
-    cd ${HORTON_FRAMEWORKROOT}
+    mkdir $(Horton.FrameworkRoot)
+    cd $(Horton.FrameworkRoot)
     git clone https://github.com/Azure/iot-sdks-e2e-fx .
-    git checkout ${HORTON_REF}
+    git checkout $(Horton.FrameworkRef)
   displayName: "Clone e2efx repo"
   condition: and(succeeded(), ne(variables['Build.SourcesDirectory'], variables['Horton.FrameworkRoot']))
 

@@ -1,5 +1,5 @@
 parameters:
-  job_name: $(Agent.JobName)
+  log_folder_name: ''
   language: ''
 
 steps:
@@ -11,31 +11,31 @@ steps:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-  condition: always()
+  condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - task: PublishTestResults@2
   displayName: 'Publish Test Results **/TEST-*.xml'
-  condition: always()
+  condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - script: |
     $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }}
-    mkdir $(Horton.FrameworkRoot)/results/__${{ parameters.job_name }}
-    mv $(Horton.FrameworkRoot)/results/logs/* $(Horton.FrameworkRoot)/results/__${{ parameters.job_name }}/
+    mkdir $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}
+    mv $(Horton.FrameworkRoot)/results/logs/* $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}/
   displayName: 'Fetch logs'
-  condition: always()
+  condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - task: CopyFiles@2
   displayName: 'Copy result files to artifact staging'
   inputs:
     SourceFolder: '$(Horton.FrameworkRoot)/results'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  condition: always()
+  condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact'
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
-  condition: always()
+  condition: and(always(), ne(variables['skipTest'],'yes'))
 
 

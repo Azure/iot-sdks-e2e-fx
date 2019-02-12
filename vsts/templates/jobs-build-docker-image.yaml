@@ -1,14 +1,63 @@
+parameters:
+  langauge: ''
+  repo: ''
+  commit: ''
+  forced_image: ''
+  job_tag: 'linux'
+
 jobs:
-- job: 'build_linux_containers'
-  pool:
-    vmImage: 'Ubuntu-16.04'
+- job: 'build_${{ parameters.job_tag }}_container'
   steps:
+
   - template: steps-ensure-e2e-fx-repo.yaml
-  - template: steps-build-docker-image.yaml 
-    parameters:
-      language: $(TARGET_SDK)
-      repo: $(REPO)
-      branch: $(TARGET_BRANCH)
-      commit: $(CHANGESET)
-      forced_image: $(FORCED_IMAGE)
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      architecture: 'x64'
+
+  - powershell: |
+      $BuildImage="yes"
+      if ($env:ForcedImage -ne "") {
+        $BuildImage="no"
+      }
+      Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
+    displayName: Custom task execution logic
+    env:
+      ForcedImage: ${{ parameters.forced_image }}
+    ignoreLASTEXITCODE: false
+    errorActionPreference: Stop
+    failOnStderr: true
+
+  - script: |
+      cd ${BUILD_SOURCESDIRECTORY} &&
+      tar --exclude .git/ -zcf ${AGENT_BUILDDIRECTORY}/source.tar.gz . &&
+      mv ${AGENT_BUILDDIRECTORY}/source.tar.gz ${HORTON_FRAMEWORKROOT}/ci-wrappers/${{ parameters.language }}/
+    displayName: "pack local language repo"
+    condition: and(
+        succeeded(), 
+        eq(variables['buildImage'],'yes'),
+        not(eq(variables['Horton.FrameworkRoot'], variables['Build.SourcesDirectory']))
+        )
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      architecture: 'x64'
+    condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+
+  - script: |
+      python3 -m pip install -r $(Horton.FrameworkRoot)/pyscripts/requirements.txt
+    displayName: "pip install requirements.txt"
+    condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+
+  - script: |
+      python3 $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language ${{ parameters.language }}  --repo ${{ parameters.repo }} --commit ${{ parameters.commit }}
+    displayName: "build docker image ${{ parameters.language }}"
+    condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+    env: 
+      IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+      IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+      IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+
 

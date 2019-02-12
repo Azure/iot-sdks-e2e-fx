@@ -1,0 +1,107 @@
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
+jobs:
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: node
+    repo: Azure/azure-iot-sdk-node
+    commit: master
+    job_tag: node
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: c
+    repo: Azure/azure-iot-sdk-c
+    commit: master
+    job_tag: c
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: java
+    repo: Azure/azure-iot-sdk-java
+    commit: master
+    job_tag: java
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: csharp
+    repo: Azure/azure-iot-sdk-csharp
+    commit: master
+    job_tag: csharp
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: python
+    repo: Azure/azure-iot-sdk-python
+    commit: master
+    job_tag: python
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: pythonpreview
+    repo: Azure/azure-iot-sdk-python-preview  
+    commit: master
+    job_tag: pythonpreview
+
+- job: "test"
+  dependsOn:
+    - "build_node_container"
+    - "build_c_container"
+    - "build_java_container"
+    - "build_csharp_container"
+    - "build_python_container"
+    - "build_pythonpreview_container"
+
+  strategy:
+    maxParallel: 6
+    matrix:
+      node_hub_module_mqtt:              { language: node, suite: hub_module_mqtt }
+      node_edge_module_mqtt:             { language: node, suite: edge_module_mqtt }
+      node_hub_module_mqtt_ws:           { language: node, suite: hub_module_mqtt_ws }
+      node_edge_module_mqtt_ws:          { language: node, suite: edge_module_mqtt_ws }
+      node_hub_module_amqp:              { language: node, suite: hub_module_amqp }
+      node_edge_module_amqp:             { language: node, suite: edge_module_amqp }
+      node_hub_module_amqp_ws:           { language: node, suite: hub_module_amqp_ws }
+      node_edge_module_amqp_ws:          { language: node, suite: edge_module_amqp_ws }
+      c_hub_module_mqtt:                 { language: c, suite: hub_module_mqtt }
+      c_edge_module_mqtt:                { language: c, suite: edge_module_mqtt }
+      c_hub_module_mqtt_ws:              { language: c, suite: hub_module_mqtt_ws }
+      c_edge_module_mqtt_ws:             { language: c, suite: edge_module_mqtt_ws }
+      c_hub_module_amqp:                 { language: c, suite: hub_module_amqp }
+      # c_edge_module_amqp:                { language: c, suite: edge_module_amqp }
+      c_hub_module_amqp_ws:              { language: c, suite: hub_module_amqp_ws }
+      # c_edge_module_amqp_ws:             { language: c, suite: edge_module_amqp_ws }
+      java_hub_module_mqtt:              { language: java, suite: hub_module_mqtt }
+      java_edge_module_mqtt:             { language: java, suite: edge_module_mqtt }
+      java_hub_module_mqtt_ws:           { language: java, suite: hub_module_mqtt_ws }
+      java_edge_module_mqtt_ws:          { language: java, suite: edge_module_mqtt_ws }
+      java_hub_module_amqp:              { language: java, suite: hub_module_amqp }
+      java_edge_module_amqp:             { language: java, suite: edge_module_amqp }
+      java_hub_module_amqp_ws:           { language: java, suite: hub_module_amqp_ws }
+      java_edge_module_amqp_ws:          { language: java, suite: edge_module_amqp_ws }
+      csharp_hub_module_mqtt:            { language: csharp, suite: hub_module_mqtt }
+      csharp_edge_module_mqtt:           { language: csharp, suite: edge_module_mqtt }
+      csharp_hub_module_mqtt_ws:         { language: csharp, suite: hub_module_mqtt_ws }
+      csharp_edge_module_mqtt_ws:        { language: csharp, suite: edge_module_mqtt_ws }
+      csharp_hub_module_amqp:            { language: csharp, suite: hub_module_amqp }
+      csharp_edge_module_amqp:           { language: csharp, suite: edge_module_amqp }
+      csharp_hub_module_amqp_ws:         { language: csharp, suite: hub_module_amqp_ws }
+      csharp_edge_module_amqp_ws:        { language: csharp, suite: edge_module_amqp_ws }
+      python_hub_module_mqtt:            { language: python, suite: hub_module_mqtt }
+      python_edge_module_mqtt:           { language: python, suite: edge_module_mqtt }
+      python_hub_module_mqtt_ws:         { language: python, suite: hub_module_mqtt_ws }
+      python_edge_module_mqtt_ws:        { language: python, suite: edge_module_mqtt_ws }
+      python_hub_module_amqp:            { language: python, suite: hub_module_amqp }
+      # python_edge_module_amqp:         { language: python, suite: edge_module_amqp }
+      python_hub_module_amqp_ws:         { language: python, suite: hub_module_amqp_ws }
+      # python_edge_module_amqp_ws:        { language: python, suite: edge_module_amqp_ws }
+      pythonpreview_hub_module_mqtt:     { language: pythonpreview, suite: hub_module_mqtt }
+      pythonpreview_edge_module_mqtt:    { language: pythonpreview, suite: edge_module_mqtt }
+
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      language: $(language)
+      suite: $(suite)
+
