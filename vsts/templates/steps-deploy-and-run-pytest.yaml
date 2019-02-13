@@ -1,0 +1,140 @@
+parameters:
+  forced_image: ''
+  language: ''
+  suite: ''
+  testcase: ''
+  repeat_count: ''
+
+steps:
+- powershell: |
+    $SkipTest="no"
+
+    Write-Host "Configuring test for language=$env:Language suite=$env:Suite"
+
+    switch ($env:Suite) {
+      "edge_module_mqtt" {
+        $Transport="mqtt"
+        $TestSet="edge_module"
+      }
+      "edge_module_mqtt_ws" {
+        $Transport="mqttws"
+        $TestSet="edge_module"
+      }
+      "edge_module_amqp" {
+        $Transport="amqp"
+        $TestSet="edge_module"
+      }
+      "edge_module_amqp_ws" {
+        $Transport="amqpws"
+        $TestSet="edge_module"
+      }
+      "hub_module_mqtt" {
+        $Transport="mqtt"
+        $TestSet="hub_module"
+      }
+      "hub_module_mqtt_ws" {
+        $Transport="mqttws"
+        $TestSet="hub_module"
+      }
+      "hub_module_amqp" {
+        $Transport="amqp"
+        $TestSet="hub_module"
+      }
+      "hub_module_amqp_ws" {
+        $Transport="amqpws"
+        $TestSet="hub_module"
+      }
+      "edge_module_fi_mqtt" {
+        $Transport="mqtt"
+        $TestSet="edge_module_fi"
+      }
+      default {
+        throw("Unknown suite: " + $env:Suite)
+      }
+    }
+    Write-Host "Transport=${Transport} TestSet=${TestSet}"
+
+
+    # Skip tests based on SDK transport support
+    if (($env:Language -eq "c") -or ($env:Language -eq "python")) {
+      if ($TestSet -eq "edge_module") {
+        if (($Transport -eq "amqp") -or ($Transport -eq "amqpws")) {
+          $SkipTest="yes"
+        }
+      }
+    } elseif ($env:Language -eq "pythonpreview") {
+      if ($Transport -ne "mqtt") {
+        $SkipTest="yes"
+      }
+    }
+
+    # set pytest parameters
+    switch($TestSet) {
+      "hub_module" {
+        $TestGroup="testgroup_iothub_module_client"
+        $TestArgs="--direct-to-iothub"
+      }
+      "edge_module" {
+        $TestGroup="testgroup_edgehub_module_client"
+        $TestArgs=""
+      }
+      "edge_module_fi" {
+        $TestGroup="testgroup_edgehub_fault_injection"
+        $TestArgs=""
+      }
+    }
+
+    # add parameters if we're runnin a single case
+    if ($env:TestCase -ne "") {
+      $TestArgs=$TestArgs + " " + $env:TestCase
+    }
+    if ($env:RepeatCount -ne "") {
+      $TestArgs=$TestArgs + " --count=" + $env:RepeatCount
+    }
+
+    $LogTag="${env:Language}_${TestSet}_${Transport}"
+
+    $TestImage=$env:DefaultImage
+    if ($env:ForcedImage -ne "") {
+      $TestImage=$env:ForcedImage
+    }
+
+    Write-Host "##vso[task.setvariable variable=logTag]${LogTag}"
+    Write-Host "##vso[task.setvariable variable=skipTest]${SkipTest}"
+    Write-Host "##vso[task.setvariable variable=testgroup]${TestGroup}"
+    Write-Host "##vso[task.setvariable variable=transport]${Transport}"
+    Write-Host "##vso[task.setvariable variable=testArgs]${TestArgs}"
+    Write-Host "##vso[task.setvariable variable=testImage]${TestImage}"
+  displayName: Custom task execution logic
+  env:
+    Language: ${{ parameters.language }}
+    Suite: ${{ parameters.suite }}
+    DefaultImage: "vsts-$(Build.BuildId)"
+    ForcedImage: ${{ parameters.forced_image }}
+    TestCase: ${{ parameters.testcase }}
+    RepeatCount: ${{ parameters.repeat_count }}
+  ignoreLASTEXITCODE: false
+  errorActionPreference: Stop
+  failOnStderr: true
+
+- template: steps-ensure-e2e-fx-repo.yaml
+
+- template: pre-test-steps.yaml
+  parameters:
+    language: ${{ parameters.language }}
+    test_image: $(testImage)
+
+- template: pytest-test-steps.yaml
+  parameters:
+    language: ${{ parameters.language }}
+    transport: $(transport)
+    testgroup: $(testgroup)
+    junit_suite_name: $(logTag)
+    log_folder_name: "$(logTag)_$(System.JobPositionInPhase)"
+    extra_args: $(testArgs)
+
+- template: post-test-steps.yaml
+  parameters:
+    language: ${{ parameters.language }}
+    log_folder_name: "$(logTag)_$(System.JobPositionInPhase)"
+

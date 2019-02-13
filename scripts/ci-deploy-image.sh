@@ -11,16 +11,7 @@ source ${script_dir}/_ci-parse-parameters.sh $@
 cd ${script_dir}/../pyscripts
 [ $? -eq 0 ] || { echo "cd ${script_dir}/../pyscripts failed"; exit 1; }
 
-if [ -z "$FORCED_IMAGE" ]; then
-    export DOCKER_FULLNAME=$(python3 -c "import docker_tags; tags=docker_tags.get_docker_tags_from_environment(); print(tags.docker_full_image_name + ':' + tags.image_tags[0])")
-else
-    export DOCKER_FULLNAME="${IOTHUB_E2E_REPO_ADDRESS}/${FORCED_IMAGE}"
-fi
-
-if [ -z "$DOCKER_FULLNAME" ]; then
-    echo "failed getting image name"
-    exit 1
-fi
+export DOCKER_FULLNAME="localhost:5000/${LANGUAGE}-e2e:latest"
 echo "running with $DOCKER_FULLNAME"
 
 cd ${script_dir}

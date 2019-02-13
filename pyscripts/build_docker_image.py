@@ -6,14 +6,14 @@ import json
 import sys
 import docker_tags
 import argparse
+import datetime
 
 parser = argparse.ArgumentParser(description="build docker image for testing")
 parser.add_argument("--language", help="language to build", type=str, required=True)
 parser.add_argument("--repo", help="repo with source", type=str, required=True)
-parser.add_argument("--branch", help="base branch for build", type=str, required=True)
-group = parser.add_mutually_exclusive_group()
-group.add_argument("--commit", help="commit to apply", type=str)
-group.add_argument("--prid", help="pull request to apply", type=str)
+parser.add_argument(
+    "--commit", help="commit to apply (ref or branch)", type=str, required=True
+)
 args = parser.parse_args()
 
 print_separator = "".join("/\\" for _ in range(80))
@@ -26,36 +26,27 @@ auth_config = {
 
 def get_dockerfile_directory(tags):
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    return os.path.normpath(
-        os.path.join(script_dir, "../ci-wrappers/" + tags.language)
-    )
+    return os.path.normpath(os.path.join(script_dir, "../ci-wrappers/" + tags.language))
 
 
 def build_image(tags):
     print(print_separator)
     print("BUILDING IMAGE")
     print(print_separator)
+
+    force_flag = 0
+    if os.stat(get_dockerfile_directory(tags) + "/source.tar.gz").st_size > 0:
+        print("source.tar.gz exists.  Setting force flag.")
+        force_flag = datetime.datetime.now().timestamp()
+
     api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
     build_args = {
         # repo -- current dockerfiles use AZURE_REPO.  They should use SDK_REPO
-        "AZURE_REPO": tags.repo,  # deprecated
-        "SDK_REPO": tags.repo,
+        "HORTON_REPO": tags.repo,
         # Base branch - current dockerfiles use BRANCH_TO_MERGE_TO. They should use BASE_BRANCH
-        "BRANCH_TO_MERGE_TO": tags.base_branch,  # deprecated
-        "BASE_BRANCH": tags.base_branch,
-        "BASE_SHA": tags.base_sha,
-        # Building with PRID.  current dockerfiles use build_with_prid with the prid in COMMIT_ID.  They should use PRID_TO_MERGE
-        "BUILD_WITH_PRID": tags.build_with_prid,  # deprecated
-        "PRID_TO_MERGE": tags.prid,
-        "PR_SOURCE_URL": tags.pr_url,
-        "PR_SOURCE_REF": tags.pr_ref,
-        # Building with commit.  Current dockerfiles use COMMIT_ID, which is overloaded with prid.
-        # They should use COMMIT_ID_TO_MERGE
-        "COMMIT_ID": tags.commit_id_for_dockerfile,  # deprecated
-        "COMMIT_ID_TO_MERGE": tags.commit_id_to_merge,
-        # commit SHA to merge.  Curernt dockerfiles only use this for PRID merges and use curl to find this for commit merges.
-        # they should use this in all cases and not use CURL
-        "COMMIT_SHA": tags.commit_sha,
+        "HORTON_BASE_BRANCH": tags.base_branch,
+        "HORTON_SHA": tags.commit_sha,
+        "HORTON_FORCEFLAG": str(force_flag),
     }
 
     if tags.image_tag_to_use_for_cache:
@@ -131,14 +122,7 @@ def prefetch_cached_images(tags):
                 print("Image not found in repository")
 
 
-if args.prid:
-    tags = docker_tags.get_docker_tags_for_prid(
-        args.language, args.repo, args.branch, args.prid
-    )
-else:
-    tags = docker_tags.get_docker_tags_for_commit(
-        args.language, args.repo, args.branch, args.commit
-    )
+tags = docker_tags.get_docker_tags_from_commit(args.language, args.repo, args.commit)
 
 prefetch_cached_images(tags)
 build_image(tags)

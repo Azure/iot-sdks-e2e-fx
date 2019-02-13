@@ -16,44 +16,24 @@ WORKDIR /wrapper
 COPY ./wrapper/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Set these early.  If these change, we want to rebuild starting here to set a baseline which includes 
-# as many dependencies as we can
-ARG AZURE_REPO
-ARG BASE_BRANCH
 
+# phase 1: grab the base branch and run prebuild
+ARG HORTON_REPO
+ARG HORTON_BASE_BRANCH
 WORKDIR /sdk
-RUN git clone https://github.com/$AZURE_REPO -b $BASE_BRANCH .
-RUN python env_setup.py --no_dev
+RUN git clone https://github.com/$HORTON_REPO -b $HORTON_BASE_BRANCH .
+COPY ./prebuild.sh /
+RUN /prebuild.sh
 
-# now check the latest SHA.  If it's changed, fetch and rebuild.
-# this seems redundant, but we're setting another baseline here
-# we have to re-fetch because the last fetch might be from a cached image that was built in the past
-ARG BASE_SHA
-RUN git fetch origin && git reset --hard origin/$BASE_BRANCH
-
-# these ARG lines are intentionally after the git clone so we can use the cached clone even when these args change
-ARG BUILD_WITH_PRID
-ARG COMMIT_ID
-ARG PR_SOURCE_URL
-ARG PR_SOURCE_REF
-ARG COMMIT_SHA
-
-RUN echo BUILD_WITH_PRID=$BUILD_WITH_PRID
-RUN echo COMMIT_ID=$COMMIT_ID
-RUN echo PR_SOURCE_URL=$PR_SOURCE_URL
-RUN echo PR_SOURCE_REF=$PR_SOURCE_REF
-RUN echo COMMIT_SHA=$COMMIT_SHA
-
-# we have to fetch again because the baseline images above might be from the past
-run git fetch origin
-RUN \
-  if [ $BUILD_WITH_PRID = "NO" ]; then \
-    git merge --ff --strategy=recursive origin/$COMMIT_ID ; \
-  else \
-    git fetch $PR_SOURCE_URL $PR_SOURCE_REF:pullsource && \
-    git merge --ff --strategy=recursive pullsource ; \
-  fi
-RUN python env_setup.py --no_dev
+# phase 2: grab the code we want to test and rebuild
+ARG HORTON_SHA
+ARG HORTON_FORCEFLAG
+VOLUME /t
+COPY ./source.tar.gz /t/
+COPY ./fetch.sh /
+RUN /fetch.sh /t
+COPY ./rebuild.sh /
+RUN /rebuild.sh
 
 WORKDIR /wrapper
 COPY ./wrapper .

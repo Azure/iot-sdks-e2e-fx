@@ -8,7 +8,7 @@ import base64
 import json
 from ..print_message import print_message
 from ..abstract_module_api import AbstractModuleApi
-from azure.iot.hub.devicesdk import ModuleClientSync
+from azure.iot.hub.devicesdk import ModuleClient
 from azure.iot.hub.devicesdk.auth.authentication_provider_factory import (
     from_connection_string,
     from_environment,

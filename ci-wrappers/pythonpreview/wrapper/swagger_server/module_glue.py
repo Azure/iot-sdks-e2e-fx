@@ -7,7 +7,7 @@ import threading
 import logging
 import json
 from swagger_server.models.connect_response import ConnectResponse
-from azure.iot.hub.devicesdk import ModuleClientSync
+from azure.iot.hub.devicesdk import ModuleClient
 from azure.iot.hub.devicesdk.auth.authentication_provider_factory import (
     from_connection_string,
     from_environment,
