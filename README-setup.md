@@ -1,6 +1,6 @@
 # Configuring your environment for Edge E2E development
 
-All paths in this document are relative to the edge_e2e directory.
+All paths in this document are relative to the iot-sdks-e2e-fx directory.
 
 ## Step 1: Configure your VM.
 I use Ubuntu 18.04.  You can also use Ubuntu 16.04
@@ -13,7 +13,7 @@ Reference: https://docs.microsoft.com/en-us/azure/iot-edge/quickstart-linux#inst
    * Follow this link to [create VM](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-portal) directly on the azure portal
    * Use configuration `Standard B2s`
 
-2. Clone https://azure-iot-sdks.visualstudio.com/azure-iot-sdks/_git/edge-e2e
+2. Clone https://github.com/Azure/iot-sdks-e2e-fx
    * This may need a SSH cloning. In that case please generate a ssh key pair and add the value of the public portion key to this repo's manage ssh keys.
 3. Set the following environment variables.  I put this into my `~/.bashrc`.
 

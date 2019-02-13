@@ -9,7 +9,7 @@ All language wrappers are located in, where else, but the wrappers directory.  A
 3. `prep-for-debug.cmd` is a script that builds everything you need to debug the wrapper locally.  This accepts a path to the local copy of the SDK repo that you want to use.  This script will build the SDK and the wrapper (or whatever needs to happen to prepare the wrapper to run)
 
 ```
-F:\repos\internals\edge-e2e\wrappers\csharp>prep-for-debug.cmd f:\repos\csharp
+F:\repos\iot-sdks-e2e-fx\wrappers\csharp>prep-for-debug.cmd f:\repos\csharp
 
 BUILD: --- Shared Assembly Debug ---
 Microsoft (R) Build Engine version 15.7.179.6572 for .NET Core
@@ -22,12 +22,12 @@ success
 
 4. `run.cmd` launches the wrapper server.  Since you'll probably be running the wrapper inside of a debugger, this script isn't too useful.
 ```
-F:\repos\internals\edge-e2e\wrappers\csharp>run
-Using launch settings from F:\repos\internals\edge-e2e\wrappers\csharp\wrapper\aspnetcore-server\src\IO.Swagger\Properties\launchSettings.json...
+F:\repos\iot-sdks-e2e-fx\wrappers\csharp>run
+Using launch settings from F:\repos\\iot-sdks-e2e-fx\wrappers\csharp\wrapper\aspnetcore-server\src\IO.Swagger\Properties\launchSettings.json...
 info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[0]
       User profile is available. Using 'C:\Users\bertk\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
 Hosting environment: Development
-Content root path: F:\repos\internals\edge-e2e\wrappers\csharp\wrapper\aspnetcore-server\src\IO.Swagger
+Content root path: F:\repos\iot-sdks-e2e-fx\wrappers\csharp\wrapper\aspnetcore-server\src\IO.Swagger
 Now listening on: http://localhost:5000
 Application started. Press Ctrl+C to shut down.
 ```

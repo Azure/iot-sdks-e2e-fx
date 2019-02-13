@@ -7,7 +7,7 @@
 **Sample Error:**
 
 ```
-foo@foo-Virtual-Machine:~/GitRepos/edge-e2e/scripts$ ./setup-ubuntu.sh
+foo@foo-Virtual-Machine:~/GitRepos/iot-sdks-e2e-fx/scripts$ ./setup-ubuntu.sh
 ----------------------------------------------------------
 installing python 3.6
 ----------------------------------------------------------
@@ -18,7 +18,7 @@ python3 is already the newest version (3.6.7-1~18.04).
 python3-pip is already the newest version (9.0.1-2.3~ubuntu1).
 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
 Requirement already up-to-date: pip in /home/foo/.local/lib/python3.6/site-packages (19.0.1)
-~/GitRepos/edge-e2e/test-runner ~/GitRepos/edge-e2e/scripts
+~/GitRepos/iot-sdks-e2e-fx/test-runner ~/GitRepos/iot-sdks-e2e-fx/scripts
 Traceback (most recent call last):
   File "/usr/bin/pip3", line 9, in <module>
     from pip import main
@@ -29,7 +29,7 @@ setup-python36 failed
 
 **Likely Cause:**
 
-There is an incompatibility with the scripts being run and the version of pip being used. Newer versions of pip will throw this error due to syntax changes. Make sure your version of E2E-FX is not outdated. 
+There is an incompatibility with the scripts being run and the version of pip being used. Newer versions of pip will throw this error due to syntax changes. Make sure your version of E2E-FX is not outdated.
 
 ## ./create-new-edgehub-device.sh Failures
 
@@ -38,7 +38,7 @@ There is an incompatibility with the scripts being run and the version of pip be
 **Sample Error:**
 
 ```
-foo@foo-Virtual-Machine:~/GitRepos/edge-e2e/scripts$ ./create-new-edgehub-device.sh
+foo@foo-Virtual-Machine:~/GitRepos/iot-sdks-e2e-fx/scripts$ ./create-new-edgehub-device.sh
 .
 /usr/lib/python3/dist-packages/requests/__init__.py:80: RequestsDependencyWarning: urllib3 (1.23) or chardet (3.0.4) doesn't match a supported version!
   RequestsDependencyWarning)
@@ -58,17 +58,17 @@ Deploying the following containers:
 Traceback (most recent call last):
   File "./../test-runner/deploy_test_containers.py", line 60, in <module>
     hub = useExistingHubInstance(service_connection_string, edge_hub_device_id)
-  File "/home/foo/GitRepos/edge-e2e/test-runner/edgehub_factory.py", line 25, in useExistingHubInstance
+  File "/home/foo/GitRepos/iot-sdks-e2e-fx/test-runner/edgehub_factory.py", line 25, in useExistingHubInstance
     return EdgeHub(service_connection_string, edge_hub_device_id)
-  File "/home/foo/GitRepos/edge-e2e/test-runner/edgehub_factory.py", line 57, in __init__
+  File "/home/foo/GitRepos/iot-sdks-e2e-fx/test-runner/edgehub_factory.py", line 57, in __init__
     self._useExistingHub(edge_hub_device_id)
-  File "/home/foo/GitRepos/edge-e2e/test-runner/edgehub_factory.py", line 66, in _useExistingHub
+  File "/home/foo/GitRepos/iot-sdks-e2e-fx/test-runner/edgehub_factory.py", line 66, in _useExistingHub
     self._finishHubSetup()
-  File "/home/foo/GitRepos/edge-e2e/test-runner/edgehub_factory.py", line 70, in _finishHubSetup
+  File "/home/foo/GitRepos/iot-sdks-e2e-fx/test-runner/edgehub_factory.py", line 70, in _finishHubSetup
     self.edge_hub_device_id
-  File "/home/foo/GitRepos/edge-e2e/test-runner/service_helper.py", line 35, in get_device_connection_string
+  File "/home/foo/GitRepos/iot-sdks-e2e-fx/test-runner/service_helper.py", line 35, in get_device_connection_string
     device = self.service.get_device(device_id, custom_headers=self.headers())
-  File "/home/foo/GitRepos/edge-e2e/test-runner/rest_wrappers/generated/service20180630/operations/service_operations.py", line 641, in get_device
+  File "/home/foo/GitRepos/iot-sdks-e2e-fx/test-runner/rest_wrappers/generated/service20180630/operations/service_operations.py", line 641, in get_device
     raise HttpOperationError(self._deserialize, response)
 msrest.exceptions.HttpOperationError: Operation returned an invalid status code 'Not Found'
 deploy_test_containers.py failed
@@ -77,7 +77,7 @@ deploy_test_containers.py failed
 
 **Likely Cause:**
 
-Try examining the iotedge logs by running: 
+Try examining the iotedge logs by running:
 
 `sudo systemctl -u iotedge -f`
 
@@ -112,7 +112,7 @@ If you see some error like the following...
 
 ### Test Module not showing up in `iotedge list`
 
-If this is the first time you are running `./create-new-edgehub-device.sh`, or the first time you are deploying a specific image through `deploy-test-containers.sh`, it might take a minute for the containers to download from the container repo. This is a non-obvious hidden time tax. 
+If this is the first time you are running `./create-new-edgehub-device.sh`, or the first time you are deploying a specific image through `deploy-test-containers.sh`, it might take a minute for the containers to download from the container repo. This is a non-obvious hidden time tax.
 
 If it is still not showing up, try checking the environment variables by running the following in python3 (via terminal shell):
 
@@ -126,9 +126,9 @@ for variable in os.environ:
 
 ```
 
-Be sure you have run `./set-environment.sh` and `./set-ubuntu.sh` if you are running Ubuntu. 
+Be sure you have run `./set-environment.sh` and `./set-ubuntu.sh` if you are running Ubuntu.
 
-## Selecting a specific version of C SDK from Azure Pipelines for Local Debugging 
+## Selecting a specific version of C SDK from Azure Pipelines for Local Debugging
 
 Select a reference build for the C SDK on the edge-e2e-c pipeline.
 
@@ -150,7 +150,7 @@ Then, to get it running, we deploy it
 
 `scripts/deploy-test-containers.sh --friend --c iotsdke2e.azurecr.io/c-e2e:vsts-8948`
 
-If that works, `docker ps` or `iotedge list` should show the cMod container existing "since a few secodns ago" or something similar. 
+If that works, `docker ps` or `iotedge list` should show the cMod container existing "since a few secodns ago" or something similar.
 
 
 

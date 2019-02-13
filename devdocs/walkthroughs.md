@@ -21,7 +21,7 @@ If you want to run a private build of the edgeHub and edgeAgent containers, you 
 
 Also, set `IOTHUB_E2E_CONNECTION_STRING` to the IotHub instance you want to use for your tests.
 
-### Step 2: run edge-e2e/scripts/setup_ubuntu.sh
+### Step 2: run iot-sdks-e2e-fx/scripts/setup_ubuntu.sh
 
 You need to run this script even if you're already running IoTEdge.  This script was written so it can be called multiple times without causing damage.
 
@@ -36,7 +36,7 @@ This script:
 
 Even if you've already created IoTEdge devices, you're better off using this script to create a new one.  Every time you run his script, you create new registry identities.
 
-Run `edge-e2e/scripts/create_new_edgehub_device.sh`.  This will create new registry identities for your IotEdge device along with a registry identity for a friend device that is used by the test scripts.  It edits config.yaml to insert the device connection string for you, deploys a default set of modules, and restarts the iotedge daemon.
+Run `iot-sdks-e2e-fx/scripts/create_new_edgehub_device.sh`.  This will create new registry identities for your IotEdge device along with a registry identity for a friend device that is used by the test scripts.  It edits config.yaml to insert the device connection string for you, deploys a default set of modules, and restarts the iotedge daemon.
 
 After this script is run, iotedge should be running with 4 modules: `edgeAgent`, `edgeHub`, `nodeMod`, and `friendMod`.  `nodeMod` and `friendMod` both use a known good build of the node.js test wrappers.  The intention is that `nodeMod` will be used as an SDK-under-test for your initial runs, but will soon be replaced by whatever SDK code you with to test.  `friendMod`, on the other hand, will not be replaced.  It will always use a known-good build of the node.js wrappers.  Its purpose is to act as "the other actor" for a bunch of the tests.  So, for instance, if a test needs to send an event to another module, `friendMod` will be that other module.  Likewise, if your wrapper is missing an implementation (like `deviceClient` or `eventHubClient`), the test scripts will use `friendMod` to instantiate those objects.  So, for example, if your wrapper implements `deviceClient`, the test case `test_device_method_from_module_to_friend_device` will use your SDK wrapper for the deviceClient object that receives the device method call.  If your SDK does not implement deviceClient,the test scripts will use the node.js implementation of deviceClient for the object that receives the method call.
 
@@ -65,7 +65,7 @@ There is one other sceanrio that we can run, which is testing code through edgeH
 
 ## Different ways to configure and run the tests
 
-The first way to run tests is using the scripts in the `edge-e2e/scripts` folder.  These scripts give you some power surrounding the actual test run.
+The first way to run tests is using the scripts in the `iot-sdks-e2e-fx/scripts` folder.  These scripts give you some power surrounding the actual test run.
 1) They can take a set of build parameters (language, repo, base branch, and commit/pull request ID) and create a module container that is running that code.
 2) They can automatically deploy whatever containers you want to test against (a known-good container for each language, or a privately built container)
 3) They can provide a set of clear container logs, as text files, that begin when the test starts and end when the test ends.  They can also log the `pytest` output and provide result files in `JUnit`-compatible XML format.
@@ -73,7 +73,7 @@ The first way to run tests is using the scripts in the `edge-e2e/scripts` folder
 5) They can provide a cleaner execution environment by restarting `iotedged` at the beginning of a test run (before the set of 6 starts) and by restarting the modules at the beginning of each scenario.
 6) They _must_ be run from a `bash` prompt on the same machine that hosts your IoTEdge instance.
 
-The second way to run tests is to call pytest manually inside the `edge-e2e/test-runner` folder.
+The second way to run tests is to call pytest manually inside the `iot-sdks-e2e-fx/test-runner` folder.
 1) This assumes that your test container has already been build and deployed.
 2) It does not provide log files in any clean format and does not produce `JUnit` results
 3) It only runs a single scenario
@@ -85,11 +85,11 @@ The second way to run tests is to call pytest manually inside the `edge-e2e/test
 The walkthroughs below cover some of the more common possible scenarios that you could run, but this is not the full list of possibilities.
 
 ## Walkthrough #1: Running your first set of E2E tests (one scenario) using a pre-built container
-To run this walkthrough, we will use the bash scripts in `edge-e2e/scripts` to deploy our containers and we'll run the full set of tests by calling pytest manually.
+To run this walkthrough, we will use the bash scripts in `iot-sdks-e2e-fx/scripts` to deploy our containers and we'll run the full set of tests by calling pytest manually.
 
-1) use edge-e2e/scripts/deploy-test-container.sh to deploy your container by specifying the language that you want to deploy as a double-dash option (e.g. `--c` for c and `--python` for python). Ex.:
+1) use iot-sdks-e2e-fx/scripts/deploy-test-container.sh to deploy your container by specifying the language that you want to deploy as a double-dash option (e.g. `--c` for c and `--python` for python). Ex.:
 
-`edge-e2e/scripts/deploy-test-container.sh --c`
+`iot-sdks-e2e-fx/scripts/deploy-test-container.sh --c`
 
 This script will also automatically deploy the friend module, which is always used for testing module-to-module communication.  Note: if this is the first time you're using a particular LKG module, it may take a while for the edgeAgent to download and start the module (perhaps up to 10 minutes).  You should not continue with the next step until you use the `iotedge` or `docker` CLI tools to verify that the module is running.
 
@@ -118,7 +118,7 @@ edgeHub          running          Up 2 days        mcr.microsoft.com/azureiotedg
 edgeAgent        running          Up 2 days        mcr.microsoft.com/azureiotedge-agent:1.0
 ```
 
-1) run pytest inside the edge-e2e/test-runner folder.  Here are some examples:
+1) run pytest inside the iot-sdks-e2e-fx/test-runner folder.  Here are some examples:
 
 | command line | meaning |
 |---|---|
@@ -152,27 +152,13 @@ The line "29 passed" is the important information.  The Exception that happens a
 
 This walkthrough is the most simple.  It uses the toplevel Jenkins (actually VSTS) script to build a container and run all tests against it.
 
-To run this, call `edge-e2e/scripts/ci-e2e-toplevel.sh` and pass your build parameters.  You can call this script with no parameters for usage instructions.  One of the benefits of his script is that it will build, deploy, wait for deployment, and run all scenarios without any interaction.
+To run this, call `iot-sdks-e2e-fx/scripts/ci-e2e-toplevel.sh` and pass your build parameters.  You can call this script with no parameters for usage instructions.  One of the benefits of his script is that it will build, deploy, wait for deployment, and run all scenarios without any interaction.
 
 ```
-bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ ./ci-e2e-toplevel.sh --language node --repo Azure/azure-iot-sdk-node --branch master --commit master
-AZURE_REPO=Azure/azure-iot-sdk-node
-BRANCH_TO_MERGE_TO=master
-Building with commit master
-<--snip-->
-FINAL RESULTS:
-
-
-SUCCEEDED: iothub amqp node
-SUCCEEDED: iothub amqpws node
-SUCCEEDED: iothub mqtt node
-SUCCEEDED: iothub mqttws node
-SUCCEEDED: edgehub amqp node
-FAILED: edgehub mqtt node
-ci-run-all.sh failed
+bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ ./ci-e2e-toplevel.sh --language node --repo Azure/azure-iot-sdk-node --commit master
 ```
 
-In this example, my run using MQTT against edgeHub failed.  To find the logs for the failure, I can look in the `edge-e2e/results/edgehub-node-mqtt` folder.
+In this example, my run using MQTT against edgeHub failed.  To find the logs for the failure, I can look in the `iot-sdks-e2e-fx/results/edgehub-node-mqtt` folder.
 
 Once you run this step, you can run `docker ps` or `iotedge list` to see that you're using your private container.  If you want to continue with this container, you can run pytest manually or run whatever tools you want.
 
@@ -193,7 +179,7 @@ edgeAgent        running          Up 18 hours      mcr.microsoft.com/azureiotedg
 
 Running a single test inside of a container is just as easy as running an entire scenario and very similar to Walkthrough #1 above.  Once your container is deployed (either LKG, like Walkthrough #1, or custom built, like Walkthrough #2), you just need to pass the filename for the test case and possibly the name of the test case along with the pytest command line.
 
-All of the tests are inside the `edge-e2e/test-runner` folder.  All modules with tests inside are named with a `test_` prefix, and all test cases are inside those files as functions that are named with `test_` prefixes.
+All of the tests are inside the `iot-sdks-e2e-fx/test-runner` folder.  All modules with tests inside are named with a `test_` prefix, and all test cases are inside those files as functions that are named with `test_` prefixes.
 
 If you want to run the tests in a single .py module, you would call `pytest` passing the name of the .py file as follows
 ```
@@ -224,7 +210,7 @@ Running your SDK code inside of a debugger is almost as easy as running inside o
 Host Machine: Windows
 * Hosts the Linux VM that's running IoTEdge under Hyper-V
 * Runs debugger with SDK wrapper
-* Runs test scripts (from `edge-e2e/test-runner`) via `pytest` from command line.
+* Runs test scripts (from `iot-sdks-e2e-fx/test-runner`) via `pytest` from command line.
 * SDK wrapper connects to edgeHub instance on Linux VM via environment variables (connection string and CA certificate)
 
 Client VM: Linux
@@ -245,9 +231,9 @@ F:\repos\iot-sdks-e2e-fx\test-runner>pip --version
 pip 18.0 from c:\python36\lib\site-packages\pip (python 3.6)
 ```
 
-2. Clone the `iot-sdks-e2e-fx` repo on your Windows machine. 
+2. Clone the `iot-sdks-e2e-fx` repo on your Windows machine.
 3. On your Windows machine, go to the `test-runner` folder. Run `pip install -r requirements.txt`.  This will grab the various python libraries that the test runner needs.
-4. On your Linux machine, run `edge-e2e/scripts/get-environment.sh windows`.  This gives you some handy text that you can copy/paste into your Windows environment to point the test runner at your Linux IoTEdge instance.
+4. On your Linux machine, run `iot-sdks-e2e-fx/scripts/get-environment.sh windows`.  This gives you some handy text that you can copy/paste into your Windows environment to point the test runner at your Linux IoTEdge instance.
 ```
 bertk@bertk-edge-ga-6:~/repos/iot-sdks-e2e-fx/scripts$ ./get-environment.sh windows
 @rem Set the following values in your environment:
@@ -281,7 +267,7 @@ Deploying the following containers:
 Note the values printed by `pytest` as `Run Parameters`.  In particular, the test_module_uri below is `http://bertk-edge-ga-6:8080`.  This tells us that your code under test is exposing a REST endpoint on this URI, which happens to be on my Linux VM
 
 ```
-F:\repos\internals\edge-e2e\test-runner>pytest --node-wrapper --local test_module_send_telemetry.py
+F:\repos\internals\iot-sdks-e2e-fx\test-runner>pytest --node-wrapper --local test_module_send_telemetry.py
 ============================= test session starts =============================
 platform win32 -- Python 3.6.3, pytest-3.6.1, py-1.5.3, pluggy-0.6.0 -- c:\python36\python.exe
 <--snip-->
@@ -346,7 +332,7 @@ When you launch the app, it will open a RESTAPI endpoint on some port.  The test
 You can verify that the test runner is configured correctly by looking at the `test_module_uri` that pytest gives you.
 
 ```
-F:\repos\internals\edge-e2e\test-runner>pytest --node --local test_module_methods.py
+F:\repos\internals\iot-sdks-e2e-fx\test-runner>pytest --node --local test_module_methods.py
 <--snip-->
   test_module_uri:      http://localhost:8080 (module under test)
 <--snip-->

@@ -3,7 +3,7 @@
 
 Like the wrappers, the test script also has some swagger.io codegen libraries.  Unlike the wrappers, we are only using the codegen library.  We don't need to change it from what we get from swagger.io tools.
 
-## edge-e2e\\test-runner\\
+## iot-sdks-e2e-fx\\test-runner\\
 
 Structure of `test-runner` directory:
 
