@@ -30,14 +30,15 @@ except docker.errors.NotFound:
   print("Container {} is not deployed".format(container_name))
   sys.exit(1)
 
-restart_attempts = 3
+restart_attempts = 10
 container_startup_time = 5
 
 for f in range(0, restart_attempts):
   try:
-    r = requests.get("http://localhost:{}/wrapper/session".format(port))
-  except:
+    r = requests.put("http://localhost:{}/wrapper/message".format(port), json={"msg": "test message from ensure_container.py"})
+  except Exception as e:
     print("Container {} is not responding".format(container_name))
+    print(str(e))
   else:
     print("Container {} is running and responding".format(container_name))
     sys.exit(0)
