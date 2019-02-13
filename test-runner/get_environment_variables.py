@@ -11,26 +11,31 @@ import sys
 import string
 from config_yaml import ConfigFile
 
-linux = True
+format = ""
 
 
 def usage():
-    print("Usage get_environment_variables.py [OS]")
-    print('OS can be one of "windows" or "linux"')
-    print("os will be autodetected ")
+    print("Usage get_environment_variables.py [format]")
+    print('format can be one of "windows", "linux", or "pycharm"')
+    print("if not specified, format will be autodetected based on OS")
     sys.exit(1)
 
 
 def print_env(env):
+    global format
     if env in os.environ:
-        if linux:
+        if format == "linux":
             print('export {}="{}"'.format(env, os.environ[env]))
-        else:
+        elif format == "windows":
             print("set {}={}".format(env, os.environ[env]))
+        elif format == "pycharm":
+            print('        <env name="{}" value="{}" />'.format(env, os.environ[env]))
+        else:
+            raise Exception("unexpected: format is unknown: {}".format(format))
 
 
 def verifyEnvironmentVariables():
-    if not "IOTHUB_E2E_CONNECTION_STRING" in os.environ:
+    if "IOTHUB_E2E_CONNECTION_STRING" not in os.environ:
         print(
             "ERROR: Iothub connection string not set in IOTHUB_E2E_CONNECTION_STRING environment variable."
         )
@@ -62,12 +67,12 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 1:
         if ("OS" in os.environ) and (os.environ["OS"] == "Windows_NT"):
-            linux = False
+            envionment = "windows"
+        else:
+            format = "linux"
     elif len(sys.argv) == 2:
-        if sys.argv[1] == "linux":
-            linux = True
-        elif sys.argv[1] == "windows":
-            linux = False
+        if sys.argv[1] in ["windows", "linux", "pycharm"]:
+            format = sys.argv[1]
         else:
             usage()
     else:
@@ -81,7 +86,7 @@ if __name__ == "__main__":
     print_env("IOTHUB_E2E_CONNECTION_STRING")
     print_env("IOTHUB_E2E_EDGEHUB_DNS_NAME")
     print_env("IOTHUB_E2E_EDGEHUB_DEVICE_ID")
-    print_env('IOTHUB_E2E_REPO_ADDRESS')
+    print_env("IOTHUB_E2E_REPO_ADDRESS")
     # print_env('IOTHUB_E2E_REPO_USER')
     # print_env('IOTHUB_E2E_REPO_PASSWORD')
     print_env("IOTHUB_E2E_EDGEHUB_CA_CERT")
