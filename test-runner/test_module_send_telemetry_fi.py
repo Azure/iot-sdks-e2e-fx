@@ -20,7 +20,7 @@ from edgehub_control import (
 
 local_timeout = 60  # Seconds
 
-
+@pytest.mark.skip
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.callsSendEvent
 def test_module_send_event_iothub_fi():
