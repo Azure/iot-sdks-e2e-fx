@@ -54,7 +54,7 @@ jobs:
     - "build_pythonpreview_container"
 
   strategy:
-    maxParallel: 6
+    maxParallel: 4
     matrix:
       node_hub_module_mqtt:              { language: node, suite: hub_module_mqtt }
       node_edge_module_mqtt:             { language: node, suite: edge_module_mqtt }
