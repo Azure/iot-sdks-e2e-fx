@@ -8,7 +8,7 @@ jobs:
 
 - job: "test"
   strategy:
-      parallel: 8
+      parallel: 4
   dependsOn:
     - 'build_linux_container'
 
