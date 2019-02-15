@@ -166,12 +166,12 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine("WaitForInputMessageAsync received for {0} with inputName {1}", connectionId, inputName);
             var mutex = new System.Threading.SemaphoreSlim(1);
             await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
-            Microsoft.Azure.Devices.Client.Message message = null;
+            byte[] bytes = null;
             var client = objectMap[connectionId];
             MessageHandler handler = async (msg, context) =>
             {
                 Debug.WriteLine("message received");
-                message = msg;
+                bytes = msg.GetBytes();
                 await client.SetInputMessageHandlerAsync(inputName, null, null).ConfigureAwait(false);
                 Debug.WriteLine("releasing inputMessage mutex");
                 mutex.Release();
@@ -184,7 +184,6 @@ namespace IO.Swagger.Controllers
             await mutex.WaitAsync().ConfigureAwait(false);
             Debug.WriteLine("mutex triggered.");
 
-            byte[] bytes = message.GetBytes();
             string s = Encoding.UTF8.GetString(bytes);
             Debug.WriteLine("message = {0}", s as object);
             object result;
