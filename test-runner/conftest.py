@@ -104,7 +104,12 @@ valid_transports = ["mqtt", "mqttws", "amqp", "amqpws"]
 
 skip_for_node = set([])
 
-skip_for_csharp = set(["module_under_test_has_device_wrapper"])
+skip_for_csharp = set(
+    [
+        "module_under_test_has_device_wrapper",
+        "handlesLoopbackMessages",
+    ]
+)
 
 
 skip_for_python = set(
