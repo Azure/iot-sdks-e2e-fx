@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.1-sdk-stretch
+FROM microsoft/dotnet:2.2-sdk
 
 # Install system components for powershell install
 RUN apt update \
