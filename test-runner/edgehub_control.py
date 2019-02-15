@@ -7,8 +7,13 @@ from time import sleep
 # Create Global Variables
 EDGEHUB_NAME = "edgeHub"
 client = docker.from_env()
-edge_network = client.networks.get("azure-iot-edge")
-edgeHub = client.containers.get(EDGEHUB_NAME)
+try:
+    edge_network = client.networks.get("azure-iot-edge")
+    edgeHub = client.containers.get(EDGEHUB_NAME)
+except:
+    print("Could not load docker engine.")
+    edge_network = None
+    edgeHub = None
 
 
 def get_network_list():

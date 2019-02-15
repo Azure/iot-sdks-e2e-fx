@@ -7,6 +7,13 @@ from threading import Thread
 import uuid
 import docker
 
+try:
+    # on Windows, we get a different exception from docker when it can't connect to the daemon :(
+    import pywintypes
+    no_container_exception = pywintypes.error
+except:
+    no_container_exception = docker.errors.NotFound
+
 
 class DockerLogWatcher:
     def __init__(self, container_names, filters):
@@ -60,6 +67,6 @@ class DockerLogWatcher:
                 line = line.decode("ascii")
                 if not any(filter in line for filter in filters):
                     queue.put("{}: {}".format(container.name, line.strip()))
-        except docker.errors.NotFound:
+        except no_container_exception:
             pass
 
