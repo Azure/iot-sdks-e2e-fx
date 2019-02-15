@@ -128,7 +128,7 @@ string InternalGlue::Connect(const char *transportType, std::string connectionSt
         size_t sasTokenLifetime = 3600;
         IoTHubModuleClient_SetOption(client, "logtrace", &traceOn);
         IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
-        IoTHubModuleClient_SetOption(client, "sas_token_lifetime", sasTokenLifetime);
+        IoTHubModuleClient_SetOption(client, "sas_token_lifetime", &sasTokenLifetime);
         
         string clientId = getNextClientId();
         this->clientMap[clientId] = (void *)client;
@@ -157,7 +157,7 @@ string InternalGlue::ConnectFromEnvironment(const char *transportType)
         size_t sasTokenLifetime = 3600;
         IoTHubModuleClient_SetOption(client, "logtrace", &traceOn);
         IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
-        IoTHubModuleClient_SetOption(client, "sas_token_lifetime", sasTokenLifetime);
+        IoTHubModuleClient_SetOption(client, "sas_token_lifetime", &sasTokenLifetime);
         
 
         string clientId = getNextClientId();
