@@ -64,11 +64,11 @@ namespace IO.Swagger.Controllers
 
         public async Task<ConnectResponse> ConnectAsync(string transport, string connectionString, Certificate caCertificate)
         {
-            Debug.WriteLine("ConnectAsync for " + transport);
+            Console.WriteLine("ConnectAsync for " + transport);
             var client = ModuleClient.CreateFromConnectionString(connectionString, transportNameToType(transport));
             await client.OpenAsync().ConfigureAwait(false);
             var connectionId = modulePrefix + Convert.ToString(++objectCount);
-            Debug.WriteLine("Connected successfully.  Connection Id = " + connectionId);
+            Console.WriteLine("Connected successfully.  Connection Id = " + connectionId);
             objectMap[connectionId] = client;
             return new ConnectResponse
             {
@@ -90,28 +90,28 @@ namespace IO.Swagger.Controllers
 
         public async Task DisconnectAsync(string connectionId)
         {
-            Debug.WriteLine("DisconnectAsync received for " + connectionId);
+            Console.WriteLine("DisconnectAsync received for " + connectionId);
             if (objectMap.ContainsKey(connectionId))
             {
                 var client = objectMap[connectionId];
                 objectMap.Remove(connectionId);
                 await client.CloseAsync().ConfigureAwait(false);
-                Debug.WriteLine("Disconnected successfully");
+                Console.WriteLine("Disconnected successfully");
             }
             else
             {
-                Debug.WriteLine("Client already disconnected.  Nothing to to do.");
+                Console.WriteLine("Client already disconnected.  Nothing to to do.");
             }
         }
 
         public async Task EnableInputMessagesAsync(string connectionId)
         {
-            Debug.WriteLine("EnableInputMessageAsync received for " + connectionId);
+            Console.WriteLine("EnableInputMessageAsync received for " + connectionId);
         }
 
         public async Task EnableMethodsAsync(string connectionId)
         {
-            Debug.WriteLine("EnableMethodsAsync received for " + connectionId);
+            Console.WriteLine("EnableMethodsAsync received for " + connectionId);
         }
 
         private TwinCollection lastDesiredProps = null;
@@ -119,73 +119,73 @@ namespace IO.Swagger.Controllers
 
         public async Task EnableTwinAsync(string connectionId)
         {
-            Debug.WriteLine("EnableTwinAsync received for " + connectionId);
+            Console.WriteLine("EnableTwinAsync received for " + connectionId);
             var client = objectMap[connectionId];
 
             DesiredPropertyUpdateCallback handler = async (props, context) =>
             {
-                Debug.WriteLine("patch received");
+                Console.WriteLine("patch received");
                 lastDesiredProps = props;
                 if (desiredPropMutex == null)
                 {
-                    Debug.WriteLine("No mutex to release.  nobody is listening for this patch.");
+                    Console.WriteLine("No mutex to release.  nobody is listening for this patch.");
                 }
                 else
                 {
-                    Debug.WriteLine("releasing patch mutex");
+                    Console.WriteLine("releasing patch mutex");
                     desiredPropMutex.Release();
                     desiredPropMutex = null;
                 }
             };
 
-            Debug.WriteLine("setting patch handler");
+            Console.WriteLine("setting patch handler");
             await client.SetDesiredPropertyUpdateCallbackAsync(handler, null).ConfigureAwait(false);
-            Debug.WriteLine("Done enabling twin");
+            Console.WriteLine("Done enabling twin");
 
         }
 
         public async Task SendEventAsync(string connectionId, string eventBody)
         {
-            Debug.WriteLine("sendEventAsync received for {0} with body {1}", connectionId, eventBody);
+            Console.WriteLine("sendEventAsync received for {0} with body {1}", connectionId, eventBody);
             var client = objectMap[connectionId];
             await client.SendEventAsync(new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(eventBody)))).ConfigureAwait(false);
-            Debug.WriteLine("sendEventAsync complete");
+            Console.WriteLine("sendEventAsync complete");
         }
 
         public async Task SendOutputEventAsync(string connectionId, string outputName, string eventBody)
         {
-            Debug.WriteLine("sendEventAsync received for {0} with output {1} and body {2}", connectionId, outputName, eventBody);
+            Console.WriteLine("sendEventAsync received for {0} with output {1} and body {2}", connectionId, outputName, eventBody);
             var client = objectMap[connectionId];
             string toSend = JsonConvert.SerializeObject(eventBody);
             await client.SendEventAsync(outputName, new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(eventBody)))).ConfigureAwait(false);
-            Debug.WriteLine("sendOutputEventAsync complete");
+            Console.WriteLine("sendOutputEventAsync complete");
         }
 
         public async Task<object> WaitForInputMessageAsync(string connectionId, string inputName)
         {
-            Debug.WriteLine("WaitForInputMessageAsync received for {0} with inputName {1}", connectionId, inputName);
+            Console.WriteLine("WaitForInputMessageAsync received for {0} with inputName {1}", connectionId, inputName);
             var mutex = new System.Threading.SemaphoreSlim(1);
             await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
             byte[] bytes = null;
             var client = objectMap[connectionId];
             MessageHandler handler = async (msg, context) =>
             {
-                Debug.WriteLine("message received");
+                Console.WriteLine("message received");
                 bytes = msg.GetBytes();
                 await client.SetInputMessageHandlerAsync(inputName, null, null).ConfigureAwait(false);
-                Debug.WriteLine("releasing inputMessage mutex");
+                Console.WriteLine("releasing inputMessage mutex");
                 mutex.Release();
                 return MessageResponse.Completed;
             };
-            Debug.WriteLine("Setting input handler");
+            Console.WriteLine("Setting input handler");
             await client.SetInputMessageHandlerAsync(inputName, handler, null).ConfigureAwait(false);
 
-            Debug.WriteLine("Waiting for inputMessage mutex to release");
+            Console.WriteLine("Waiting for inputMessage mutex to release");
             await mutex.WaitAsync().ConfigureAwait(false);
-            Debug.WriteLine("mutex triggered.");
+            Console.WriteLine("mutex triggered.");
 
             string s = Encoding.UTF8.GetString(bytes);
-            Debug.WriteLine("message = {0}", s as object);
+            Console.WriteLine("message = {0}", s as object);
             object result;
             try
             {
@@ -222,14 +222,14 @@ namespace IO.Swagger.Controllers
 
         public async Task<object> InvokeModuleMethodAsync(string connectionId, string deviceId, string moduleId, object methodInvokeParameters)
         {
-            Debug.WriteLine("InvokeModuleMethodAsync received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
-            Debug.WriteLine(methodInvokeParameters.ToString());
+            Console.WriteLine("InvokeModuleMethodAsync received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
+            Console.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
             var request = _jobjectToMethodRequest(methodInvokeParameters as JObject);
-            Debug.WriteLine("Invoking");
+            Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, moduleId, request, CancellationToken.None).ConfigureAwait(false);
-            Debug.WriteLine("Response received:");
-            Debug.WriteLine(JsonConvert.SerializeObject(response));
+            Console.WriteLine("Response received:");
+            Console.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
                 new JProperty("payload", response.ResultAsJson)
@@ -238,14 +238,14 @@ namespace IO.Swagger.Controllers
 
         public async Task<object> InvokeDeviceMethodAsync(string connectionId, string deviceId, object methodInvokeParameters)
         {
-            Debug.WriteLine("InvokeDeviceMethodAsync received for {0} with deviceId {1} ", connectionId, deviceId);
-            Debug.WriteLine(methodInvokeParameters.ToString());
+            Console.WriteLine("InvokeDeviceMethodAsync received for {0} with deviceId {1} ", connectionId, deviceId);
+            Console.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
             var request = _jobjectToMethodRequest(methodInvokeParameters as JObject);
-            Debug.WriteLine("Invoking");
+            Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, request, CancellationToken.None).ConfigureAwait(false);
-            Debug.WriteLine("Response received:");
-            Debug.WriteLine(JsonConvert.SerializeObject(response));
+            Console.WriteLine("Response received:");
+            Console.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
                 new JProperty("payload", response.ResultAsJson)
@@ -257,35 +257,35 @@ namespace IO.Swagger.Controllers
             // Since there's no way to un-register for a patch, we have a global patch handler.  We keep the
             // "last desired props received" in a member varaible along with a mutex to trigger when this changes.
             // Not very cool and not very thread safe :(
-            Debug.WriteLine("WaitForDesiredPropertyPatchAsync received for " + connectionId);
+            Console.WriteLine("WaitForDesiredPropertyPatchAsync received for " + connectionId);
             var client = objectMap[connectionId];
             var mutex = new System.Threading.SemaphoreSlim(1);
             await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
             desiredPropMutex = mutex;
 
-            Debug.WriteLine("Waiting for patch");
+            Console.WriteLine("Waiting for patch");
             await mutex.WaitAsync().ConfigureAwait(false);
-            Debug.WriteLine("mutex triggered.");
+            Console.WriteLine("mutex triggered.");
 
-            Debug.WriteLine("Returning patch:");
-            Debug.WriteLine(JsonConvert.SerializeObject(lastDesiredProps));
+            Console.WriteLine("Returning patch:");
+            Console.WriteLine(JsonConvert.SerializeObject(lastDesiredProps));
             return lastDesiredProps;
         }
 
         public async Task<object> GetTwinAsync(string connectionId)
         {
-            Debug.WriteLine("GetTwinAsync received for " + connectionId);
+            Console.WriteLine("GetTwinAsync received for " + connectionId);
             var client = objectMap[connectionId];
             Twin t = await client.GetTwinAsync().ConfigureAwait(false);
-            Debug.WriteLine("Twin Received");
-            Debug.WriteLine(JsonConvert.SerializeObject(t));
+            Console.WriteLine("Twin Received");
+            Console.WriteLine(JsonConvert.SerializeObject(t));
             return t;
         }
 
         public async Task SendTwinPatchAsync(string connectionId, object props)
         {
-            Debug.WriteLine("SendTwinPatchAsync received for " + connectionId);
-            Debug.WriteLine(JsonConvert.SerializeObject(props));
+            Console.WriteLine("SendTwinPatchAsync received for " + connectionId);
+            Console.WriteLine(JsonConvert.SerializeObject(props));
             var client = objectMap[connectionId];
             TwinCollection reportedProps = new TwinCollection(props as JObject, null);
             await client.UpdateReportedPropertiesAsync(reportedProps).ConfigureAwait(false);
@@ -293,25 +293,25 @@ namespace IO.Swagger.Controllers
 
         public async Task<object> RoundtripMethodCallAsync(string connectionId, string methodName, RoundtripMethodCallBody requestAndResponse)
         {
-            Debug.WriteLine("RoundtripMethodCallAsync received for {0} and methodName {1}", connectionId, methodName);
-            Debug.WriteLine(JsonConvert.SerializeObject(requestAndResponse));
+            Console.WriteLine("RoundtripMethodCallAsync received for {0} and methodName {1}", connectionId, methodName);
+            Console.WriteLine(JsonConvert.SerializeObject(requestAndResponse));
             var client = objectMap[connectionId];
             var mutex = new System.Threading.SemaphoreSlim(1);
             await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
 
             MethodCallback callback = async (methodRequest, userContext) =>
             {
-                Debug.WriteLine("Method invocation received");
+                Console.WriteLine("Method invocation received");
 
                 object request = JsonConvert.DeserializeObject(methodRequest.DataAsJson);
                 string received = JsonConvert.SerializeObject(new JRaw(request));
                 string expected = ((Newtonsoft.Json.Linq.JToken)requestAndResponse.RequestPayload)["payload"].ToString();
-                Debug.WriteLine("request expected: " + expected);
-                Debug.WriteLine("request received: " + received);
+                Console.WriteLine("request expected: " + expected);
+                Console.WriteLine("request received: " + received);
                 if (expected != received)
                 {
-                    Debug.WriteLine("request did not match expectations");
-                    Debug.WriteLine("Releasing the method mutex");
+                    Console.WriteLine("request did not match expectations");
+                    Console.WriteLine("Releasing the method mutex");
                     mutex.Release();
                     return new MethodResponse(500);
                 }
@@ -325,27 +325,27 @@ namespace IO.Swagger.Controllers
 
                     byte[] responseBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestAndResponse.ResponsePayload));
 
-                    Debug.WriteLine("Releasing the method mutex");
+                    Console.WriteLine("Releasing the method mutex");
                     mutex.Release();
 
-                    Debug.WriteLine("Returning the result");
+                    Console.WriteLine("Returning the result");
                     return new MethodResponse(responseBytes, status);
                 }
             };
 
-            Debug.WriteLine("Setting the handler");
+            Console.WriteLine("Setting the handler");
             await client.SetMethodHandlerAsync(methodName, callback, null).ConfigureAwait(false);
 
-            Debug.WriteLine("Waiting on the method mutex");
+            Console.WriteLine("Waiting on the method mutex");
             await mutex.WaitAsync().ConfigureAwait(false);
 
-            Debug.WriteLine("Method mutex released.  Waiting for a tiny bit.");  // Otherwise, the connection might close before the response is actually sent
+            Console.WriteLine("Method mutex released.  Waiting for a tiny bit.");  // Otherwise, the connection might close before the response is actually sent
             await Task.Delay(100).ConfigureAwait(false);
 
-            Debug.WriteLine("Nulling the handler");
+            Console.WriteLine("Nulling the handler");
             await client.SetMethodHandlerAsync(methodName, null, null).ConfigureAwait(false);
 
-            Debug.WriteLine("RoundtripMethodCallAsync is complete");
+            Console.WriteLine("RoundtripMethodCallAsync is complete");
             return new object();
         }
 
