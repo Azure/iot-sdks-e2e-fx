@@ -7,6 +7,7 @@ import conftest
 import os
 import sys
 import base64
+from pathlib import Path
 import edgehub_factory as edgehub_factory
 from containers import all_containers
 from get_environment_variables import verifyEnvironmentVariables
@@ -65,7 +66,14 @@ service_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
 edge_device_id = os.environ["IOTHUB_E2E_EDGEHUB_DEVICE_ID"]
 
 # DNS name for host that is running your edge hub instance
-edge_hub_host = os.environ["IOTHUB_E2E_EDGEHUB_DNS_NAME"]
+host_for_rest_uri = os.environ["IOTHUB_E2E_EDGEHUB_DNS_NAME"]
+gateway_host_name = os.environ["IOTHUB_E2E_EDGEHUB_DNS_NAME"]
+
+# If we're on the actual machine, just use localhost instead
+
+config_yaml = Path("/etc/iotedge/config.yaml")
+if config_yaml.is_file():
+  host_for_rest_uri = "localhost"
 
 # CA certificate for you edgeHub instance.
 # only used in some SDKs if friend_module_connect_from_environment == False
@@ -179,16 +187,16 @@ def setupExecutionEnvironment():
         edge_test_container = "http://localhost:" + str(container_under_test.local_port)
     else:
         edge_test_container = (
-            "http://" + edge_hub_host + ":" + str(container_under_test.host_port)
+            "http://" + host_for_rest_uri + ":" + str(container_under_test.host_port)
         )
 
     edge_friend_container = (
-        "http://" + edge_hub_host + ":" + str(all_containers["friend"].host_port)
+        "http://" + host_for_rest_uri + ":" + str(all_containers["friend"].host_port)
     )
 
     if not conftest.direct_to_iothub:
         # route all of our devices through edgeHub if necessary
-        gatewayHostSuffix = ";GatewayHostName=" + edge_hub_host
+        gatewayHostSuffix = ";GatewayHostName=" + gateway_host_name
         test_module_connection_string = (
             test_module_connection_string + gatewayHostSuffix
         )
