@@ -31,7 +31,7 @@ class ModuleGlue:
     def connect_from_environment(self, transport_type):
         print("connecting from environment")
         auth_provider = from_environment()
-        client = ModuleClientSync.from_authentication_provider(
+        client = ModuleClient.from_authentication_provider(
             auth_provider, transport_type
         )
         return self._finish_connection(client)
@@ -41,7 +41,7 @@ class ModuleGlue:
         auth_provider = from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
             auth_provider.ca_cert = ca_certificate.cert
-        client = ModuleClientSync.from_authentication_provider(
+        client = ModuleClient.from_authentication_provider(
             auth_provider, transport_type
         )
         return self._finish_connection(client)
