@@ -24,7 +24,7 @@ class DockerLogWatcher:
         self.flush_marker = uuid.uuid4()
         self.flush_complete = Event()
 
-        self.logger_thread = Thread(target = self.queue_reader)
+        self.logger_thread = Thread(target = self.queue_reader, daemon=True)
         self.logger_thread.start()
 
         self.watcher_processes = []
