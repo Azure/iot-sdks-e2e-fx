@@ -10,7 +10,6 @@ parameters:
 steps:
 
 - script: |
-    docker restart edgeHub ${{ parameters.language }}Mod
     export IOTHUB_E2E_EDGEHUB_CA_CERT=$(sudo cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0)
     mkdir $(Horton.FrameworkRoot)/results
     cd $(Horton.FrameworkRoot)/test-runner
