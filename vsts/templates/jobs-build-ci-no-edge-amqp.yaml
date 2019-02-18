@@ -11,12 +11,12 @@ jobs:
     - "build_linux_container"
   strategy:
     matrix:
-      hub_module_mqtt: { suite: hub_module_mqtt }
-      edge_module_mqtt: { suite: edge_module_mqtt }
-      hub_module_mqtt_ws: { suite: hub_module_mqtt_ws }
-      edge_module_mqtt_ws: { suite: edge_module_mqtt_ws }
-      hub_module_amqp: { suite: hub_module_amqp }
-      hub_module_amqp_ws: { suite: hub_module_amqp_ws }
+      iothub_module_mqtt: { suite: iothub_module_mqtt }
+      edgehub_module_mqtt: { suite: edgehub_module_mqtt }
+      iothub_module_mqtt_ws: { suite: iothub_module_mqtt_ws }
+      edgehub_module_mqtt_ws: { suite: edgehub_module_mqtt_ws }
+      iothub_module_amqp: { suite: iothub_module_amqp }
+      iothub_module_amqp_ws: { suite: iothub_module_amqp_ws }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml

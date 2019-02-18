@@ -12,41 +12,41 @@ steps:
     Write-Host "Configuring test for language=$env:Language suite=$env:Suite"
 
     switch ($env:Suite) {
-      "edge_module_mqtt" {
+      "edgehub_module_mqtt" {
         $Transport="mqtt"
-        $TestSet="edge_module"
+        $TestSet="edgehub_module"
       }
-      "edge_module_mqtt_ws" {
+      "edgehub_module_mqtt_ws" {
         $Transport="mqttws"
-        $TestSet="edge_module"
+        $TestSet="edgehub_module"
       }
-      "edge_module_amqp" {
+      "edgehub_module_amqp" {
         $Transport="amqp"
-        $TestSet="edge_module"
+        $TestSet="edgehub_module"
       }
-      "edge_module_amqp_ws" {
+      "edgehub_module_amqp_ws" {
         $Transport="amqpws"
-        $TestSet="edge_module"
+        $TestSet="edgehub_module"
       }
-      "hub_module_mqtt" {
+      "iothub_module_mqtt" {
         $Transport="mqtt"
-        $TestSet="hub_module"
+        $TestSet="iothub_module"
       }
-      "hub_module_mqtt_ws" {
+      "iothub_module_mqtt_ws" {
         $Transport="mqttws"
-        $TestSet="hub_module"
+        $TestSet="iothub_module"
       }
-      "hub_module_amqp" {
+      "iothub_module_amqp" {
         $Transport="amqp"
-        $TestSet="hub_module"
+        $TestSet="iothub_module"
       }
-      "hub_module_amqp_ws" {
+      "iothub_module_amqp_ws" {
         $Transport="amqpws"
-        $TestSet="hub_module"
+        $TestSet="iothub_module"
       }
-      "edge_module_fi_mqtt" {
+      "edgehub_module_fi_mqtt" {
         $Transport="mqtt"
-        $TestSet="edge_module_fi"
+        $TestSet="edgehub_module_fi"
       }
       default {
         throw("Unknown suite: " + $env:Suite)
@@ -57,7 +57,7 @@ steps:
 
     # Skip tests based on SDK transport support
     if (($env:Language -eq "c") -or ($env:Language -eq "python")) {
-      if ($TestSet -eq "edge_module") {
+      if ($TestSet -eq "edgehub_module") {
         if (($Transport -eq "amqp") -or ($Transport -eq "amqpws")) {
           $SkipTest="yes"
         }
@@ -70,15 +70,15 @@ steps:
 
     # set pytest parameters
     switch($TestSet) {
-      "hub_module" {
+      "iothub_module" {
         $TestGroup="testgroup_iothub_module_client"
         $TestArgs="--direct-to-iothub"
       }
-      "edge_module" {
+      "edgehub_module" {
         $TestGroup="testgroup_edgehub_module_client"
         $TestArgs=""
       }
-      "edge_module_fi" {
+      "edgehub_module_fi" {
         $TestGroup="testgroup_edgehub_fault_injection"
         $TestArgs=""
       }
@@ -112,7 +112,15 @@ steps:
     Write-Host "##vso[task.setvariable variable=testArgs]${TestArgs}"
     Write-Host "##vso[task.setvariable variable=testImage]${TestImage}"
 
-    Write-Host "AgentJobName=" + $env:AGENT_JOBNAME
+    Write-Host "AgentJobName=${env:AGENT_JOBNAME}"
+    Write-Host "JunitSuiteName=${JunitSuiteName}"
+    Write-Host "LogFolderName=${LogFolderName}"
+    Write-Host "SkipTest=${SkipTest}"
+    Write-Host "TestGroup=${TestGroup}"
+    Write-Host "Transport=${Transport}"
+    Write-Host "TestArgs=${TestArgs}"
+    Write-Host "TestImage=${TestImage}"
+
   displayName: Custom task execution logic
   env:
     Language: ${{ parameters.language }}

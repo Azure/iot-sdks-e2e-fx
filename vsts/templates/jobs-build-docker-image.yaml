@@ -22,6 +22,7 @@ jobs:
         $BuildImage="no"
       }
       Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
+      Write-Host "BuildImage=${BuildImage}"
     displayName: Custom task execution logic
     env:
       ForcedImage: ${{ parameters.forced_image }}

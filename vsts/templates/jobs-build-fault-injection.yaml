@@ -17,6 +17,6 @@ jobs:
     parameters:
       language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
-      suite: "edge_module_fi_mqtt"
+      suite: "edgehub_module_fi_mqtt"
 
 
