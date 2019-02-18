@@ -94,8 +94,7 @@ jobs:
       be_iothub_module_amqp: { suite: iothub_module_amqp }
       be_edgehub_module_amqp: { suite: edgehub_module_amqp }
       be_iothub_module_amqp_ws: { suite: iothub_module_amqp_ws }
-      ee_edgehub_module_amqp_ws: { suite: edgehub_module_amqp_ws }
-    docker restart edgeHub ${{ parameters.language }}Mod
+      be_edgehub_module_amqp_ws: { suite: edgehub_module_amqp_ws }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
