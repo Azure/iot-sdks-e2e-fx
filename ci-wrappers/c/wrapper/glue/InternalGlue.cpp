@@ -247,7 +247,7 @@ void twinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsigned char *pa
 
     if (update_state == DEVICE_TWIN_UPDATE_COMPLETE)
     {
-        // the debice twin update is a total twin update
+        // the device twin update is a total twin update
         response->current_complete = string(reinterpret_cast<const char *>(payLoad), size);
     }
     else if (update_state == DEVICE_TWIN_UPDATE_PARTIAL)
