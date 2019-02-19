@@ -29,6 +29,8 @@ struct twin_callback_struct
 {
     condition_variable cv;
     mutex m;
+    condition_variable cvp;
+    mutex mp;
     string latest_payload;
     string current_complete;
 };
@@ -208,8 +210,9 @@ void InternalGlue::EnableMethods(string connectionId)
     }
 }
 
-string patch_twin(string prev_complete_twin, string patch)
+string add_patch_to_twin(string prev_complete_twin, string patch)
 {
+    // add twin patch to complete twin 
     JSON_Value *twin_root_value;
     JSON_Value *patch_root_value;
     JSON_Object *twin_root_object;
@@ -236,18 +239,22 @@ string patch_twin(string prev_complete_twin, string patch)
     return updated_twin_s;
 }
 
-void deviceTwinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsigned char *payLoad, const size_t size, void *userContextCallback)
+void twinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsigned char *payLoad, const size_t size, void *userContextCallback)
 {
-    cout << "deviceTwinCallback called" << endl;
+    cout << "twinCallback called with state " << update_state << endl;
     twin_callback_struct *response = (twin_callback_struct *)userContextCallback;
     response->latest_payload = string(reinterpret_cast<const char *>(payLoad), size);
+
     if (update_state == DEVICE_TWIN_UPDATE_COMPLETE)
     {
+        // the debice twin update is a total twin update
         response->current_complete = string(reinterpret_cast<const char *>(payLoad), size);
     }
-    else
+    else if (update_state == DEVICE_TWIN_UPDATE_PARTIAL)
     {
-        response->current_complete = patch_twin(response->current_complete, response->latest_payload);
+        // the device twin update is a patch, so we should only patch
+        response->current_complete = add_patch_to_twin(response->current_complete, response->latest_payload);
+        response->cvp.notify_one();
     }
     response->cv.notify_one();
 }
@@ -264,7 +271,7 @@ void InternalGlue::EnableTwin(string connectionId)
     }
 
     twin_callback_struct *resp = new twin_callback_struct;
-    ret = IoTHubModuleClient_SetModuleTwinCallback(client, deviceTwinCallback, resp);
+    ret = IoTHubModuleClient_SetModuleTwinCallback(client, twinCallback, resp);
     ThrowIfFailed(ret, "IoTHubModuleClient_SetModuleTwinCallback");
 
     cout << "waiting for initial Twin response" << endl;
