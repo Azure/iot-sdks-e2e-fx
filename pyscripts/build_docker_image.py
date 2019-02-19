@@ -41,11 +41,9 @@ def build_image(tags):
 
     api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
     build_args = {
-        # repo -- current dockerfiles use AZURE_REPO.  They should use SDK_REPO
         "HORTON_REPO": tags.repo,
-        # Base branch - current dockerfiles use BRANCH_TO_MERGE_TO. They should use BASE_BRANCH
-        "HORTON_BASE_BRANCH": tags.base_branch,
-        "HORTON_SHA": tags.commit_sha,
+        "HORTON_COMMIT_NAME": tags.commit_name,
+        "HORTON_COMMIT_SHA": tags.commit_sha,
         "HORTON_FORCEFLAG": str(force_flag),
     }
 
