@@ -98,38 +98,31 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
 
     base = random.randint(1, 9999) * 100
     for i in range(1, 4):
-        log_message("start waiting for patch #" + str(i))
-        patch_thread = module_client.wait_for_desired_property_patch_async()
-
-        log_message("sending patch #" + str(i) + " through registry client")
-        log_message("disconnecting edgehub")
-        sleep(2)
-        disconnect_edgehub()  # DISCONNECTING EGEHUB
-        connect_edgehub()  # CONNECTING EDGEHUB
+        log_message("sending patch #" + str(i) + " through registry client") # Send patch
         twin_sent = {"properties": {"desired": {"foo": base + i}}}
         registry_client.patch_module_twin(
             environment.edge_device_id, environment.module_id, twin_sent
         )
-        log_message("patch " + str(i) + " sent")
-
+        log_message("patch " + str(i) + " sent"
+        log_message("start waiting for patch #" + str(i))
+        patch_thread = module_client.wait_for_desired_property_patch_async() # Set Twin Callback
+        log_message("Fault Injection: disconnecting edgehub")
+        disconnect_edgehub()  # DISCONNECTING EGEHUB
+        log_message("Fault Injection: reconnecting edgehub")
+        connect_edgehub()  # CONNECTING EDGEHUB
+        sleep(2)
+        log_message("Tringgering patch #" + str(i) + " through registry client") # Trigger Twin Callback
+        registry_client.patch_module_twin(
+            environment.edge_device_id, environment.module_id, twin_sent
+        )
+        log_message("patch " + str(i) + " triggered")
         log_message("waiting for patch " + str(i) + " to arrive at module client")
-        patch_received = patch_thread.get()
+        patch_received = patch_thread.get() # Get twin from patch received  
         log_message("patch received:" + json.dumps(patch_received))
-
         log_message(
             "desired properties sent:     "
             + str(twin_sent["properties"]["desired"]["foo"])
         )
-
-        # Most of the time, the C wrapper returns a patch with "foo" at the root.  Sometimes it
-        # returns a patch with "properties/desired" at the root.  I know that this has to do with timing and
-        # the difference between the code that handles the initial GET and the code that handles
-        # the PATCH that arrives later.  I suspect it has something to do with the handling for
-        # DEVICE_TWIN_UPDATE_COMPLETE and maybe we occasionally get a full twin when we're waiting
-        # for a patch, but that's just an educated guess.
-        #
-        # I don't know if this is happening in the SDK or in the glue.
-        # this happens relatively rarely.  Maybe 1/20, maybe 1/100 times
         foo_val = get_patch_received(patch_received)
         if (foo_val == -1):
             log_message("patch received of invalid format!")
