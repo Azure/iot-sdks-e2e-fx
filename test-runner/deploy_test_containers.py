@@ -5,7 +5,7 @@
 # full license information.
 
 from get_environment_variables import verifyEnvironmentVariables
-from connection_string import parseConnectionString
+from connection_string import connection_string_to_sas_token
 from edgehub_factory import useExistingHubInstance
 from containers import all_containers
 import os
@@ -43,7 +43,7 @@ if not (
     sys.exit(1)
 
 service_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
-host = parseConnectionString(service_connection_string)["host"]
+host = connection_string_to_sas_token(service_connection_string)["host"]
 edge_hub_device_id = os.environ["IOTHUB_E2E_EDGEHUB_DEVICE_ID"]
 
 print("Operating with device {} on on hub {}".format(edge_hub_device_id, host))

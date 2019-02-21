@@ -5,7 +5,7 @@
 # full license information.
 
 from edgehub_factory import createNewHubInstance
-from connection_string import parseConnectionString
+from connection_string import connection_string_to_sas_token
 from config_yaml import ConfigFile
 from get_environment_variables import verifyEnvironmentVariables
 from service_helper import Helper
@@ -21,7 +21,7 @@ if not "IOTHUB_E2E_CONNECTION_STRING" in os.environ:
     sys.exit(1)
 
 service_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
-host = parseConnectionString(service_connection_string)["host"]
+host = connection_string_to_sas_token(service_connection_string)["host"]
 print("Creating new device on hub {}".format(host))
 
 if "IOTHUB_E2E_EDGEHUB_DEVICE_ID" in os.environ:

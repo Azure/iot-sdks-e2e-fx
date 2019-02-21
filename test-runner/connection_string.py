@@ -11,7 +11,7 @@ import time
 import base64
 
 
-def get_auth_token(uri, sas_name, sas_value):
+def generate_auth_token(uri, sas_name, sas_value):
     """
   Given a URI, a sas_name, and a sas_value, return a shared access signature.
   """
@@ -25,7 +25,7 @@ def get_auth_token(uri, sas_name, sas_value):
     )
 
 
-def connectionStringToDictionary(str):
+def connection_string_to_dictionary(str):
     """
   parse a connection string and return a dictionary of values
   """
@@ -36,13 +36,13 @@ def connectionStringToDictionary(str):
     return cn
 
 
-def parseConnectionString(str):
+def connection_string_to_sas_token(str):
     """
   parse an IoTHub service connection string and return the host and a shared access
   signature that can be used to connect to the given hub
   """
-    cn = connectionStringToDictionary(str)
-    sas = get_auth_token(
+    cn = connection_string_to_dictionary(str)
+    sas = generate_auth_token(
         cn["HostName"], cn["SharedAccessKeyName"], cn["SharedAccessKey"] + "="
     )
     return {"host": cn["HostName"], "sas": sas}

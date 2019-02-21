@@ -19,7 +19,7 @@ import uuid
 
 class Helper:
     def __init__(self, service_connection_string):
-        self.cn = connection_string.parseConnectionString(service_connection_string)
+        self.cn = connection_string.connection_string_to_sas_token(service_connection_string)
         self.service = IotHubGatewayServiceAPIs20180630(
             "https://" + self.cn["host"]
         ).service

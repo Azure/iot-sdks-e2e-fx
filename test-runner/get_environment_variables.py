@@ -4,7 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from connection_string import parseConnectionString, connectionStringToDictionary
+from connection_string import connection_string_to_sas_token, connection_string_to_dictionary
 from edgehub_factory import useExistingHubInstance
 import os
 import sys
@@ -53,7 +53,7 @@ def verifyEnvironmentVariables():
             if "DeviceId=" in device_connection_string:
                 os.environ[
                     "IOTHUB_E2E_EDGEHUB_DEVICE_ID"
-                ] = connectionStringToDictionary(device_connection_string)["DeviceId"]
+                ] = connection_string_to_dictionary(device_connection_string)["DeviceId"]
             os.environ["IOTHUB_E2E_EDGEHUB_DNS_NAME"] = config_file.contents["hostname"]
 
         except FileNotFoundError:
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     service_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
     edge_hub_device_id = os.environ["IOTHUB_E2E_EDGEHUB_DEVICE_ID"]
     hub = useExistingHubInstance(service_connection_string, edge_hub_device_id)
-    host = parseConnectionString(service_connection_string)["host"]
+    host = connection_string_to_sas_token(service_connection_string)["host"]
 
     print_env("IOTHUB_E2E_CONNECTION_STRING")
     print_env("IOTHUB_E2E_EDGEHUB_DNS_NAME")
