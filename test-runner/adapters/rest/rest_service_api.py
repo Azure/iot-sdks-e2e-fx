@@ -8,9 +8,10 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 )
 from multiprocessing.pool import ThreadPool
 from ..decorators import log_entry_and_exit, add_timeout
+from ..abstract_service_api import AbstractServiceApi
 
 
-class ServiceApi:
+class ServiceApi(AbstractServiceApi):
     def __init__(self, hostname):
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).service
         self.rest_endpoint.config.retry_policy.retries = 0

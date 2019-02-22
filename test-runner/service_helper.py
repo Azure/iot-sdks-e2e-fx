@@ -4,12 +4,12 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from rest_wrappers.generated.service20180630 import IotHubGatewayServiceAPIs20180630
-from rest_wrappers.generated.service20180630.models.configuration_content import (
+from autorest_service_apis.service20180630 import IotHubGatewayServiceAPIs20180630
+from autorest_service_apis.service20180630.models.configuration_content import (
     ConfigurationContent,
 )
-from rest_wrappers.generated.service20180630.models.device import Device
-from rest_wrappers.generated.service20180630.models.device_capabilities import (
+from autorest_service_apis.service20180630.models.device import Device
+from autorest_service_apis.service20180630.models.device_capabilities import (
     DeviceCapabilities,
 )
 from msrest.exceptions import HttpOperationError
@@ -19,7 +19,9 @@ import uuid
 
 class Helper:
     def __init__(self, service_connection_string):
-        self.cn = connection_string.connection_string_to_sas_token(service_connection_string)
+        self.cn = connection_string.connection_string_to_sas_token(
+            service_connection_string
+        )
         self.service = IotHubGatewayServiceAPIs20180630(
             "https://" + self.cn["host"]
         ).service

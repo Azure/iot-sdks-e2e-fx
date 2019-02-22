@@ -6,15 +6,16 @@
 import sys
 from .decorators import *
 from . import rest as rest_adapters
-from . import direct_eventhub as direct_eventhub_adapters
+from . import direct_azure_rest as direct_azure_rest_adapters
 from .print_message import print_message
+
 try:
-    from . import direct_iot_sdk as direct_iot_sdk_adapters
+    from . import direct_python_sdk as direct_python_sdk_adapters
 except ModuleNotFoundError:
-    # It's OK to fail this.  The import will only succeed if the use has the 
-    # iot sdks pip packages installed, and the import is only necessary if 
+    # It's OK to fail this.  The import will only succeed if the use has the
+    # iot sdks pip packages installed, and the import is only necessary if
     # you're actually using the pp_direct adapters.
-    print("Failed to load direct_iot_sdk_adapters.  Skipping.")
+    print("Failed to load direct_python_sdk_adapters.  Skipping.")
 
 this_module = sys.modules[__name__]
 
@@ -65,20 +66,21 @@ def add_rest_adapter(name, api_surface, uri):
     rest_adapters.add_rest_uri(uri)
 
 
-def add_direct_eventhub_adapter():
-    print("Adding direct EventHub adapter using azure-eventhub module")
-    setattr(this_module, "EventHubClient", direct_eventhub_adapters.EventHubApi)
+def add_direct_azure_rest_adapter(name, api_surface):
+    print("Adding direct Azure rest adapter for {}".format(name))
+    AdapterClass = getattr(direct_azure_rest_adapters, api_surface)
+    setattr(this_module, name, AdapterClass)
 
 
-def add_direct_iot_sdk_adapter(name, api_surface):
+def add_direct_python_sdk_adapter(name, api_surface):
     print(
-        "Adding direct IoT SDK adapter for {} using the {} api".format(
+        "Adding direct Python SDK adapter for {} using the {} api".format(
             name, api_surface
         )
     )
-    # if this line excepts, it's probably because the import of direct_iot_sdk_adapters 
-    # failed, and that's probably because you don't have the iot sdk packages installed.  
-    AdapterClass = getattr(direct_iot_sdk_adapters, api_surface)
+    # if this line excepts, it's probably because the import of direct_python_sdk_adapters
+    # failed, and that's probably because you don't have the iot sdk packages installed.
+    AdapterClass = getattr(direct_python_sdk_adapters, api_surface)
     setattr(this_module, name, AdapterClass)
 
 
@@ -88,6 +90,6 @@ def cleanup_test_objects():
     that those adapters are responsible for.
     """
     rest_adapters.cleanup_test_objects()
-    direct_eventhub_adapters.cleanup_test_objects()
-    if getattr(this_module, "direct_iot_sdk_adapters", None):
-        direct_iot_sdk_adapters.cleanup_test_objects()
+    direct_azure_rest_adapters.cleanup_test_objects()
+    if getattr(this_module, "direct_python_sdk_adapters", None):
+        direct_python_sdk_adapters.cleanup_test_objects()

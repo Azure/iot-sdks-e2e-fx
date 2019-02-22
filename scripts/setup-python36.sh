@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
+script_dir=$(cd "$(dirname "$0")" && pwd)
 
 # Make sure we're running python 3.5 or higher
 needpython=1
@@ -17,16 +18,13 @@ if [ $needpython -eq 1 ]; then
   [ $? -eq 0 ] || { echo "apt-get for python3 failed"; exit 1; }
 fi
 
-
-python3 -m pip install --upgrade pip
-[ $? -eq 0 ] || { echo "pip upgrade failed"; exit 1; }
+cd ${script_dir}/.. &&  \
+    python3 -m pip install -e horton_helpers
+[ $? -eq 0 ] || { echo "install horton_helpers failed"; exit 1; }
 
 # install requirements for our test runner
-pushd $(dirname "$0")/../test-runner
-[ $? -eq 0 ] || { echo "pushd test-runner failed"; exit 1; }
-
-python3 -m pip install --user -r requirements.txt
+cd ${script_dir}/../test-runner &&  \
+    python3 -m pip install -r requirements.txt
 [ $? -eq 0 ] || { echo "pip install requirements.txt failed"; exit 1; }
 
-popd
 

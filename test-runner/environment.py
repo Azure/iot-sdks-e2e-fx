@@ -73,7 +73,7 @@ gateway_host_name = os.environ["IOTHUB_E2E_EDGEHUB_DNS_NAME"]
 
 config_yaml = Path("/etc/iotedge/config.yaml")
 if config_yaml.is_file():
-  host_for_rest_uri = "localhost"
+    host_for_rest_uri = "localhost"
 
 # CA certificate for you edgeHub instance.
 # only used in some SDKs if friend_module_connect_from_environment == False
@@ -245,26 +245,35 @@ def setupExecutionEnvironment():
     language = conftest.language
 
     if language == "ppdirect":
-        adapters.add_direct_iot_sdk_adapter(
+        adapters.add_direct_python_sdk_adapter(
             name="TestModuleClient", api_surface="ModuleApi"
+        )
+        adapters.add_direct_azure_rest_adapter(
+            name="RegistryClient", api_surface="RegistryApi"
+        )
+        adapters.add_direct_azure_rest_adapter(
+            name="ServiceClient", api_surface="ServiceApi"
         )
     else:
         adapters.add_rest_adapter(
             name="TestModuleClient", api_surface="ModuleApi", uri=test_module_uri
         )
+        adapters.add_rest_adapter(
+            name="RegistryClient", api_surface="RegistryApi", uri=registry_uri
+        )
+        adapters.add_rest_adapter(
+            name="ServiceClient", api_surface="ServiceApi", uri=service_client_uri
+        )
+
     adapters.add_rest_adapter(
         name="FriendModuleClient", api_surface="ModuleApi", uri=friend_module_uri
     )
     adapters.add_rest_adapter(
         name="LeafDeviceClient", api_surface="DeviceApi", uri=leaf_device_uri
     )
-    adapters.add_rest_adapter(
-        name="RegistryClient", api_surface="RegistryApi", uri=registry_uri
+    adapters.add_direct_azure_rest_adapter(
+        name="EventHubClient", api_surface="EventHubApi"
     )
-    adapters.add_rest_adapter(
-        name="ServiceClient", api_surface="ServiceApi", uri=service_client_uri
-    )
-    adapters.add_direct_eventhub_adapter()
 
     print("Run Parameters:")
     print("  language:             {}".format(language))

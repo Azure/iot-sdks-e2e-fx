@@ -29,7 +29,7 @@ class ModuleApi(AbstractModuleApi):
         self.auth_provider = from_connection_string(connection_string)
         if ca_certificate and "cert" in ca_certificate:
             self.auth_provider.ca_cert = ca_certificate["cert"]
-        self.client = ModuleClientSync.from_authentication_provider(
+        self.client = ModuleClient.from_authentication_provider(
             self.auth_provider, transport
         )
         object_list.append(self)
@@ -38,7 +38,7 @@ class ModuleApi(AbstractModuleApi):
     def connect_from_environment(self, transport):
         print("connecting from environment")
         self.auth_provider = from_environment()
-        self.client = ModuleClientSync.from_authentication_provider(
+        self.client = ModuleClient.from_authentication_provider(
             self.auth_provider, transport
         )
         object_list.append(self)
