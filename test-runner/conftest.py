@@ -255,8 +255,9 @@ def pytest_collection_modifyitems(config, items):
         print("you must specify a wrapper")
         raise Exception("no wrapper specified")
 
-    log_progress.install_progress_fixtures()
     environment.setupExecutionEnvironment()
+    log_progress.install_progress_fixtures()
+    adapters.print_message("HORTON: starting run: {}".format(config._origargs))
     set_up_log_watcher()
 
 def set_up_log_watcher():
