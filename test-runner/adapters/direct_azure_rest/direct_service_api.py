@@ -10,6 +10,7 @@ from autorest_service_apis.service20180630modified import (
 from ..abstract_service_api import AbstractServiceApi
 import connection_string
 import uuid
+from .amqp_service_client import AmqpServiceClient
 
 object_list = []
 
@@ -20,6 +21,8 @@ class ServiceApi(AbstractServiceApi):
         object_list.append(self)
         self.cn = None
         self.service = None
+        self.service_connection_string = None
+        self.amqp_service_client = None
         self.pool = ThreadPool()
 
     def __del__(self):
@@ -33,12 +36,16 @@ class ServiceApi(AbstractServiceApi):
         }
 
     def connect(self, service_connection_string):
+        self.service_connection_string = service_connection_string
         self.cn = connection_string.connection_string_to_sas_token(
             service_connection_string
         )
         self.service = IotHubGatewayServiceAPIs("https://" + self.cn["host"]).service
 
     def disconnect(self):
+        if self.amqp_service_client:
+            self.amqp_service_client.disconnect()
+            self.amqp_serice_client = None
         self.cn = None
         self.service = None
 
@@ -60,3 +67,9 @@ class ServiceApi(AbstractServiceApi):
             ).as_dict()
 
         return self.pool.apply_async(thread_proc)
+
+    def send_c2d(self, device_id, message):
+        if not self.amqp_service_client:
+            self.amqp_service_client = AmqpServiceClient()
+            self.amqp_service_client.connect(self.service_connection_string)
+        self.amqp_service_client.send_to_device(device_id, message)
