@@ -34,14 +34,13 @@ class DockerLogWatcher:
             new_process = Process(
                 target=DockerLogWatcher.log_reader_subprocess,
                 args=(self.queue, container_name, filters),
+                daemon=True
             )
             new_process.start()
             self.watcher_processes.append(new_process)
 
     def terminate(self):
         self.queue.put(self.kill_marker)
-        for subprocess in self.watcher_processes:
-            subprocess.terminate()
 
     def enable(self):
         self.silent = False
