@@ -29,6 +29,31 @@ def get_dockerfile_directory(tags):
     return os.path.normpath(os.path.join(script_dir, "../ci-wrappers/" + tags.language))
 
 
+def print_filtered_docker_line(line):
+    try:
+        obj = json.loads(line.decode("utf-8"))
+    except:
+        print(line)
+    else:
+        if "status" in obj:
+            if "id" in obj:
+                if obj["status"] not in [
+                    "Waiting",
+                    "Downloading",
+                    "Verifying Checksum",
+                    "Extracting",
+                    "Preparing",
+                    "Pushing",
+                ]:
+                    print("{}: {}".format(obj["status"], obj["id"]))
+                else:
+                    pass
+            else:
+                print(obj["status"])
+        else:
+            print(line)
+
+
 def build_image(tags):
     print(print_separator)
     print("BUILDING IMAGE")
@@ -65,7 +90,7 @@ def build_image(tags):
         try:
             sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
         except KeyError:
-            sys.stdout.write(line.decode("utf-8") + "\n")
+            print_filtered_docker_line(line)
 
 
 def tag_images(tags):
@@ -89,7 +114,7 @@ def push_images(tags):
         for line in api_client.push(
             tags.docker_full_image_name, image_tag, stream=True, auth_config=auth_config
         ):
-            print(line)
+            print_filtered_docker_line(line)
 
 
 def prefetch_cached_images(tags):
@@ -112,7 +137,7 @@ def prefetch_cached_images(tags):
                     stream=True,
                     auth_config=auth_config,
                 ):
-                    print(line)
+                    print_filtered_docker_line(line)
                 tags.image_tag_to_use_for_cache = image_tag
                 print("Found {}.  Using this for image cache".format(image_tag))
                 return
