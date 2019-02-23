@@ -10,6 +10,7 @@ import docker
 try:
     # on Windows, we get a different exception from docker when it can't connect to the daemon :(
     import pywintypes
+
     no_container_exception = pywintypes.error
 except:
     no_container_exception = docker.errors.NotFound
@@ -24,20 +25,23 @@ class DockerLogWatcher:
         self.flush_marker = uuid.uuid4()
         self.flush_complete = Event()
 
-        self.logger_thread = Thread(target = self.queue_reader, daemon=True)
+        self.logger_thread = Thread(target=self.queue_reader, daemon=True)
         self.logger_thread.start()
 
         self.watcher_processes = []
         for container_name in container_names:
             print("watching " + container_name)
-            new_process =  Process(target = DockerLogWatcher.log_reader_subprocess, args=(self.queue, container_name, filters))
+            new_process = Process(
+                target=DockerLogWatcher.log_reader_subprocess,
+                args=(self.queue, container_name, filters),
+            )
             new_process.start()
             self.watcher_processes.append(new_process)
 
     def terminate(self):
+        self.queue.put(self.kill_marker)
         for subprocess in self.watcher_processes:
             subprocess.terminate()
-        self.queue.put(self.kill_marker)
 
     def enable(self):
         self.silent = False
@@ -69,4 +73,3 @@ class DockerLogWatcher:
                     queue.put("{}: {}".format(container.name, line.strip()))
         except no_container_exception:
             pass
-

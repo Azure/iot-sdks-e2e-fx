@@ -9,9 +9,9 @@ import pytest
 import signal
 import environment
 import adapters
+from adapters import print_message as log_message
 from docker_log_watcher import DockerLogWatcher
 from get_environment_variables import verifyEnvironmentVariables
-import log_progress
 
 verifyEnvironmentVariables()
 
@@ -106,10 +106,7 @@ valid_transports = ["mqtt", "mqttws", "amqp", "amqpws"]
 skip_for_node = set([])
 
 skip_for_csharp = set(
-    [
-        "module_under_test_has_device_wrapper",
-        "handlesLoopbackMessages",
-    ]
+    ["module_under_test_has_device_wrapper", "handlesLoopbackMessages"]
 )
 
 
@@ -157,6 +154,74 @@ def skip_tests_by_marker(items, skiplist, reason):
 
 
 __tracebackhide__ = True
+
+
+# from https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # execute all other hooks to obtain the report object
+    outcome = yield
+    rep = outcome.get_result()
+
+    # set a report attribute for each phase of a call, which can
+    # be 'setup', 'call', 'teardown'
+
+    setattr(item, "rep_" + rep.when, rep)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def function_log_fixture(request):
+    global log_watcher
+    log_watcher.enable()
+    print("")
+    log_message("HORTON: Entering function {}".format(request.function.__name__))
+
+    def fin():
+        print("")
+        if hasattr(request.node, "rep_setup"):
+            log_message("setup:      " + str(request.node.rep_setup.outcome))
+        if hasattr(request.node, "rep_call"):
+            log_message("call:       " + str(request.node.rep_call.outcome))
+        if hasattr(request.node, "rep_teardown"):
+            log_message("teardown:   " + str(request.node.rep_call.outcome))
+        log_message(
+            "HORTON: Cleaning up after function {}".format(request.function.__name__)
+        )
+        adapters.cleanup_test_objects()
+        log_message("HORTON: Exiting function {}".format(request.function.__name__))
+        log_watcher.flush_and_disable()
+
+    request.addfinalizer(fin)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def module_log_fixture(request):
+    print("")
+    log_message("HORTON: Entering module {}".format(request.module.__name__))
+
+    def fin():
+        print("")
+        log_message("HORTON: Exiting module {}".format(request.module.__name__))
+
+    request.addfinalizer(fin)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def session_log_fixture(request):
+    print("")
+    log_message("HORTON: Preforming pre-session cleanup")
+    adapters.cleanup_test_objects()
+    log_message("HORTON: pre-session cleanup complete")
+
+    def fin():
+        print("")
+        log_message("Preforming post-session cleanup")
+        adapters.cleanup_test_objects()
+        log_message("HORTON: post-session cleanup complete")
+        if log_watcher:
+            log_watcher.terminate()
+
+    request.addfinalizer(fin)
 
 
 def pytest_collection_modifyitems(config, items):
@@ -256,9 +321,9 @@ def pytest_collection_modifyitems(config, items):
         raise Exception("no wrapper specified")
 
     environment.setupExecutionEnvironment()
-    log_progress.install_progress_fixtures()
     adapters.print_message("HORTON: starting run: {}".format(config._origargs))
     set_up_log_watcher()
+
 
 def set_up_log_watcher():
     global log_watcher
