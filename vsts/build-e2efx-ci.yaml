@@ -1,4 +1,4 @@
-name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 jobs:
@@ -9,6 +9,7 @@ jobs:
     repo: Azure/azure-iot-sdk-node
     commit: master
     job_tag: node
+    forced_image: $(Horton.ForcedImage)
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -16,6 +17,7 @@ jobs:
     repo: Azure/azure-iot-sdk-c
     commit: master
     job_tag: c
+    forced_image: $(Horton.ForcedImage)
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -23,6 +25,7 @@ jobs:
     repo: Azure/azure-iot-sdk-java
     commit: master
     job_tag: java
+    forced_image: $(Horton.ForcedImage)
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -30,6 +33,7 @@ jobs:
     repo: Azure/azure-iot-sdk-csharp
     commit: master
     job_tag: csharp
+    forced_image: $(Horton.ForcedImage)
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -37,6 +41,7 @@ jobs:
     repo: Azure/azure-iot-sdk-python
     commit: master
     job_tag: python
+    forced_image: $(Horton.ForcedImage)
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -44,6 +49,7 @@ jobs:
     repo: Azure/azure-iot-sdk-python-preview  
     commit: master
     job_tag: pythonpreview
+    forced_image: $(Horton.ForcedImage)
 
 - job: "test"
   dependsOn:
@@ -72,4 +78,5 @@ jobs:
     parameters:
       language: $(language)
       suite: $(suite)
+      forced_image: $(Horton.ForcedImage)
 

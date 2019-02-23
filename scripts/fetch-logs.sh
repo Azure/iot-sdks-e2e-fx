@@ -25,4 +25,13 @@ if [ $? -ne 0 ]; then
   echo "error fetching iotedged journal"
 fi
 
+args=
+for mod in ${languageMod} friendMod edgeHub edgeAgent; do
+    args="${args} -staticfile ${mod}.log"
+done
+pushd $resultsdir && python ${root_dir}/pyscripts/docker_log_processor.py $args > merged.log
+if [ $? -ne 0 ]; then
+  echo "error merging logs"
+fi
+
 
