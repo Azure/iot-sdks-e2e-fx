@@ -47,7 +47,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: |
-    python3 $(Horton.FrameworkRoot)/test-runner/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v2:${{ parameters.test_image }}
+    python3 $(Horton.FrameworkRoot)/pyscripts/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v2:${{ parameters.test_image }}
   displayName: 'Deploy manifest (${{ parameters.test_image }})'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)

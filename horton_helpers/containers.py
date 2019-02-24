@@ -1,8 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from service_helper import Helper
-from edge_configuration import EdgeConfiguration
 import os
 
 
@@ -100,7 +98,9 @@ all_containers["java"] = java
 pythonpreview = Container()
 pythonpreview.name = "pythonpreview"
 pythonpreview.module_id = "pythonpreviewMod"
-pythonpreview.lkg_image = os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/edge-e2e-pythonpreview:latest"
+pythonpreview.lkg_image = (
+    os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/edge-e2e-pythonpreview:latest"
+)
 pythonpreview.container_port = 8080
 pythonpreview.host_port = 8085
 pythonpreview.local_port = 8080

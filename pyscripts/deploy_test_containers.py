@@ -4,7 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from get_environment_variables import verifyEnvironmentVariables
+from identity_helpers import ensure_edge_environment_variables
 from connection_string import connection_string_to_sas_token
 from edgehub_factory import useExistingHubInstance
 from containers import all_containers
@@ -13,7 +13,7 @@ import sys
 import string
 import argparse
 
-verifyEnvironmentVariables()
+ensure_edge_environment_variables()
 
 parser = argparse.ArgumentParser(description="deploy containers for testing")
 parser.add_argument("--all", action="store_true", help="deploy all containers")
@@ -28,7 +28,7 @@ for container_name in all_containers:
 args = parser.parse_args()
 
 for container_name in all_containers:
-    if getattr(args, container_name) == None:
+    if not getattr(args, container_name):
         if args.all or all_containers[container_name].required:
             setattr(args, container_name, all_containers[container_name].lkg_image)
 
@@ -51,7 +51,7 @@ print()
 print("Deploying the following containers:")
 containers_to_deploy = set()
 for container_name in all_containers:
-    if hasattr(args, container_name) and getattr(args, container_name) != None:
+    if hasattr(args, container_name) and getattr(args, container_name):
         container = all_containers[container_name]
         container.image_to_deploy = getattr(args, container_name)
         print("{:>10}: {}".format(container_name, container.image_to_deploy))

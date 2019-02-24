@@ -17,7 +17,7 @@ echo "running with $DOCKER_FULLNAME"
 cd ${script_dir}
 [ $? -eq 0 ] || { echo "cd ${script_dir} failed"; exit 1; }
 
-python3 ${test_dir}/deploy_test_containers.py --friend --${LANGUAGE} ${DOCKER_FULLNAME}
+python3 ${root_dir}/pyscripts/deploy_test_containers.py --friend --${LANGUAGE} ${DOCKER_FULLNAME}
 [ $? -eq 0 ] || { echo "python3 deployment script failed"; exit 1; }
 
 ${script_dir}/force-restart-iotedge-clean.sh friend ${language}

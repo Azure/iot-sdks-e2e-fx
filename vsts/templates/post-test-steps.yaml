@@ -4,13 +4,10 @@ parameters:
 
 steps:
 - script: |
-   python3 $(Horton.FrameworkRoot)/test-runner/remove_edgehub_device.py
+   python3 $(Horton.FrameworkRoot)/pyscripts/remove_edgehub_device.py
   displayName: 'remove devices'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
-    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
-    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
-    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - task: PublishTestResults@2

@@ -2,10 +2,10 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 echo $(dirname "$0")
 
-python3 $(dirname "$0")/../test-runner/create_new_edgehub_device.py $1
+python3 $(dirname "$0")/../pyscripts/create_new_edgehub_device.py $1
 [ $? -eq 0 ] || { echo "create_new_edgehub_device.py failed"; exit 1; }
 
-python3 $(dirname "$0")/../test-runner/deploy_test_containers.py
+python3 $(dirname "$0")/../pyscripts/deploy_test_containers.py
 [ $? -eq 0 ] || { echo "deploy_test_containers.py failed"; exit 1; }
 
 echo "restarting iotedge"

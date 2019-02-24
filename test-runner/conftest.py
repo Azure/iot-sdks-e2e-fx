@@ -11,9 +11,9 @@ import environment
 import adapters
 from adapters import print_message as log_message
 from docker_log_watcher import DockerLogWatcher
-from get_environment_variables import verifyEnvironmentVariables
+from identity_helpers import ensure_edge_environment_variables
 
-verifyEnvironmentVariables()
+ensure_edge_environment_variables()
 
 
 def pytest_addoption(parser):

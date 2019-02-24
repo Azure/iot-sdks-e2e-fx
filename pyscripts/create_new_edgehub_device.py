@@ -7,14 +7,14 @@
 from edgehub_factory import createNewHubInstance
 from connection_string import connection_string_to_sas_token
 from config_yaml import ConfigFile
-from get_environment_variables import verifyEnvironmentVariables
+from identity_helpers import ensure_edge_environment_variables
 from service_helper import Helper
 import os
 import sys
 
-verifyEnvironmentVariables()
+ensure_edge_environment_variables()
 
-if not "IOTHUB_E2E_CONNECTION_STRING" in os.environ:
+if "IOTHUB_E2E_CONNECTION_STRING" not in os.environ:
     print(
         "ERROR: Iothub connection string not set in IOTHUB_E2E_CONNECTION_STRING environment variable."
     )

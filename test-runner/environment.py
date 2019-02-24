@@ -10,10 +10,10 @@ import base64
 from pathlib import Path
 import edgehub_factory as edgehub_factory
 from containers import all_containers
-from get_environment_variables import verifyEnvironmentVariables
+from identity_helpers import ensure_edge_environment_variables
 import adapters
 
-verifyEnvironmentVariables()
+ensure_edge_environment_variables()
 
 
 # --------------------------------------------------------------------------------------

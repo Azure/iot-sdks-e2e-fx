@@ -4,6 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from service_helper import Helper
+from identity_helpers import get_random_device_name
 from edge_configuration import EdgeConfiguration
 from containers import all_containers
 import random
@@ -25,39 +26,17 @@ def useExistingHubInstance(service_connection_string, edge_hub_device_id):
     return EdgeHub(service_connection_string, edge_hub_device_id)
 
 
-def get_device_name():
-    """
-    Get a prefix for the automatically-generated name of new edgeHub devices.  This defaults to the username of the logged in user, but can also be a random
-    string of two upper case letters followed by two digits
-    """
-    if "USER" in os.environ:
-        user_name = os.environ["USER"]
-    elif "USERNAME" in os.environ:
-        user_name = os.environ["USERNAME"]
-    else:
-        user_name = "unknown-user-" + str(random.randrange(1000, 9999))
-
-    if "COMPUTERNAME" in os.environ:
-        computer_name = os.environ["COMPUTERNAME"]
-    elif "IOTHUB_E2E_EDGEHUB_DNS_NAME" in os.environ:
-        computer_name = os.environ["IOTHUB_E2E_EDGEHUB_DNS_NAME"]
-    else:
-        computer_name = "unknown-computer"
-
-    return computer_name + "_" + user_name + "_" + str(random.randint(10000000, 99999999))
-
-
 class EdgeHub:
     def __init__(self, service_connection_string, edge_hub_device_id=None):
         self.service_connection_string = service_connection_string
         self.helper = Helper(self.service_connection_string)
-        if edge_hub_device_id == None:
+        if not edge_hub_device_id:
             self._createNewHub()
         else:
             self._useExistingHub(edge_hub_device_id)
 
     def _createNewHub(self):
-        self.edge_hub_device_id = get_device_name()
+        self.edge_hub_device_id = get_random_device_name()
         self.helper.create_device(self.edge_hub_device_id, True)
         self._finishHubSetup()
 
