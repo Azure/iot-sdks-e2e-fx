@@ -47,6 +47,8 @@ class ModuleApi(AbstractModuleApi):
         if self.connection_id:
             self.rest_endpoint.disconnect(self.connection_id)
             self.connection_id = ""
+            # give edgeHub a chance to disconnect MessagingServiceClient from IoTHub.  It does this lazily after the module disconnects from edgeHub
+            time.sleep(2)
 
     @log_entry_and_exit
     @add_timeout
