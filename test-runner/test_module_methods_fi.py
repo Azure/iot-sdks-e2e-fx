@@ -53,7 +53,7 @@ def do_module_method_call(
 
     # start listening for method calls on the destination side
     log_message("starting to listen from destination module")
-    destination_module.roundtrip_method_async(
+    receiver_thread = destination_module.roundtrip_method_async(
         method_name, status_code, method_invoke_parameters, method_response_body
     )
     log_message(
@@ -84,6 +84,8 @@ def do_module_method_call(
     if isinstance(response["payload"], str):
         response["payload"] = json.loads(response["payload"])
     assert response["payload"] == method_response_body
+
+    receiver_thread.wait()
 
 
 @pytest.mark.timeout(180)

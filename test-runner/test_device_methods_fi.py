@@ -51,7 +51,7 @@ def do_device_method_call(source_module, destination_module, destination_device_
 
         # start listening for method calls on the destination side
         log_message("starting to listen from destination module")
-        request_thread = destination_module.roundtrip_method_async(
+        receiver_thread = destination_module.roundtrip_method_async(
             method_name, status_code, method_invoke_parameters, method_response_body
         )
         time.sleep(time_for_method_to_fully_register)
@@ -75,6 +75,8 @@ def do_device_method_call(source_module, destination_module, destination_device_
         if isinstance(response["payload"], str):
             response["payload"] = json.loads(response["payload"])
         assert response["payload"] == method_response_body
+
+        receiver_thread.wait()
     finally:
         connect_edgehub()
         restart_edgehub(hard=False)
