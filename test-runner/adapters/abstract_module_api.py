@@ -10,67 +10,63 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class AbstractModuleApi:
     @abc.abstractmethod
-    def connect(self, transport, connection_string, ca_certificate):
+    async def connect(self, transport, connection_string, ca_certificate):
         pass
 
     @abc.abstractmethod
-    def connect_from_environment(self, transport):
+    async def connect_from_environment(self, transport):
         pass
 
     @abc.abstractmethod
-    def disconnect(self):
+    async def disconnect(self):
         pass
 
     @abc.abstractmethod
-    def enable_twin(self):
+    async def enable_twin(self):
         pass
 
     @abc.abstractmethod
-    def enable_methods(self):
+    async def enable_methods(self):
         pass
 
     @abc.abstractmethod
-    def enable_input_messages(self):
+    async def enable_input_messages(self):
         pass
 
     @abc.abstractmethod
-    def get_twin(self):
+    async def get_twin(self):
         pass
 
     @abc.abstractmethod
-    def patch_twin(self, patch):
+    async def patch_twin(self, patch):
         pass
 
     @abc.abstractmethod
-    def wait_for_desired_property_patch_async(self):
+    async def wait_for_desired_property_patch_async(self):
         pass
 
     @abc.abstractmethod
-    def send_event(self, body):
+    async def send_event(self, body):
         pass
 
     @abc.abstractmethod
-    def send_event_async(self, body):
+    async def send_output_event(self, output_name, body):
         pass
 
     @abc.abstractmethod
-    def send_output_event(self, output_name, body):
+    async def wait_for_input_event_async(self, input_name):
         pass
 
     @abc.abstractmethod
-    def wait_for_input_event_async(self, input_name):
+    async def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
         pass
 
     @abc.abstractmethod
-    def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
+    async def call_device_method_async(self, device_id, method_invoke_parameters):
         pass
 
     @abc.abstractmethod
-    def call_device_method_async(self, device_id, method_invoke_parameters):
-        pass
-
-    @abc.abstractmethod
-    def roundtrip_method_async(
+    async def roundtrip_method_async(
         self, method_name, status_code, request_payload, response_payload
     ):
         pass

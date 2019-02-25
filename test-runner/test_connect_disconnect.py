@@ -15,6 +15,13 @@ def test_module_client_connect_disconnect():
     module_client.disconnect()
 
 
+@pytest.mark.asyncio
+@pytest.mark.testgroup_iothub_module_client
+async def test_module_client_connect_disconnect_async():
+    module_client_async = await connections.connect_test_module_client_async()
+    await module_client_async.disconnect()
+
+
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.supportsTwin
@@ -70,3 +77,17 @@ def test_device_client_connect_enable_methods_disconnect():
     device_client = connections.connect_leaf_device_client()
     device_client.enable_methods()
     device_client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.testgroup_iothub_module_client
+async def test_device_client_connect_disconnect_async():
+    device_client_async = await connections.connect_leaf_device_client_async()
+    await device_client_async.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.testgroup_iothub_module_client
+async def test_module_client_connect_disconnect_async():
+    module_client_async = await connections.connect_test_module_client_async()
+    await module_client_async.disconnect()

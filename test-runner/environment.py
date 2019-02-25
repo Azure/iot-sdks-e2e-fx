@@ -248,6 +248,15 @@ def setupExecutionEnvironment():
         adapters.add_direct_python_sdk_adapter(
             name="TestModuleClient", api_surface="ModuleApi"
         )
+        adapters.add_direct_python_sdk_adapter(
+            name="TestModuleClientAsync", api_surface="ModuleApiAsync"
+        )
+        adapters.add_direct_python_sdk_adapter(
+            name="LeafDeviceClient", api_surface="DeviceApi"
+        )
+        adapters.add_direct_python_sdk_adapter(
+            name="LeafDeviceClientAsync", api_surface="DeviceApiAsync"
+        )
         adapters.add_direct_azure_rest_adapter(
             name="RegistryClient", api_surface="RegistryApi"
         )
@@ -264,12 +273,12 @@ def setupExecutionEnvironment():
         adapters.add_rest_adapter(
             name="ServiceClient", api_surface="ServiceApi", uri=service_client_uri
         )
+        adapters.add_rest_adapter(
+            name="LeafDeviceClient", api_surface="DeviceApi", uri=leaf_device_uri
+        )
 
     adapters.add_rest_adapter(
         name="FriendModuleClient", api_surface="ModuleApi", uri=friend_module_uri
-    )
-    adapters.add_rest_adapter(
-        name="LeafDeviceClient", api_surface="DeviceApi", uri=leaf_device_uri
     )
     adapters.add_direct_azure_rest_adapter(
         name="EventHubClient", api_surface="EventHubApi"
