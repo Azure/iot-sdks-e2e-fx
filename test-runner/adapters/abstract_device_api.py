@@ -22,6 +22,10 @@ class AbstractDeviceApi:
         pass
 
     @abc.abstractmethod
+    async def receive_c2d(self):
+        pass
+
+    @abc.abstractmethod
     async def enable_methods(self):
         pass
 

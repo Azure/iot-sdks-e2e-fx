@@ -40,6 +40,10 @@ class DeviceApi(AbstractDeviceApi):
         self.sync_client.send_event(body)
         print("send confirmation received")
 
+    def receive_c2d(self):
+        c2d_message_queue = self.sync_client.get_c2d_message_queue()
+        return c2d_message_queue
+
     def enable_methods(self):
         raise NotImplementedError
 
