@@ -163,7 +163,7 @@ def setupExecutionEnvironment():
         runtime_config.friend_module.connection_string += gatewayHostSuffix
         runtime_config.leaf_device.connection_string += gatewayHostSuffix
     else:
-        runtime_config.ca_certificate = None
+        runtime_config.ca_certificate = {}  # must be an empty dictionary
         runtime_config.test_module.connection_type = config.CONNECTION_STRING
         runtime_config.friend_module.connection_type = config.CONNECTION_STRING
 
