@@ -7,7 +7,7 @@
 import pytest
 import random
 import connections
-import environment
+from environment import runtime_config
 from adapters import print_message as log_message
 
 
@@ -32,7 +32,7 @@ def test_module_can_set_reported_properties_and_service_can_retrieve_them():
     registry_client = connections.connect_registry_client()
     log_message("getting twin")
     twin_received = registry_client.get_module_twin(
-        environment.edge_device_id, environment.module_id
+        runtime_config.test_module.device_id, runtime_config.test_module.module_id
     )
     log_message("disconnecting registry client")
     registry_client.disconnect()

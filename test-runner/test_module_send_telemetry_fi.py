@@ -8,7 +8,7 @@ import pytest
 import connections
 import random
 import test_utilities
-import environment
+from environment import runtime_config
 from adapters import print_message as log_message
 from edgehub_control import (
     edgeHub,
@@ -19,6 +19,7 @@ from edgehub_control import (
 
 
 local_timeout = 60  # Seconds
+
 
 @pytest.mark.skip
 @pytest.mark.testgroup_edgehub_fault_injection
@@ -38,7 +39,7 @@ def test_module_send_event_iothub_fi():
         thread.wait(local_timeout)  # Result is None if successful
         log_message("wait for event to arrive at eventhub")
         received_message = eventhub_client.wait_for_next_event(
-            environment.edge_device_id,
+            runtime_config.test_module.device_id,
             test_utilities.default_eventhub_timeout,
             expected=sent_message,
         )

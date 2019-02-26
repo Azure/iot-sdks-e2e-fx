@@ -328,5 +328,9 @@ def pytest_collection_modifyitems(config, items):
 def set_up_log_watcher():
     global log_watcher
     filters = ["PYTEST: ", "Getting next batch", "Obtained next batch"]
-    container_names = ["edgeHub", "friendMod", environment.module_id]
+    container_names = [
+        "edgeHub",
+        "friendMod",
+        environment.runtime_config.test_module.module_id,
+    ]
     log_watcher = DockerLogWatcher(container_names, filters)

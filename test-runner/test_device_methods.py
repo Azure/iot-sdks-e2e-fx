@@ -5,11 +5,11 @@
 # full license information.
 
 import pytest
-import environment
 import connections
 import json
 import time
 from adapters import print_message as log_message
+from environment import runtime_config
 
 # How long do we have to wait after a module registers to receive
 # method calls until we can actually call a method.
@@ -73,7 +73,7 @@ def test_device_method_from_service_to_leaf_device():
     leaf_device_client = connections.connect_leaf_device_client()
 
     do_device_method_call(
-        service_client, leaf_device_client, environment.leaf_device_id
+        service_client, leaf_device_client, runtime_config.leaf_device.device_id
     )
 
     service_client.disconnect()
@@ -91,7 +91,9 @@ def test_device_method_from_module_to_leaf_device():
     module_client = connections.connect_test_module_client()
     leaf_device_client = connections.connect_leaf_device_client()
 
-    do_device_method_call(module_client, leaf_device_client, environment.leaf_device_id)
+    do_device_method_call(
+        module_client, leaf_device_client, runtime_config.leaf_device.device_id
+    )
 
     module_client.disconnect()
     leaf_device_client.disconnect()

@@ -8,12 +8,13 @@ import pytest
 import random
 import connections
 import time
-import environment
+from environment import runtime_config
 import json
 from adapters import print_message as log_message
 
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
+
 
 def get_patch_received(patch_received):
     """
@@ -30,6 +31,7 @@ def get_patch_received(patch_received):
         foo_val = -1
     return foo_val
 
+
 @pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
@@ -42,7 +44,9 @@ def test_service_can_set_desired_properties_and_module_can_retrieve_them():
     registry_client = connections.connect_registry_client()
     log_message("patching twin")
     registry_client.patch_module_twin(
-        environment.edge_device_id, environment.module_id, twin_sent
+        runtime_config.test_module.device_id,
+        runtime_config.test_module.module_id,
+        twin_sent,
     )
     log_message("disconnecting registry client")
     registry_client.disconnect()
@@ -69,10 +73,6 @@ def test_service_can_set_desired_properties_and_module_can_retrieve_them():
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.supportsTwin
-@pytest.mark.skipif(
-    environment.language == "java",
-    reason="java tests after this test are failing.  I suspect the wrapper isn't cleaning itself up correctly",
-)
 def test_service_can_set_multiple_desired_property_patches_and_module_can_retrieve_them_as_events():
 
     log_message("connecting registry client")
@@ -87,17 +87,21 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         log_message("sending patch #" + str(i) + " through registry client")
         twin_sent = {"properties": {"desired": {"foo": base + i}}}
         registry_client.patch_module_twin(
-            environment.edge_device_id, environment.module_id, twin_sent
+            runtime_config.test_module.device_id,
+            runtime_config.test_module.module_id,
+            twin_sent,
         )
         log_message("patch " + str(i) + " sent")
-        
+
         log_message("start waiting for patch #" + str(i))
         patch_thread = module_client.wait_for_desired_property_patch_async()
 
         log_message("Tringgering patch #" + str(i) + " through registry client")
         twin_sent = {"properties": {"desired": {"foo": base + i}}}
         registry_client.patch_module_twin(
-            environment.edge_device_id, environment.module_id, twin_sent
+            runtime_config.test_module.device_id,
+            runtime_config.test_module.module_id,
+            twin_sent,
         )
         log_message("patch " + str(i) + " triggered")
 
@@ -120,7 +124,7 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         # I don't know if this is happening in the SDK or in the glue.
         # this happens relatively rarely.  Maybe 1/20, maybe 1/100 times
         foo_val = get_patch_received(patch_received)
-        if (foo_val == -1):
+        if foo_val == -1:
             log_message("patch received of invalid format!")
             assert 0
         log_message("desired properties recieved: " + str(foo_val))

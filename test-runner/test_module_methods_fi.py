@@ -9,9 +9,9 @@ import connections
 import json
 import multiprocessing
 import time
-import environment
 from adapters import print_message as log_message
 from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
+from environment import runtime_config
 import docker
 
 
@@ -103,8 +103,8 @@ def test_module_method_call_invoked_from_service():
     do_module_method_call(
         service_client,
         module_client,
-        environment.edge_device_id,
-        environment.module_id,
+        runtime_config.test_module.device_id,
+        runtime_config.test_module.module_id,
         registration_sleep=time_for_method_to_fully_register_service_call,
     )
 
@@ -126,8 +126,8 @@ def test_module_method_from_test_to_friend_fi():
     do_module_method_call(
         module_client,
         friend_client,
-        environment.edge_device_id,
-        environment.friend_module_id,
+        runtime_config.friend_module.device_id,
+        runtime_config.friend_module.module_id,
     )
 
     module_client.disconnect()
@@ -147,7 +147,10 @@ def test_module_method_from_friend_to_test_fi():
     friend_client = connections.connect_friend_module_client()
     time.sleep(5)
     do_module_method_call(
-        friend_client, module_client, environment.edge_device_id, environment.module_id
+        friend_client,
+        module_client,
+        runtime_config.test_module.device_id,
+        runtime_config.test_module.module_id,
     )
 
     module_client.disconnect()

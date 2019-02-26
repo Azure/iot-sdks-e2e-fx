@@ -8,56 +8,34 @@ import os
 import sys
 import base64
 from pathlib import Path
+from pprint import pprint
 import edgehub_factory as edgehub_factory
 from containers import all_containers
 from identity_helpers import ensure_edge_environment_variables
 import adapters
+import runtime_configuration_templates as config
+from runtime_configuration_serializer import obj_to_dict
 
-ensure_edge_environment_variables()
+
+class EdgeHubRuntimeConfig:
+    def __init__(self):
+        self.service = None
+        self.registry = None
+        self.iotedge = None
+        self.test_module = None
+        self.friend_module = None
+        self.leaf_device = None
+        self.eventhub = None
+        self.ca_certificate = None
 
 
-# --------------------------------------------------------------------------------------
-# execution settings that you might want to modify for your run
-# --------------------------------------------------------------------------------------
-
-# Transport to use for the module-under-test.  One of 'mqtt', 'mqttws', 'amqp', 'amqpws', or 'http'
-# (these values are valid, but may not be implemented.)
-test_module_transport = "mqtt"
-
-# Transport to use for the friend module.  One of 'mqtt', 'mqttws', 'amqp', 'amqpws', or 'http'
-# (these values are valid, but may not be implemented.)
-friend_module_transport = "mqtt"
-
-# Transport to use for the leaf device.  One of 'mqtt', 'mqttws', 'amqp', 'amqpws', or 'http'
-leaf_device_transport = "mqtt"
-
-# If True, uses the fromEnvironment function to connect.  If False, uses the connection string and cert
-test_module_connect_from_environment = True
-
-# If True, uses the fromEnvironment function to connect.  If False, uses the connection string and cert
-friend_module_connect_from_environment = True
+runtime_config = EdgeHubRuntimeConfig
 
 # --------------------------------------------------------------------------------------
 # execution settings that come directly from environment variables.
 # --------------------------------------------------------------------------------------
 
-if "IOTHUB_E2E_CONNECTION_STRING" not in os.environ:
-    print(
-        "ERROR: Iothub connection string not set in IOTHUB_E2E_CONNECTION_STRING environment variable."
-    )
-    sys.exit(1)
-
-if "IOTHUB_E2E_EDGEHUB_DEVICE_ID" not in os.environ:
-    print(
-        "ERROR: Edge device ID not set in IOTHUB_E2E_EDGEHUB_DEVICE_ID environment variable.  You can use CreateNewEdgeHubDevice.cmd/sh to create a new device"
-    )
-    sys.exit(1)
-
-if "IOTHUB_E2E_EDGEHUB_DNS_NAME" not in os.environ:
-    print(
-        "ERROR: DNS name of edge service VM not set in IOTHUB_E2E_EDGEHUB_DNS_NAME environment variable."
-    )
-    sys.exit(1)
+ensure_edge_environment_variables()
 
 # connection string for the IoTHub instance that is hosting your edgeHub instance.
 service_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
@@ -83,56 +61,12 @@ if config_yaml.is_file():
 # (You know who you are)
 #
 # retrived from edge-e2e/scripts/get_ca_cert.sh
-ca_certificate = None
 if "IOTHUB_E2E_EDGEHUB_CA_CERT" in os.environ:
-    ca_certificate = {
+    runtime_config.ca_certificate = {
         "cert": base64.b64decode(os.environ["IOTHUB_E2E_EDGEHUB_CA_CERT"]).decode(
             "utf-8"
         )
     }
-
-# --------------------------------------------------------------------------------------
-# Environment settings that come from the hub or from command line args
-# (these can't be set until after pytest_collection_modifyitems runs, and that
-# happens fairly late, so we leave them set as None until setUpExecutionEnvironment
-# can be run
-# --------------------------------------------------------------------------------------
-
-# moduleId for the module under test
-module_id = None
-
-# moduleId for the friend module
-friend_module_id = None
-
-# device ID for leaf device
-leaf_device_id = None
-
-# connection string for the module that is being testes
-test_module_connection_string = None
-
-# connection string for the bounceback module
-friend_module_connection_string = None
-
-# connection string for leaf device
-leaf_device_connection_string = None
-
-# URI to use for the module API under test
-test_module_uri = None
-
-# URI for the bounceback module
-friend_module_uri = None
-
-# URI for the bounceback device
-leaf_device_uri = None
-
-# URI to use for the registry API under test
-registry_uri = None
-
-# URI to use for the service client API under test
-service_client_uri = None
-
-# language being tested
-language = None
 
 
 def setupExecutionEnvironment():
@@ -141,150 +75,117 @@ def setupExecutionEnvironment():
   such as connection strings, and also endpoint URIs that can't be built until after command lines are parsed
   in conftest.py (which happens after all modules are loaded)
   """
-    global leaf_device_id, leaf_device_connection_string
-    global module_id, test_module_connection_string
-    global friend_module_id, friend_module_connection_string
-    global test_module_uri, friend_module_uri, leaf_device_uri
-    global registry_uri, service_client_uri
-    global test_module_connect_from_environment, friend_module_connect_from_environment
-    global ca_certificate
-    global test_module_transport, friend_module_transport
-    global language
+    global runtime_config
+    runtime_config.iotedge = config.IotEdgeDevice()
+    runtime_config.friend_module = config.EdgeHubModuleRest("FriendModuleClient")
+    runtime_config.eventhub = config.EventHubDirect()
 
     if conftest.language == "ppdirect":
         container_under_test = all_containers["pythonpreview"]
+        runtime_config.service = config.IotHubServiceDirect()
+        runtime_config.registry = config.IotHubRegistryDirect()
+        runtime_config.test_module = config.EdgeHubModuleDirect("TestModuleClient")
+        runtime_config.leaf_device = config.EdgeHubLeafDeviceRest("LeafDeviceClient")
     else:
         container_under_test = all_containers[conftest.language]
+        runtime_config.service = config.IotHubServiceRest()
+        runtime_config.registry = config.IotHubRegistryRest()
+        runtime_config.test_module = config.EdgeHubModuleRest("TestModuleClient")
+        runtime_config.leaf_device = config.EdgeHubLeafDeviceRest("LeafDeviceClient")
 
     hub = edgehub_factory.useExistingHubInstance(
         service_connection_string, edge_device_id
     )
 
-    module_id = container_under_test.module_id
+    runtime_config.service.connection_string = service_connection_string
+    runtime_config.registry.connection_string = service_connection_string
+    runtime_config.eventhub.connection_string = service_connection_string
 
-    friend_module_id = all_containers["friend"].module_id
+    runtime_config.iotedge.device_id = edge_device_id
 
-    leaf_device_id = hub.leaf_device_id
+    runtime_config.test_module.device_id = edge_device_id
+    runtime_config.test_module.module_id = container_under_test.module_id
+    runtime_config.test_module.connection_string = (
+        container_under_test.connection_string
+    )
+    if conftest.local:
+        runtime_config.test_module.rest_uri = "http://localhost:" + str(
+            container_under_test.local_port
+        )
+    else:
+        runtime_config.test_module.rest_uri = (
+            "http://" + host_for_rest_uri + ":" + str(container_under_test.host_port)
+        )
+    runtime_config.test_module.transport = conftest.transport
+    runtime_config.test_module.language = conftest.language
 
-    test_module_connection_string = container_under_test.connection_string
+    runtime_config.friend_module.device_id = edge_device_id
+    runtime_config.friend_module.module_id = all_containers["friend"].module_id
+    runtime_config.friend_module.connection_string = all_containers[
+        "friend"
+    ].connection_string
+    runtime_config.friend_module.rest_uri = (
+        "http://" + host_for_rest_uri + ":" + str(all_containers["friend"].host_port)
+    )
 
-    friend_module_connection_string = all_containers["friend"].connection_string
+    runtime_config.leaf_device.device_id = hub.leaf_device_id
+    runtime_config.leaf_device.connection_string = hub.leaf_device_connection_string
+    if container_under_test.deviceImpl:
+        runtime_config.leaf_device.rest_uri = runtime_config.test_module.rest_uri
+    else:
+        runtime_config.leaf_device.rest_uri = runtime_config.friend_module.rest_uri
 
-    leaf_device_connection_string = hub.leaf_device_connection_string
-
-    if test_module_connection_string is None or test_module_connection_string == "":
+    if not runtime_config.test_module.connection_string:
         raise Exception(
             "test module has not been deployed.  You need to deploy your langauge module (even if you're testing locally)"
         )
-    if friend_module_connection_string is None or friend_module_connection_string == "":
+    if not runtime_config.friend_module.connection_string:
         raise Exception("friend module has not been deployed.")
-    if leaf_device_connection_string is None or leaf_device_connection_string == "":
+    if not runtime_config.leaf_device.connection_string:
         raise Exception(
             "Leaf device does not appear to have an iothub identity.  You may need to re-run create-new-edgehub-device.sh"
         )
 
-    if conftest.local:
-        edge_test_container = "http://localhost:" + str(container_under_test.local_port)
+    if container_under_test.registryImpl:
+        runtime_config.registry.rest_uri = runtime_config.test_module.rest_uri
     else:
-        edge_test_container = (
-            "http://" + host_for_rest_uri + ":" + str(container_under_test.host_port)
-        )
+        runtime_config.registry.rest_uri = runtime_config.friend_module.rest_uri
 
-    edge_friend_container = (
-        "http://" + host_for_rest_uri + ":" + str(all_containers["friend"].host_port)
-    )
+    if container_under_test.serviceImpl:
+        runtime_config.service.rest_uri = runtime_config.test_module.rest_uri
+    else:
+        runtime_config.service.rest_uri = runtime_config.friend_module.rest_uri
 
     if not conftest.direct_to_iothub:
         # route all of our devices through edgeHub if necessary
         gatewayHostSuffix = ";GatewayHostName=" + gateway_host_name
-        test_module_connection_string = (
-            test_module_connection_string + gatewayHostSuffix
-        )
-        friend_module_connection_string = (
-            friend_module_connection_string + gatewayHostSuffix
-        )
-        leaf_device_connection_string = (
-            leaf_device_connection_string + gatewayHostSuffix
-        )
+        runtime_config.test_module.connection_string += gatewayHostSuffix
+        runtime_config.friend_module.connection_string += gatewayHostSuffix
+        runtime_config.leaf_device.connection_string += gatewayHostSuffix
     else:
-        # no certificate if we're going straight to iothub
-        ca_certificate = {}
-        test_module_connect_from_environment = False
-        friend_module_connect_from_environment = False
+        runtime_config.ca_certificate = None
+        runtime_config.test_module.connection_type = config.CONNECTION_STRING
+        runtime_config.friend_module.connection_type = config.CONNECTION_STRING
 
-    test_module_uri = edge_test_container
+    for object_name in dir(runtime_config):
+        test_obj = getattr(runtime_config, object_name)
+        if getattr(test_obj, "test_object_type", None):
+            adapter_type = getattr(test_obj, "adapter_type", None)
+            if not adapter_type:
+                pass
+            elif adapter_type == config.REST_ADAPTER:
+                adapters.add_rest_adapter(
+                    name=test_obj.api_name,
+                    api_surface=test_obj.api_surface,
+                    uri=test_obj.rest_uri,
+                )
+            elif adapter_type == config.DIRECT_AZURE_ADAPTER:
+                adapters.add_direct_azure_rest_adapter(
+                    name=test_obj.api_name, api_surface=test_obj.api_surface
+                )
+            elif adapter_type == config.DIRECT_PYTHON_SDK_ADAPTER:
+                adapters.add_direct_python_sdk_adapter(
+                    name=test_obj.api_name, api_surface=test_obj.api_surface
+                )
 
-    friend_module_uri = edge_friend_container
-
-    leaf_device_uri = edge_test_container
-    if container_under_test.deviceImpl is False:
-        leaf_device_uri = edge_friend_container
-
-    registry_uri = edge_test_container
-    if container_under_test.registryImpl is False:
-        registry_uri = edge_friend_container
-
-    service_client_uri = edge_test_container
-    if container_under_test.serviceImpl is False:
-        service_client_uri = edge_friend_container
-
-    if conftest.test_module_use_connection_string:
-        test_module_connect_from_environment = False
-
-    test_module_transport = conftest.transport
-    #  friend_module_transport = conftest.transport
-
-    def friendly_uri(uri):
-        if uri == edge_test_container:
-            return uri + " (module under test)"
-        elif uri == edge_friend_container:
-            return uri + " (friend container)"
-        else:
-            return uri + " (some other container)"
-
-    language = conftest.language
-
-    if language == "ppdirect":
-        adapters.add_direct_python_sdk_adapter(
-            name="TestModuleClient", api_surface="ModuleApi"
-        )
-        adapters.add_direct_azure_rest_adapter(
-            name="RegistryClient", api_surface="RegistryApi"
-        )
-        adapters.add_direct_azure_rest_adapter(
-            name="ServiceClient", api_surface="ServiceApi"
-        )
-    else:
-        adapters.add_rest_adapter(
-            name="TestModuleClient", api_surface="ModuleApi", uri=test_module_uri
-        )
-        adapters.add_rest_adapter(
-            name="RegistryClient", api_surface="RegistryApi", uri=registry_uri
-        )
-        adapters.add_rest_adapter(
-            name="ServiceClient", api_surface="ServiceApi", uri=service_client_uri
-        )
-
-    adapters.add_rest_adapter(
-        name="FriendModuleClient", api_surface="ModuleApi", uri=friend_module_uri
-    )
-    adapters.add_rest_adapter(
-        name="LeafDeviceClient", api_surface="DeviceApi", uri=leaf_device_uri
-    )
-    adapters.add_direct_azure_rest_adapter(
-        name="EventHubClient", api_surface="EventHubApi"
-    )
-
-    print("Run Parameters:")
-    print("  language:             {}".format(language))
-    print("  module_id:            {}".format(module_id))
-    print("  friend_module_id:     {}".format(friend_module_id))
-    print("  leaf_device_id:       {}".format(leaf_device_id))
-    print("  using environment:    {}".format(test_module_connect_from_environment))
-    print("  test transport:       {}".format(test_module_transport))
-    print("  friend transport:     {}".format(friend_module_transport))
-    print(
-        "  destination:          {}".format(
-            "iothub" if conftest.direct_to_iothub else "edgehub"
-        )
-    )
+    pprint(obj_to_dict(runtime_config))

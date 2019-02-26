@@ -9,7 +9,7 @@ import random
 import pytest
 
 import connections
-import environment
+from environment import runtime_config
 import test_utilities
 from edgehub_control import (
     connect_edgehub,
@@ -37,7 +37,9 @@ def test_module_send_multiple_event_iothub_fi():
         eventhub_client.enable_telemetry()
 
         log_message("start waiting for events on eventhub")
-        input_thread = eventhub_client.wait_for_event_async(environment.edge_device_id)
+        input_thread = eventhub_client.wait_for_event_async(
+            runtime_config.test_module.device_id
+        )
         sent_message = test_utilities.random_string_in_json()
 
         log_message("disconnecting edgehub")

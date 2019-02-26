@@ -8,7 +8,7 @@ import pytest
 import connections
 import random
 import test_utilities
-import environment
+from environment import runtime_config
 from edgehub_control import (
     disconnect_edgehub,
     connect_edgehub,
@@ -38,7 +38,7 @@ def test_module_output_routed_upstream_fi():
         module_client.send_output_event(output_name, sent_message)
 
         received_message = eventhub_client.wait_for_next_event(
-            environment.edge_device_id,
+            runtime_config.test_module.device_id,
             test_utilities.default_eventhub_timeout,
             expected=sent_message,
         )
