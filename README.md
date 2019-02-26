@@ -2,21 +2,19 @@
 
 [![Build Status](https://azure-iot-sdks.visualstudio.com/azure-iot-sdks/_apis/build/status/c/edge-e2e-c)](https://azure-iot-sdks.visualstudio.com/azure-iot-sdks/_build/latest?definitionId=55)
 
-## Setup IoT Edge Device on Linux VM
-Follow this README to configure your device and run your first test:
-* [Setting up your edgeHub device on a Linux VM](./README-setup.md)
+## Background Information
 
-## Implementation Info
-If you need more details, you can see the following:
-* [Tests README.md](./README-tests.md) - Overview of test-runner folder
-* [Wrapper README.md](./README-wrapper.md) - Overview of Edge E2E Architecture and Wrappers
-* [Tips README.md](./README-tips.md) - Tips on execution
+* A top-level view of the Horton framework is located [here](./devdocs/framework_top_level_picture.md)
+* Useful definitions are located [here](./devdocs/framework_definitions.md)
+* (slightly more) Concrete Examples for Framework Definitions are located [here](./devdocs/framework_definitions_visualized.md)
+* A description of the thinking behind the Horton framework is located [here](./devdocs/language-independent-tests.md)
 
-## Guides to Using the E2E
+## Setup and Configuration
 
-* [Walkthroughs](./devdocs/walkthroughs.md) - Multiple walkthroughs of different test deployments and scenarios
-* [Hacks](./devdocs/hacks.md) - Hacks in case things aren't working super well
-* [Langauge Independent Tests](./language-independent-tests.md) - Explanation of testing framework from 10,000 feet high level overview down to lower level explanation of architecture
+The first time you run this framework, you will want to follow these documents:
+1. [Set up a VM to run tests under Linux](./devdocs/linux_test_vm_setup.md)
+2. [Run a simple test to verify your installation](./devdocs/running_your_first_test_suite.md)
+
 
 ## What to Do if it Won't Do What You Want it to Do
 
