@@ -275,8 +275,7 @@ class DockerLogProcessor:
                 date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
                 line_count += 1
                 out_line = log_line.module_name + " : " + date_delta + split_str +  log_line.log_data
-                #print(out_line)
-                print(out_line[0:125])
+                print(out_line)
                 outfile.write("{}\n".format(out_line))
                 last_timestamp = logline_timestamp
 
