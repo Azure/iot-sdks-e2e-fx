@@ -93,6 +93,7 @@ def build_image(tags):
             print_filtered_docker_line(line)
 
 
+
 def tag_images(tags):
     print(print_separator)
     print("TAGGING IMAGE")
