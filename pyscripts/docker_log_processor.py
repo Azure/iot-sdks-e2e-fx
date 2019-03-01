@@ -171,7 +171,7 @@ class DockerLogProcessor:
         parser.add_argument('-staticfile', nargs='+', help="filename to read from")
         parser.add_argument('-filterfile', nargs=1, help="filename of json filters")
         arguments = parser.parse_args(options.split(' '))
-
+ 
         import os
         dir_name = os.path.dirname(os.path.abspath(__file__))
         out_filenames = arguments.outputfile
