@@ -35,7 +35,7 @@ class DockerLogProcessor:
 
             for container_name in container_names:
                 print("Getting Log for: " + container_name)
-                new_process =  Process(target = DockerLogProcessor.get_log_from_container, args=(container_name, self.queue, options))
+                new_process =  Process(target = self.get_log_from_container, args=(container_name, self.queue, options))
                 new_process.start()
                 self.watcher_processes.append(new_process)
 
@@ -275,7 +275,8 @@ class DockerLogProcessor:
                 date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
                 line_count += 1
                 out_line = log_line.module_name + " : " + date_delta + split_str +  log_line.log_data
-                print(out_line)
+                #print(out_line)
+                print(out_line[0:125])
                 outfile.write("{}\n".format(out_line))
                 last_timestamp = logline_timestamp
 
@@ -299,5 +300,3 @@ class LogLineObject:
         self.timestamp    = timestamp
         self.module_name  = module_name  
         self.log_data     = log_data  
-if __name__ == "__main__":
-    log_processor = DockerLogProcessor([], " ".join(sys.argv[1:]))
