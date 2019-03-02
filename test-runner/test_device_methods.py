@@ -82,7 +82,6 @@ def test_device_method_from_service_to_leaf_device():
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.invokesDeviceMethodCalls
-@pytest.mark.module_under_test_has_device_wrapper
 def test_device_method_from_module_to_leaf_device():
     """
     invoke a method call from the test module and respond to it from the leaf device
