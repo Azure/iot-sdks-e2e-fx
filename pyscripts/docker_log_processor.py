@@ -6,7 +6,7 @@
 # filename: docker_log_processor.py
 # author:   v-greach@microsoft.com
 # created:  01/29/2019
-# Rev: 03/03/2019 D
+# Rev: 03/03/2019 E
 
 from multiprocessing import Process, Queue, Event
 from threading import Thread
@@ -18,13 +18,14 @@ import sys
 
 class DockerLogProcessor:
 
-    def __init__(self, container_names, args=""):
+    def __init__(self, args):
 
         # Parse args
         parser = argparse.ArgumentParser(description="Docker Log Processor")
-        parser.add_argument('-staticfile', nargs='+', help="filename to read from")
+        parser.add_argument('-staticfile', action='append', nargs='+', help="filename to read from")
+        parser.add_argument('-modulename', action='append', nargs='+', help="docker modulename to read from")
         parser.add_argument('-filterfile', nargs=1, help="filename of json filters")
-        arguments = parser.parse_args(args.split(' '))
+        arguments = parser.parse_args(args)
 
         if arguments.staticfile:
             self.process_static_log(arguments.staticfile, arguments.filterfile)
@@ -34,7 +35,7 @@ class DockerLogProcessor:
             self.logger_thread.start()
             self.watcher_processes = []
 
-            for container_name in container_names:
+            for container_name in arguments.modulename:
                 print("Getting Log for: " + container_name)
                 new_process =  Process(target = self.get_log_from_container, args=(container_name, self.queue))
                 new_process.start()
@@ -148,7 +149,7 @@ class DockerLogProcessor:
 
     def process_static_log(self, static_filenames, filter_filenames):
         """
-        Got some static logs - set 'em up for processing.
+        Got the static logs - set them up for processing.
 
         Static log(s) specified.
             static_filenames
@@ -170,6 +171,16 @@ class DockerLogProcessor:
         
         if filter_filenames:
             filter_filename = os.path.abspath(filter_filenames[0])
+            """
+            filter.json should have a format like this:
+                {
+                    "filters":
+                    [
+                        "Getting next batch",
+                        "Obtained next batch"
+                    ]
+                }
+            """
             try:
                 filter_json = open(filter_filename, encoding="utf8").read()
                 if filter_json:
@@ -194,6 +205,7 @@ class DockerLogProcessor:
             if static_filename:
                 static_filename = static_filename.strip()
                 module_name = os.path.basename(static_filename)
+                print("Getting log from file: " + static_filename)
                 # Pad the filename so that each is the same length
                 for _ in range(len(module_name), max_name_len):
                     module_name += ' '
@@ -272,4 +284,9 @@ class LogLineObject:
         self.log_data     = log_data  
 
 if __name__ == "__main__":
-    log_processor = DockerLogProcessor([], " ".join(sys.argv[1:]))
+    if len(sys.argv) > 1:
+        run_with_args = sys.argv[1:]
+    else:
+        run_with_args = ["-filterfile","filters.json","-staticfile","datafiles/real-logs/edgeHub.log","-staticfile","datafiles/real-logs/edgeAgent.log","-staticfile","real-logs/friendMod.log"]
+    log_processor = DockerLogProcessor(run_with_args)
+
