@@ -6,7 +6,7 @@
 # filename: docker_log_processor.py
 # author:   v-greach@microsoft.com
 # created:  01/29/2019
-# Rev: 03/03/2019 F
+# Rev: 03/03/2019 G
 
 from multiprocessing import Process, Queue, Event
 from threading import Thread
@@ -44,9 +44,9 @@ class DockerLogProcessor:
     @classmethod
     def format_date_and_time(self, date_in="", time_format="%Y-%m-%d %H:%M:%S.%f"):
         """
-        Formats a sting into a datetime type.
+        Formats a string into a datetime type.
 
-        string comes in, if it's empty, set it to NOW,
+        date_in comes in, if it's empty, set it to NOW,
         then using the format, convert the string to datetime type.
 
         Parameters
@@ -59,7 +59,7 @@ class DockerLogProcessor:
         Returns
         -------
         datetime
-            converted input string or NOW() if empty
+            converted input string or NOW() if date_in is empty
         """
         date_out =""
         if not date_in:
@@ -74,7 +74,8 @@ class DockerLogProcessor:
     @staticmethod
     def get_log_from_container(container_name, queue):
         """
-        Gets log info from the Docker container.
+        Gets log info from the Docker container then converts DateTime
+            and puts each line in the queue.
 
         Parameters
         ----------
@@ -82,8 +83,6 @@ class DockerLogProcessor:
             Name of the Docker container
         queue : object
             queue to stuff the log object in
-        options : string
-            Options - basically the argv passed to the class
         """
         client = docker.from_env()
         container = client.containers.get(container_name)
@@ -117,8 +116,8 @@ class DockerLogProcessor:
         """
         Diff date_one and date_two then format string for readability.
 
-        Delta of the strings are slammed into submission by fields.
-        line_count can be used to print a full timestamp every line_mod lines
+        Delta of the strings are converted by fields.
+        line_count can be used to print a full timestamp every line_mod (%) lines
 
         """
         if line_mod != 0 and line_count % line_mod == 0:
@@ -149,7 +148,7 @@ class DockerLogProcessor:
 
     def process_static_log(self, static_filenames, filter_filenames):
         """
-        Got the static logs - set them up for processing.
+        Static logs in args - set them up for processing.
 
         Static log(s) specified.
             static_filenames
@@ -191,7 +190,7 @@ class DockerLogProcessor:
                 self.write_err(e)
                 return
 
-        # find the max_name_len of every staticfile filename
+        # find the max_name_len of every staticfile filename basename
         for static_filename in static_filenames:
             if static_filename:
                 base_filename = os.path.basename(static_filename[0])
@@ -199,7 +198,7 @@ class DockerLogProcessor:
                 if name_len > max_name_len:
                     max_name_len = name_len
 
-        # read and proess every static file
+        # read and process every static file
         for static_filename in static_filenames:
             if static_filename:
                 static_filename = static_filename[0]
@@ -269,7 +268,6 @@ class DockerLogProcessor:
         line_count = 0
         while True:
             log_line = self.queue.get()
-
             logline_timestamp = log_line.timestamp
             date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
             line_count += 1
