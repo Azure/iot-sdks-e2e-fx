@@ -6,6 +6,7 @@
 # filename: docker_log_processor.py
 # author:   v-greach@microsoft.com
 # created:  01/29/2019
+# Rev: 03/03/2019 C
 
 from multiprocessing import Process, Queue, Event
 from threading import Thread
@@ -17,25 +18,25 @@ import sys
 
 class DockerLogProcessor:
 
-    def __init__(self, container_names, options=""):
+    def __init__(self, container_names, args=""):
 
-        run_static = False
-        if options:
-            if "-staticfile" in options:
-                run_static = True
-                self.process_static_log(options)
+        # Parse args
+        parser = argparse.ArgumentParser(description="Docker Log Processor")
+        parser.add_argument('-staticfile', nargs='+', help="filename to read from")
+        parser.add_argument('-filterfile', nargs=1, help="filename of json filters")
+        arguments = parser.parse_args(args.split(' '))
 
-        if run_static == False:
+        if arguments.staticfile:
+            self.process_static_log(arguments.staticfile, arguments.filterfile)
+        else:
             self.queue = Queue()
-
             self.logger_thread = Thread(target = self.process_queue)
             self.logger_thread.start()
-
             self.watcher_processes = []
 
             for container_name in container_names:
                 print("Getting Log for: " + container_name)
-                new_process =  Process(target = self.get_log_from_container, args=(container_name, self.queue, options))
+                new_process =  Process(target = self.get_log_from_container, args=(container_name, self.queue))
                 new_process.start()
                 self.watcher_processes.append(new_process)
 
@@ -70,7 +71,7 @@ class DockerLogProcessor:
         return date_out
 
     @staticmethod
-    def get_log_from_container(container_name, queue, options):
+    def get_log_from_container(container_name, queue):
         """
         Gets log info from the Docker container.
 
@@ -93,7 +94,7 @@ class DockerLogProcessor:
                 log_line_object = LogLineObject(DockerLogProcessor.format_date_and_time(log_line_parts[0]), container_name, log_line_parts[1])
                 queue.put(log_line_object)
             except Exception as e:
-                write_err("Exception getting container log_line from: " + container_name)
+                self.write_err("Exception getting container log_line from: " + container_name)
                 self.write_err(e)
 
     def split(self, string, delimiters):
@@ -145,7 +146,7 @@ class DockerLogProcessor:
             field_count += 1
         return time_delta_str
 
-    def process_static_log(self, options):
+    def process_static_log(self, static_filenames, filter_filenames):
         """
         Got some static logs - set 'em up for processing.
 
@@ -157,52 +158,28 @@ class DockerLogProcessor:
         read all log files and format each line
         sort and push to output
         """
-        write_log_filename = "logsbytime.log"
-        split_str = ' ' + u"\u2588" + ' '
+        import os
+        import json
+        import pathlib
 
+        split_str = ' ' + u"\u2588" + ' '
         loglines = []
         max_name_len = 0
-        filter_json_file = ""
         filter_list = ""
         pytest_owner = ""
-
-        parser = argparse.ArgumentParser(description="Docker Log Processor")
-        parser.add_argument('-outputfile', nargs=1, help="filename to write output")
-        parser.add_argument('-staticfile', nargs='+', help="filename to read from")
-        parser.add_argument('-filterfile', nargs=1, help="filename of json filters")
-        arguments = parser.parse_args(options.split(' '))
- 
-        import os
-        dir_name = os.path.dirname(os.path.abspath(__file__))
-        out_filenames = arguments.outputfile
-        if len(out_filenames) > 1:
-            self.write_err("ERR: Too many -outfiles")
-            return
-        else:
-            out_filename = out_filenames[0]
-            out_filename = out_filename.strip()
-            write_log_filename = os.path.basename(out_filename)
-
-        import json
-        filter_filenames = arguments.filterfile
-        if len(filter_filenames) > 1:
-            self.write_err("ERR: Too many -filterfile")
-            return
-        else:
-            filter_filename = filter_filenames[0]
-            filter_json_file = filter_filename.strip()
-            full_filter_path = os.path.join(os.sep, dir_name, filter_json_file)
+        
+        if filter_filenames:
+            filter_filename = os.path.abspath(filter_filenames[0])
             try:
-                filter_json = open(full_filter_path, encoding="utf8").read()
+                filter_json = open(filter_filename, encoding="utf8").read()
                 if filter_json:
                     json_data  = json.loads(filter_json)
                     filter_list = json_data['filters']
             except Exception as e:
-                self.write_err("Exception processing JSON file: " + full_filter_path)
+                self.write_err("Exception processing JSON file: " + filter_filename)
                 self.write_err(e)
                 return
 
-        static_filenames = arguments.staticfile
         # find the max_name_len of every staticfile filename
         for static_filename in static_filenames:
             if static_filename:
@@ -212,21 +189,18 @@ class DockerLogProcessor:
                 if name_len > max_name_len:
                     max_name_len = name_len
 
+        # read and proess every static file
         for static_filename in static_filenames:
             if static_filename:
                 static_filename = static_filename.strip()
-                base_filename = os.path.basename(static_filename)
-
-                module_name = base_filename
+                module_name = os.path.basename(static_filename)
                 # Pad the filename so that each is the same length
-                for _ in range(len(base_filename), max_name_len):
+                for _ in range(len(module_name), max_name_len):
                     module_name += ' '
-
-                full_log_path = os.path.join(os.sep, dir_name, static_filename)
                 try:
-                    read_file = open(full_log_path, encoding="utf8").read().split("\n")
+                    read_file = open(static_filename, encoding="utf8").read().split("\n")
                 except Exception as e:
-                    self.write_err("Exception opening LOG file: " + full_log_path )
+                    self.write_err("Exception opening LOG file: " + static_filename )
                     self.write_err(e)
                 
                 # Get and filter each line
@@ -239,14 +213,13 @@ class DockerLogProcessor:
                             else:
                                 if pytest_owner != base_filename:
                                     ok_to_log = False
-
                         if ok_to_log:
                             for filter in filter_list:
                                 if filter in log_line:
                                     ok_to_log = False
 
                         if ok_to_log:
-                            # Made it past filters and BuinessLogic, LOG IT
+                            # Made it past filters and PyTest, so Log the line
                             log_line_parts = log_line.split("Z ")
                             if log_line_parts:
                                 log_data = ""
@@ -263,22 +236,19 @@ class DockerLogProcessor:
                                 log_line_object = LogLineObject(log_time, module_name, log_data)
                                 loglines.append(log_line_object)
 
+        # Sort the merged static file lines by timestamp
         loglines.sort(key=lambda x: x.timestamp)
         last_timestamp = datetime.now() + timedelta(days=-364)
         line_count = 0
 
-        #Done processing  and sorted, now display and write results
-        write_log_filename = os.path.join(os.sep, dir_name, write_log_filename)
-        with open(write_log_filename,'w', encoding="utf-8") as outfile: 
-            for log_line in loglines:
-                logline_timestamp = log_line.timestamp
-                date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
-                line_count += 1
-                out_line = log_line.module_name + " : " + date_delta + split_str +  log_line.log_data
-                #print(out_line)
-                print(out_line[0:125])
-                outfile.write("{}\n".format(out_line))
-                last_timestamp = logline_timestamp
+        # display the results to stdout
+        for log_line in loglines:
+            logline_timestamp = log_line.timestamp
+            date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
+            line_count += 1
+            out_line = log_line.module_name + " : " + date_delta + split_str +  log_line.log_data
+            print(out_line)
+            last_timestamp = logline_timestamp
 
     def process_queue(self):
         """
