@@ -6,7 +6,7 @@
 # filename: docker_log_processor.py
 # author:   v-greach@microsoft.com
 # created:  01/29/2019
-# Rev: 03/03/2019 E
+# Rev: 03/03/2019 F
 
 from multiprocessing import Process, Queue, Event
 from threading import Thread
@@ -52,7 +52,7 @@ class DockerLogProcessor:
         Parameters
         ----------
         date_in : string
-            String to convert - call be null
+            String to convert - can be null
         time_format : string
             format of string for datetime conversion
 
@@ -194,8 +194,7 @@ class DockerLogProcessor:
         # find the max_name_len of every staticfile filename
         for static_filename in static_filenames:
             if static_filename:
-                static_filename = static_filename.strip()
-                base_filename = os.path.basename(static_filename)
+                base_filename = os.path.basename(static_filename[0])
                 name_len = len(base_filename)
                 if name_len > max_name_len:
                     max_name_len = name_len
@@ -203,7 +202,7 @@ class DockerLogProcessor:
         # read and proess every static file
         for static_filename in static_filenames:
             if static_filename:
-                static_filename = static_filename.strip()
+                static_filename = static_filename[0]
                 module_name = os.path.basename(static_filename)
                 print("Getting log from file: " + static_filename)
                 # Pad the filename so that each is the same length
@@ -284,9 +283,4 @@ class LogLineObject:
         self.log_data     = log_data  
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        run_with_args = sys.argv[1:]
-    else:
-        run_with_args = ["-filterfile","filters.json","-staticfile","datafiles/real-logs/edgeHub.log","-staticfile","datafiles/real-logs/edgeAgent.log","-staticfile","real-logs/friendMod.log"]
-    log_processor = DockerLogProcessor(run_with_args)
-
+    log_processor = DockerLogProcessor(sys.argv[1:])
