@@ -6,7 +6,7 @@
 # filename: docker_log_processor.py
 # author:   v-greach@microsoft.com
 # created:  01/29/2019
-# Rev: 03/03/2019 C
+# Rev: 03/03/2019 D
 
 from multiprocessing import Process, Queue, Event
 from threading import Thread
@@ -151,12 +151,12 @@ class DockerLogProcessor:
         Got some static logs - set 'em up for processing.
 
         Static log(s) specified.
-        parse the options with argparse.
-            get a list of string of filenames to proceas,
-            get the output filename,
-            get json filters.
+            static_filenames
+        Optional filter_filename
+            Path to JSON filter file
+
         read all log files and format each line
-        sort and push to output
+        sort and display to stdout
         """
         import os
         import json
@@ -270,3 +270,6 @@ class LogLineObject:
         self.timestamp    = timestamp
         self.module_name  = module_name  
         self.log_data     = log_data  
+
+if __name__ == "__main__":
+    log_processor = DockerLogProcessor([], " ".join(sys.argv[1:]))
