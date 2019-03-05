@@ -288,8 +288,12 @@ class DockerLogProcessor:
             logline_timestamp = log_line.timestamp
             date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
             line_count += 1
-            print(log_line.module_name + " : " + date_delta + " : " +  log_line.log_data)
             last_timestamp = logline_timestamp
+            out_line = log_line.module_name + " : " + date_delta + " " + u"\u2588" +  " " + log_line.log_data)
+            try:
+                print(out_line)
+            except Exception as e:
+                print(''.join([i if ord(i) < 128 else '#' for i in out_line]))
 
 class LogLineObject:  
     def __init__ (self, timestamp, module_name='', log_data=''):  
