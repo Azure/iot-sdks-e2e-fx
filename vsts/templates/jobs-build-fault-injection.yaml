@@ -19,4 +19,18 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: "edgehub_module_fi_mqtt"
 
+- job: "test2"
+  strategy:
+      parallel: 4
+  dependsOn:
+    - 'build_linux_container'
+
+  steps:
+  - template: steps-deploy-and-run-pytest.yaml
+    parameters:
+      language: $(Horton.Language)
+      forced_image: $(Horton.ForcedImage)
+      suite: "edgehub_module_mqtt_ws"
+
+
 
