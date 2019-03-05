@@ -30,10 +30,42 @@ jobs:
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
-  
+
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
       language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
       suite: "edgehub_module_fi_mqtt_ws"
+
+- job: "amqp"
+  displayName: "amqp"
+  strategy:
+      parallel: 8
+      maxParallel: 3
+  dependsOn:
+    - 'build_linux_container'
+  continueOnError: true
+
+  steps:
+  - template: steps-deploy-and-run-pytest.yaml
+    parameters:
+      language: $(Horton.Language)
+      forced_image: $(Horton.ForcedImage)
+      suite: "edgehub_module_fi_amqp"
+
+- job: "amqp_ws"
+  displayName: "amqp_ws"
+  strategy:
+      parallel: 8
+      maxParallel: 3
+  dependsOn:
+    - 'build_linux_container'
+  continueOnError: true
+  
+  steps:
+  - template: steps-deploy-and-run-pytest.yaml
+    parameters:
+      language: $(Horton.Language)
+      forced_image: $(Horton.ForcedImage)
+      suite: "edgehub_module_fi_amqp_ws"
