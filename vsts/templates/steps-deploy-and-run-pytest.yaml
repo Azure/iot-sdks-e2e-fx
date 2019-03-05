@@ -48,6 +48,18 @@ steps:
         $Transport="mqtt"
         $Scenario="edgehub_module_fi"
       }
+      "edgehub_module_fi_mqtt_ws" {
+        $Transport="mqttws"
+        $TestSet="edgehub_module_fi"
+      }
+      "edgehub_module_fi_amqp" {
+        $Transport="amqp"
+        $TestSet="edgehub_module_fi"
+      }
+      "edgehub_module_fi_amqp_ws" {
+        $Transport="amqp"
+        $TestSet="edgehub_module_fi"
+      }
       default {
         throw("Unknown suite: " + $env:Suite)
       }
