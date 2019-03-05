@@ -6,7 +6,7 @@
 # filename: docker_log_processor.py
 # author:   v-greach@microsoft.com
 # created:  01/29/2019
-# Rev: 03/03/2019 G
+# Rev: 03/05/2019 A
 
 from multiprocessing import Process, Queue, Event
 from threading import Thread
@@ -274,7 +274,7 @@ class DockerLogProcessor:
             last_timestamp = logline_timestamp
             try:
                 print(out_line)
-            except Exception as e:
+            except Exception:
                 print(''.join([i if ord(i) < 128 else '#' for i in out_line]))
 
     def process_queue(self):
@@ -283,16 +283,17 @@ class DockerLogProcessor:
         """        
         last_timestamp = datetime.now() + timedelta(days=-364)
         line_count = 0
+        split_char = u"\u2588"
         while True:
             log_line = self.queue.get()
             logline_timestamp = log_line.timestamp
             date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
             line_count += 1
             last_timestamp = logline_timestamp
-            out_line = log_line.module_name + " : " + date_delta + " " + u"\u2588" +  " " + log_line.log_data)
+            out_line = log_line.module_name + " : " + date_delta + " " + split_char +  " " + log_line.log_data
             try:
                 print(out_line)
-            except Exception as e:
+            except Exception:
                 print(''.join([i if ord(i) < 128 else '#' for i in out_line]))
 
 class LogLineObject:  
