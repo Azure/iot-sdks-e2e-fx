@@ -12,6 +12,7 @@ jobs:
       parallel: 4
   dependsOn:
     - 'build_linux_container'
+  continueOnError: true
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml
@@ -27,7 +28,7 @@ jobs:
   dependsOn:
     - 'build_linux_container'
     - "mqtt"    
-    
+
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
