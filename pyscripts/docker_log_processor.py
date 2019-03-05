@@ -22,8 +22,9 @@ class DockerLogProcessor:
 
         # Parse args
         parser = argparse.ArgumentParser(description="Docker Log Processor")
-        parser.add_argument('-staticfile', action='append', nargs='+', help="filename to read from")
-        parser.add_argument('-modulename', action='append', nargs='+', help="docker modulename to read from")
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('-staticfile', action='append', nargs='+', help="filename to read from")
+        group.add_argument('-modulename', action='append', nargs='+', help="docker modulename to read from")
         parser.add_argument('-filterfile', nargs=1, help="filename of json filters")
         arguments = parser.parse_args(args)
 
@@ -72,6 +73,14 @@ class DockerLogProcessor:
         return date_out
 
     @staticmethod
+    def write_err(msg):
+        """
+        write a string to stdout and stderr.
+        """         
+        print(msg, file=sys.stderr)
+        print(msg)
+
+    @staticmethod
     def get_log_from_container(container_name, queue):
         """
         Gets log info from the Docker container then converts DateTime
@@ -91,11 +100,23 @@ class DockerLogProcessor:
             try:
                 log_line = log_line.decode('utf8').strip()
                 log_line_parts = log_line.split("Z ")
-                log_line_object = LogLineObject(DockerLogProcessor.format_date_and_time(log_line_parts[0]), container_name, log_line_parts[1])
+
+                if log_line_parts:
+                    log_data = ""
+                    num_parts = len(log_line_parts)
+
+                    # Handle case where more than one timestamp
+                    if num_parts > 2:
+                        for part in range(1, num_parts):    
+                            log_data += log_line_parts[part] + ' '
+                    else:
+                        log_data = log_line_parts[1]
+
+                log_line_object = LogLineObject(DockerLogProcessor.format_date_and_time(log_line_parts[0]), container_name, log_data)
                 queue.put(log_line_object)
             except Exception as e:
-                self.write_err("Exception getting container log_line from: " + container_name)
-                self.write_err(e)
+                DockerLogProcessor.write_err("Exception getting container log_line from: " + container_name)
+                DockerLogProcessor.write_err(e)
 
     def split(self, string, delimiters):
         """
@@ -104,13 +125,6 @@ class DockerLogProcessor:
         import re
         regexPattern = '|'.join(map(re.escape, delimiters))
         return re.split(regexPattern, string)
-
-    def write_err(self, msg):
-        """
-        write a string to stdout and stderr.
-        """         
-        print(msg, file=sys.stderr)
-        print(msg)
 
     def get_timestamp_delta(self, date_one, date_two, line_count = 0, line_mod = 100):
         """
@@ -162,7 +176,7 @@ class DockerLogProcessor:
         import json
         import pathlib
 
-        split_str = ' ' + u"\u2588" + ' '
+        split_char = u"\u2588"
         loglines = []
         max_name_len = 0
         filter_list = ""
@@ -188,7 +202,6 @@ class DockerLogProcessor:
             except Exception as e:
                 self.write_err("Exception processing JSON file: " + filter_filename)
                 self.write_err(e)
-                return
 
         # find the max_name_len of every staticfile filename basename
         for static_filename in static_filenames:
@@ -212,7 +225,8 @@ class DockerLogProcessor:
                 except Exception as e:
                     self.write_err("Exception opening LOG file: " + static_filename )
                     self.write_err(e)
-                
+                    return
+               
                 # Get and filter each line
                 for log_line in read_file:
                     ok_to_log = True
@@ -256,9 +270,12 @@ class DockerLogProcessor:
             logline_timestamp = log_line.timestamp
             date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
             line_count += 1
-            out_line = log_line.module_name + " : " + date_delta + split_str +  log_line.log_data
-            print(out_line)
+            out_line = log_line.module_name + " : " + date_delta + " " + split_char + " " +  log_line.log_data
             last_timestamp = logline_timestamp
+            try:
+                print(out_line)
+            except Exception as e:
+                print(''.join([i if ord(i) < 128 else '#' for i in out_line]))
 
     def process_queue(self):
         """
@@ -282,3 +299,4 @@ class LogLineObject:
 
 if __name__ == "__main__":
     log_processor = DockerLogProcessor(sys.argv[1:])
+    
