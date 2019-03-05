@@ -9,7 +9,8 @@ jobs:
 - job: "mqtt"
   displayName: "mqtt"
   strategy:
-      parallel: 4
+      parallel: 8
+      maxParallel: 3
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
@@ -24,11 +25,12 @@ jobs:
 - job: "mqtt_ws"
   displayName: "mqtt_ws"
   strategy:
-      parallel: 4
+      parallel: 8
+      maxParallel: 3
   dependsOn:
     - 'build_linux_container'
-    - "mqtt"    
-
+  continueOnError: true
+  
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
