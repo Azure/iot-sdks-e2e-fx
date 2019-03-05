@@ -9,8 +9,8 @@ jobs:
 - job: "mqtt"
   displayName: "mqtt"
   strategy:
-      parallel: 8
       maxParallel: 3
+      parallel: 8
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
@@ -25,8 +25,8 @@ jobs:
 - job: "mqtt_ws"
   displayName: "mqtt_ws"
   strategy:
-      parallel: 8
       maxParallel: 3
+      parallel: 8
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
@@ -41,8 +41,8 @@ jobs:
 - job: "amqp"
   displayName: "amqp"
   strategy:
-      parallel: 8
       maxParallel: 3
+      parallel: 8
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
@@ -57,8 +57,8 @@ jobs:
 - job: "amqp_ws"
   displayName: "amqp_ws"
   strategy:
-      parallel: 8
       maxParallel: 3
+      parallel: 8
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
