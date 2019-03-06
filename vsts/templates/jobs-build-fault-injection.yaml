@@ -9,8 +9,8 @@ jobs:
 - job: "mqtt"
   displayName: "mqtt"
   strategy:
-    parallel: 8
-    maxParallel: 3
+    parallel: 8 # parallel strategy, see below
+    maxParallel: 3 # maximum number of agents to simultaneously run copies of this job on
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
