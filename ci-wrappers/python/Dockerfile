@@ -3,6 +3,7 @@ from ubuntu:18.04
 # common to C and Python
 RUN apt update \
   && apt install --fix-missing -y \
+    rsync \
     build-essential \
     wget \
     vim \
