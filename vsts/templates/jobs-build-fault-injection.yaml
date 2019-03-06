@@ -9,6 +9,7 @@ jobs:
 - job: "mqtt"
   displayName: "mqtt"
   strategy:
+    parallel: 8
     maxParallel: 3
   dependsOn:
     - 'build_linux_container'
