@@ -5,6 +5,7 @@ ENV MAVEN_CONFIG=/usr/share/maven/ref
 
 RUN apt update \
  && apt install --fix-missing -y \
+  rsync \
   git \
   vim
 
