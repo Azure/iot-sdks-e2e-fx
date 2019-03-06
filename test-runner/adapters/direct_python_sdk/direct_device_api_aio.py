@@ -40,6 +40,9 @@ class DeviceApiAsync(AbstractDeviceApi):
         await self.async_client.send_event(body)
         print("send confirmation received")
 
+    async def receive_c2d(self):
+        pass
+
     async def enable_methods(self):
         pass
 
