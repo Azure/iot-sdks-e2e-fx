@@ -57,10 +57,8 @@ jobs:
 - job: "amqp_ws"
   displayName: "amqp_ws"
   strategy:
-    {
-      maxParallel: 3,
-      parallel: 8
-    }
+    - maxParallel: 3
+    - parallel: 8
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
