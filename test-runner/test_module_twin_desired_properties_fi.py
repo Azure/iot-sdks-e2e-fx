@@ -41,53 +41,43 @@ def get_patch_received(patch_received):
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.supportsTwin
 def test_service_can_set_desired_properties_and_module_can_retrieve_them_fi():
-    try:
-        twin_sent = {"properties": {"desired": {"foo": random.randint(1, 9999)}}}
+    twin_sent = {"properties": {"desired": {"foo": random.randint(1, 9999)}}}
 
-        log_message("connecting registry client")
-        registry_client = connections.connect_registry_client()
-        log_message("disconnecting edgehub")
-        sleep(2)
-        disconnect_edgehub()  # DISCONNECTING EGEHUB
-        connect_edgehub()  # CONNECTING EDGEHUB
-        registry_client.patch_module_twin(
-            runtime_config.test_module.device_id,
-            runtime_config.test_module.module_id,
-            twin_sent,
-        )
-        log_message("patching twin")
-        log_message("disconnecting registry client")
-        registry_client.disconnect()
+    log_message("connecting registry client")
+    registry_client = connections.connect_registry_client()
+    log_message("disconnecting edgehub")
+    sleep(2)
+    disconnect_edgehub()  # DISCONNECTING EGEHUB
+    connect_edgehub()  # CONNECTING EDGEHUB
+    registry_client.patch_module_twin(
+        runtime_config.test_module.device_id,
+        runtime_config.test_module.module_id,
+        twin_sent,
+    )
+    log_message("patching twin")
+    log_message("disconnecting registry client")
+    registry_client.disconnect()
 
-        log_message("connecting module client")
-        module_client = connections.connect_test_module_client()
-        log_message("enabling twin")
-        module_client.enable_twin()
-        log_message("disconnecting edgehub")
-        sleep(2)
-        disconnect_edgehub()  # DISCONNECTING EGEHUB
-        sleep(5)
-        connect_edgehub()  # CONNECTING EDGEHUB
-        twin_received = module_client.get_twin()
-        log_message("getting module twin")
-        log_message("disconnecting module client")
-        module_client.disconnect()
-        log_message("module client disconnected")
-        log_message("twin sent:    " + str(twin_sent))
-        log_message("twin received:" + str(twin_received))
-        assert (
-            twin_sent["properties"]["desired"]["foo"]
-            == twin_received["properties"]["desired"]["foo"]
-        )
-    finally:
-        cMod = client.containers.get("cMod")
-        friendMod = client.containers.get("friendMod")
-        edgeHub = client.containers.get("edgeHub")
-        edgeHub.restart()
-        friendMod.restart()
-        cMod.restart()
-        # restart_edgehub(hard=True)
-
+    log_message("connecting module client")
+    module_client = connections.connect_test_module_client()
+    log_message("enabling twin")
+    module_client.enable_twin()
+    log_message("disconnecting edgehub")
+    sleep(2)
+    disconnect_edgehub()  # DISCONNECTING EGEHUB
+    sleep(5)
+    connect_edgehub()  # CONNECTING EDGEHUB
+    twin_received = module_client.get_twin()
+    log_message("getting module twin")
+    log_message("disconnecting module client")
+    module_client.disconnect()
+    log_message("module client disconnected")
+    log_message("twin sent:    " + str(twin_sent))
+    log_message("twin received:" + str(twin_received))
+    assert (
+        twin_sent["properties"]["desired"]["foo"]
+        == twin_received["properties"]["desired"]["foo"]
+    )
 
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.supportsTwin

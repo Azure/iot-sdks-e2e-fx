@@ -81,20 +81,14 @@ def restart_edgehub(hard=False):
     client = docker.from_env()
     edgeHub = client.containers.get(EDGEHUB_NAME)
     try:
-        if hard:
-            # cwd = os.getcwd()
-            # clean_script = cwd + "/../scripts/force-restart-iotedge-clean.sh"
-            # log_message(clean_script)
-            # os.system(clean_script)
-
-            client = docker.from_env()
-            cMod = client.containers.get("cMod")
-            friendMod = client.containers.get("friendMod")
-            edgeHub = client.containers.get("edgeHub")
-            cMod.restart()
-            friendMod.restart()
-            edgeHub.restart()
-            # edgeHub.remove(force=True)
+        if hard:            client = docker.from_env()
+            containerList = []
+            for i in client.containers.list():
+                if "Mod" or "edgeHub" in i.name:
+                    name = client.containers.get(name)
+                    list.append(name)
+            for i in containerList:
+                i.restart()
             while EDGEHUB_NAME not in list(
                 map(lambda x: x.name, client.containers.list())
             ):
