@@ -34,9 +34,7 @@ def test_device_receive_c2d_from_iothub_single():
     listen_thread.daemon = True
     listen_thread.start()
 
-    print("This may print while the thread is running.")
     listen_thread.join(10)
-    print("This will always print after the thread has finished.")
 
     result_message = result_messages[0]
     if not result_message:

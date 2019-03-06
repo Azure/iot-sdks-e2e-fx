@@ -62,7 +62,8 @@ class ModuleApi(AbstractModuleApi):
         raise NotImplementedError()
 
     def enable_input_messages(self):
-        raise NotImplementedError()
+        # TODO : Should take input name as param ?
+        input_message_queue = self.sync_client.get_input_message_queue("input1")
 
     def get_twin(self):
         raise NotImplementedError()
