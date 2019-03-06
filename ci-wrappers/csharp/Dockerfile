@@ -1,17 +1,27 @@
 FROM microsoft/dotnet:2.2-sdk
 
-# Install system components for powershell install
 RUN apt update \
   && apt install --fix-missing -y \
     rsync \
     vim \
     git \
-    curl
+    curl \
+    unzip \
+    openssh-server \
+  && apt clean
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
 
 EXPOSE 80/tcp
+EXPOSE 22/tcp
+
+# get ready for ssh keys
+RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys
+
+
+# install vsdbg
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
 
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO

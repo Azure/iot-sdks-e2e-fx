@@ -103,7 +103,8 @@ class EdgeConfiguration:
             createOptions = {
                 "HostConfig": {
                     "PortBindings": {
-                        str(containerPort) + "/tcp": [{"HostPort": str(hostPort)}]
+                        str(containerPort) + "/tcp": [{"HostPort": str(hostPort)}],
+                        "22/tcp": [{"HostPort": hostPort + 100}]
                     }
                 }
             }
