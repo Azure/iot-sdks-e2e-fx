@@ -81,23 +81,14 @@ def restart_edgehub(hard=False):
     client = docker.from_env()
     edgeHub = client.containers.get(EDGEHUB_NAME)
     try:
-        if hard:
-            # cwd = os.getcwd()
-            # clean_script = cwd + "/../scripts/force-restart-iotedge-clean.sh"
-            # log_message(clean_script)
-            # os.system(clean_script)
-
+        if hard:            
             client = docker.from_env()
-            cMod = client.containers.get("cMod")
-            friendMod = client.containers.get("friendMod")
-            edgeHub = client.containers.get("edgeHub")
-            cMod.restart()
-            friendMod.restart()
-            edgeHub.restart()
-            # edgeHub.remove(force=True)
-            while EDGEHUB_NAME not in list(
-                map(lambda x: x.name, client.containers.list())
-            ):
+            containerList = list(map(lambda x: x.name, client.containers.list()))
+            for containerName in containerList:
+                if "Mod" or "edgeHub" in containerName:
+                    currentContainer = client.containers.get(containerName)
+                    currentContainer.restart()
+            while EDGEHUB_NAME not in list(map(lambda x: x.name, client.containers.list())):
                 log_message("waiting for edge daemon to revive edgehub...")
                 sleep(1)
             log_message("updating pointer to edgehub container")
