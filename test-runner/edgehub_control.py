@@ -81,7 +81,8 @@ def restart_edgehub(hard=False):
     client = docker.from_env()
     edgeHub = client.containers.get(EDGEHUB_NAME)
     try:
-        if hard:            client = docker.from_env()
+        if hard:            
+            client = docker.from_env()
             containerList = []
             for i in client.containers.list():
                 if "Mod" or "edgeHub" in i.name:
