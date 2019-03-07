@@ -24,7 +24,6 @@ local_timeout = 60  # Seconds
 # TODO: Make sure that testing environment is same linux environment that modules are running on.
 
 
-@pytest.mark.skip
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.callsSendEvent
 def test_module_send_multiple_event_iothub_fi():
