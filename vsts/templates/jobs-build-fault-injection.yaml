@@ -9,7 +9,7 @@ jobs:
 - job: "mqtt"
   displayName: "mqtt"
   strategy:
-    parallel: 3 # maximum number of agents to simultaneously run copies of this job on
+    parallel: 1
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
@@ -24,7 +24,7 @@ jobs:
 - job: "mqtt_ws"
   displayName: "mqtt_ws"
   strategy:
-    parallel: 3
+    parallel: 1
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
@@ -39,7 +39,7 @@ jobs:
 - job: "amqp"
   displayName: "amqp"
   strategy:
-    parallel: 3
+    parallel: 1
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
@@ -54,7 +54,7 @@ jobs:
 - job: "amqp_ws"
   displayName: "amqp_ws"
   strategy:
-    parallel: 3
+    parallel: 1
   dependsOn:
     - 'build_linux_container'
   continueOnError: true
