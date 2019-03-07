@@ -24,8 +24,7 @@ Send Output Event
 There's a rule in the routing table that sends the 'telemetry' output event to eventhub
 """
 
-# We are going to be skipping this fault injection test for now... 
-@pytest.mark.skip
+
 @pytest.mark.callsSendOutputEvent
 @pytest.mark.testgroup_edgehub_fault_injection
 def test_module_output_routed_upstream_fi():
