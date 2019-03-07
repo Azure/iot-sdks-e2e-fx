@@ -50,4 +50,4 @@ def test_module_output_routed_upstream_fi():
         module_client.disconnect()
         eventhub_client.disconnect()
     finally:
-        restart_edgehub(hard=True)
+        restart_edgehub(hard=False)
