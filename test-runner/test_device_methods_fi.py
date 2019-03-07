@@ -81,12 +81,17 @@ def do_device_method_call(source_module, destination_module, destination_device_
         connect_edgehub()
         restart_edgehub(hard=False)
 
+"""
+Test: device method from service to leaf device fi 
+invoke a method call from the service API and respond to it from the leaf device
+
+"""
 
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.module_under_test_has_device_wrapper
 def test_device_method_from_service_to_leaf_device_fi():
     """
-    invoke a method call from the service API and respond to it from the leaf device
+    
     """
 
     service_client = connections.connect_service_client()

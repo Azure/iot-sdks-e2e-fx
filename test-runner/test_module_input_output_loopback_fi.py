@@ -26,7 +26,6 @@ Module sending message to itself
 Loopout and Loopin are linked together on the deployment manifest
 """
 
-@pytest.mark.skip
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.callsendOutputMessage
 @pytest.mark.receivesInputMessages
