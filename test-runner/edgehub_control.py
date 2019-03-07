@@ -83,13 +83,11 @@ def restart_edgehub(hard=False):
     try:
         if hard:            
             client = docker.from_env()
-            containerList = []
-            for i in client.containers.list():
-                if "Mod" or "edgeHub" in i.name:
-                    name = client.containers.get(name)
-                    list.append(name)
-            for i in containerList:
-                i.restart()
+            containerList = list(map(lambda x: x.name, client.containers.list()))
+            for containerName in containerList:
+                currentContainer = client.containers.get(containerName)
+                currentContainer.restart()
+
             while EDGEHUB_NAME not in list(
                 map(lambda x: x.name, client.containers.list())
             ):
