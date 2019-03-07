@@ -83,25 +83,12 @@ def restart_edgehub(hard=False):
     try:
         if hard:            
             client = docker.from_env()
-<<<<<<< HEAD
             containerList = list(map(lambda x: x.name, client.containers.list()))
             for containerName in containerList:
                 if "Mod" or "edgeHub" in containerName:
                     currentContainer = client.containers.get(containerName)
                     currentContainer.restart()
             while EDGEHUB_NAME not in list(map(lambda x: x.name, client.containers.list())):
-=======
-            containerList = []
-            for i in client.containers.list():
-                if "Mod" or "edgeHub" in i.name:
-                    name = client.containers.get(name)
-                    list.append(name)
-            for i in containerList:
-                i.restart()
-            while EDGEHUB_NAME not in list(
-                map(lambda x: x.name, client.containers.list())
-            ):
->>>>>>> bugfix with indent
                 log_message("waiting for edge daemon to revive edgehub...")
                 sleep(1)
             log_message("updating pointer to edgehub container")
