@@ -86,12 +86,11 @@ def restart_edgehub(hard=False):
             containerList = list(map(lambda x: x.name, client.containers.list()))
             
             for containerName in containerList:
-                print("CONTAINER NAME: {0}",containerName)
+                if EDGEHUB_NAME or "mod" in containerName:
+                    print("CONTAINER NAME: {0}".format(containerName))
+                    currentContainer = client.containers.get(containerName)
+                    currentContainer.restart()
 
-                currentContainer = client.containers.get(containerName)
-                currentContainer.restart()
-
-            
             while EDGEHUB_NAME not in list(
                 map(lambda x: x.name, client.containers.list())
             ):
