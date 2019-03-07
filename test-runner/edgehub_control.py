@@ -78,6 +78,7 @@ def connect_edgehub(network=True):
 
 def restart_edgehub(hard=False):
     log_message("restarting edgehub")
+    sleep(5)
     client = docker.from_env()
     edgeHub = client.containers.get(EDGEHUB_NAME)
     try:
