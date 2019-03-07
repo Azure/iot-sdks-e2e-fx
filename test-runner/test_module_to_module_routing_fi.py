@@ -30,7 +30,6 @@ test_to_friend_input = None
 receive_timeout = 60
 
 
-@pytest.mark.skip
 @pytest.mark.callsSendOutputEvent
 def test_module_to_friend_routing():
     test_client = connections.connect_test_module_client()
