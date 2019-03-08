@@ -25,8 +25,8 @@ There's a rule in the routing table that sends the 'telemetry' output event to e
 """
 
 
-@pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.callsSendOutputEvent
+@pytest.mark.testgroup_edgehub_fault_injection
 def test_module_output_routed_upstream_fi():
     try:
         module_client = connections.connect_test_module_client()
@@ -49,4 +49,4 @@ def test_module_output_routed_upstream_fi():
         module_client.disconnect()
         eventhub_client.disconnect()
     finally:
-        restart_edgehub(hard=True)
+        restart_edgehub(hard=False)

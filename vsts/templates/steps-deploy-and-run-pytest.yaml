@@ -48,6 +48,18 @@ steps:
         $Transport="mqtt"
         $Scenario="edgehub_module_fi"
       }
+      "edgehub_module_fi_mqtt_ws" {
+        $Transport="mqttws"
+        $TestSet="edgehub_module_fi"
+      }
+      "edgehub_module_fi_amqp" {
+        $Transport="amqp"
+        $TestSet="edgehub_module_fi"
+      }
+      "edgehub_module_fi_amqp_ws" {
+        $Transport="amqpws"
+        $TestSet="edgehub_module_fi"
+      }
       default {
         throw("Unknown suite: " + $env:Suite)
       }
@@ -57,7 +69,7 @@ steps:
 
     # Skip tests based on SDK transport support
     if (($env:Language -eq "c") -or ($env:Language -eq "python")) {
-      if ($TestSet -eq "edgehub_module") {
+      if (($TestSet -eq "edgehub_module") -or ($TestSet -eq "edgehub_module_fi")) {
         if (($Transport -eq "amqp") -or ($Transport -eq "amqpws")) {
           $SkipTest="yes"
         }

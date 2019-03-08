@@ -111,8 +111,7 @@ def test_module_method_call_invoked_from_service():
     module_client.disconnect()
     service_client.disconnect()
 
-
-@pytest.mark.skip
+@pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.invokesModuleMethodCalls
 def test_module_method_from_test_to_friend_fi():
@@ -134,7 +133,7 @@ def test_module_method_from_test_to_friend_fi():
     friend_client.disconnect()
 
 
-@pytest.mark.skip
+@pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.receivesMethodCalls
 @pytest.mark.invokesModuleMethodCalls
