@@ -14,45 +14,45 @@ steps:
     switch ($env:Suite) {
       "edgehub_module_mqtt" {
         $Transport="mqtt"
-        $TestSet="edgehub_module"
+        $Scenario="edgehub_module"
       }
       "edgehub_module_mqtt_ws" {
         $Transport="mqttws"
-        $TestSet="edgehub_module"
+        $Scenario="edgehub_module"
       }
       "edgehub_module_amqp" {
         $Transport="amqp"
-        $TestSet="edgehub_module"
+        $Scenario="edgehub_module"
       }
       "edgehub_module_amqp_ws" {
         $Transport="amqpws"
-        $TestSet="edgehub_module"
+        $Scenario="edgehub_module"
       }
       "iothub_module_mqtt" {
         $Transport="mqtt"
-        $TestSet="iothub_module"
+        $Scenario="iothub_module"
       }
       "iothub_module_mqtt_ws" {
         $Transport="mqttws"
-        $TestSet="iothub_module"
+        $Scenario="iothub_module"
       }
       "iothub_module_amqp" {
         $Transport="amqp"
-        $TestSet="iothub_module"
+        $Scenario="iothub_module"
       }
       "iothub_module_amqp_ws" {
         $Transport="amqpws"
-        $TestSet="iothub_module"
+        $Scenario="iothub_module"
       }
       "edgehub_module_fi_mqtt" {
         $Transport="mqtt"
-        $TestSet="edgehub_module_fi"
+        $Scenario="edgehub_module_fi"
       }
       default {
         throw("Unknown suite: " + $env:Suite)
       }
     }
-    Write-Host "Transport=${Transport} TestSet=${TestSet}"
+    Write-Host "Transport=${Transport} Scenario=${Scenario}"
 
 
     # Skip tests based on SDK transport support
@@ -68,23 +68,8 @@ steps:
       }
     }
 
-    # set pytest parameters
-    switch($TestSet) {
-      "iothub_module" {
-        $TestGroup="testgroup_iothub_module_client"
-        $TestArgs="--direct-to-iothub"
-      }
-      "edgehub_module" {
-        $TestGroup="testgroup_edgehub_module_client"
-        $TestArgs=""
-      }
-      "edgehub_module_fi" {
-        $TestGroup="testgroup_edgehub_fault_injection"
-        $TestArgs=""
-      }
-    }
-
     # add parameters if we're runnin a single case
+    $TestArgs=""
     if ($env:TestCase -ne "") {
       $TestArgs=$TestArgs + " " + $env:TestCase
     }
@@ -92,7 +77,7 @@ steps:
       $TestArgs=$TestArgs + " --count=" + $env:RepeatCount
     }
 
-    $JunitSuiteName="${env:Language}_${TestSet}_${Transport}"
+    $JunitSuiteName="${env:Language}_${Scenario}_${Transport}"
     $LogFolderName=$JunitSuiteName
     if ($env:AGENT_JOBNAME -ne "Job") {
       $LogFolderName=$env:AGENT_JOBNAME.replace(" + ","").replace(" ","_")
@@ -107,7 +92,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=junitSuiteName]${JunitSuiteName}"
     Write-Host "##vso[task.setvariable variable=logFolderName]${LogFolderName}"
     Write-Host "##vso[task.setvariable variable=skipTest]${SkipTest}"
-    Write-Host "##vso[task.setvariable variable=testgroup]${TestGroup}"
+    Write-Host "##vso[task.setvariable variable=scenario]${Scenario}"
     Write-Host "##vso[task.setvariable variable=transport]${Transport}"
     Write-Host "##vso[task.setvariable variable=testArgs]${TestArgs}"
     Write-Host "##vso[task.setvariable variable=testImage]${TestImage}"
@@ -116,7 +101,7 @@ steps:
     Write-Host "JunitSuiteName=${JunitSuiteName}"
     Write-Host "LogFolderName=${LogFolderName}"
     Write-Host "SkipTest=${SkipTest}"
-    Write-Host "TestGroup=${TestGroup}"
+    Write-Host "Scenario=${Scenario}"
     Write-Host "Transport=${Transport}"
     Write-Host "TestArgs=${TestArgs}"
     Write-Host "TestImage=${TestImage}"
@@ -144,7 +129,7 @@ steps:
   parameters:
     language: ${{ parameters.language }}
     transport: $(transport)
-    testgroup: $(testgroup)
+    scenario: $(scenario)
     junit_suite_name: $(junitSuiteName)
     log_folder_name: $(logFolderName)
     extra_args: $(testArgs)

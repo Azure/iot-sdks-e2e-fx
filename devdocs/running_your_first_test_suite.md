@@ -161,11 +161,11 @@ bertk@bertk-test-vm:~/repos/e2e-fx$
 
 *What this accomplishes*: Now that we have the test module deployed and the environment set, we can run the tests.  The fact that we're testing the node.js SDK is specified twice: once by the fact that we have the node.js image deployed, and once by the use of the --node_wrapper parameter.
 
-*Command to run* (from `test-runner` directory): `pytest --node-wrapper -m testgroup_edgehub_module_client`
+*Command to run* (from `test-runner` directory): `pytest --node-wrapper --scenario=edgehub_module_client`
 
 *Example output*:
 ```
-bertk@bertk-test-vm:~/repos/e2e-fx/test-runner$ pytest --node-wrapper -m testgroup_edgehub_module_client
+bertk@bertk-test-vm:~/repos/e2e-fx/test-runner$ pytest --node-wrapper --scenario=edgehub_module_client
 ======================================================= test session starts ========================================================
 platform linux -- Python 3.6.7, pytest-3.8.2, py-1.8.0, pluggy-0.9.0 -- /usr/bin/python3
 cachedir: .pytest_cache
@@ -192,11 +192,11 @@ Run Parameters:
   test transport:       mqtt
   friend transport:     mqtt
   destination:          edgehub
-PYTEST: HORTON: starting run: ['--timeout', '90', '-vv', '--showlocals', '--tb=short', '--node-wrapper', '-m', 'testgroup_edgehub_module_client']
+PYTEST: HORTON: starting run: ['--timeout', '90', '-vv', '--showlocals', '--tb=short', '--node-wrapper', 'scenario=edgehub_module_client']
 watching edgeHub
 watching friendMod
 watching nodeMod
-collected 44 items / 22 deselected
+collected 44 items
 
 test_connect_disconnect.py::test_module_client_connect_disconnect PASSED                                                     [  4%]
 test_connect_disconnect.py::test_module_client_connect_enable_twin_disconnect PASSED                                         [  9%]
@@ -227,8 +227,7 @@ bertk@bertk-test-vm:~/repos/e2e-fx/test-runner$
 ## Other suites to run:
 
 ### Run IoTEdge module tests with transport=amqp
-*Command to run*: `pytest --node-wrapper -m testgroup_edgehub_module_client --transport=amqp`
+*Command to run*: `pytest --node-wrapper --scenario=edgehub_module_client --transport=amqp`
 
 ### Run IotHub module tests with transport=mqtt-ws
-Note: you have to specify iothub in two places: once in the group of tests to run (`-m testgroup_iothub_module_client`) and once in the parameter that specifies to bypas IoTEdge and go straight to IoTHub (`--direct-to-iothub`)
-*Command to run*: `pytest --node-wrapper -m testgroup_iothub_module_client --transport=mqttws --direct-to-iothub`
+*Command to run*: `pytest --node-wrapper --scenario=iothub_module_client`

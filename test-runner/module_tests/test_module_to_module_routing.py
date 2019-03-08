@@ -9,15 +9,15 @@ import connections
 import random
 import time
 import test_utilities
-from environment import runtime_config
+from runtime_config import get_current_config
 
 
 @pytest.fixture(scope="module", autouse=True)
 def set_channels(request):
     global friend_to_test_output
     global test_to_friend_input
-    friend_to_test_output = "to" + runtime_config.test_module.module_id
-    test_to_friend_input = "from" + runtime_config.test_module.module_id
+    friend_to_test_output = "to" + get_current_config().test_module.module_id
+    test_to_friend_input = "from" + get_current_config().test_module.module_id
 
 
 friend_to_test_output = None

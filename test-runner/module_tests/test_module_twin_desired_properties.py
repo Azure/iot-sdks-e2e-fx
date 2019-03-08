@@ -8,7 +8,7 @@ import pytest
 import random
 import connections
 import time
-from environment import runtime_config
+from runtime_config import get_current_config
 import json
 from adapters import print_message as log_message
 
@@ -44,8 +44,8 @@ def test_service_can_set_desired_properties_and_module_can_retrieve_them():
     registry_client = connections.connect_registry_client()
     log_message("patching twin")
     registry_client.patch_module_twin(
-        runtime_config.test_module.device_id,
-        runtime_config.test_module.module_id,
+        get_current_config().test_module.device_id,
+        get_current_config().test_module.module_id,
         twin_sent,
     )
     log_message("disconnecting registry client")
@@ -87,8 +87,8 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         log_message("sending patch #" + str(i) + " through registry client")
         twin_sent = {"properties": {"desired": {"foo": base + i}}}
         registry_client.patch_module_twin(
-            runtime_config.test_module.device_id,
-            runtime_config.test_module.module_id,
+            get_current_config().test_module.device_id,
+            get_current_config().test_module.module_id,
             twin_sent,
         )
         log_message("patch " + str(i) + " sent")
@@ -99,8 +99,8 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         log_message("Tringgering patch #" + str(i) + " through registry client")
         twin_sent = {"properties": {"desired": {"foo": base + i}}}
         registry_client.patch_module_twin(
-            runtime_config.test_module.device_id,
-            runtime_config.test_module.module_id,
+            get_current_config().test_module.device_id,
+            get_current_config().test_module.module_id,
             twin_sent,
         )
         log_message("patch " + str(i) + " triggered")

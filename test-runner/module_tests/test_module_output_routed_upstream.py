@@ -8,7 +8,7 @@ import pytest
 import connections
 import random
 import test_utilities
-from environment import runtime_config
+from runtime_config import get_current_config
 from adapters import print_message as log_message
 
 output_name = "telemetry"
@@ -25,7 +25,7 @@ def test_module_output_routed_upstream():
     module_client.send_output_event(output_name, sent_message)
 
     received_message = eventhub_client.wait_for_next_event(
-        runtime_config.test_module.device_id,
+        get_current_config().test_module.device_id,
         test_utilities.default_eventhub_timeout,
         expected=sent_message,
     )

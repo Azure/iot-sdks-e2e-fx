@@ -34,7 +34,9 @@ function run_single_scenario {
   shift
   language=$1
   shift
-  $script_dir/ci-run-single-scenario.sh $tag $transport $language $@
+  scenario=$1
+  shift
+  $script_dir/ci-run-single-scenario.sh $tag $transport $language $scenario $@
   if [ $? -ne 0 ]; then
     return_code=1
     return_string="$return_string"$'\n'"FAILED: $tag $transport $language"
@@ -63,7 +65,7 @@ for transport in amqp amqpws mqtt mqttws ; do
       continue
     fi
   fi
-  run_single_scenario edgehub $transport $language testgroup_edgehub_module_client
+  run_single_scenario edgehub $transport $language edgehub_module
 done
 
 for transport in amqp amqpws mqtt mqttws; do
@@ -76,7 +78,7 @@ for transport in amqp amqpws mqtt mqttws; do
       continue
     fi
   fi
-  run_single_scenario iothub $transport $language testgroup_iothub_module_client --direct-to-iothub
+  run_single_scenario iothub $transport $language iothub_module
 done
 
 end_script

@@ -18,7 +18,7 @@ from edgehub_control import (
     restart_edgehub,
 )
 from adapters import print_message as log_message
-from environment import runtime_config
+from runtime_config import get_current_config
 
 client = docker.from_env()
 
@@ -93,7 +93,7 @@ def test_device_method_from_service_to_leaf_device_fi():
     leaf_device_client = connections.connect_leaf_device_client()
 
     do_device_method_call(
-        service_client, leaf_device_client, runtime_config.leaf_device.device_id
+        service_client, leaf_device_client, get_current_config().leaf_device.device_id
     )
 
     service_client.disconnect()
@@ -112,7 +112,7 @@ def test_device_method_from_module_to_leaf_device_fi():
     leaf_device_client = connections.connect_leaf_device_client()
 
     do_device_method_call(
-        module_client, leaf_device_client, runtime_config.leaf_device.device_id
+        module_client, leaf_device_client, get_current_config().leaf_device.device_id
     )
 
     module_client.disconnect()

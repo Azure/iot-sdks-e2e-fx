@@ -205,11 +205,11 @@ In vscode, press F5 to start the debugger.  If it all works, you should start se
 
 You probably do this using a bash prompt on your Linux VM.  As the test is running inside your bash window, you should see debug output in your vscode debugger window.  This is how you know it's running.
 
-**(one possible) command to use**: `pytest --csharp-wrapper -m testgroup_edgehub_module_client`
+**(one possible) command to use**: `pytest --csharp-wrapper --scenario=edgehub_module_client`
 
 **Example output**:
 ```
-(Python-3.6.6) bertk@bertk-newvm-1:~/repos/e2e-fx/test-runner$ pytest --csharp-wrapper -m testgroup_edgehub_module_client
+(Python-3.6.6) bertk@bertk-newvm-1:~/repos/e2e-fx/test-runner$ pytest --csharp-wrapper --scenario=edgehub_module_client
 =================================== test session starts ===================================
 platform linux -- Python 3.6.6, pytest-3.8.2, py-1.6.0, pluggy-0.8.1 -- /home/bertk/env/Python-3.6.6/bin/python3
 cachedir: .pytest_cache
