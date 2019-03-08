@@ -4,7 +4,7 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 
 # Make sure we're running python 3.5 or higher
 needpython=1
-which pytho3 > /dev/null
+which python3 > /dev/null
 if [ $? -eq 0 ]; then
   ret=`python3 -c 'import sys; print("%i" % (sys.hexversion>0x03050000))'`
   if [ $ret -eq 1 ]; then
