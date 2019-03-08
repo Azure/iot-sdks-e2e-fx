@@ -23,7 +23,7 @@ if [ -z ${tag} ] ||
    [ -z ${scenario} ]; then
   echo "incorrect parameters."
   echo "Usage: $0 [tag] [transport] [language] [scenario] [args...]"
-  echo "e.g. $0 iothub mqtt node iothub_module_client"
+  echo "e.g. $0 iothub mqtt node iothub_module"
   exit 1
 fi
 

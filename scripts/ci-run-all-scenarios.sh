@@ -65,7 +65,7 @@ for transport in amqp amqpws mqtt mqttws ; do
       continue
     fi
   fi
-  run_single_scenario edgehub $transport $language edgehub_module_client
+  run_single_scenario edgehub $transport $language edgehub_module
 done
 
 for transport in amqp amqpws mqtt mqttws; do
@@ -78,7 +78,7 @@ for transport in amqp amqpws mqtt mqttws; do
       continue
     fi
   fi
-  run_single_scenario iothub $transport $language iothub_module_client
+  run_single_scenario iothub $transport $language iothub_module
 done
 
 end_script
