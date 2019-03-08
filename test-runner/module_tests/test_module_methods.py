@@ -10,13 +10,7 @@ import json
 import multiprocessing
 import time
 from adapters import print_message as log_message
-from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
-from environment import runtime_config
-import docker
-
-
-client = docker.from_env()
-
+from runtime_config import get_current_config
 
 # How long do we have to wait after a module registers to receive
 # method calls until we can actually call a method.
@@ -63,13 +57,6 @@ def do_module_method_call(
     )
     time.sleep(registration_sleep)
 
-    disconnect_edgehub()  # One point that could be good to disconnect edgeHub
-    # time.sleep(1)
-    connect_edgehub()
-    log_message("Sleeping")
-    time.sleep(30)
-    log_message(" Done Sleeping")
-
     # invoking the call from caller side
     log_message("invoking method call")
     response = source_module.call_module_method_async(
@@ -89,22 +76,22 @@ def do_module_method_call(
 
 
 @pytest.mark.timeout(180)
-@pytest.mark.testgroup_edgehub_fault_injection
+@pytest.mark.testgroup_edgehub_module_client
+@pytest.mark.testgroup_iothub_module_client
 @pytest.mark.receivesMethodCalls
 def test_module_method_call_invoked_from_service():
     """
     invoke a module call from the service and responds to it from the test module.
     """
 
-    restart_edgehub(hard=True)
-    time.sleep(5)
     service_client = connections.connect_service_client()
     module_client = connections.connect_test_module_client()
+
     do_module_method_call(
         service_client,
         module_client,
-        runtime_config.test_module.device_id,
-        runtime_config.test_module.module_id,
+        get_current_config().test_module.device_id,
+        get_current_config().test_module.module_id,
         registration_sleep=time_for_method_to_fully_register_service_call,
     )
 
@@ -112,45 +99,43 @@ def test_module_method_call_invoked_from_service():
     service_client.disconnect()
 
 
-@pytest.mark.skip
-@pytest.mark.testgroup_edgehub_fault_injection
+@pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.invokesModuleMethodCalls
-def test_module_method_from_test_to_friend_fi():
+def test_module_method_from_test_to_friend():
     """
-  invoke a method call from the test module and respond to it from the friend module
-  """
+    invoke a method call from the test module and respond to it from the friend module
+    """
 
     module_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
-    time.sleep(5)
+
     do_module_method_call(
         module_client,
         friend_client,
-        runtime_config.friend_module.device_id,
-        runtime_config.friend_module.module_id,
+        get_current_config().friend_module.device_id,
+        get_current_config().friend_module.module_id,
     )
 
     module_client.disconnect()
     friend_client.disconnect()
 
 
-@pytest.mark.skip
-@pytest.mark.testgroup_edgehub_fault_injection
+@pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.receivesMethodCalls
 @pytest.mark.invokesModuleMethodCalls
-def test_module_method_from_friend_to_test_fi():
+def test_module_method_from_friend_to_test():
     """
-  invoke a method call from the friend module and respond to it from the test module
-  """
+    invoke a method call from the friend module and respond to it from the test module
+    """
 
     module_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
-    time.sleep(5)
+
     do_module_method_call(
         friend_client,
         module_client,
-        runtime_config.test_module.device_id,
-        runtime_config.test_module.module_id,
+        get_current_config().test_module.device_id,
+        get_current_config().test_module.module_id,
     )
 
     module_client.disconnect()

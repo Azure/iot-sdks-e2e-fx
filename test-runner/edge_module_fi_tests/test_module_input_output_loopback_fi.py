@@ -26,6 +26,7 @@ Module sending message to itself
 Loopout and Loopin are linked together on the deployment manifest
 """
 
+
 @pytest.mark.skip
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.callsendOutputMessage
@@ -53,4 +54,3 @@ def test_module_input_output_loopback_fi():
     log_message("received message: " + str(received_message))
     assert received_message == sent_message
     module_client.disconnect()
-

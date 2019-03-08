@@ -68,26 +68,19 @@ valid_api_surfaces = [MODULE_API, DEVICE_API, SERVICE_API, REGISTRY_API, EVENTHU
 
 CONNECTION_STRING = "connection_string"
 ENVIRONMENT = "environment"
-CONNECTION_STRING_WITH_GATEWAY = "connection_string_with_gateway"
 
-valid_connection_types = [
-    CONNECTION_STRING,
-    ENVIRONMENT,
-    CONNECTION_STRING_WITH_GATEWAY,
-]
+valid_connection_types = [CONNECTION_STRING, ENVIRONMENT]
 
 # --------------------------------------------------------------------------
 # value markers
 
 SET_AT_RUNTIME = "undefined, needs to be set at runtime"
-NOT_USED_YET = "unused for now, will be used in future code"
 
 
 class IotHubServiceRest:
     def __init__(self):
         self.test_object_type = IOTHUB_SERVICE
         self.connection_type = CONNECTION_STRING
-        self.docker_image = NOT_USED_YET
         self.connection_string = SET_AT_RUNTIME
         self.adapter_type = REST_ADAPTER
         self.rest_uri = SET_AT_RUNTIME
@@ -101,14 +94,12 @@ class IotHubServiceDirect(IotHubServiceRest):
         self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_AZURE_ADAPTER
         del self.rest_uri
-        del self.docker_image
 
 
 class IotHubRegistryRest:
     def __init__(self):
         self.test_object_type = IOTHUB_SERVICE
         self.connection_type = CONNECTION_STRING
-        self.docker_image = NOT_USED_YET
         self.connection_string = SET_AT_RUNTIME
         self.adapter_type = REST_ADAPTER
         self.rest_uri = SET_AT_RUNTIME
@@ -122,7 +113,6 @@ class IotHubRegistryDirect(IotHubRegistryRest):
         self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_AZURE_ADAPTER
         del self.rest_uri
-        del self.docker_image
 
 
 class EventHubDirect:
@@ -146,7 +136,6 @@ class EdgeHubModuleRest:
     def __init__(self, api_name):
         self.test_object_type = EDGEHUB_MODULE
         self.connection_type = ENVIRONMENT
-        self.docker_image = NOT_USED_YET
         self.language = SET_AT_RUNTIME
         self.connection_string = SET_AT_RUNTIME
         self.device_id = SET_AT_RUNTIME
@@ -164,14 +153,12 @@ class EdgeHubModuleDirect(EdgeHubModuleRest):
         self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
         del self.rest_uri
-        del self.docker_image
 
 
 class EdgeHubLeafDeviceRest:
     def __init__(self, api_name):
         self.test_object_type = IOTHUB_DEVICE
-        self.connection_type = CONNECTION_STRING_WITH_GATEWAY
-        self.docker_image = NOT_USED_YET
+        self.connection_type = CONNECTION_STRING
         self.language = SET_AT_RUNTIME
         self.connection_string = SET_AT_RUNTIME
         self.device_id = SET_AT_RUNTIME
@@ -188,4 +175,3 @@ class EdgeHubLeafDeviceDirect(EdgeHubLeafDeviceRest):
         self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
         del self.rest_uri
-        del self.docker_image

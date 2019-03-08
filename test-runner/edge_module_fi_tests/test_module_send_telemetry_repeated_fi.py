@@ -9,7 +9,7 @@ import random
 import pytest
 
 import connections
-from environment import runtime_config
+from runtime_config import get_current_config
 import test_utilities
 from edgehub_control import (
     connect_edgehub,
@@ -38,7 +38,7 @@ def test_module_send_multiple_event_iothub_fi():
 
         log_message("start waiting for events on eventhub")
         input_thread = eventhub_client.wait_for_event_async(
-            runtime_config.test_module.device_id
+            get_current_config().test_module.device_id
         )
         sent_message = test_utilities.random_string_in_json()
 

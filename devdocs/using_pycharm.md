@@ -79,7 +79,7 @@ bertk@bertk-newvm-1:~$ source ~/pycharm-venv/bin/activate
 ![pc-10.png](\pycharm-assets\pc-10.png)
 
 * In the new configuration page, select `custom`
-* Set `Additional Arguments` to anything you need to pass to pytest.  (I use `--node-wrapper --direct-to-iothub -m testgroup_iothub_module_client` for testing node iothub modules
+* Set `Additional Arguments` to anything you need to pass to pytest.  (I use `--node-wrapper --scenario=iothub_module_client` for testing node iothub modules
 * Set `Working Directory` to the `test-runner` folder.
 * Click `OK`
 

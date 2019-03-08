@@ -122,9 +122,9 @@ edgeAgent        running          Up 2 days        mcr.microsoft.com/azureiotedg
 
 | command line | meaning |
 |---|---|
-| `pytest --csharp-wrapper` | Use the csharp module to run against `edgeHub` (the default) using MQTT (the default). |
-| `pytest --c-wrapper--direct-to-iothub --transport=amqpws` | Use the C module to test against IoTHub using AMQP with websockets |
-| `pytest --java-wrapper --transport=amqp` | Use the Java module to test against edgeHub (the default) using AMQP |
+| `pytest --csharp-wrapper --scenario=edgehub_module_client` | Use the csharp module to run against `edgeHub` using MQTT (the default). |
+| `pytest --c-wrapper --scenario=iothub_module_client --transport=amqpws` | Use the C module to test against IoTHub using AMQP with websockets |
+| `pytest --java-wrapper --scenario=edgehub_module_client --transport=amqp` | Use the Java module to test against edgeHub using AMQP |
 
 At the end of the run, you will see your results.
 

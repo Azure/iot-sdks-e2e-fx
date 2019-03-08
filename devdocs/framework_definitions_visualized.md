@@ -4,29 +4,29 @@
 
 An example test matrix might be the set of tests that get run as part of the commit gate for a given SDK.  To easily visualize this, remember:
 * A _matrix_ contains a list of _suites_
-* A _suite_ defines how to runs a _group_ with some set of parameters (transport, environment, and destination)
-* A _group_ contains a bunch of related test cases
+* A _suite_ defines how to runs a _scenario_ with some set of parameters (transport, environment, and destination)
+* A _scenario_ contains a bunch of related test cases along with some smaller set of static parameters (destination and connection method)
 
 ### A test matrix
 
 This matrix (called `build-ci` in this example) would run the following suites.  One purpose of this suite might be to validate code before it gets committed to master.
 
-* `edge_module_mqtt` - Runs all IoT Edge Module tests using MQTT
-* `edge_module_mqttws` - ditto, only with a different transport
-* `edge_module_amqp` - ditto
-* `edge_module_amqpws` - ditto
-* `hub_module_mqtt` - Runs all IoT Hub Module tests using MQTT
-* `hub_module_mqttws` - ditto, only with a different transport
-* `hub_module_amqp` - ditto
-* `hub_module_amqpws` - ditto
+* `edgehub_module_mqtt` - Runs all IoT Edge Module tests using MQTT
+* `edgehub_module_mqttws` - ditto, only with a different transport
+* `edgehub_module_amqp` - ditto
+* `edgehub_module_amqpws` - ditto
+* `iothub_module_mqtt` - Runs all IoT Hub Module tests using MQTT
+* `iothub_module_mqttws` - ditto, only with a different transport
+* `iothub_module_amqp` - ditto
+* `iothub_module_amqpws` - ditto
 
 ### A test suite
 
-The `hub_module_mqtt` suite is simple enough.  It runs the `hub-module` test group, using the MQTT transport, inside a `node-v6-ubuntu-slim` container.  It knows that it uses an IotEdge deployment to deploy this container to a test machine and it knows to use the `GatewayHostName=` parameter on the connection string so it can route traffic through EdgeHub.
+The `edgehub_module_mqtt` suite is simple enough.  It runs the `edgehub-module` scenario, using the MQTT transport, inside a `node-v6-ubuntu-slim` container.
 
-### A test group
+### A test scenario
 
-The `hub-module` test group has the following test cases.  These all exercise different ModuleApi functionality using IoT Edge as a destination.  Additionally, it will test any RegistryApi and ServiceApi functions involved with using IoT Edge Modules.
+The `edgehub_module` test scenario has the following test cases.  These all exercise different ModuleApi functionality using IoT Edge as a destination.  Additionally, it will test any RegistryApi and ServiceApi functions involved with using IoT Edge Modules.  It knows that it uses an IotEdge deployment to deploy this container to a test machine and it knows to use the `GatewayHostName=` parameter on the connection string so it can route traffic through EdgeHub.
 
 * `test_module_client_connect_disconnect`
 * `test_module_client_connect_enable_twin_disconnect`

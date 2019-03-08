@@ -7,7 +7,7 @@
 import pytest
 import random
 import connections
-from environment import runtime_config
+from runtime_config import get_current_config
 from adapters import print_message as log_message
 from edgehub_control import (
     edgeHub,
@@ -48,7 +48,8 @@ def test_module_can_set_reported_properties_and_service_can_retrieve_them_fi():
         log_message("reconnected edgehub")
         log_message("getting twin")
         twin_received = registry_client.get_module_twin(
-            runtime_config.test_module.device_id, runtime_config.test_module.module_id
+            get_current_config().test_module.device_id,
+            get_current_config().test_module.module_id,
         )
         log_message("disconnecting registry client")
         registry_client.disconnect()

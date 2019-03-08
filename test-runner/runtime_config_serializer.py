@@ -1,5 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information
+import connection_string
+import runtime_config_templates
 
 
 def _can_serialize(obj_name, obj):
@@ -16,9 +18,13 @@ def _can_serialize(obj_name, obj):
 
 
 def obj_to_dict(obj, object_name=None):
-    if object_name in ["connection_string", "ca_certificate", "certificate"]:
+    if obj is runtime_config_templates.SET_AT_RUNTIME:
+        return obj
+    elif object_name is "connection_string":
+        return connection_string.obfuscate_connection_string(obj)
+    elif object_name in ["ca_certificate", "certificate"]:
         return "REDACTED"
-    if isinstance(obj, str):
+    elif isinstance(obj, str):
         return obj
     elif isinstance(obj, object):
         dict = {}
