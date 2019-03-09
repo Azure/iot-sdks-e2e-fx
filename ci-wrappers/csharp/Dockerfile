@@ -19,6 +19,10 @@ EXPOSE 22/tcp
 # get ready for ssh keys
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys
 
+# make a key that we can use to connect to SSH and authorize it.  
+# people who want to use SSH can use docker cp to get the key out of the container
+RUN ssh-keygen -b 2048 -t rsa -f /root/.ssh/remote-debug -q -N ""
+RUN cat /root/.ssh/remote-debug.pub > /root/.ssh/authorized_keys
 
 # install vsdbg
 RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
