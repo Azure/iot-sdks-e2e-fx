@@ -1,6 +1,7 @@
 
 test_connect_disconnect_fi.py
-```
+
+```log
 {"message": "PYTEST: HORTON: starting run: ['--timeout', '90', '-vv', '--showlocals', '--tb=short', '--scenario=edgehub_module_fi', '--c-wrapper', 'test_connect_disconnect_fi.py']"}
 {"message": "PYTEST: HORTON: Preforming pre-session cleanup"}
 {"message": "PYTEST: HORTON: pre-session cleanup complete"}
