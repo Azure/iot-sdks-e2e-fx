@@ -153,4 +153,36 @@ Then, to get it running, we deploy it
 If that works, `docker ps` or `iotedge list` should show the cMod container existing "since a few secodns ago" or something similar.
 
 
+## Pulling Down the latest version of the C SDK and rebuilding within the docker container
 
+From the VM that is running your tests, open an ssh into the container
+
+```
+docker exec -it cMod /bin/bash
+```
+
+cd into the sdk folder, which is off the root directory
+
+```
+cd /sdk
+```
+
+Run the usual git commands to update the folder to the latest version of master
+
+```
+git checkout master
+
+git fetch
+
+git rebase
+
+git submodule update --init --recursive
+```
+
+Once all that is done, exit the sdk folder and run the rebuild script
+
+```
+cd /
+
+./rebuild.sh
+```
