@@ -10,7 +10,7 @@ This is useful for:
 
 ## Step 1: Get SSH key and source
 
-Instructions for this are in [remote-debug-setup.md](/remote-debug-setup.md)
+Instructions for this are in [remote-debug-setup.md](/devdocs/remote-debug-setup.md)
 
 ## Step 2: Install GDB dDebug extension
 

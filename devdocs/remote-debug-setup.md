@@ -65,6 +65,17 @@ Then restart the sshd service:
 service ssh restart
 ```
 
+You may get the following output if your container is not set up correctly (example for c sdk):
+
+```
+running tests for for c
+Copying source and ssh key for c into /home/yoseph/GitRepos/iot-sdks-e2e-fx/c_source
+Source for cMod is in /home/yoseph/GitRepos/iot-sdks-e2e-fx/c_source
+Template parsing error: template: :1:3: executing "" at <index (index .Networ...>: error calling index: index of untyped nil
+SSH port 22 is not exposed from cMod
+```
+This indicates you have not set up your container to open the SSH port 22.
+
 ## Step 3: connect to the container and restart the sshd service
 
 **What this accomplishes**: For some unknown reason, sshd needs to be manually restarted before it will accept incoming connections.
