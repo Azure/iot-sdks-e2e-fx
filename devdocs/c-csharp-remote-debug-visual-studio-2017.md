@@ -12,6 +12,8 @@ This is useful for:
 
 Instructions for this are in [remote-debug-setup.md](/devdocs/remote-debug-setup.md)
 
+When you are completed with these steps, you should be able to SSH into your module container via your host machine (as opposed to your local VM, which the container is running on). 
+
 ## Step 2: Install GDB dDebug extension
 
 For C, you need to install the [Visual C++ for IoT Development](https://marketplace.visualstudio.com/items?itemName=MarcGoodner-MSFT.VisualCforIoTDevelopment) into your Visual Studio 2017 install
