@@ -161,7 +161,7 @@ Inside VSCode, open `.vscode/launch.json` and add the following.  Replace the fo
 
 In vscode, press F5 to start the debugger.  If it all works, you should start seeing debug output in the terminal at the bottom.
 
-![cs-rd-03.png](\cs-remotedebug-assets\cs-rd-03.png)
+![cs-rd-03.png](/devdocs/remotedebug-assets/cs-rd-03.png)
 
 ## Step 7: Launch your tests
 
