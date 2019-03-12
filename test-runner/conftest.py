@@ -9,6 +9,7 @@ import pytest
 import signal
 import adapters
 from adapters import print_message as log_message
+from adapters import adapter_config
 from docker_log_watcher import DockerLogWatcher
 from identity_helpers import ensure_edge_environment_variables
 import runtime_config_templates
@@ -80,6 +81,12 @@ def pytest_addoption(parser):
         action="store_true",
         default=False,
         help="run tests for the python preview wrapper in-proc",
+    )
+    parser.addoption(
+        "--debug-container",
+        action="store_true",
+        default=False,
+        help="adjust run for container debugging (disable timeouts)",
     )
 
 
@@ -319,6 +326,11 @@ def pytest_collection_modifyitems(config, items):
     runtime_config.set_runtime_configuration(scenario, language, transport, local)
     adapters.print_message("HORTON: starting run: {}".format(config._origargs))
     set_up_log_watcher()
+
+    if config.getoption("--debug-container"):
+        print("Debugging the container.  Removing all timeouts")
+        adapter_config.default_api_timeout = 3600
+        config._env_timeout = 0
 
 
 def set_up_log_watcher():

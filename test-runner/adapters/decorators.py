@@ -5,7 +5,6 @@
 # full license information.
 import functools
 
-from multiprocessing.pool import ThreadPool
 from .print_message import print_message
 
 
@@ -41,25 +40,3 @@ def log_entry_and_exit(_func=None, *, print_args=True):
         return decorator_log_entry_and_exit
     else:
         return decorator_log_entry_and_exit(_func)
-
-
-timeout_pool = ThreadPool()
-
-
-def add_timeout(_func=None, *, timeout=45):
-    """
-    add a timeout value to the function call
-    """
-
-    def decorator_add_timeout(func):
-        @functools.wraps(func)
-        def wrapper_add_timeout(*args, **kwargs):
-            thread = timeout_pool.apply_async(func, args, kwargs)
-            return thread.get(timeout)
-
-        return wrapper_add_timeout
-
-    if _func is None:
-        return decorator_add_timeout
-    else:
-        return decorator_add_timeout(_func)

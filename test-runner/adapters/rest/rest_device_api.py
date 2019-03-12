@@ -8,7 +8,8 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
     AzureIOTEndToEndTestWrapperRestApi,
 )
 from multiprocessing.pool import ThreadPool
-from ..decorators import log_entry_and_exit, add_timeout
+from ..decorators import log_entry_and_exit
+from .. import adapter_config
 
 # Amount of time to wait after submitting async request.  Gives server time to call API before calling the next API.
 wait_time_for_async_start = 1
@@ -27,27 +28,30 @@ class DeviceApi:
         # self.pool.join()
 
     @log_entry_and_exit(print_args=False)
-    @add_timeout
     def connect(self, transport, connection_string, ca_certificate):
         result = self.rest_endpoint.connect(
-            transport, connection_string, ca_certificate=ca_certificate
+            transport,
+            connection_string,
+            ca_certificate=ca_certificate,
+            timeout=adapter_config.default_api_timeout,
         )
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    @add_timeout
     def disconnect(self):
         if self.connection_id:
-            self.rest_endpoint.disconnect(self.connection_id)
+            self.rest_endpoint.disconnect(
+                self.connection_id, timeout=adapter_config.default_api_timeout
+            )
             self.connection_id = ""
 
     @log_entry_and_exit
-    @add_timeout
     def enable_methods(self):
-        return self.rest_endpoint.enable_methods(self.connection_id)
+        return self.rest_endpoint.enable_methods(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
     @log_entry_and_exit
-    @add_timeout
     def roundtrip_method_async(
         self, method_name, status_code, request_payload, response_payload
     ):
@@ -59,5 +63,6 @@ class DeviceApi:
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.roundtrip_method_call),
             (self.connection_id, method_name, request_and_response),
+            dict(timeout=adapter_config.default_api_timeout),
         )
         return thread

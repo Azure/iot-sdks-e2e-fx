@@ -2,17 +2,14 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from multiprocessing.pool import ThreadPool
-from multiprocessing.context import TimeoutError
 from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_api import (
     AzureIOTEndToEndTestWrapperRestApi,
 )
-from ..decorators import add_timeout
+import msrest
+from .. import adapter_config
 
 rest_endpoints = None
 
-pool = ThreadPool()
-print_message_timeout = 2
 all_rest_uris = set()
 
 
@@ -33,11 +30,10 @@ def _get_rest_endpoints():
     return rest_endpoints
 
 
-@add_timeout
 def cleanup_test_objects():
     for rest_endpoint in _get_rest_endpoints():
         try:
-            rest_endpoint.cleanup()
+            rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
         except Exception:
             pass
 
@@ -48,11 +44,11 @@ def print_message(message):
     modules that are being used for the current test run.
     """
     for rest_endpoint in _get_rest_endpoints():
-        thread = pool.apply_async(
-            rest_endpoint.log_message, ({"message": "PYTEST: " + message},)
-        )
         try:
-            thread.get(print_message_timeout)
-        except TimeoutError:
-            print("PYTEST: timeout logging to " + str(rest_endpoint))
+            rest_endpoint.log_message(
+                {"message": "PYTEST: " + message},
+                timeout=adapter_config.print_message_timeout,
+            )
+        except msrest.exceptions.ClientRequestError:
+            print("PYTEST: error logging to " + str(rest_endpoint))
             # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
