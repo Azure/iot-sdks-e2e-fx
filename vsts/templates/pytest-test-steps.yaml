@@ -13,7 +13,7 @@ steps:
     export IOTHUB_E2E_EDGEHUB_CA_CERT=$(sudo cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0)
     mkdir $(Horton.FrameworkRoot)/results
     cd $(Horton.FrameworkRoot)/test-runner
-    python3 -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --${{ parameters.language }}-wrapper --junitxml=../results/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.junit_suite_name }} ${{ parameters.extra_args }}
+    python3 -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --${{ parameters.language }}-wrapper --junitxml=$(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.junit_suite_name }} ${{ parameters.extra_args }}
 
   displayName: 'run tests ${{ parameters.scenario }} ${{ parameters.language }} ${{ parameters.transport }}'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
