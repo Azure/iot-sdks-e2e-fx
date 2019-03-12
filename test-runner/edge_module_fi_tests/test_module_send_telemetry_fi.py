@@ -38,7 +38,7 @@ def test_module_send_event_iothub_fi():
     module_client.send_event_async(sent_message)
     log_message("wait for event to arrive at eventhub")
     received_message = eventhub_client.wait_for_next_event(
-        runtime_config.test_module.device_id,
+        get_current_config().test_module.device_id,
         test_utilities.default_eventhub_timeout,
         expected=sent_message,
     )
@@ -49,7 +49,7 @@ def test_module_send_event_iothub_fi():
     module_client.send_event_async(sent_message)
     connect_edgehub()  # RECONNECT EDGEHUB
     received_message = eventhub_client.wait_for_next_event(
-        runtime_config.test_module.device_id,
+        get_current_config().test_module.device_id,
         test_utilities.default_eventhub_timeout,
         expected=sent_message,
     )
