@@ -50,8 +50,8 @@ def test_service_can_set_desired_properties_and_module_can_retrieve_them_fi():
     disconnect_edgehub()  # DISCONNECTING EGEHUB
     connect_edgehub()  # CONNECTING EDGEHUB
     registry_client.patch_module_twin(
-        runtime_config.test_module.device_id,
-        runtime_config.test_module.module_id,
+        get_current_config().test_module.device_id,
+        get_current_config().test_module.module_id,
         twin_sent,
     )
     log_message("patching twin")
