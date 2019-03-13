@@ -14,7 +14,7 @@ jobs:
       edgehub_module_mqtt_fi: { suite: edgehub_module_mqtt_fi }
       edgehub_module_mqtt_ws_fi: { suite: edgehub_module_mqtt_ws_fi }
       edgehub_module_amqp_fi: { suite: edgehub_module_amqp_fi }
-      edgehub_module_amqp_ws_fi: { suite: edgehub_module_amqp_ws_fi }}
+      edgehub_module_amqp_ws_fi: { suite: edgehub_module_amqp_ws_fi }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml
