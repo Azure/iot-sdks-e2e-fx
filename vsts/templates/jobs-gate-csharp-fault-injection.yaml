@@ -11,10 +11,10 @@ jobs:
     - "build_linux_container"
   strategy:
     matrix:
-      edgehub_module_mqtt_fi: { suite: edgehub_module_mqtt_fi }
-      edgehub_module_mqtt_ws_fi: { suite: edgehub_module_mqtt_ws_fi }
-      edgehub_module_amqp_fi: { suite: edgehub_module_amqp_fi }
-      edgehub_module_amqp_ws_fi: { suite: edgehub_module_amqp_ws_fi }
+      edgehub_module_mqtt_fi: { suite: edgehub_module_fi_mqtt }
+      edgehub_module_mqtt_ws_fi: { suite: edgehub_module_fi_mqtt_ws }
+      edgehub_module_amqp_fi: { suite: edgehub_module_fi_amqp }
+      edgehub_module_amqp_ws_fi: { suite: edgehub_module_fi_amqp_ws }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml
