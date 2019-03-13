@@ -5,8 +5,8 @@
 ## Setup and Configuration
 
 The first time you run this framework, you will want to follow these documents:
-1. [Set up a VM to run tests under Linux](./devdocs/linux_test_vm_setup.md)
-2. [Run a simple test to verify your installation](./devdocs/running_your_first_test_suite.md)
+1. [Set up a VM to run tests under Linux](https://github.com/Azure/iot-sdks-e2e-fx/wiki/usage-linux-test-vm-setup)
+2. [Run a simple test to verify your installation](https://github.com/Azure/iot-sdks-e2e-fx/wiki/usage-running-your-first-test-suite)
 
 
 # [Wiki](https://github.com/Azure/iot-sdks-e2e-fx/wiki)
