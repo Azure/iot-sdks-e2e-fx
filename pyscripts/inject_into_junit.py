@@ -6,7 +6,7 @@
 # filename: inject_into_junit.py
 # author:   v-greach@microsoft.com
 # created:  03/11/2019
-# Rev: 03/11/2019 C
+# Rev: 03/11/2019 D
 
 import sys
 import os
@@ -37,7 +37,9 @@ class InjectIntoJunit:
             return
 
         try:
-            read_file = open(merge_log_path, encoding="utf8").read().split("\n")
+            with open(merge_log_path, 'r', encoding="utf8") as f:
+                read_file = f.read().splitlines()
+
         except Exception as e:
             print("Exception opening LOG file: " + merge_log_path )
             print(e)
