@@ -6,7 +6,7 @@
 # filename: Tag-DockerImage.ps1
 # author:   v-greach@microsoft.com
 # created:  03/11/2019
-# Rev: 03/11/2019 C
+# Rev: 03/11/2019 D
 
 Param
 (
@@ -58,6 +58,7 @@ try {
 }
 catch {
     Write-Output $Error[0]
+    exit
 }
 
 $Params = @{

@@ -21,7 +21,6 @@ class InjectIntoJunit:
         parser = argparse.ArgumentParser(description="Inject Into Junit")
         parser.add_argument('-junit_file', required=True, nargs=1, help="filename of junit file")
         parser.add_argument('-log_file', required=True, nargs=1, help="filename of log file")
-        parser.add_argument('-whatif', action="store_true", default=False, help="for testing")
         arguments = parser.parse_args(args)
 
         junit_path = arguments.junit_file[0]
@@ -69,10 +68,7 @@ class InjectIntoJunit:
             return
 
         try:
-            if(arguments.whatif):
-                shutil.copyfile(junit_save_path, junit_path + "x")
-            else:
-                shutil.copyfile(junit_save_path, junit_path)
+            shutil.copyfile(junit_save_path, junit_path)
         except Exception as e:
             print("Exception copying JUNIT file: " + junit_path )
             print(e)
