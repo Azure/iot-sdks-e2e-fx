@@ -85,6 +85,65 @@ def test_module_client_connect_enable_input_messages_disconnect_fi():
 
 
 """
+Test: test_registry_client_connect_disconnect
+Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
+
+Success:
+Module Twin can reconnect to edgeHub after disconnection.
+
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
+"""
+
+
+@pytest.mark.testgroup_edgehub_fault_injection
+def test_registry_client_connect_disconnect_fi():
+    log_message("registry_client = connections.connect_registry_client()")
+    registry_client = connections.connect_registry_client()
+    disconnect_edgehub()
+    connect_edgehub()
+    log_message("registry_client.disconnect()")
+    registry_client.disconnect()
+
+
+"""
+Test: test_service_client_connect_disconnect
+
+Success: test_service_client_connect_disconnect
+Module Twin can reconnect to edgeHub after disconnection.
+
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
+"""
+
+
+@pytest.mark.testgroup_edgehub_fault_injection
+def test_service_client_connect_disconnect_fi():
+    log_message("service_client = connections.connect_service_client()")
+    service_client = connections.connect_service_client()
+    disconnect_edgehub()
+    connect_edgehub()
+    log_message("service_client.disconnect()")
+    service_client.disconnect()
+
+
+"""
+Test:
+Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
+
+Success:
+Module Twin can reconnect to edgeHub after disconnection.
+
+Failure: Upon edgeHub dropout, Module Twin cannot reconnect.
+"""
+
+
+@pytest.mark.testgroup_edgehub_fault_injection
+@pytest.mark.module_under_test_has_device_wrapper
+def test_device_client_connect_disconnect_fi():
+    device_client = connections.connect_leaf_device_client()
+    device_client.disconnect()
+
+
+"""
 Test:
 Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
 
