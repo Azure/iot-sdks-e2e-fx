@@ -18,13 +18,34 @@ class DeployHorton:
 
     def __init__(self, args):
 
-        print("Deploying Horton")
+        #base_hostname = "bertk-newvm-1"
+        #base_hostname = "giothub333.azure-devices.net"
+        #base_hostname = "greggiothub1.azure-devices.net"
+        
+        base_hostname = "hortondeploytest"
+        deployment_name = base_hostname + '-' + self.get_random_num_string(10000)
+        print("Deploying Horton to: " + deployment_name)
 
         deployment_json = self.get_deployment_model_json()
+        azure_ids = deployment_json['deployment']['azure_identities']
+        for id_name in azure_ids:
+            print(id_name)
+            print("type: " + self.get_json_value(azure_ids, id_name, 'type'))
+            print("device_id_suffix: " + self.get_json_value(azure_ids, id_name, 'device_id_suffix'))
 
-        rndval = self.get_random_num_string(10000)
-
-        print(rndval)
+            if(self.node_has_children(azure_ids, id_name)):
+                children = azure_ids[id_name]['children']
+                for child in children:
+                    print("...." + child)
+                    print("........type: " + self.get_json_value(children, child, 'type'))
+                    print("........module_id: " + self.get_json_value(children, child, 'module_id'))
+                    print("........docker_image: " + self.get_json_value(children, child, 'docker_image'))
+                    print("........docker_container_name: " + self.get_json_value(children, child, 'docker_container_name'))
+                    print("........docker_creation_args: " + self.get_json_value(children, child, 'docker_creation_args'))
+            else:
+                print("docker_image: " + self.get_json_value(azure_ids, id_name, 'docker_image'))
+                print("docker_container_name: " + self.get_json_value(azure_ids, id_name, 'docker_container_name'))
+                print("docker_creation_args: " + self.get_json_value(azure_ids, id_name, 'docker_creation_args'))
 
         # STEP 1
         # read horton_manifest
@@ -43,6 +64,22 @@ class DeployHorton:
         # c. use ensure_container.py to make sure it's responding.
         #
         # a & c will be used for edgehub deployments eventually
+
+    def node_has_children(self, json, node):
+        try:
+            children = json[node]['children']
+            return True
+        except:
+            return False
+
+    def get_json_value(self, json, node, name):
+        try:
+            value = json[node][name]
+            return value
+        except:
+            print("ERROR: value not found in JSON: " + name)
+        return ""
+        
 
     def get_random_num_string(self, maxval):
         from random import randrange
@@ -82,7 +119,8 @@ class DeployHorton:
                                 "type": "iothub_module",
                                 "module_id": "module2",
                                 "docker_container_name": "other_module",
-                                "docker_image": "docker_image/blah"
+                                "docker_image": "docker_image/blah",
+                                "docker_creation_args": "-p 8083/tcp:80"
                             }
                         }
 					}
@@ -94,7 +132,8 @@ class DeployHorton:
         #if data["fa"] == "cc.ee":
         #    data["fb"]["new_key"] = "cc.ee was present!"
 
-        return json.dumps(data)
+        #return json.dumps(data)
+        return data
 
 
 if __name__ == "__main__":
