@@ -2,25 +2,16 @@
 
 [![Build Status](https://azure-iot-sdks.visualstudio.com/azure-iot-sdks/_apis/build/status/c/edge-e2e-c)](https://azure-iot-sdks.visualstudio.com/azure-iot-sdks/_build/latest?definitionId=55)
 
-## Background Information
-
-* A top-level view of the Horton framework is located [here](./devdocs/framework_top_level_picture.md)
-* Useful definitions are located [here](./devdocs/framework_definitions.md)
-* (slightly more) Concrete Examples for Framework Definitions are located [here](./devdocs/framework_definitions_visualized.md)
-* A description of the thinking behind the Horton framework is located [here](./devdocs/language-independent-tests.md)
-
 ## Setup and Configuration
 
 The first time you run this framework, you will want to follow these documents:
-1. [Set up a VM to run tests under Linux](./devdocs/linux_test_vm_setup.md)
-2. [Run a simple test to verify your installation](./devdocs/running_your_first_test_suite.md)
+1. [Set up a VM to run tests under Linux](https://github.com/Azure/iot-sdks-e2e-fx/wiki/usage-linux-test-vm-setup)
+2. [Run a simple test to verify your installation](https://github.com/Azure/iot-sdks-e2e-fx/wiki/usage-running-your-first-test-suite)
 
 
-## What to Do if it Won't Do What You Want it to Do
+# [Wiki](https://github.com/Azure/iot-sdks-e2e-fx/wiki)
 
-* [Troubleshooting Guide](./devdocs/troubleshooting.md) <- Check this out.
-* [Submit Issue](https://github.com/Azure/iot-sdks-e2e-fx/issues) <- Tell us about it.
-* [Submit a PR](https://github.com/Azure/iot-sdks-e2e-fx/pulls) <- Need it done yesterday? Can't trust nobody but yourself, so submit a PR!
+Head over to our wiki for all your documentation needs.
 
 # Contributing
 

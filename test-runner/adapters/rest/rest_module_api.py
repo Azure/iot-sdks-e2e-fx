@@ -8,7 +8,8 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
     AzureIOTEndToEndTestWrapperRestApi,
 )
 from multiprocessing.pool import ThreadPool
-from ..decorators import log_entry_and_exit, add_timeout
+from ..decorators import log_entry_and_exit
+from .. import adapter_config
 from ..abstract_module_api import AbstractModuleApi
 
 # Amount of time to wait after submitting async request.  Gives server time to call API before calling the next API.
@@ -28,42 +29,49 @@ class ModuleApi(AbstractModuleApi):
         # self.pool.join()
 
     @log_entry_and_exit(print_args=False)
-    @add_timeout
     def connect(self, transport, connection_string, ca_certificate):
         result = self.rest_endpoint.connect(
-            transport, connection_string, ca_certificate=ca_certificate
+            transport,
+            connection_string,
+            ca_certificate=ca_certificate,
+            timeout=adapter_config.default_api_timeout,
         )
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    @add_timeout
     def connect_from_environment(self, transport):
-        result = self.rest_endpoint.connect_from_environment(transport)
+        result = self.rest_endpoint.connect_from_environment(
+            transport, timeout=adapter_config.default_api_timeout
+        )
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    @add_timeout
     def disconnect(self):
         if self.connection_id:
-            self.rest_endpoint.disconnect(self.connection_id)
+            self.rest_endpoint.disconnect(
+                self.connection_id, timeout=adapter_config.default_api_timeout
+            )
             self.connection_id = ""
             # give edgeHub a chance to disconnect MessagingServiceClient from IoTHub.  It does this lazily after the module disconnects from edgeHub
             time.sleep(2)
 
     @log_entry_and_exit
-    @add_timeout
     def enable_twin(self):
-        return self.rest_endpoint.enable_twin(self.connection_id)
+        return self.rest_endpoint.enable_twin(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
     @log_entry_and_exit
-    @add_timeout
     def enable_methods(self):
-        return self.rest_endpoint.enable_methods(self.connection_id)
+        return self.rest_endpoint.enable_methods(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
     @log_entry_and_exit
-    @add_timeout
     def enable_input_messages(self):
-        return self.rest_endpoint.enable_input_messages(self.connection_id)
+        return self.rest_endpoint.enable_input_messages(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
     """
     *NOTE FOR C SDK*
@@ -72,71 +80,78 @@ class ModuleApi(AbstractModuleApi):
     """
 
     @log_entry_and_exit
-    @add_timeout
     def get_twin(self):
-        return self.rest_endpoint.get_twin(self.connection_id)
+        return self.rest_endpoint.get_twin(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
     @log_entry_and_exit
-    @add_timeout
     def patch_twin(self, patch):
-        self.rest_endpoint.patch_twin(self.connection_id, patch)
+        self.rest_endpoint.patch_twin(
+            self.connection_id, patch, timeout=adapter_config.default_api_timeout
+        )
 
     @log_entry_and_exit
-    @add_timeout
     def wait_for_desired_property_patch_async(self):
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.wait_for_desired_properties_patch),
             (self.connection_id,),
+            dict(timeout=adapter_config.default_api_timeout),
         )
         time.sleep(wait_time_for_async_start)
         return thread
 
     @log_entry_and_exit
-    @add_timeout
     def send_event(self, body):
-        self.rest_endpoint.send_event(self.connection_id, body)
+        self.rest_endpoint.send_event(
+            self.connection_id, body, timeout=adapter_config.default_api_timeout
+        )
 
     @log_entry_and_exit
-    @add_timeout
     def send_event_async(self, body):
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.send_event),
             (self.connection_id, body),
+            dict(timeout=adapter_config.default_api_timeout),
         )
         time.sleep(wait_time_for_async_start)
         return thread
 
     @log_entry_and_exit
-    @add_timeout
     def send_output_event(self, output_name, body):
-        self.rest_endpoint.send_output_event(self.connection_id, output_name, body)
+        self.rest_endpoint.send_output_event(
+            self.connection_id,
+            output_name,
+            body,
+            timeout=adapter_config.default_api_timeout,
+        )
 
     @log_entry_and_exit
-    @add_timeout
     def wait_for_input_event_async(self, input_name):
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.wait_for_input_message),
             (self.connection_id, input_name),
+            dict(timeout=adapter_config.default_api_timeout),
         )
         time.sleep(wait_time_for_async_start)
         return thread
 
     @log_entry_and_exit
-    @add_timeout
     def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.invoke_module_method),
             (self.connection_id, device_id, module_id, method_invoke_parameters),
+            dict(timeout=adapter_config.default_api_timeout),
         )
         time.sleep(wait_time_for_async_start)
         return thread
 
     @log_entry_and_exit
-    @add_timeout
     def call_device_method_async(self, device_id, method_invoke_parameters):
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.invoke_device_method),
             (self.connection_id, device_id, method_invoke_parameters),
+            dict(timeout=adapter_config.default_api_timeout),
         )
         time.sleep(wait_time_for_async_start)
         return thread
@@ -148,7 +163,6 @@ class ModuleApi(AbstractModuleApi):
     """
 
     @log_entry_and_exit
-    @add_timeout
     def roundtrip_method_async(
         self, method_name, status_code, request_payload, response_payload
     ):
@@ -160,5 +174,6 @@ class ModuleApi(AbstractModuleApi):
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.roundtrip_method_call),
             (self.connection_id, method_name, request_and_response),
+            dict(timeout=adapter_config.default_api_timeout),
         )
         return thread

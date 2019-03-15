@@ -7,21 +7,25 @@
 
 import pytest
 import signal
-import environment
 import adapters
 from adapters import print_message as log_message
+from adapters import adapter_config
 from docker_log_watcher import DockerLogWatcher
 from identity_helpers import ensure_edge_environment_variables
+import runtime_config_templates
+import runtime_config
+import scenarios
 
 ensure_edge_environment_variables()
 
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--direct-to-iothub",
-        action="store_true",
-        default=False,
-        help="go directly to iothub for tests (no edgehub)",
+        "--scenario",
+        help="scenario to run",
+        required=True,
+        type=str,
+        choices=scenarios.scenarios.keys(),
     )
     parser.addoption(
         "--node-wrapper",
@@ -60,16 +64,11 @@ def pytest_addoption(parser):
         help="run tests against local module (probably in debugger",
     )
     parser.addoption(
-        "--force-connection-string",
-        action="store_true",
-        default=False,
-        help="force use of connection string for modules",
-    )
-    parser.addoption(
         "--transport",
         action="store",
         default="mqtt",
-        help="transport: mqtt, mqttws, amqp, amqpws, or http",
+        help="transport to use for test",
+        choices=runtime_config_templates.valid_transports,
     )
     parser.addoption(
         "--pythonpreview-wrapper",
@@ -83,25 +82,19 @@ def pytest_addoption(parser):
         default=False,
         help="run tests for the python preview wrapper in-proc",
     )
+    parser.addoption(
+        "--debug-container",
+        action="store_true",
+        default=False,
+        help="adjust run for container debugging (disable timeouts)",
+    )
 
 
 # langauge that we're running against
 language = ""
 
-# True if we're debugging against a local module rather than a container
-local = False
-
-# True if we're bypassing edgeHub
-direct_to_iothub = False
-
-# True to connect the module using a connection string
-test_module_use_connection_string = False
-
 # Transport to use for test
 transport = "mqtt"
-
-# Valid transports
-valid_transports = ["mqtt", "mqttws", "amqp", "amqpws"]
 
 skip_for_node = set([])
 
@@ -141,6 +134,22 @@ skip_for_c_connection_string = set(
 )
 
 skip_for_java = set(["module_under_test_has_device_wrapper", "supportsTwin"])
+
+
+def remove_tests_not_in_marker_list(items, markers):
+    """
+    remove all items that don't have one of the specified markers set
+    """
+    remaining = []
+    for item in items:
+        keep = False
+        for marker in markers:
+            if item.get_marker(marker):
+                keep = True
+        if keep:
+            remaining.append(item)
+
+    items[:] = remaining
 
 
 def skip_tests_by_marker(items, skiplist, reason):
@@ -225,34 +234,28 @@ def session_log_fixture(request):
 
 
 def pytest_collection_modifyitems(config, items):
-    global language
-    global local
-    global direct_to_iothub
-    global test_module_use_connection_string
-    global transport
-
     print("")
 
+    test_module_use_connection_string = False
+    local = False
+
+    scenario = scenarios.scenarios[config.getoption("--scenario")]
+    remove_tests_not_in_marker_list(items, scenario.pytest_markers)
+
     transport = config.getoption("--transport")
-    if transport in valid_transports:
-        print("Using " + transport)
-    else:
-        pytest.fail("Transport {} is invalid".format(transport))
+    print("Using " + transport)
 
     if config.getoption("--local"):
         print("Running against local module")
         local = True
         test_module_use_connection_string = True
 
-    if test_module_use_connection_string or config.getoption(
-        "--force-connection-string"
+    if (
+        test_module_use_connection_string
+        or scenarios.CONNECT_WITH_ENVIRONMENT not in scenario.scenario_flags
     ):
         print("Using connection string to connect")
         test_module_use_connection_string = True
-
-    if config.getoption("--direct-to-iothub"):
-        print("Going directly to iothub")
-        direct_to_iothub = True
 
     if config.getoption("--node-wrapper"):
         print("Using node wrapper")
@@ -320,9 +323,14 @@ def pytest_collection_modifyitems(config, items):
         print("you must specify a wrapper")
         raise Exception("no wrapper specified")
 
-    environment.setupExecutionEnvironment()
+    runtime_config.set_runtime_configuration(scenario, language, transport, local)
     adapters.print_message("HORTON: starting run: {}".format(config._origargs))
     set_up_log_watcher()
+
+    if config.getoption("--debug-container"):
+        print("Debugging the container.  Removing all timeouts")
+        adapter_config.default_api_timeout = 3600
+        config._env_timeout = 0
 
 
 def set_up_log_watcher():
@@ -331,6 +339,6 @@ def set_up_log_watcher():
     container_names = [
         "edgeHub",
         "friendMod",
-        environment.runtime_config.test_module.module_id,
+        runtime_config.get_current_config().test_module.module_id,
     ]
     log_watcher = DockerLogWatcher(container_names, filters)

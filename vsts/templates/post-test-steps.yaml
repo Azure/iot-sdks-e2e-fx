@@ -10,15 +10,16 @@ steps:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
-- task: PublishTestResults@2
-  displayName: 'Publish Test Results **/TEST-*.xml'
-  condition: and(always(), ne(variables['skipTest'],'yes'))
-
 - script: |
     $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }}
     mkdir $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}
     mv $(Horton.FrameworkRoot)/results/logs/* $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}/
+    cp $(Build.SourcesDirectory)/TEST-* $(Horton.FrameworkRoot)/results
   displayName: 'Fetch logs'
+  condition: and(always(), ne(variables['skipTest'],'yes'))
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results **/TEST-*.xml'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - task: CopyFiles@2

@@ -14,16 +14,16 @@ shift
 language=$1
 shift
 
-testgroup=$1
+scenario=$1
 shift
 
 if [ -z ${tag} ] ||
    [ -z ${transport} ] ||
    [ -z ${language} ] ||
-   [ -z ${testgroup} ]; then
+   [ -z ${scenario} ]; then
   echo "incorrect parameters."
-  echo "Usage: $0 [tag] [transport] [language] [testgroup] [args...]"
-  echo "e.g. $0 iothub mqtt node testgroup_iothub_module_client --direct-to-iothub"
+  echo "Usage: $0 [tag] [transport] [language] [scenario] [args...]"
+  echo "e.g. $0 iothub mqtt node iothub_module"
   exit 1
 fi
 
@@ -52,7 +52,7 @@ resultdir=$resultroot/$junit_suite_name
 mkdir -p $resultdir
 [ $? -eq 0 ] || { echo "failed to mkdir $resultdir"; exit 1; }
 
-PYTEST_ARGS="-u -m pytest -v -m ${testgroup} --transport=$transport --$language-wrapper --junitxml=$junit_filename -o junit_suite_name=$junit_suite_name"
+PYTEST_ARGS="-u -m pytest -v --scenario=$scenario --transport=$transport --$language-wrapper --junitxml=$junit_filename -o junit_suite_name=$junit_suite_name"
 
 if [ ! "x$STOP_AFTER_FIRST_FAILURE" = "x" ]; then
   echo "STOP_AFTER_FIRST_FAILURE set.  Stopping pytest after first failure."
