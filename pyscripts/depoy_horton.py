@@ -6,31 +6,29 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/15/2019 A
+# Rev: 03/17/2019 F
 
 import sys
 import os
 import json
 import shutil
-
 import iothub_service_client
 from iothub_service_client import IoTHubRegistryManager, IoTHubRegistryManagerAuthMethod
-from iothub_service_client import IoTHubDeviceTwin, IoTHubError
+from iothub_service_client import IoTHubDeviceStatus, IoTHubError
 
 class DeployHorton:
 
     def __init__(self, args):
 
+        az_devices = []
+        module_children = []
+        connect_string = self.get_env_connect_string()
         base_hostname = "hortondeploytest"
         deployment_name = base_hostname + '-' + self.get_random_num_string(10000)
         print("Deploying Horton to: " + deployment_name)
 
         deployment_json = self.get_deployment_model_json()
         azure_ids = deployment_json['deployment']['azure_identities']
-        az_devices = []
-        mod_kids = []
-        connect_string = self.get_env_connect_string()
-
         for az_id_name in azure_ids:
             az_type = self.get_json_value(azure_ids, az_id_name, 'type')
             az_device_id_suffix = self.get_json_value(azure_ids, az_id_name, 'device_id_suffix')
@@ -41,21 +39,22 @@ class DeployHorton:
 
             if(self.node_has_children(azure_ids, az_id_name)):
                 children = azure_ids[az_id_name]['children']
-                mod_kids = []
+                module_children = []
                 for child in children:
                     child_type = self.get_json_value(children, child, 'type')
                     child_module_id = self.get_json_value(children, child, 'module_id')
-                    #TEST TEST TEST
-                    child_module_name = child_module_id + "_" + self.get_random_num_string(1000)
                     child_docker_image =  self.get_json_value(children, child, 'docker_image')
                     child_docker_container= self.get_json_value(children, child, 'docker_container_name')
                     child_docker_args = self.get_json_value(children, child, 'docker_creation_args')
+                    #TEST_TEST_TEST - NextLines:1
+                    child_module_name = child_module_id + "_" + self.get_random_num_string(1000)
 
-                    new_mod = HortonModuleObject(None, child_module_name, child_type, child_module_id, child_docker_image, child_docker_container, child_docker_args)
-                    mod_kids.append(new_mod)
+                    new_module = DeviceModuleObject(None, child_module_name, child_type, child_module_id, child_docker_image, child_docker_container, child_docker_args)
+                    module_children.append(new_module)
 
                     print("...." + child)
                     print("........type: " + child_type)
+                    print("........module_name: " + child_module_name)
                     print("........module_id: " + child_module_id)
                     print("........docker_image: " + child_docker_image)
                     print("........docker_container_name: " + child_docker_container)
@@ -69,32 +68,26 @@ class DeployHorton:
                 print("docker_container_name: " + az_docker_container)
                 print("docker_creation_args: " + az_docker_args)
 
-            # TEST TEST TEST
+            # TEST_TEST_TEST  - NextLines:1
             az_id_name = az_id_name + "_" + self.get_random_num_string(100) + az_device_id_suffix
             new_device = self.create_iot_device(connect_string, az_id_name)
 
-            kid_mods = []
-            for kid_mod in mod_kids:
-                new_mod = self.add_iot_module(connect_string, new_device, kid_mod.module_id)
-                kid_mods.append(new_mod)
+            child_module_objects = []
+            for child_module in module_children:
+                new_module = self.create_device_module(connect_string, az_id_name, child_module.module_name)
+                child_module_objects.append(new_module)
 
-            new_device_obj = HortonDeviceObject(new_device, az_id_name, az_device_id_suffix, az_docker_image, az_docker_container, az_docker_args)
-            new_device_obj.modules = kid_mods
+            new_device_obj = IotDeviceObject(new_device, az_id_name, az_device_id_suffix, az_docker_image, az_docker_container, az_docker_args)
+            new_device_obj.modules = child_module_objects
             az_devices.append(new_device_obj)
 
         print(az_devices)
 
-        # STEP 1
-        # read horton_manifest
-        # basename = hostname + random number
-        #base_hostname = "bertk-newvm-1"
-        #base_hostname = "greggiothub1.azure-devices.net"
-        # walk the tree
-        # create device & module identietes on azure
         # add device id's and connection strings back to horton_manifest & save it
 
 
-        #Step 2: create containers
+        # PHASE 2: create containers
+        #
         # read updated horton_manifest
         # docker login
         # for each docker container, 
@@ -115,12 +108,12 @@ class DeployHorton:
             return False
 
     def get_json_value(self, json, node, name):
+        value = ""
         try:
             value = json[node][name]
-            return value
         except:
             print("ERROR: value not found in JSON: " + name)
-        return ""
+        return value
         
     def get_env_connect_string(self):
         service_connection_string = ""
@@ -142,12 +135,12 @@ class DeployHorton:
             print(e, file=sys.stderr)
         return new_device
 
-    def add_iot_module(self, connect_string, device_obj, module_name):
+    def create_device_module(self, connect_string, device_id, module_name):
         auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
         new_module = None
         try:
             iothub_registry_manager = IoTHubRegistryManager(connect_string)
-            new_module = iothub_registry_manager.create_module(device_obj, "", "", module_name, auth_method)
+            new_module = iothub_registry_manager.create_module(device_id, '', '', module_name, auth_method)
         except Exception as e:
             print("Exception Creating device/module: " + module_name, file=sys.stderr)
             print(e, file=sys.stderr)
@@ -203,7 +196,7 @@ class DeployHorton:
         data = json.loads(json_template)
         return data
 
-class HortonModuleObject:  
+class DeviceModuleObject:  
     def __init__ (self, module_obj=None, mod_name='', mod_type='', mod_id='', mod_img='', mod_ctr='', mod_args=''):
         self.module_obj       = module_obj
         self.module_name      = mod_name
@@ -213,7 +206,7 @@ class HortonModuleObject:
         self.module_contianer = mod_ctr
         self.module_arguments = mod_args
 
-class HortonDeviceObject:  
+class IotDeviceObject:  
     def __init__ (self, device_obj, device_name='', device_id_suffix='', docker_image='', docker_container='', docker_args=''):
         self.device_obj       = device_obj
         self.device_name      = device_name
