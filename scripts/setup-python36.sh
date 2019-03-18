@@ -30,11 +30,21 @@ if [ $? -ne 0 ]; then
 fi
 
 colorecho $_yellow "Installing python libraries"
+cd ${script_dir}/../ci-wrappers/pythonpreview/wrapper  &&  \
+    python3 -m pip install --user -e python_glue
+if [ $? -ne 0 ]; then 
+    colorecho $_yellow "user path not accepted.  Installing globally"
+    cd ${script_dir}/../ci-wrappers/pythonpreview/wrapper  &&  \
+        python3 -m pip install -e python_glue
+    [ $? -eq 0 ] || { colorecho $_red "install python_glue failed"; exit 1; }
+fi
+
 cd ${script_dir}/.. &&  \
     python3 -m pip install --user -e horton_helpers
 if [ $? -ne 0 ]; then 
     colorecho $_yellow "user path not accepted.  Installing globally"
-    python3 -m pip install -e horton_helpers
+    cd ${script_dir}/.. &&  \
+        python3 -m pip install -e horton_helpers
     [ $? -eq 0 ] || { colorecho $_red "install horton_helpers failed"; exit 1; }
 fi
 
@@ -43,7 +53,8 @@ cd ${script_dir}/../test-runner &&  \
     python3 -m pip install --user -r requirements.txt
 if [ $? -ne 0 ]; then 
     colorecho $_yellow "user path not accepted.  Installing globally"
-    python3 -m pip install -r requirements.txt
+    cd ${script_dir}/../test-runner &&  \
+        python3 -m pip install -r requirements.txt
     [ $? -eq 0 ] || { colorecho $_red "pip install requirements.txt failed"; exit 1; }
 fi
 

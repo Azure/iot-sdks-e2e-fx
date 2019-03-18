@@ -2,7 +2,7 @@ import connexion
 import six
 
 from swagger_server import util
-from swagger_server import wrapper_glue
+import wrapper_glue
 
 def wrapper_cleanup_put():  # noqa: E501
     """verify that the clients have cleaned themselves up completely

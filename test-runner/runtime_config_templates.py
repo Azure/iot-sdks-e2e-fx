@@ -149,7 +149,7 @@ class EdgeHubModuleRest:
 
 class EdgeHubModuleDirect(EdgeHubModuleRest):
     def __init__(self, api_name):
-        EdgeHubModuleRest(self, api_name)
+        super(EdgeHubModuleDirect, self).__init__(api_name)
         self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
         del self.rest_uri
@@ -171,7 +171,7 @@ class EdgeHubLeafDeviceRest:
 
 class EdgeHubLeafDeviceDirect(EdgeHubLeafDeviceRest):
     def __init__(self, api_name):
-        EdgeHubLeafDeviceRest(self, api_name)
+        super(EdgeHubLeafDeviceRest, self).__init__(api_name)
         self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
         del self.rest_uri
