@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/17/2019 F
+# Rev: 03/17/2019 G
 
 import sys
 import os
@@ -22,6 +22,8 @@ class DeployHorton:
 
         az_devices = []
         module_children = []
+        az_device_names = []
+        module_count = 0
         connect_string = self.get_env_connect_string()
         base_hostname = "hortondeploytest"
         deployment_name = base_hostname + '-' + self.get_random_num_string(10000)
@@ -49,7 +51,7 @@ class DeployHorton:
                     #TEST_TEST_TEST - NextLines:1
                     child_module_name = child_module_id + "_" + self.get_random_num_string(1000)
 
-                    new_module = DeviceModuleObject(None, child_module_name, child_type, child_module_id, child_docker_image, child_docker_container, child_docker_args)
+                    new_module = DeviceModuleObject(None, child_module_name, az_id_name,  child_type, child_module_id, child_docker_image, child_docker_container, child_docker_args, 'child_conn')
                     module_children.append(new_module)
 
                     print("...." + child)
@@ -69,22 +71,34 @@ class DeployHorton:
                 print("docker_creation_args: " + az_docker_args)
 
             # TEST_TEST_TEST  - NextLines:1
-            az_id_name = az_id_name + "_" + self.get_random_num_string(100) + az_device_id_suffix
+            az_id_name = 'xx' + az_id_name + "_" + self.get_random_num_string(100) + az_device_id_suffix
             new_device = self.create_iot_device(connect_string, az_id_name)
+            az_device_names.append(az_id_name)
 
             child_module_objects = []
             for child_module in module_children:
                 new_module = self.create_device_module(connect_string, az_id_name, child_module.module_name)
-                child_module_objects.append(new_module)
+                child_module.module_obj = new_module
+                child_module_objects.append(child_module)
+                module_count += 1
 
-            new_device_obj = IotDeviceObject(new_device, az_id_name, az_device_id_suffix, az_docker_image, az_docker_container, az_docker_args)
-            new_device_obj.modules = child_module_objects
+            new_device_obj = IotDeviceObject(az_id_name, az_device_id_suffix, 'conn1', az_docker_image, az_docker_container, az_docker_args)
+            new_device_obj.children = child_module_objects
             az_devices.append(new_device_obj)
 
-        print(az_devices)
+        print("Created {} Devices and {} Modules".format(len(az_devices), module_count))
+
+        new_az_id_obj = AzuerIdObject(az_id_name, az_device_names, az_devices) 
+        deployment_obj = DeploymentObject(deployment_name, new_az_id_obj)
 
         # add device id's and connection strings back to horton_manifest & save it
+        new_manifest_json = json.dumps(deployment_obj, default = lambda x: x.__dict__, sort_keys=False, indent=2)
+        print(new_manifest_json)
+        save_manifest_file = "c:\\iot_testdata\\horton\\horton_updated_manifest.json"
+        with open(save_manifest_file, 'w') as f:
+            f.write(new_manifest_json)
 
+        print("PHASE1 Complete")
 
         # PHASE 2: create containers
         #
@@ -197,24 +211,37 @@ class DeployHorton:
         return data
 
 class DeviceModuleObject:  
-    def __init__ (self, module_obj=None, mod_name='', mod_type='', mod_id='', mod_img='', mod_ctr='', mod_args=''):
-        self.module_obj       = module_obj
+    def __init__ (self, module_obj=None, mod_name='', dev_name='', mod_type='', mod_id='', mod_img='', mod_ctr='', mod_args='', module_connect=''):
+        #self.module_obj       = module_obj
         self.module_name      = mod_name
+        self.device_name      = dev_name
         self.module_type      = mod_type
         self.module_id        = mod_id
         self.module_image     = mod_img
         self.module_contianer = mod_ctr
         self.module_arguments = mod_args
+        self.module_connect   = module_connect
 
 class IotDeviceObject:  
-    def __init__ (self, device_obj, device_name='', device_id_suffix='', docker_image='', docker_container='', docker_args=''):
-        self.device_obj       = device_obj
+    def __init__ (self, device_name='', device_id_suffix='', device_connect='', docker_image='', docker_container='', docker_args='', children=None):
+        #self.device_obj       = device_obj
         self.device_name      = device_name
         self.device_id_suffix = device_id_suffix
+        self.device_connect   = device_connect
         self.docker_image     = docker_image
         self.docker_container = docker_container
         self.docker_args      = docker_args
-        self.modules          = None
+        self.children         = children
+
+class AzuerIdObject:  
+    def __init__ (self, azure_devicess=None, ks=[], vs=[]):
+        self.azure_identities = azure_devicess
+        self.__dict__ = dict(zip(ks, vs))
+
+class DeploymentObject:  
+    def __init__ (self, deployment_name, azure_identities=None):
+        self.deployment  = deployment_name
+        self.azure_identities = azure_identities
 
 if __name__ == "__main__":
     horton_deploymnet = DeployHorton(sys.argv[1:])
