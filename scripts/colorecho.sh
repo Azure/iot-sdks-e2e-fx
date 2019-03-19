@@ -5,6 +5,7 @@
 export _cyan="1;36"
 export _red="1;31"
 export _green="1;32"
+export _yellow="1;93"
 
 function colorecho {
   color="$1"

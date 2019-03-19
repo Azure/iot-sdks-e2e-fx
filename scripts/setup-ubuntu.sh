@@ -38,6 +38,10 @@ header $_green "\n\
 setup-ubuntu succeeded\n\
 \n\
 Please open a new bash prompt before continuing\n\
+\n\
+If you get permission errors from docker, reboot your VM\n\
+for group changes to take effect\n\
+\n\
 "
 
 
