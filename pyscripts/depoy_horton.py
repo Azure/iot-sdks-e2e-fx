@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/18/2019 B
+# Rev: 03/19/2019 F
 
 import sys
 import os
@@ -30,40 +30,33 @@ class DeployHorton:
         connect_string = self.get_env_connect_string()
         base_hostname = "hortondeploytest"
         deployment_name = base_hostname + '-' + self.get_random_num_string(10000)
-        #print("Deploying Horton to: " + deployment_name)
-
         deployment_json = self.get_deployment_model_json(input_manifest_file)
 
         try:
-            azure_ids = deployment_json['deployment']['azure_identities'][0]
-            for az_device_name in azure_ids:
+            azure_ids = deployment_json['azure_identities']
+            for azure_device in azure_ids:
                 device_connectstring = ''
                 children_modules = []
-                az_device_type = self.get_json_value(azure_ids, az_device_name, 'device_type')
-                az_device_id_suffix = self.get_json_value(azure_ids, az_device_name, 'device_id_suffix')
+                az_device_name = self.get_json_value(azure_device, 'device_name')
+                # TEST_TEST_TEST  - NextLines:1
+                az_device_name = 'D0_' + az_device_name + "_" + self.get_random_num_string(100)
+                az_device_type = self.get_json_value(azure_device, 'device_type')
+                az_device_id_suffix = self.get_json_value(azure_device, 'device_id_suffix')
+                az_docker_image = self.get_json_value(azure_device, 'docker_image')
+                az_docker_container = self.get_json_value(azure_device, 'docker_container')
+                az_docker_args = self.get_json_value(azure_device, 'docker_args')
                 
-                if(self.node_has_children(azure_ids, az_device_name)):
-                    children = azure_ids[az_device_name][0]['children']
-                    children_modules = []
+                if(self.node_has_children(azure_device)):
+                    children = azure_device['children']
                     for child in children:
-                        child_module_id = self.get_child_value(child, 'module_id')
-                        child_module_type = self.get_child_value(child, 'module_type')
-                        child_docker_image = self.get_child_value(child, 'module_docker_image_name')
-                        child_docker_container = self.get_child_value(child, 'module_docker_container_name')
-                        child_docker_args = self.get_child_value(child, 'module_docker_creation_args')
-                        #TEST_TEST_TEST - NextLines:1
-                        child_module_id = child_module_id + "_" + self.get_random_num_string(1000)
-
+                        child_module_id = self.get_json_value(child, 'module_id')
+                        child_module_type = self.get_json_value(child, 'module_type')
+                        child_docker_image = self.get_json_value(child, 'module_docker_image_name')
+                        child_docker_container = self.get_json_value(child, 'module_docker_container_name')
+                        child_docker_args = self.get_json_value(child, 'module_docker_creation_args')
                         new_module = DeviceModuleObject(child_module_id, az_device_name, child_module_type, child_docker_image, child_docker_container, child_docker_args, '')
                         children_modules.append(new_module)
-                else:
-                    az_docker_image = self.get_json_value(azure_ids, az_device_name, 'docker_image')
-                    az_docker_container = self.get_json_value(azure_ids, az_device_name, 'docker_container_name')
-                    az_docker_args = self.get_json_value(azure_ids, az_device_name, 'docker_creation_args')
 
-                # TEST_TEST_TEST  - NextLines:1
-                az_device_name = 'aa' + az_device_name + "_" + self.get_random_num_string(100)
-                
                 if(az_device_type == 'iothub_device'):
                     new_device = self.create_iot_device(connect_string, az_device_name + az_device_id_suffix)
                     if(new_device):
@@ -76,7 +69,7 @@ class DeployHorton:
                     if(child_module.module_type == 'iothub_module'):
                         new_module = self.create_device_module(connect_string, az_device_name + az_device_id_suffix, child_module.module_id)
                         if(new_module):
-                            child_module.module_connect = self.create_module_connectstring(connect_string, az_device_name + az_device_id_suffix, child_module.module_id, new_module.primaryKey)
+                            child_module.module_connect_string = self.create_module_connectstring(connect_string, az_device_name + az_device_id_suffix, child_module.module_id, new_module.primaryKey)
                             child_module_objects.append(child_module)
                             module_count += 1
 
@@ -86,23 +79,19 @@ class DeployHorton:
 
         except Exception as e:
             print(Fore.RED + "Exception Processing HortonManifest: " + input_manifest_file, file=sys.stderr)
-            print(Fore.RED + str(e), file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
+            print(str(e) + Fore.RESET, file=sys.stderr)
             return
 
-        print(Fore.GREEN + "Created {} Devices and {} Modules".format(len(az_devices), module_count))
+        print(Fore.GREEN + "Created {} Devices and {} Modules".format(len(az_devices), module_count) + Fore.RESET)
 
         # add device id's and connection strings back to horton_manifest & save it
         deployment_obj = DeploymentObject(deployment_name, az_devices)
         new_manifest_json = json.dumps(deployment_obj, default = lambda x: x.__dict__, sort_keys=False, indent=2)
-        print(Fore.RESET + new_manifest_json)
-
         try:
             with open(save_manifest_file, 'w') as f:
                 f.write(new_manifest_json)
         except:
-            print(Fore.RED + "ERROR: writing JSON manifest to: " + save_manifest_file, file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
+            print(Fore.RED + "ERROR: writing JSON manifest to: " + save_manifest_file + Fore.RESET, file=sys.stderr)
 
         print("PHASE1 Complete")
 
@@ -146,9 +135,9 @@ class DeployHorton:
 
         return
 
-    def node_has_children(self, json, node):
+    def node_has_children(self, node):
         try:
-            children = json[node][0]['children']
+            children = node['children']
             if(children):
                 return True
             else:
@@ -156,22 +145,12 @@ class DeployHorton:
         except:
             return False
 
-    def get_child_value(self, node, name):
+    def get_json_value(self, node, name):
         value = ""
         try:
             value = node[name]
         except:
-            print(Fore.YELLOW + "ERROR: value not found in JSON: ({}/{})".format(node, name), file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
-        return value
-        
-    def get_json_value(self, json, node, name):
-        value = ""
-        try:
-            value = json[node][0][name]
-        except:
-            print(Fore.YELLOW + "ERROR: value not found in JSON: ({}/{})".format(node, name), file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
+            print(Fore.YELLOW + "ERROR: value not found in JSON: ({}/{})".format(node, name) + Fore.RESET, file=sys.stderr)
         return value
         
     def get_env_connect_string(self):
@@ -179,8 +158,7 @@ class DeployHorton:
         try:  
             service_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
         except KeyError: 
-            print(Fore.RED + "IOTHUB_E2E_CONNECTION_STRING not set in environment", file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
+            print(Fore.RED + "IOTHUB_E2E_CONNECTION_STRING not set in environment" + Fore.RESET, file=sys.stderr)
             sys.exit(1)
         return service_connection_string
 
@@ -192,8 +170,7 @@ class DeployHorton:
             new_device = iothub_registry_manager.create_device(device_name, "", "", auth_method)
         except Exception as e:
             print(Fore.RED + "Exception Creating device: " + device_name, file=sys.stderr)
-            print(Fore.RED + str(e), file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
+            print(str(e) + Fore.RESET, file=sys.stderr)
         return new_device
 
     def create_device_module(self, connect_string, device_id, module_name):
@@ -204,8 +181,7 @@ class DeployHorton:
             new_module = iothub_registry_manager.create_module(device_id, '', '', module_name, auth_method)
         except Exception as e:
             print(Fore.RED + "Exception Creating device/module: " + module_name, file=sys.stderr)
-            print(Fore.RED + e, file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
+            print(str(e) + Fore.RESET, file=sys.stderr)
         return new_module
 
     def create_device_connectstring(self, hub_connectstring, device_name, access_key):
@@ -230,9 +206,7 @@ class DeployHorton:
             with open(json_filename, 'r') as f:
                 json_manifest = json.loads(f.read())
         except:
-            print(Fore.RED + "ERROR: in JSON manifest: " + json_filename, file=sys.stderr)
-            print(Fore.RESET + " ", file=sys.stderr)
-    
+            print(Fore.RED + "ERROR: in JSON manifest: " + json_filename + Fore.RESET, file=sys.stderr)
         return json_manifest
 
 class DeviceModuleObject:  
