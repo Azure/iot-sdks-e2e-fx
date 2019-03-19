@@ -14,7 +14,7 @@ steps:
     $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }}
     mkdir $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}
     mv $(Horton.FrameworkRoot)/results/logs/* $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}/
-    cp $(Build.SourcesDirectory)/TEST-* $(Horton.FrameworkRoot)/results
+    mv $(Build.SourcesDirectory)/TEST-* $(Horton.FrameworkRoot)/results
   displayName: 'Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
