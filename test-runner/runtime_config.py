@@ -194,6 +194,17 @@ def set_runtime_configuration(scenario, language, transport, local):
             runtime_config_templates.CONNECTION_STRING
         )
 
+    if local and not direct_to_iothub:
+        runtime_config.test_module.connection_type = (
+            runtime_config_templates.CONNECTION_STRING
+        )
+
+    if language == "ppdirect":
+        if not direct_to_iothub:
+            runtime_config.test_module.connection_type = (
+                runtime_config_templates.CONNECTION_STRING
+            )
+
     for object_name in dir(runtime_config):
         test_obj = getattr(runtime_config, object_name)
         if getattr(test_obj, "test_object_type", None):

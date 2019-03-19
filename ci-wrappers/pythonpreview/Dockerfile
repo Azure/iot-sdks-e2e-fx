@@ -40,6 +40,7 @@ WORKDIR /wrapper
 COPY ./wrapper .
 RUN pip install -r requirements.txt
 RUN python setup.py install
+RUN pip install -e python_glue
 
 ENTRYPOINT ["python", "-u", "-m", "swagger_server"]
 

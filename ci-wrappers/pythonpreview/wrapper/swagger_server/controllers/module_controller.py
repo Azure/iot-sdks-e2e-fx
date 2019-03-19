@@ -3,11 +3,15 @@ import six
 
 from swagger_server.models.certificate import Certificate  # noqa: E501
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
-from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
+from swagger_server.models.roundtrip_method_call_body import (
+    RoundtripMethodCallBody,
+)  # noqa: E501
 from swagger_server import util
 
-from swagger_server.module_glue import ModuleGlue
+from module_glue import ModuleGlue
+
 module_glue = ModuleGlue()
+
 
 def module_connect_from_environment_transport_type_put(transportType):  # noqa: E501
     """Connect to the azure IoT Hub as a module using the environment variables
@@ -21,7 +25,10 @@ def module_connect_from_environment_transport_type_put(transportType):  # noqa: 
     """
     return module_glue.connect_from_environment(transportType)
 
-def module_connect_transport_type_put(transportType, connectionString, caCertificate=None):  # noqa: E501
+
+def module_connect_transport_type_put(
+    transportType, connectionString, caCertificate=None
+):  # noqa: E501
     """Connect to the azure IoT Hub as a module
 
      # noqa: E501
@@ -36,11 +43,15 @@ def module_connect_transport_type_put(transportType, connectionString, caCertifi
     :rtype: ConnectResponse
     """
     if connexion.request.is_json:
-        caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
+        caCertificate = Certificate.from_dict(
+            connexion.request.get_json()
+        )  # noqa: E501
     return module_glue.connect(transportType, connectionString, caCertificate)
 
 
-def module_connection_id_device_method_device_id_put(connectionId, deviceId, methodInvokeParameters):  # noqa: E501
+def module_connection_id_device_method_device_id_put(
+    connectionId, deviceId, methodInvokeParameters
+):  # noqa: E501
     """call the given method on the given device
 
      # noqa: E501
@@ -54,7 +65,9 @@ def module_connection_id_device_method_device_id_put(connectionId, deviceId, met
 
     :rtype: object
     """
-    return module_glue.invoke_device_method(connectionId, deviceId, methodInvokeParameters)
+    return module_glue.invoke_device_method(
+        connectionId, deviceId, methodInvokeParameters
+    )
 
 
 def module_connection_id_disconnect_put(connectionId):  # noqa: E501
@@ -124,7 +137,9 @@ def module_connection_id_event_put(connectionId, eventBody):  # noqa: E501
     module_glue.send_event(connectionId, eventBody)
 
 
-def module_connection_id_input_message_input_name_get(connectionId, inputName):  # noqa: E501
+def module_connection_id_input_message_input_name_get(
+    connectionId, inputName
+):  # noqa: E501
     """Wait for a message on a module input
 
      # noqa: E501
@@ -139,7 +154,9 @@ def module_connection_id_input_message_input_name_get(connectionId, inputName): 
     return module_glue.wait_for_input_message(connectionId, inputName)
 
 
-def module_connection_id_module_method_device_id_module_id_put(connectionId, deviceId, moduleId, methodInvokeParameters):  # noqa: E501
+def module_connection_id_module_method_device_id_module_id_put(
+    connectionId, deviceId, moduleId, methodInvokeParameters
+):  # noqa: E501
     """call the given method on the given module
 
      # noqa: E501
@@ -155,10 +172,14 @@ def module_connection_id_module_method_device_id_module_id_put(connectionId, dev
 
     :rtype: object
     """
-    return module_glue.invoke_module_method(connectionId, deviceId, moduleId, methodInvokeParameters)
+    return module_glue.invoke_module_method(
+        connectionId, deviceId, moduleId, methodInvokeParameters
+    )
 
 
-def module_connection_id_output_event_output_name_put(connectionId, outputName, eventBody):  # noqa: E501
+def module_connection_id_output_event_output_name_put(
+    connectionId, outputName, eventBody
+):  # noqa: E501
     """Send an event to a module output
 
      # noqa: E501
@@ -175,7 +196,9 @@ def module_connection_id_output_event_output_name_put(connectionId, outputName, 
     module_glue.send_output_event(connectionId, outputName, eventBody)
 
 
-def module_connection_id_roundtrip_method_call_method_name_put(connectionId, methodName, requestAndResponse):  # noqa: E501
+def module_connection_id_roundtrip_method_call_method_name_put(
+    connectionId, methodName, requestAndResponse
+):  # noqa: E501
     """Wait for a method call, verify the request, and return the response.
 
     This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call) # noqa: E501
@@ -190,8 +213,12 @@ def module_connection_id_roundtrip_method_call_method_name_put(connectionId, met
     :rtype: None
     """
     if connexion.request.is_json:
-        requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
-    return module_glue.roundtrip_method_call(connectionId, methodName, requestAndResponse)
+        requestAndResponse = RoundtripMethodCallBody.from_dict(
+            connexion.request.get_json()
+        )  # noqa: E501
+    return module_glue.roundtrip_method_call(
+        connectionId, methodName, requestAndResponse
+    )
 
 
 def module_connection_id_twin_desired_prop_patch_get(connectionId):  # noqa: E501
@@ -232,4 +259,4 @@ def module_connection_id_twin_patch(connectionId, props):  # noqa: E501
 
     :rtype: None
     """
-    return  module_glue.send_twin_patch(connectionId, props)
+    return module_glue.send_twin_patch(connectionId, props)

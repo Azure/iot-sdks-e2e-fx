@@ -25,6 +25,7 @@ def _get_rest_endpoints():
         rest_endpoints = set()
         for uri in all_rest_uris:
             rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(uri).wrapper
+            rest_endpoint.config.retry_policy.retries = 0
             rest_endpoints.add(rest_endpoint)
 
     return rest_endpoints
