@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/17/2019 H
+# Rev: 03/18/2019 B
 
 import sys
 import os
@@ -101,35 +101,38 @@ class DeployHorton:
                         module_count += 1
 
             child_object = DeviceChildrenObject(children_names, children_modules)
-            new_device_obj = IotDeviceObject(az_id_name, az_device_id_suffix, device_connectstring, az_docker_image, az_docker_container, az_docker_args)
+            new_device_obj = IotDeviceObject(az_id_name, az_type, az_device_id_suffix, device_connectstring, az_docker_image, az_docker_container, az_docker_args)
             new_device_obj.children = child_object
             az_devices.append(new_device_obj)
 
         print(Fore.GREEN + "Created {} Devices and {} Modules".format(len(az_devices), module_count))
 
+        # add device id's and connection strings back to horton_manifest & save it
         new_az_id_obj = AzureIdObject(az_id_name, az_device_names, az_devices) 
         deployment_obj = DeploymentObject(deployment_name, new_az_id_obj)
-
-        # add device id's and connection strings back to horton_manifest & save it
         new_manifest_json = json.dumps(deployment_obj, default = lambda x: x.__dict__, sort_keys=False, indent=2)
         print(Fore.RESET + new_manifest_json)
-        with open(save_manifest_file, 'w') as f:
-            f.write(new_manifest_json)
+
+        try:
+            with open(save_manifest_file, 'w') as f:
+                f.write(new_manifest_json)
+        except:
+            print(Fore.RED + "ERROR: writing JSON manifest to: " + save_manifest_file, file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
 
         print("PHASE1 Complete")
 
-        self.create_docker_containers(deployment_obj)
+        self.start_docker_containers(deployment_obj)
 
         print("DONE")
 
-    def create_docker_containers(self, deployment_obj):
+    def start_docker_containers(self, deployment_obj):
+        from os.path import dirname, join, abspath
+        sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
+        from containers import all_containers
 
-        #manifest_json = ''
-        #with open(manifest_file, 'r') as f:
-        #    manifest_json = f.read(new_manifest_json)
-
-
-
+        for cntr in all_containers:
+            print(cntr)
 
         # PHASE 2: create containers
         #
@@ -141,6 +144,8 @@ class DeployHorton:
         # c. use ensure_container.py to make sure it's responding.
         #
         # a & c will be used for edgehub deployments eventually
+
+        return
 
     def node_has_children(self, json, node):
         try:
@@ -158,6 +163,7 @@ class DeployHorton:
             value = json[node][name]
         except:
             print(Fore.YELLOW + "ERROR: value not found in JSON: " + name, file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
         return value
         
     def get_env_connect_string(self):
@@ -166,6 +172,7 @@ class DeployHorton:
             service_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
         except KeyError: 
             print(Fore.RED + "IOTHUB_E2E_CONNECTION_STRING not set in environment", file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
             sys.exit(1)
         return service_connection_string
 
@@ -177,7 +184,8 @@ class DeployHorton:
             new_device = iothub_registry_manager.create_device(device_name, "", "", auth_method)
         except Exception as e:
             print(Fore.RED + "Exception Creating device: " + device_name, file=sys.stderr)
-            print(Fore.RED + str(e.value), file=sys.stderr)
+            print(Fore.RED + str(e), file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
         return new_device
 
     def create_device_module(self, connect_string, device_id, module_name):
@@ -189,6 +197,7 @@ class DeployHorton:
         except Exception as e:
             print(Fore.RED + "Exception Creating device/module: " + module_name, file=sys.stderr)
             print(Fore.RED + e, file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
         return new_module
 
     def create_device_connectstring(self, hub_connectstring, device_name, access_key):
@@ -266,8 +275,9 @@ class DeviceChildrenObject:
         self.__dict__ = dict(zip(ks, vs))
 
 class IotDeviceObject:  
-    def __init__ (self, device_name='', device_id_suffix='', device_connect='', docker_image='', docker_container='', docker_args='', children=None):
+    def __init__ (self, device_name='', device_type='', device_id_suffix='', device_connect='', docker_image='', docker_container='', docker_args='', children=None):
         self.device_name      = device_name
+        self.device_type      = device_type
         self.device_id_suffix = device_id_suffix
         self.device_connect   = device_connect
         self.docker_image     = docker_image
