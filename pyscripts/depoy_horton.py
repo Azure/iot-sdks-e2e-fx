@@ -22,82 +22,78 @@ class DeployHorton:
     def __init__(self, args):
 
         az_devices = []
-        az_device_names = []
         module_count = 0
         init(convert=True)
 
+        input_manifest_file = "C:\\IoT_TestData\\Horton\\horton_maifest_template_001.json"
         save_manifest_file = "c:\\iot_testdata\\horton\\horton_updated_manifest.json"
-
         connect_string = self.get_env_connect_string()
-
-        #TEST_TEST_TEST
-        self.NUKE_ALL_DEVICES_IN_HUB(connect_string)
-
         base_hostname = "hortondeploytest"
         deployment_name = base_hostname + '-' + self.get_random_num_string(10000)
-        print("Deploying Horton to: " + deployment_name)
+        #print("Deploying Horton to: " + deployment_name)
 
-        deployment_json = self.get_deployment_model_json()
-        azure_ids = deployment_json['deployment']['azure_identities']
-        for az_id_name in azure_ids:
-            device_connectstring = ''
-            children_modules = []
-            children_names = []
+        deployment_json = self.get_deployment_model_json(input_manifest_file)
 
-            az_type = self.get_json_value(azure_ids, az_id_name, 'type')
-            az_device_id_suffix = self.get_json_value(azure_ids, az_id_name, 'device_id_suffix')
-            
-            if(self.node_has_children(azure_ids, az_id_name)):
-                children = azure_ids[az_id_name]['children']
+        try:
+            azure_ids = deployment_json['deployment']['azure_identities'][0]
+            for az_device_name in azure_ids:
+                device_connectstring = ''
                 children_modules = []
-                children_names = []
-                for child in children:
-                    child_type = self.get_json_value(children, child, 'type')
-                    child_module_id = self.get_json_value(children, child, 'module_id')
-                    child_docker_image =  self.get_json_value(children, child, 'docker_image')
-                    child_docker_container= self.get_json_value(children, child, 'docker_container_name')
-                    child_docker_args = self.get_json_value(children, child, 'docker_creation_args')
-                    #TEST_TEST_TEST - NextLines:1
-                    child_module_name = child_module_id + "_" + self.get_random_num_string(1000)
+                az_device_type = self.get_json_value(azure_ids, az_device_name, 'device_type')
+                az_device_id_suffix = self.get_json_value(azure_ids, az_device_name, 'device_id_suffix')
+                
+                if(self.node_has_children(azure_ids, az_device_name)):
+                    children = azure_ids[az_device_name][0]['children']
+                    children_modules = []
+                    for child in children:
+                        child_module_id = self.get_child_value(child, 'module_id')
+                        child_module_type = self.get_child_value(child, 'module_type')
+                        child_docker_image = self.get_child_value(child, 'module_docker_image_name')
+                        child_docker_container = self.get_child_value(child, 'module_docker_container_name')
+                        child_docker_args = self.get_child_value(child, 'module_docker_creation_args')
+                        #TEST_TEST_TEST - NextLines:1
+                        child_module_id = child_module_id + "_" + self.get_random_num_string(1000)
 
-                    new_module = DeviceModuleObject(child_module_id, az_id_name, child_type, child_docker_image, child_docker_container, child_docker_args, '')
-                    children_modules.append(new_module)
-                    children_names.append(child_module_name)
-            else:
-                az_docker_image = self.get_json_value(azure_ids, az_id_name, 'docker_image')
-                az_docker_container = self.get_json_value(azure_ids, az_id_name, 'docker_container_name')
-                az_docker_args = self.get_json_value(azure_ids, az_id_name, 'docker_creation_args')
+                        new_module = DeviceModuleObject(child_module_id, az_device_name, child_module_type, child_docker_image, child_docker_container, child_docker_args, '')
+                        children_modules.append(new_module)
+                else:
+                    az_docker_image = self.get_json_value(azure_ids, az_device_name, 'docker_image')
+                    az_docker_container = self.get_json_value(azure_ids, az_device_name, 'docker_container_name')
+                    az_docker_args = self.get_json_value(azure_ids, az_device_name, 'docker_creation_args')
 
-            # TEST_TEST_TEST  - NextLines:1
-            az_id_name = 'aa' + az_id_name + "_" + self.get_random_num_string(100) + az_device_id_suffix
-            
-            if(az_type == 'iothub_device'):
-                new_device = self.create_iot_device(connect_string, az_id_name)
-                if(new_device):
-                    device_connectstring = self.create_device_connectstring(connect_string, az_id_name, new_device.primaryKey)
-            else:
-                new_device = None
+                # TEST_TEST_TEST  - NextLines:1
+                az_device_name = 'aa' + az_device_name + "_" + self.get_random_num_string(100)
+                
+                if(az_device_type == 'iothub_device'):
+                    new_device = self.create_iot_device(connect_string, az_device_name + az_device_id_suffix)
+                    if(new_device):
+                        device_connectstring = self.create_device_connectstring(connect_string, az_device_name + az_device_id_suffix, new_device.primaryKey)
+                else:
+                    new_device = None
 
-            az_device_names.append(az_id_name)
-            child_module_objects = []
-            for child_module in children_modules:
-                if(child_module.module_type == 'iothub_module'):
-                    new_module = self.create_device_module(connect_string, az_id_name, child_module.module_id)
-                    if(new_module):
-                        child_module.module_connect = self.create_module_connectstring(connect_string, az_id_name, child_module.module_id, new_module.primaryKey)
-                        child_module_objects.append(child_module)
-                        module_count += 1
+                child_module_objects = []
+                for child_module in children_modules:
+                    if(child_module.module_type == 'iothub_module'):
+                        new_module = self.create_device_module(connect_string, az_device_name + az_device_id_suffix, child_module.module_id)
+                        if(new_module):
+                            child_module.module_connect = self.create_module_connectstring(connect_string, az_device_name + az_device_id_suffix, child_module.module_id, new_module.primaryKey)
+                            child_module_objects.append(child_module)
+                            module_count += 1
 
-            child_object = DeviceChildrenObject(children_names, children_modules)
-            new_device_obj = IotDeviceObject(az_id_name, az_type, az_device_id_suffix, device_connectstring, az_docker_image, az_docker_container, az_docker_args)
-            new_device_obj.children = child_object
-            az_devices.append(new_device_obj)
+                new_device_obj = IotDeviceObject(az_device_name, az_device_type, az_device_id_suffix, device_connectstring, az_docker_image, az_docker_container, az_docker_args)
+                new_device_obj.children = children_modules
+                az_devices.append(new_device_obj)
+
+        except Exception as e:
+            print(Fore.RED + "Exception Processing HortonManifest: " + input_manifest_file, file=sys.stderr)
+            print(Fore.RED + str(e), file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
+            return
 
         print(Fore.GREEN + "Created {} Devices and {} Modules".format(len(az_devices), module_count))
 
         # add device id's and connection strings back to horton_manifest & save it
-        new_az_id_obj = AzureIdObject(az_id_name, az_device_names, az_devices) 
-        deployment_obj = DeploymentObject(deployment_name, new_az_id_obj)
+        deployment_obj = DeploymentObject(deployment_name, az_devices)
         new_manifest_json = json.dumps(deployment_obj, default = lambda x: x.__dict__, sort_keys=False, indent=2)
         print(Fore.RESET + new_manifest_json)
 
@@ -119,13 +115,23 @@ class DeployHorton:
         sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
         from containers import all_containers
 
+        import docker
+        client = docker.from_env()
+
+        docker_containers = client.containers.list(all=True)
+        for cntr in docker_containers:
+            print(cntr)
+
         for cntr in all_containers:
             print(cntr)
 
         deployment_devices = deployment_obj.azure_identities
 
+        print("Deployment: " + deployment_obj.deployment_name)
         for device in deployment_devices:
-            print("DeviceName: " + device)
+            print("....DeviceName: " + device.device_name)
+            for module in device.children:
+                print("........Module: " + module.module_id)
 
         # PHASE 2: create containers
         #
@@ -140,21 +146,9 @@ class DeployHorton:
 
         return
 
-    #####################
-    ### INTERNAL ONLY ###
-    #####################
-    def NUKE_ALL_DEVICES_IN_HUB(self, conn_string):
-        print(Fore.RED + "######################################")
-        print(conn_string)
-        code = input("Enter the secret code to NUKE ALL DEVICES: ")
-        if(code == 'WtF'):
-            print('NUKING ' + conn_string)
-
-        sys.exit(1)
-
     def node_has_children(self, json, node):
         try:
-            children = json[node]['children']
+            children = json[node][0]['children']
             if(children):
                 return True
             else:
@@ -162,12 +156,21 @@ class DeployHorton:
         except:
             return False
 
+    def get_child_value(self, node, name):
+        value = ""
+        try:
+            value = node[name]
+        except:
+            print(Fore.YELLOW + "ERROR: value not found in JSON: ({}/{})".format(node, name), file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
+        return value
+        
     def get_json_value(self, json, node, name):
         value = ""
         try:
-            value = json[node][name]
+            value = json[node][0][name]
         except:
-            print(Fore.YELLOW + "ERROR: value not found in JSON: " + name, file=sys.stderr)
+            print(Fore.YELLOW + "ERROR: value not found in JSON: ({}/{})".format(node, name), file=sys.stderr)
             print(Fore.RESET + " ", file=sys.stderr)
         return value
         
@@ -220,70 +223,38 @@ class DeployHorton:
         randnum = randrange(maxval)
         return str(randnum).zfill(len(str(maxval)))        
 
-    def get_deployment_model_json(self):
-        json_template = """{
-            "deployment": {
-                "azure_identities": {
-                    "device_123": {
-                        "type": "iothub_device",
-                        "device_id_suffix": "_testdevice",
-                        "docker_image": "blah",
-                        "docker_container_name": "test_device",
-                        "docker_creation_args": "-p 8081/tcp:80"
-                    },
-                    "helper_object": {
-                        "type": "container",
-                        "device_id_suffix": "_testdevice",
-                        "docker_image": "blah",
-                        "docker_container_name": "service_module",
-                        "docker_creation_args": "-p 8081/tcp:80"
-                    },
-                    "device_456": {
-                        "type": "iothub_device",
-                        "device_id_suffix": "_device_with_module_children",
-                        "children": {
-                            "module1": {
-                                "type": "iothub_module",
-                                "module_id": "module1",
-                                "docker_image": "docker_image/blah",
-                                "docker_container_name": "module_under_test",
-                                "docker_creation_args": "-p 8083/tcp:80"
-                            },
-                            "module2": {
-                                "type": "iothub_module",
-                                "module_id": "module2",
-                                "docker_container_name": "other_module",
-                                "docker_image": "docker_image/blah",
-                                "docker_creation_args": "-p 8083/tcp:80"
-                            }
-                        }
-					}
-				}
-			}
-        }"""
-        data = json.loads(json_template)
-        return data
+    def get_deployment_model_json(self, json_filename):
+
+        json_manifest = ''
+        try:
+            with open(json_filename, 'r') as f:
+                json_manifest = json.loads(f.read())
+        except:
+            print(Fore.RED + "ERROR: in JSON manifest: " + json_filename, file=sys.stderr)
+            print(Fore.RESET + " ", file=sys.stderr)
+    
+        return json_manifest
 
 class DeviceModuleObject:  
-    def __init__ (self, module_id, device_name='', module_type='', module_image='', module_contianer='', module_arguments='', module_connect=''):
-        self.module_id        = module_id
-        self.device_name      = device_name
-        self.module_type      = module_type
-        self.module_image     = module_image
-        self.module_contianer = module_contianer
-        self.module_arguments = module_arguments
-        self.module_connect   = module_connect
+    def __init__ (self, module_id, device_name='', module_type='', module_docker_image_name='', module_docker_container_name='', module_docker_creation_args='', module_connect_string=''):
+        self.module_id                    = module_id
+        self.device_name                  = device_name
+        self.module_type                  = module_type
+        self.module_docker_image_name     = module_docker_image_name
+        self.module_docker_container_name = module_docker_container_name
+        self.module_docker_creation_args  = module_docker_creation_args
+        self.module_connect_string        = module_connect_string
 
 class IotDeviceObject:  
-    def __init__ (self, device_name='', device_type='', device_id_suffix='', device_connect='', docker_image='', docker_container='', docker_args='', children=None):
-        self.device_name      = device_name
-        self.device_type      = device_type
-        self.device_id_suffix = device_id_suffix
-        self.device_connect   = device_connect
-        self.docker_image     = docker_image
-        self.docker_container = docker_container
-        self.docker_args      = docker_args
-        self.children         = children
+    def __init__ (self, device_name='', device_type='', device_id_suffix='', device_connect_string='', docker_image='', docker_container='', docker_args='', children=None):
+        self.device_name             = device_name
+        self.device_type             = device_type
+        self.device_id_suffix        = device_id_suffix
+        self.device_connect_string   = device_connect_string
+        self.docker_image            = docker_image
+        self.docker_container        = docker_container
+        self.docker_args             = docker_args
+        self.children                = children
 
 class DeploymentObject:  
     def __init__ (self, deployment_name, azure_identities=None):
