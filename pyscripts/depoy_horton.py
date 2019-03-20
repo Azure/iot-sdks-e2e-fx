@@ -105,11 +105,12 @@ class DeployHorton:
         #client = docker.from_env()
         print(repo_address)
         repo_port = ":2376"
-        repo_url = "https://" + repo_ip + repo_port
-        print(repo_url)
+        #repo_connect = "https://" + repo_ip + repo_port
+        repo_connect = "https://" + repo_address + repo_port
+        print(repo_connect)
 
         try:
-            client = docker.DockerClient(base_url=repo_url)
+            client = docker.DockerClient(base_url=repo_connect)
             resp = client.login(username=repo_user, password=repo_password)
             cntr_list = client.containers.list(all=True)
             #client.images.push('arycloud/istiogui', tag=deployment.name)
@@ -117,7 +118,8 @@ class DeployHorton:
         except Exception as e:
              print(Fore.RED + "Exception connecting to Docker: " + repo_url, file=sys.stderr)
              traceback.print_exc()
-             print(e + Fore.RESET, file=sys.stderr)
+             #print(e + Fore.RESET, file=sys.stderr)
+             print(Fore.RESET, file=sys.stderr)
 
 
         # PHASE 2: create containers
