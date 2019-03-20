@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/19/2019 H
+# Rev: 03/20/2019 B
 
 import sys
 import os
@@ -18,21 +18,129 @@ from colorama import init, Fore, Back, Style
 import iothub_service_client
 from iothub_service_client import IoTHubRegistryManager, IoTHubRegistryManagerAuthMethod
 from iothub_service_client import IoTHubDeviceStatus, IoTHubError
+init(convert=True)
 
 class DeployHorton:
 
     def __init__(self, args):
 
-        az_devices = []
-        module_count = 0
-        init(convert=True)
-
         input_manifest_file = "/IoT_TestData/Horton/horton_maifest_template_001.json"
         save_manifest_file = "/iot_testdata/horton/horton_updated_manifest.json"
+
+        self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
+
+        self.setup_docker_containers(save_manifest_file)
+
+    def setup_docker_containers(self, input_manifest_file):
+        from os.path import dirname, join, abspath
+        sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
+        from containers import all_containers
+        import urllib
+        import base64
+        import docker
+
+        if not ("IOTHUB_E2E_REPO_ADDRESS" in os.environ
+            and "IOTHUB_E2E_CONNECTION_STRING" in os.environ
+            and "IOTHUB_E2E_REPO_USER" in os.environ
+            and "IOTHUB_E2E_REPO_PASSWORD" in os.environ):
+            print("Error: Docker container repository credentials are not set in IOTHUB_E2E_REPO* environment variables.")
+            return
+
+        #e2e_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
+        #repo_name =  os.environ["IOTHUB_E2E_REPO_ADDRESS"]
+        repo_ip =  "104.214.18.185"
+        repo_name =  "iotsdke2e.azurecr.io"
+        #repo_name =  "iotsdke2e"
+        repo_address = "https://" + repo_name
+        repo_user = os.environ["IOTHUB_E2E_REPO_USER"]
+        repo_password = os.environ["IOTHUB_E2E_REPO_PASSWORD"]
+
+        #repository = 'bertk-csharp-lkg'
+        #repo_tag = 'latest'
+        repository = 'java-e2e'
+        repo_tag = 'linux-amd64-dockerV18-AzureAzureIotSdkJava-Master'
+        repo_uri =  "{}/v2/{}/manifests/{}".format(repo_address, repository, repo_tag)
+
+        content_type = 'application/vnd.docker.distribution.manifest.v2+json'
+        auth_header = self.build_auth_header(repo_user, repo_password)
+        try:
+            req = urllib.request.Request(repo_uri, method='GET')
+            req.add_header('Authorization', auth_header)
+            req.add_header('Accept', content_type)
+            content = urllib.request.urlopen(req).read()
+            manifest = content.decode('ascii')
+            data = json.loads(manifest)
+            save_file = "/iot_testdata/horton/docker_repo.json"
+            docker_json = json.dumps(data, default = lambda x: x.__dict__, sort_keys=False, indent=2)
+            try:
+                with open(save_file, 'w') as f:
+                    f.write(docker_json)
+            except:
+                print(Fore.RED + "ERROR: writing JSON docker to: " + save_file + Fore.RESET, file=sys.stderr)
+
+        except Exception as e:
+             print(Fore.RED + "Exception connecting to Docker: " + repo_address, file=sys.stderr)
+             traceback.print_exc()
+             print(e + Fore.RESET, file=sys.stderr)
+
+        deployment_json = self.get_deployment_model_json(input_manifest_file)
+        azure_ids = deployment_json['azure_identities']
+        for azure_device in azure_ids:
+            az_device_name = self.get_json_value(azure_device, 'device_name')
+            print("...." + az_device_name)
+            children = azure_device['children']
+            for child in children:
+                child_module_id = self.get_json_value(child, 'module_id')
+                print("........" + child_module_id)
+
+        hub_connect_string = self.get_env_connect_string()
+        auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
+        try:
+            iothub_registry_manager = IoTHubRegistryManager(hub_connect_string)
+        except Exception as e:
+            print(Fore.RED + "Exception connecting to IoT Hub: " + hub_connect_string + Fore.RESET, file=sys.stderr)
+
+        #api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+        #api_client = docker.APIClient(base_url=repo_address + ":2376")
+        #client = docker.from_env()
+        print(repo_address)
+        repo_port = ":2376"
+        repo_url = "https://" + repo_ip + repo_port
+        print(repo_url)
+
+        try:
+            client = docker.DockerClient(base_url=repo_url)
+            resp = client.login(username=repo_user, password=repo_password)
+            cntr_list = client.containers.list(all=True)
+            #client.images.push('arycloud/istiogui', tag=deployment.name)
+            #docker login repo_name
+        except Exception as e:
+             print(Fore.RED + "Exception connecting to Docker: " + repo_url, file=sys.stderr)
+             traceback.print_exc()
+             print(e + Fore.RESET, file=sys.stderr)
+
+
+        # PHASE 2: create containers
+        #
+        # read updated horton_manifest
+        # docker login
+        # for each docker container, 
+        # a. fetch the image, fail if it's missing.
+        # b. start it using args and the container_name,
+        # c. use ensure_container.py to make sure it's responding.
+        #
+        # a & c will be used for edgehub deployments eventually
+
+        return True
+
+    def create_hotron_devices_from_manifest(self, input_manifest_file, save_manifest_file):
+
         hub_connect_string = self.get_env_connect_string()
         base_hostname = "hortondeploytest"
         deployment_name = base_hostname + '-' + self.get_random_num_string(10000)
         deployment_json = self.get_deployment_model_json(input_manifest_file)
+        az_devices = []
+        module_count = 0
 
         try:
             azure_ids = deployment_json['azure_identities']
@@ -41,7 +149,7 @@ class DeployHorton:
                 children_modules = []
                 az_device_name = self.get_json_value(azure_device, 'device_name')
                 # TEST_TEST_TEST  - NextLines:1
-                az_device_name      = 'D0_' + az_device_name + "_" + self.get_random_num_string(100)
+                #az_device_name      = 'D0_' + az_device_name + "_" + self.get_random_num_string(100)
                 az_device_type      = self.get_json_value(azure_device, 'device_type')
                 az_device_id_suffix = self.get_json_value(azure_device, 'device_id_suffix')
                 az_docker_image     = self.get_json_value(azure_device, 'docker_image')
@@ -95,149 +203,13 @@ class DeployHorton:
         except:
             print(Fore.RED + "ERROR: writing JSON manifest to: " + save_manifest_file + Fore.RESET, file=sys.stderr)
 
-        print("PHASE1 Complete")
-
-        self.setup_docker_containers(hub_connect_string, deployment_obj)
-
-        print("DONE")
-
-    def setup_docker_containers(self, hub_connect_string, deployment_obj):
-        from os.path import dirname, join, abspath
-        sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
-        from containers import all_containers
-        import urllib
-        import base64
-        import docker
-
-        if not ("IOTHUB_E2E_REPO_ADDRESS" in os.environ
-            and "IOTHUB_E2E_CONNECTION_STRING" in os.environ
-            and "IOTHUB_E2E_REPO_USER" in os.environ
-            and "IOTHUB_E2E_REPO_PASSWORD" in os.environ):
-            print("Error: Docker container repository credentials are not set in IOTHUB_E2E_REPO* environment variables.")
-            return
-
-        #e2e_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
-        repo_address = "https://" + os.environ["IOTHUB_E2E_REPO_ADDRESS"]
-        repo_user = os.environ["IOTHUB_E2E_REPO_USER"]
-        repo_password = os.environ["IOTHUB_E2E_REPO_PASSWORD"]
-
-        repository = 'bertk-csharp-lkg'
-        repo_tag = 'latest'
-
-        #docker_client = docker.DockerClient.login(repo_user, repo_password, '', repo_address)
-        #docker.APIClient.login('username', '*******', 'email@gmail.com','https://index.docker.io/v1/', config)        docker_client = docker.DockerClient.login() .login(repo_user, repo_password, '', repo_address)
-        #config = os.path.join('/', 'IGui') + 'config.json'
-        #try:
-        #    docker_client = docker.APIClient.login(repo_user, repo_password, 'email@gmail.com', repo_address, config)
-        #    docker_containers = docker_client.containers.list(all=True)
-        #except Exception as e:
-        #    print(Fore.RED + "Exception connecting to Docker: " + repo_address, file=sys.stderr)
-        #    traceback.print_exc()
-        #    print(e + Fore.RESET, file=sys.stderr)
-
-        #"$Registry/v2/$Repository/manifests/$TAG_OLD"
-        uri =  "{}/v2/{}/manifests/{}".format(repo_address, repository, repo_tag)
-
-        content_type = 'application/vnd.docker.distribution.manifest.v2+json'
-        auth_header = self.build_auth_header(repo_user, repo_password)
-
-        #req = urllib.request.Request(repo_address, method='GET')
-        try:
-            req = urllib.request.Request(uri, method='GET')
-            req.add_header('Authorization', auth_header)
-            req.add_header('Accept', content_type)
-            #resp = urllib.request.urlopen(req)
-            content = urllib.request.urlopen(req).read()
-            #charset = resp.info().get_content_charset()
-            #content = resp.read()
-            #content = resp.read().decode(charset)
-            #req=urllib.request.urlopen(URL)
-            #charset=req.info().get_content_charset()
-            #content=req.read().decode(charset)            
-            #x = content.ByteArray()
-            #$Manifest = ConvertFrom-ByteArray -Data $Response.Content -Encoding ASCII
-            #print(content)
-            #manifest = [x.decode('utf-8') for x in content]
-            #manifest = bytes(content, 'ascii')
-            #manifest = ''.join(bytelist).decode('utf-8')
-            #manifest = ''.join(content.decode()).decode('ascii')
-            #manifest = ''.join(content.decode()).decode('ascii')
-            manifest = content.decode('ascii')
-            print(manifest)
-
-            data = json.loads(manifest)
-            print(data)
-
-            save_file = "/iot_testdata/horton/docker_repo.json"
-            docker_json = json.dumps(data, default = lambda x: x.__dict__, sort_keys=False, indent=2)
-            try:
-                with open(save_file, 'w') as f:
-                    f.write(docker_json)
-            except:
-                print(Fore.RED + "ERROR: writing JSON docker to: " + save_file + Fore.RESET, file=sys.stderr)
-
-        except Exception as e:
-             print(Fore.RED + "Exception connecting to Docker: " + repo_address, file=sys.stderr)
-             traceback.print_exc()
-             print(e + Fore.RESET, file=sys.stderr)
-
-
-        #req = urllib.request.Request(repo_address, data=b'DATA!', method='PUT')
-        #urllib.request.urlopen(req)
-
-        #for cntr in docker_containers:
-        #    print(cntr)
-
-        for cntr in all_containers:
-            print(cntr)
-
-        deployment_devices = deployment_obj.azure_identities
-        auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
-        try:
-            iothub_registry_manager = IoTHubRegistryManager(hub_connect_string)
-        except Exception as e:
-            print(Fore.RED + "Exception connecting to IoT Hub: " + hub_connect_string + Fore.RESET, file=sys.stderr)
-
-        api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
-
-        print("Deployment: " + deployment_obj.deployment_name)
-        for device in deployment_devices:
-            print("....DeviceName: " + device.device_name)
-            if(device.docker_container):
-                container = device.docker_container
-                if(container in all_containers):
-                    docker_containers = api_client.containers(all=True)
-                    for docker_container in docker_containers:
-                        print(docker_container)
-
-            for module in device.children:
-                print("........Module: " + module.module_id)
-
-        # PHASE 2: create containers
-        #
-        # read updated horton_manifest
-        # docker login
-        # for each docker container, 
-        # a. fetch the image, fail if it's missing.
-        # b. start it using args and the container_name,
-        # c. use ensure_container.py to make sure it's responding.
-        #
-        # a & c will be used for edgehub deployments eventually
-
-        return
+        print("create_hotron_devices_from_manifest Complete")
+        return True
 
     def build_auth_header(self, username, password):
-        #pair = "{}:{}".format(username, password)
         puid = username + ':' + password
         puid_bytes = puid.encode('ascii')
-        #puid_bytes = puid_ascii.encode('utf-8')
-        #encoded_credentials = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($Pair))
         encoded_credentials = base64.b64encode(puid_bytes)
-        #Params.Headers.Add('Authorization', "Basic $encodedCredentials")
-        base64string = base64.b64decode(encoded_credentials).decode('utf-8')
-        base64string = 'aW90c2RrZTJlOkgwMzRCUkxVVHRORkhnOFN3MGppaVg4S204PXVDSGtu'
-        auth_header = "Basic {}".format(base64string)
-        #auth_header = "Basic " + encoded_credentials
         auth_header = "Basic " + encoded_credentials.decode('ascii')
         return auth_header    
 
@@ -306,7 +278,6 @@ class DeployHorton:
         return str(randnum).zfill(len(str(maxval)))        
 
     def get_deployment_model_json(self, json_filename):
-
         json_manifest = ''
         try:
             with open(json_filename, 'r') as f:
