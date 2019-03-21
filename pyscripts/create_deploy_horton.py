@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/20/2019 B
+# Rev: 03/20/2019 E
 
 import sys
 import os
@@ -27,7 +27,7 @@ class DeployHorton:
         input_manifest_file = "/IoT_TestData/Horton/horton_maifest_template_001.json"
         save_manifest_file = "/iot_testdata/horton/horton_updated_manifest.json"
 
-        self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
+        #self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
 
         self.setup_docker_containers(save_manifest_file)
 
@@ -38,6 +38,8 @@ class DeployHorton:
         import urllib
         import base64
         import docker
+
+        from docker_tags import DockerTags
 
         if not ("IOTHUB_E2E_REPO_ADDRESS" in os.environ
             and "IOTHUB_E2E_CONNECTION_STRING" in os.environ
@@ -54,6 +56,102 @@ class DeployHorton:
         repo_address = "https://" + repo_name
         repo_user = os.environ["IOTHUB_E2E_REPO_USER"]
         repo_password = os.environ["IOTHUB_E2E_REPO_PASSWORD"]
+
+        deployment_json = self.get_deployment_model_json(input_manifest_file)
+        azure_ids = deployment_json['azure_identities']
+        for azure_device in azure_ids:
+            az_device_name = self.get_json_value(azure_device, 'device_name')
+            print("...." + az_device_name)
+            children = azure_device['children']
+            for child in children:
+                child_module_id = self.get_json_value(child, 'module_id')
+                print("........" + child_module_id)
+
+        hub_connect_string = self.get_env_connect_string()
+        auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
+        try:
+            iothub_registry_manager = IoTHubRegistryManager(hub_connect_string)
+        except Exception as e:
+            print(Fore.RED + "Exception connecting to IoT Hub: " + hub_connect_string + Fore.RESET, file=sys.stderr)
+
+        #api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+        #api_client = docker.APIClient(base_url=repo_address + ":2376")
+        #client = docker.from_env()
+        #print(repo_address)
+        #repo_port = ":2376"
+        #repo_port = ":53"
+        #repo_connect = 'iotsdke2e.azurecr.io:53'
+        #repo_connect = "https://" + repo_address
+        #repo_connect = "https://" + repo_ip + repo_port
+        #repo_connect = repo_address + repo_port
+        #repo_connect = repo_name
+        #repo_connect = "tcp://" + repo_name + repo_port
+        #print(repo_connect)
+        #config_file = '/Users/v-greach/.docker/config.json'
+
+        auth_config = {
+            "username": os.environ["IOTHUB_E2E_REPO_USER"],
+            "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
+        }
+
+        docker_tags = DockerTags()
+        docker_tags.docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
+
+        language = 'python'
+        repo = 'vsts'
+        commit = '14080'
+        image_tag = 'latest'
+        #tags = docker_tags.get_docker_tags_from_commit(language, repo, commit)
+        docker_image_name = "{}-e2e-v2".format(language)
+
+        docker_full_image_name = "{}/{}".format(repo, docker_image_name)
+
+        api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+
+        for line in api_client.pull(
+                docker_full_image_name,
+                image_tag,
+                stream=True,
+                auth_config=auth_config,
+            ):
+
+            print(line)
+
+        #try:
+            #client = docker.DockerClient(base_url='192.168.65.1:53')
+            #client = docker.DockerClient(base_url="unix://var/run/docker.sock")
+
+            #client = docker.DockerClient(base_url=repo_connect, version='auto', timeout=120)
+            #resp = client.login(username="iotsdke2e", password="H034BRLUTtNFHg8Sw0jiiX8Km8=uCHkn", dockercfg_path=config_file)
+
+            #client = docker.DockerClient(base_url=repo_connect)
+            #resp = client.login(username=repo_user, password=repo_password)
+
+            #cntr_list = client.containers.list(all=True)
+
+            #client.images.push('arycloud/istiogui', tag=deployment.name)
+            #docker login repo_name
+        #except Exception as e:
+             #print(Fore.RED + "Exception connecting to Docker: " + hub_repo_connect, file=sys.stderr)
+             #traceback.print_exc()
+             #print(e + Fore.RESET, file=sys.stderr)
+             #print(Fore.RESET, file=sys.stderr)
+
+
+        # PHASE 2: create containers
+        #
+        # read updated horton_manifest
+        # docker login
+        # for each docker container, 
+        # a. fetch the image, fail if it's missing.
+        # b. start it using args and the container_name,
+        # c. use ensure_container.py to make sure it's responding.
+        #
+        # a & c will be used for edgehub deployments eventually
+
+        return True
+
+    def my_docker_api():
 
         #repository = 'bertk-csharp-lkg'
         #repo_tag = 'latest'
@@ -82,58 +180,6 @@ class DeployHorton:
              print(Fore.RED + "Exception connecting to Docker: " + repo_address, file=sys.stderr)
              traceback.print_exc()
              print(e + Fore.RESET, file=sys.stderr)
-
-        deployment_json = self.get_deployment_model_json(input_manifest_file)
-        azure_ids = deployment_json['azure_identities']
-        for azure_device in azure_ids:
-            az_device_name = self.get_json_value(azure_device, 'device_name')
-            print("...." + az_device_name)
-            children = azure_device['children']
-            for child in children:
-                child_module_id = self.get_json_value(child, 'module_id')
-                print("........" + child_module_id)
-
-        hub_connect_string = self.get_env_connect_string()
-        auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
-        try:
-            iothub_registry_manager = IoTHubRegistryManager(hub_connect_string)
-        except Exception as e:
-            print(Fore.RED + "Exception connecting to IoT Hub: " + hub_connect_string + Fore.RESET, file=sys.stderr)
-
-        #api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
-        #api_client = docker.APIClient(base_url=repo_address + ":2376")
-        #client = docker.from_env()
-        print(repo_address)
-        repo_port = ":2376"
-        #repo_connect = "https://" + repo_ip + repo_port
-        repo_connect = "https://" + repo_address + repo_port
-        print(repo_connect)
-
-        try:
-            client = docker.DockerClient(base_url=repo_connect)
-            resp = client.login(username=repo_user, password=repo_password)
-            cntr_list = client.containers.list(all=True)
-            #client.images.push('arycloud/istiogui', tag=deployment.name)
-            #docker login repo_name
-        except Exception as e:
-             print(Fore.RED + "Exception connecting to Docker: " + repo_url, file=sys.stderr)
-             traceback.print_exc()
-             #print(e + Fore.RESET, file=sys.stderr)
-             print(Fore.RESET, file=sys.stderr)
-
-
-        # PHASE 2: create containers
-        #
-        # read updated horton_manifest
-        # docker login
-        # for each docker container, 
-        # a. fetch the image, fail if it's missing.
-        # b. start it using args and the container_name,
-        # c. use ensure_container.py to make sure it's responding.
-        #
-        # a & c will be used for edgehub deployments eventually
-
-        return True
 
     def create_hotron_devices_from_manifest(self, input_manifest_file, save_manifest_file):
 
