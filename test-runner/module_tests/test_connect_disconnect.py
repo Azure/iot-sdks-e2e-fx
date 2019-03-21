@@ -42,21 +42,6 @@ def test_module_client_connect_enable_input_messages_disconnect():
 
 
 @pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.testgroup_iothub_module_client
-def test_registry_client_connect_disconnect():
-    registry_client = connections.connect_registry_client()
-    registry_client.disconnect()
-
-
-@pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.testgroup_iothub_module_client
-def test_service_client_connect_disconnect():
-    service_client = connections.connect_service_client()
-    service_client.disconnect()
-
-
-@pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.testgroup_iothub_module_client
 @pytest.mark.module_under_test_has_device_wrapper
 def test_device_client_connect_disconnect():
     device_client = connections.connect_leaf_device_client()
@@ -64,7 +49,6 @@ def test_device_client_connect_disconnect():
 
 
 @pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.testgroup_iothub_module_client
 @pytest.mark.module_under_test_has_device_wrapper
 def test_device_client_connect_enable_methods_disconnect():
     device_client = connections.connect_leaf_device_client()
