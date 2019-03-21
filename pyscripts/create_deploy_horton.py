@@ -14,6 +14,7 @@ import json
 import shutil
 import traceback
 import base64
+from pathlib import *
 from colorama import init, Fore, Back, Style
 import iothub_service_client
 from iothub_service_client import IoTHubRegistryManager, IoTHubRegistryManagerAuthMethod
@@ -24,10 +25,11 @@ class DeployHorton:
 
     def __init__(self, args):
 
-        input_manifest_file = "/IoT_TestData/Horton/horton_maifest_template_001.json"
-        save_manifest_file = "/iot_testdata/horton/horton_updated_manifest.json"
+        home_dir = str(Path.home())
+        input_manifest_file = os.path.normpath(home_dir + "/horton/horton_maifest_template.json")
+        save_manifest_file = os.path.normpath(home_dir + "/horton/horton_updated_manifest.json")
 
-        #self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
+        self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
 
         self.setup_docker_containers(save_manifest_file)
 
@@ -94,8 +96,9 @@ class DeployHorton:
             "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
         }
 
+        docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
         docker_tags = DockerTags()
-        docker_tags.docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
+        docker_tags.docker_repo = docker_repo
 
         language = 'python'
         repo = 'vsts'
@@ -106,7 +109,10 @@ class DeployHorton:
 
         docker_full_image_name = "{}/{}".format(repo, docker_image_name)
 
-        api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+        #docker_base = 'tcp://127.0.0.1:1234'
+        docker_base = 'tcp://' + docker_repo + ':2376'
+
+        api_client = docker.APIClient(base_url=docker_base)
 
         for line in api_client.pull(
                 docker_full_image_name,
@@ -330,8 +336,10 @@ class DeployHorton:
         try:
             with open(json_filename, 'r') as f:
                 json_manifest = json.loads(f.read())
-        except:
+        except Exception as e:
             print(Fore.RED + "ERROR: in JSON manifest: " + json_filename + Fore.RESET, file=sys.stderr)
+            traceback.print_exc()
+            print(e + Fore.RESET, file=sys.stderr)
         return json_manifest
 
 class DeviceModuleObject:  
