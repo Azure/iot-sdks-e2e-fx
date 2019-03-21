@@ -10,10 +10,15 @@
 
 import sys
 import os
-import iothub_service_client
-from iothub_service_client import IoTHubRegistryManager, IoTHubRegistryManagerAuthMethod
-from iothub_service_client import IoTHubDeviceStatus, IoTHubError
+#print(sys.path)
+#import iothub_service_client
+#from iothub_service_client import IoTHubRegistryManager, IoTHubRegistryManagerAuthMethod
+#from iothub_service_client import IoTHubDeviceStatus, IoTHubError
 #from iothub_service_client_args import get_iothub_opt, OptionError
+
+from os.path import dirname, join, abspath
+sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
+from service_helper import Helper
 
 class HortonTools:
 
@@ -49,13 +54,23 @@ class HortonTools:
 
         print('NUKING ' + conn_string)
 
-        auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
+        #auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
+        #iothub_registry_manager = IoTHubRegistryManager(conn_string)
 
-        iothub_registry_manager = IoTHubRegistryManager(conn_string)
+        devices_to_delete = [ "device_123", "helper_object", "device_456"]
 
+        helper = Helper(conn_string)
+
+        for device in devices_to_delete:
+            ret = helper.try_delete_device(device)
+            print("Delete: ({}) returned: {}".format(device, ret))
+
+
+    def old_code():
         number_of_devices = 10
 
-        dev_list = iothub_registry_manager.get_device_list(number_of_devices)
+        #dev_list = iothub_registry_manager.get_device_list(number_of_devices)
+        dev_list = helper
         devices_got = len(dev_list)
         total = devices_got
         dev_count = 0
