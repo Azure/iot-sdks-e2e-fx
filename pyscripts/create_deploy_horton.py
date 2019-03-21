@@ -26,6 +26,8 @@ class DeployHorton:
     def __init__(self, args):
 
         home_dir = str(Path.home())
+        from os.path import expanduser
+        home_dir = expanduser("~")
         input_manifest_file = os.path.normpath(home_dir + "/horton/horton_maifest_template.json")
         save_manifest_file = os.path.normpath(home_dir + "/horton/horton_updated_manifest.json")
 
@@ -61,9 +63,12 @@ class DeployHorton:
 
         deployment_json = self.get_deployment_model_json(input_manifest_file)
         azure_ids = deployment_json['azure_identities']
+        containers_needed = []
         for azure_device in azure_ids:
             az_device_name = self.get_json_value(azure_device, 'device_name')
+            device_container = azure_device[""]
             print("...." + az_device_name)
+           
             children = azure_device['children']
             for child in children:
                 child_module_id = self.get_json_value(child, 'module_id')
