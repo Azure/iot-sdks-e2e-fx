@@ -222,7 +222,7 @@ class IotHubModuleRuntimeConfig:
         self.service = IotHubServiceRest()
         self.registry = IotHubRegistryRest()
         self.eventhub = EventHubDirect()
-        self.test_module = EdgeHubModuleRest("TestModuleClient")
+        self.test_module = IotHubModuleRest("TestModuleClient")
         self.ca_certificate = {}
 
 
@@ -231,7 +231,7 @@ class IotHubModuleRuntimeConfigDirect:
         self.service = IotHubServiceDirect()
         self.registry = IotHubRegistryDirect()
         self.eventhub = EventHubDirect()
-        self.test_module = EdgeHubModuleDirect("TestModuleClient")
+        self.test_module = IotHubModuleDirect("TestModuleClient")
         self.ca_certificate = {}
 
 
@@ -240,7 +240,7 @@ class IotHubModuleAndDeviceRuntimeConfig:
         self.service = IotHubServiceRest()
         self.registry = IotHubRegistryRest()
         self.eventhub = EventHubDirect()
-        self.test_module = EdgeHubModuleRest("TestModuleClient")
+        self.test_module = IotHubModuleRest("TestModuleClient")
         self.test_device = IotHubDeviceRest("TestDeviceClient")
         self.ca_certificate = {}
 
@@ -250,7 +250,7 @@ class IotHubModuleAndDeviceRuntimeConfigDirect:
         self.service = IotHubServiceDirect()
         self.registry = IotHubRegistryDirect()
         self.eventhub = EventHubDirect()
-        self.test_module = EdgeHubModuleDirect("TestModuleClient")
+        self.test_module = IotHubModuleDirect("TestModuleClient")
         self.test_device = IotHubDeviceDirect("TestDeviceClient")
         self.ca_certificate = {}
 
