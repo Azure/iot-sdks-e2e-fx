@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information
+import scenarios
 
 # --------------------------------------------------------------------------
 # object types
@@ -91,7 +92,6 @@ class IotHubServiceRest:
 class IotHubServiceDirect(IotHubServiceRest):
     def __init__(self):
         IotHubServiceRest.__init__(self)
-        self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_AZURE_ADAPTER
         del self.rest_uri
 
@@ -110,7 +110,6 @@ class IotHubRegistryRest:
 class IotHubRegistryDirect(IotHubRegistryRest):
     def __init__(self):
         IotHubRegistryRest.__init__(self)
-        self.language = PYTHONPREVIEW
         self.adapter_type = DIRECT_AZURE_ADAPTER
         del self.rest_uri
 
@@ -136,7 +135,6 @@ class EdgeHubModuleRest:
     def __init__(self, api_name):
         self.test_object_type = EDGEHUB_MODULE
         self.connection_type = ENVIRONMENT
-        self.language = SET_AT_RUNTIME
         self.connection_string = SET_AT_RUNTIME
         self.device_id = SET_AT_RUNTIME
         self.module_id = SET_AT_RUNTIME
@@ -149,17 +147,15 @@ class EdgeHubModuleRest:
 
 class EdgeHubModuleDirect(EdgeHubModuleRest):
     def __init__(self, api_name):
-        super(EdgeHubModuleDirect, self).__init__(api_name)
-        self.language = PYTHONPREVIEW
+        EdgeHubModuleRest.__init__(self, api_name)
         self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
         del self.rest_uri
 
 
-class EdgeHubLeafDeviceRest:
+class IotHubDeviceRest:
     def __init__(self, api_name):
         self.test_object_type = IOTHUB_DEVICE
         self.connection_type = CONNECTION_STRING
-        self.language = SET_AT_RUNTIME
         self.connection_string = SET_AT_RUNTIME
         self.device_id = SET_AT_RUNTIME
         self.adapter_type = REST_ADAPTER
@@ -169,9 +165,114 @@ class EdgeHubLeafDeviceRest:
         self.transport = MQTT
 
 
-class EdgeHubLeafDeviceDirect(EdgeHubLeafDeviceRest):
+class IotHubDeviceDirect(IotHubDeviceRest):
     def __init__(self, api_name):
-        super(EdgeHubLeafDeviceRest, self).__init__(api_name)
-        self.language = PYTHONPREVIEW
+        IotHubDeviceRest.__init__(self, api_name)
         self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
         del self.rest_uri
+
+
+class IotHubModuleRest:
+    def __init__(self, api_name):
+        self.test_object_type = IOTHUB_MODULE
+        self.connection_type = CONNECTION_STRING
+        self.connection_string = SET_AT_RUNTIME
+        self.device_id = SET_AT_RUNTIME
+        self.module_id = SET_AT_RUNTIME
+        self.adapter_type = REST_ADAPTER
+        self.rest_uri = SET_AT_RUNTIME
+        self.api_name = api_name
+        self.api_surface = MODULE_API
+        self.transport = MQTT
+
+
+class IotHubModuleDirect(IotHubModuleRest):
+    def __init__(self, api_name):
+        IotHubModuleDirect.__init__(self, api_name)
+        self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
+        del self.rest_uri
+
+
+class EdgeHubModuleRuntimeConfig:
+    def __init__(self):
+        self.service = IotHubServiceRest()
+        self.registry = IotHubRegistryRest()
+        self.eventhub = EventHubDirect()
+        self.iotedge = IotEdgeDevice()
+        self.test_module = EdgeHubModuleRest("TestModuleClient")
+        self.friend_module = EdgeHubModuleRest("FriendModuleClient")
+        self.leaf_device = IotHubDeviceRest("LeafDeviceClient")
+        self.ca_certificate = {}
+
+
+class EdgeHubModuleRuntimeConfigDirect:
+    def __init__(self):
+        self.service = IotHubServiceDirect()
+        self.registry = IotHubRegistryDirect()
+        self.eventhub = EventHubDirect()
+        self.iotedge = IotEdgeDevice()
+        self.test_module = EdgeHubModuleDirect("TestModuleClient")
+        self.friend_module = EdgeHubModuleRest("FriendModuleClient")
+        self.leaf_device = IotHubDeviceRest("LeafDeviceClient")
+        self.ca_certificate = {}
+
+
+class IotHubModuleRuntimeConfig:
+    def __init__(self):
+        self.service = IotHubServiceRest()
+        self.registry = IotHubRegistryRest()
+        self.eventhub = EventHubDirect()
+        self.test_module = IotHubModuleRest("TestModuleClient")
+        self.ca_certificate = {}
+
+
+class IotHubModuleRuntimeConfigDirect:
+    def __init__(self):
+        self.service = IotHubServiceDirect()
+        self.registry = IotHubRegistryDirect()
+        self.eventhub = EventHubDirect()
+        self.test_module = IotHubModuleDirect("TestModuleClient")
+        self.ca_certificate = {}
+
+
+class IotHubModuleAndDeviceRuntimeConfig:
+    def __init__(self):
+        self.service = IotHubServiceRest()
+        self.registry = IotHubRegistryRest()
+        self.eventhub = EventHubDirect()
+        self.test_module = IotHubModuleRest("TestModuleClient")
+        self.test_device = IotHubDeviceRest("TestDeviceClient")
+        self.ca_certificate = {}
+
+
+class IotHubModuleAndDeviceRuntimeConfigDirect:
+    def __init__(self):
+        self.service = IotHubServiceDirect()
+        self.registry = IotHubRegistryDirect()
+        self.eventhub = EventHubDirect()
+        self.test_module = IotHubModuleDirect("TestModuleClient")
+        self.test_device = IotHubDeviceDirect("TestDeviceClient")
+        self.ca_certificate = {}
+
+
+scenario_to_config = {
+    scenarios.EDGEHUB_MODULE: EdgeHubModuleRuntimeConfig,
+    scenarios.IOTHUB_MODULE: IotHubModuleRuntimeConfig,
+    scenarios.EDGEHUB_MODULE_FI: EdgeHubModuleRuntimeConfig,
+    scenarios.IOTHUB_MODULE_AND_DEVICE: IotHubModuleAndDeviceRuntimeConfig,
+}
+
+scenario_to_config_direct = {
+    scenarios.EDGEHUB_MODULE: EdgeHubModuleRuntimeConfigDirect,
+    scenarios.IOTHUB_MODULE: IotHubModuleRuntimeConfigDirect,
+    scenarios.EDGEHUB_MODULE_FI: EdgeHubModuleRuntimeConfigDirect,
+    scenarios.IOTHUB_MODULE_AND_DEVICE: IotHubModuleAndDeviceRuntimeConfigDirect,
+}
+
+
+def get_runtime_config(scenario):
+    return scenario_to_config[scenario.scenario_name]()
+
+
+def get_runtime_config_direct(scenario):
+    return scenario_to_config_direct[scenario.scenario_name]()
