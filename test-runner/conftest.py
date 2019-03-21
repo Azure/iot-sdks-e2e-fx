@@ -8,6 +8,7 @@
 import pytest
 import signal
 import adapters
+import logging
 from adapters import print_message as log_message
 from adapters import adapter_config
 from docker_log_watcher import DockerLogWatcher
@@ -15,6 +16,11 @@ from identity_helpers import ensure_edge_environment_variables
 import runtime_config_templates
 import runtime_config
 import scenarios
+
+# default to logging.INFO
+logging.basicConfig(level=logging.INFO)
+# AMQP is chatty at INFO level.  Dial this down to WARNING.
+logging.getLogger("uamqp").setLevel(level=logging.WARNING)
 
 ensure_edge_environment_variables()
 
@@ -61,7 +67,7 @@ def pytest_addoption(parser):
         "--local",
         action="store_true",
         default=False,
-        help="run tests against local module (probably in debugger",
+        help="run tests against local module (probably in debugger)",
     )
     parser.addoption(
         "--transport",
@@ -113,7 +119,6 @@ skip_for_python = set(
 
 skip_for_pythonpreview = set(
     [
-        "receivesInputMessages",
         "receivesMethodCalls",
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",

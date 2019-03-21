@@ -12,9 +12,9 @@ steps:
 
 - script: |
     $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }}
-    mkdir $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}
-    mv $(Horton.FrameworkRoot)/results/logs/* $(Horton.FrameworkRoot)/results/${{ parameters.log_folder_name }}/
-    cp $(Build.SourcesDirectory)/TEST-* $(Horton.FrameworkRoot)/results
+    mkdir -p $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}
+    mv $(Horton.FrameworkRoot)/results/logs/* $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}/
+    mv $(Build.SourcesDirectory)/TEST-* $(Build.SourcesDirectory)/results
   displayName: 'Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
@@ -25,7 +25,7 @@ steps:
 - task: CopyFiles@2
   displayName: 'Copy result files to artifact staging'
   inputs:
-    SourceFolder: '$(Horton.FrameworkRoot)/results'
+    SourceFolder: '$(Build.SourcesDirectory)/results'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 

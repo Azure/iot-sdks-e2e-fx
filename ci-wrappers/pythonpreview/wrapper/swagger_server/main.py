@@ -4,6 +4,10 @@
 # full license information.
 import connexion
 import faulthandler
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
 
 from . import encoder
 
