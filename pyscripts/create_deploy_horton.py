@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/20/2019 E
+# Rev: 03/20/2019 F
 
 import sys
 import os
