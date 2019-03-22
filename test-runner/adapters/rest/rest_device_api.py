@@ -77,5 +77,5 @@ class DeviceApi(AbstractDeviceApi):
         raise NotImplementedError()
 
     @log_entry_and_exit
-    def receive_c2d_async(self):
+    def wait_for_c2d_message_async(self):
         raise NotImplementedError()
