@@ -90,3 +90,17 @@ def connect_leaf_device_client():
         current_config.ca_certificate,
     )
     return client
+
+
+def connect_test_device_client():
+    """
+    connect the device client for the test device and return the client object
+    """
+    current_config = runtime_config.get_current_config()
+    client = adapters.TestDeviceClient()
+    client.connect(
+        current_config.test_device.transport,
+        current_config.test_device.connection_string,
+        current_config.ca_certificate,
+    )
+    return client

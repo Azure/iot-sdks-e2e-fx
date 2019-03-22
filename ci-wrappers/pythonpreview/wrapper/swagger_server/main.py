@@ -5,16 +5,18 @@
 import connexion
 import faulthandler
 import logging
+from . import encoder
 
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("paho").setLevel(level=logging.DEBUG)
 
-from . import encoder
 
 def main():
     faulthandler.enable()
-    app = connexion.App(__name__, specification_dir='./swagger/')
+    app = connexion.App(__name__, specification_dir="./swagger/")
     app.app.json_encoder = encoder.JSONEncoder
-    app.add_api('swagger.yaml', arguments={'title': 'IoT SDK Device &amp; Client REST API'})
+    app.add_api(
+        "swagger.yaml", arguments={"title": "IoT SDK Device &amp; Client REST API"}
+    )
     app.run(port=8080, debug=True, use_reloader=False, threaded=True)
