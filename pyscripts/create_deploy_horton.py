@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/21/2019 F
+# Rev: 03/21/2019 G
 
 import sys
 import os
@@ -79,6 +79,17 @@ class DeployHorton:
                     containers_needed.append(docker_container)
                 print("........" + child_module_id)
 
+        containers_to_get = []
+        for container in containers_needed:
+            if(container in all_containers):
+                containers_to_get.append(container)
+            else:
+                print("Requested container is not in all_containers: " + container)
+            
+        for container in containers_to_get:
+            print("Getting container: " + container)
+
+
         language = 'python'
         repo = 'vsts'
         commit = '14080'
@@ -91,7 +102,7 @@ class DeployHorton:
         api_client = None
         acr_containers = []
         try:
-            api_client = docker.APIClient(base_url=docker_base)
+            api_client = docker.APIClient(base_url=docker_base, timeout=600)
         except Exception as e:
              print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
              traceback.print_exc()
@@ -100,7 +111,7 @@ class DeployHorton:
         if not (api_client):
             try:
                 docker_base = "unix://var/run/docker.sock"
-                api_client = docker.APIClient(base_url=docker_base)
+                api_client = docker.APIClient(base_url=docker_base, timeout=600)
                 print("APIClient: " + api_client)
             except Exception as e:
                 print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
