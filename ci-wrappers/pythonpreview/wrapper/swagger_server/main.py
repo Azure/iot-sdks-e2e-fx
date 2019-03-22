@@ -8,6 +8,7 @@ import logging
 
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("paho").setLevel(level=logging.DEBUG)
 
 from . import encoder
 

@@ -21,6 +21,7 @@ import scenarios
 logging.basicConfig(level=logging.INFO)
 # AMQP is chatty at INFO level.  Dial this down to WARNING.
 logging.getLogger("uamqp").setLevel(level=logging.WARNING)
+logging.getLogger("paho").setLevel(level=logging.DEBUG)
 
 ensure_edge_environment_variables()
 

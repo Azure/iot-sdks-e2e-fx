@@ -188,7 +188,7 @@ class IotHubModuleRest:
 
 class IotHubModuleDirect(IotHubModuleRest):
     def __init__(self, api_name):
-        IotHubModuleDirect.__init__(self, api_name)
+        IotHubModuleRest.__init__(self, api_name)
         self.adapter_type = DIRECT_PYTHON_SDK_ADAPTER
         del self.rest_uri
 
