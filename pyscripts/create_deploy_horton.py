@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/21/2019 A
+# Rev: 03/21/2019 D
 
 import sys
 import os
@@ -16,10 +16,6 @@ import traceback
 import base64
 from pathlib import *
 from colorama import init, Fore, Back, Style
-#import iothub_service_client
-#from iothub_service_client import IoTHubRegistryManager, IoTHubRegistryManagerAuthMethod
-#from iothub_service_client import IoTHubDeviceStatus, IoTHubError
-
 from os.path import dirname, join, abspath
 sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
 from service_helper import Helper
@@ -211,7 +207,7 @@ class DeployHorton:
                 children_modules = []
                 az_device_name = self.get_json_value(azure_device, 'device_name')
                 # TEST_TEST_TEST  - NextLines:1
-                az_device_name      = 'A21_' + az_device_name + "_" + self.get_random_num_string(100)
+                az_device_name      = 'D21_' + az_device_name + "_" + self.get_random_num_string(100)
                 az_device_type      = self.get_json_value(azure_device, 'device_type')
                 az_device_id_suffix = self.get_json_value(azure_device, 'device_id_suffix')
                 az_docker_image     = self.get_json_value(azure_device, 'docker_image')
@@ -226,13 +222,20 @@ class DeployHorton:
                         child_docker_image     = self.get_json_value(child, 'module_docker_image_name')
                         child_docker_container = self.get_json_value(child, 'module_docker_container_name')
                         child_docker_args      = self.get_json_value(child, 'module_docker_creation_args')
-                        new_module = DeviceModuleObject(child_module_id, az_device_name, child_module_type, child_docker_image, child_docker_container, child_docker_args, '')
+                        new_module = DeviceModuleObject(
+                            child_module_id, 
+                            az_device_name, 
+                            child_module_type, 
+                            child_docker_image, 
+                            child_docker_container, 
+                            child_docker_args,
+                            ''
+                            )
                         children_modules.append(new_module)
 
                 if(az_device_type == 'iothub_device'):
                     new_device = self.create_iot_device(hub_connect_string, az_device_name + az_device_id_suffix)
                     if(new_device):
-                        #device_connectstring = self.create_device_connectstring(hub_connect_string, az_device_name + az_device_id_suffix, new_device.primaryKey)
                         device_connectstring = new_device
                 else:
                     new_device = None
@@ -240,9 +243,12 @@ class DeployHorton:
                 child_module_objects = []
                 for child_module in children_modules:
                     if(child_module.module_type == 'iothub_module'):
-                        new_module = self.create_device_module(hub_connect_string, az_device_name + az_device_id_suffix, child_module.module_id)
+                        new_module = self.create_device_module(
+                            hub_connect_string, 
+                            az_device_name + az_device_id_suffix, 
+                            child_module.module_id
+                            )
                         if(new_module):
-                            #child_module.module_connect_string = self.create_module_connectstring(hub_connect_string, az_device_name + az_device_id_suffix, child_module.module_id, new_module.primaryKey)
                             child_module.module_connect_string = new_module
                             child_module_objects.append(child_module)
                             module_count += 1
@@ -308,10 +314,9 @@ class DeployHorton:
         dev_connect = ""
         try:
             helper = Helper(connect_string)
-            retval = helper.create_device(device_name)
-            print("Create: ({}) returned: ({})".format(device_name, 'OK'))
+            helper.create_device(device_name)
+            print("create_iot_device: ({}) returned: ({})".format(device_name, 'OK'))
             dev_connect = helper.get_device_connection_string(device_name)
-            print("{}: ConnectString:{}".format(device_name, dev_connect))
         except Exception as e:
              print(Fore.RED + "Exception creating device: " + device_name, file=sys.stderr)
              traceback.print_exc()
@@ -319,43 +324,18 @@ class DeployHorton:
 
         return dev_connect
        
-    #def create_iot_device_old(self, connect_string, device_name):
-    #    auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
-    #    new_device = None
-    #    try:
-    #        iothub_registry_manager = IoTHubRegistryManager(connect_string)
-    #        new_device = iothub_registry_manager.create_device(device_name, "", "", auth_method)
-    #    except Exception as e:
-    #        print(Fore.RED + "Exception Creating device: " + device_name, file=sys.stderr)
-    #        print(str(e) + Fore.RESET, file=sys.stderr)
-    #    return new_device
-
     def create_device_module(self, connect_string, device_name, module_name):
-        dev_connect = None
+        mod_connect = None
         try:
             helper = Helper(connect_string)
-            module_id = device_name + '/' + module_name
-            retval = helper.create_device(module_id)
-            print("CreateModule: ({}/{}) returned: ({})".format(device_name, module_name, 'OK'))
-            dev_connect = helper.get_module_connection_string(module_id)
-            print("{}: ConnectString:{}".format(module_id, dev_connect))
+            helper.create_device_module(device_name, module_name)
+            print("create_device_module: ({}/{}) returned: ({})".format(device_name, module_name, 'OK'))
+            mod_connect = helper.get_module_connection_string(device_name, module_name)
         except Exception as e:
-             print(Fore.RED + "Exception creating device: " + module_id, file=sys.stderr)
+             print(Fore.RED + "Exception creating device: {}/{}".format(device_name, module_name), file=sys.stderr)
              traceback.print_exc()
              print(e + Fore.RESET, file=sys.stderr)
-        return dev_connect
-
-    #def create_device_module_old(self, connect_string, device_id, module_name):
-    #    print(Fore.YELLOW + "CONN: " + connect_string + Fore.RESET)
-    #    auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
-    #    new_module = None
-    #    try:
-    #        iothub_registry_manager = IoTHubRegistryManager(connect_string)
-    #        new_module = iothub_registry_manager.create_module(device_id, '', '', module_name, auth_method)
-    #    except Exception as e:
-    #        print(Fore.RED + "Exception Creating device/module: " + module_name, file=sys.stderr)
-    #        print(str(e) + Fore.RESET, file=sys.stderr)
-    #    return new_module
+        return mod_connect
 
     def create_device_connectstring(self, hub_connectstring, device_name, access_key):
         connect_parts = hub_connectstring.split(';')

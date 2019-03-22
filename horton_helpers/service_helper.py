@@ -12,6 +12,7 @@ from autorest_service_apis.service20180630.models.device import Device
 from autorest_service_apis.service20180630.models.device_capabilities import (
     DeviceCapabilities,
 )
+from autorest_service_apis.service20180630.models.module import Module
 from msrest.exceptions import HttpOperationError
 import connection_string
 import uuid
@@ -79,6 +80,20 @@ class Helper:
             device.capabilities = DeviceCapabilities(True)
         self.service.create_or_update_device(
             device_id, device, custom_headers=self.headers()
+        )
+
+    def create_device_module(self, device_id, module_id, is_edge=False):
+        print("creating module {}/{}".format(device_id, module_id))
+        try:
+            module = self.service.get_module(device_id, module_id, custom_headers=self.headers())
+            print("using existing device module")
+        except HttpOperationError:
+            module = Module(module_id, None, device_id)
+
+        if is_edge:
+            module.capabilities = DeviceCapabilities(True)
+        self.service.create_or_update_module(
+            device_id, module_id, module, custom_headers=self.headers()
         )
 
     def try_delete_device(self, device_id):
