@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/21/2019 D
+# Rev: 03/21/2019 F
 
 import sys
 import os
@@ -31,17 +31,17 @@ class DeployHorton:
         input_manifest_file = os.path.normpath(home_dir + "/horton/horton_maifest_template.json")
         save_manifest_file = os.path.normpath(home_dir + "/horton/horton_updated_manifest.json")
 
-        self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
+        #self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
 
-        #self.setup_docker_containers(save_manifest_file)
+        self.setup_docker_containers(save_manifest_file)
 
     def setup_docker_containers(self, input_manifest_file):
-        from os.path import dirname, join, abspath
-        sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
-        from containers import all_containers
         import urllib
         import base64
         import docker
+        from os.path import dirname, join, abspath
+        sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
+        from containers import all_containers
 
         from docker_tags import DockerTags
 
@@ -52,81 +52,68 @@ class DeployHorton:
             print("Error: Docker container repository credentials are not set in IOTHUB_E2E_REPO* environment variables.")
             return
 
-        #e2e_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
-        #repo_name =  os.environ["IOTHUB_E2E_REPO_ADDRESS"]
-        repo_ip =  "104.214.18.185"
-        repo_name =  "iotsdke2e.azurecr.io"
-        #repo_name =  "iotsdke2e"
+        e2e_connection_string = os.environ["IOTHUB_E2E_CONNECTION_STRING"]
+        repo_name =  os.environ["IOTHUB_E2E_REPO_ADDRESS"]
         repo_address = "https://" + repo_name
         repo_user = os.environ["IOTHUB_E2E_REPO_USER"]
         repo_password = os.environ["IOTHUB_E2E_REPO_PASSWORD"]
+        auth_config = {
+            "username": os.environ["IOTHUB_E2E_REPO_USER"],
+            "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
+        }
 
         deployment_json = self.get_deployment_model_json(input_manifest_file)
         azure_ids = deployment_json['azure_identities']
         containers_needed = []
         for azure_device in azure_ids:
             az_device_name = self.get_json_value(azure_device, 'device_name')
-            device_container = azure_device[""]
+            docker_container = self.get_json_value(azure_device, "docker_container")
+            if not (docker_container in containers_needed):
+                containers_needed.append(docker_container)
             print("...." + az_device_name)
-           
             children = azure_device['children']
             for child in children:
                 child_module_id = self.get_json_value(child, 'module_id')
+                docker_container = self.get_json_value(child, "module_docker_container_name")
+                if not (docker_container in containers_needed):
+                    containers_needed.append(docker_container)
                 print("........" + child_module_id)
-
-        hub_connect_string = self.get_env_connect_string()
-        auth_method = IoTHubRegistryManagerAuthMethod.SHARED_PRIVATE_KEY
-        try:
-            iothub_registry_manager = IoTHubRegistryManager(hub_connect_string)
-        except Exception as e:
-            print(Fore.RED + "Exception connecting to IoT Hub: " + hub_connect_string + Fore.RESET, file=sys.stderr)
-
-        #api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
-        #api_client = docker.APIClient(base_url=repo_address + ":2376")
-        #client = docker.from_env()
-        #print(repo_address)
-        #repo_port = ":2376"
-        #repo_port = ":53"
-        #repo_connect = 'iotsdke2e.azurecr.io:53'
-        #repo_connect = "https://" + repo_address
-        #repo_connect = "https://" + repo_ip + repo_port
-        #repo_connect = repo_address + repo_port
-        #repo_connect = repo_name
-        #repo_connect = "tcp://" + repo_name + repo_port
-        #print(repo_connect)
-        #config_file = '/Users/v-greach/.docker/config.json'
-
-        auth_config = {
-            "username": os.environ["IOTHUB_E2E_REPO_USER"],
-            "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
-        }
-
-        docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
-        docker_tags = DockerTags()
-        docker_tags.docker_repo = docker_repo
 
         language = 'python'
         repo = 'vsts'
         commit = '14080'
         image_tag = 'latest'
-        #tags = docker_tags.get_docker_tags_from_commit(language, repo, commit)
         docker_image_name = "{}-e2e-v2".format(language)
-
         docker_full_image_name = "{}/{}".format(repo, docker_image_name)
 
-        #docker_base = 'tcp://127.0.0.1:1234'
+        docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
         docker_base = 'tcp://' + docker_repo + ':2376'
+        api_client = None
+        acr_containers = []
+        try:
+            api_client = docker.APIClient(base_url=docker_base)
+        except Exception as e:
+             print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
+             traceback.print_exc()
+             print(Fore.RESET, file=sys.stderr)
 
-        api_client = docker.APIClient(base_url=docker_base)
-
-        for line in api_client.pull(
-                docker_full_image_name,
-                image_tag,
-                stream=True,
-                auth_config=auth_config,
-            ):
-
-            print(line)
+        if not (api_client):
+            try:
+                docker_base = "unix://var/run/docker.sock"
+                api_client = docker.APIClient(base_url=docker_base)
+                print("APIClient: " + api_client)
+            except Exception as e:
+                print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
+                traceback.print_exc()
+                print(Fore.RESET, file=sys.stderr)
+        try:
+            for line in api_client.containers(all=True):
+                acr_containers.append(line)
+                print(line)
+        except Exception as e:
+             print(Fore.RED + "Exception listing to Docker: " + docker_base, file=sys.stderr)
+             traceback.print_exc()
+             print(Fore.RESET, file=sys.stderr)
 
         #try:
             #client = docker.DockerClient(base_url='192.168.65.1:53')
@@ -145,7 +132,7 @@ class DeployHorton:
         #except Exception as e:
              #print(Fore.RED + "Exception connecting to Docker: " + hub_repo_connect, file=sys.stderr)
              #traceback.print_exc()
-             #print(e + Fore.RESET, file=sys.stderr)
+             #print(Fore.RESET, file=sys.stderr)
              #print(Fore.RESET, file=sys.stderr)
 
 
@@ -163,9 +150,6 @@ class DeployHorton:
         return True
 
     def my_docker_api():
-
-        #repository = 'bertk-csharp-lkg'
-        #repo_tag = 'latest'
         repository = 'java-e2e'
         repo_tag = 'linux-amd64-dockerV18-AzureAzureIotSdkJava-Master'
         repo_uri =  "{}/v2/{}/manifests/{}".format(repo_address, repository, repo_tag)
@@ -185,12 +169,12 @@ class DeployHorton:
                 with open(save_file, 'w') as f:
                     f.write(docker_json)
             except:
-                print(Fore.RED + "ERROR: writing JSON docker to: " + save_file + Fore.RESET, file=sys.stderr)
+                print(Fore.RED + "ERROR: writing JSON docker to: " + save_filFore.RESET, file=sys.stderr)
 
         except Exception as e:
              print(Fore.RED + "Exception connecting to Docker: " + repo_address, file=sys.stderr)
              traceback.print_exc()
-             print(e + Fore.RESET, file=sys.stderr)
+             print(Fore.RESET, file=sys.stderr)
 
     def create_hotron_devices_from_manifest(self, input_manifest_file, save_manifest_file):
         hub_connect_string = self.get_env_connect_string()
@@ -207,7 +191,7 @@ class DeployHorton:
                 children_modules = []
                 az_device_name = self.get_json_value(azure_device, 'device_name')
                 # TEST_TEST_TEST  - NextLines:1
-                az_device_name      = 'D21_' + az_device_name + "_" + self.get_random_num_string(100)
+                az_device_name      = 'F21_' + az_device_name + "_" + self.get_random_num_string(100)
                 az_device_type      = self.get_json_value(azure_device, 'device_type')
                 az_device_id_suffix = self.get_json_value(azure_device, 'device_id_suffix')
                 az_docker_image     = self.get_json_value(azure_device, 'docker_image')
@@ -229,8 +213,7 @@ class DeployHorton:
                             child_docker_image, 
                             child_docker_container, 
                             child_docker_args,
-                            ''
-                            )
+                            '')
                         children_modules.append(new_module)
 
                 if(az_device_type == 'iothub_device'):
@@ -320,7 +303,7 @@ class DeployHorton:
         except Exception as e:
              print(Fore.RED + "Exception creating device: " + device_name, file=sys.stderr)
              traceback.print_exc()
-             print(e + Fore.RESET, file=sys.stderr)
+             print(Fore.RESET, file=sys.stderr)
 
         return dev_connect
        
@@ -334,7 +317,7 @@ class DeployHorton:
         except Exception as e:
              print(Fore.RED + "Exception creating device: {}/{}".format(device_name, module_name), file=sys.stderr)
              traceback.print_exc()
-             print(e + Fore.RESET, file=sys.stderr)
+             print(Fore.RESET, file=sys.stderr)
         return mod_connect
 
     def create_device_connectstring(self, hub_connectstring, device_name, access_key):
@@ -360,7 +343,7 @@ class DeployHorton:
         except Exception as e:
             print(Fore.RED + "ERROR: in JSON manifest: " + json_filename + Fore.RESET, file=sys.stderr)
             traceback.print_exc()
-            print(e + Fore.RESET, file=sys.stderr)
+            print(Fore.RESET, file=sys.stderr)
         return json_manifest
 
 class DeviceModuleObject:  
