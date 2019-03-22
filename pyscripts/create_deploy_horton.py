@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/21/2019 G
+# Rev: 03/21/2019 H
 
 import sys
 import os
@@ -89,18 +89,20 @@ class DeployHorton:
         for container in containers_to_get:
             print("Getting container: " + container)
 
-
-        language = 'python'
-        repo = 'vsts'
-        commit = '14080'
-        image_tag = 'latest'
-        docker_image_name = "{}-e2e-v2".format(language)
-        docker_full_image_name = "{}/{}".format(repo, docker_image_name)
-
         docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
         docker_base = 'tcp://' + docker_repo + ':2376'
+
+        language = 'python'
+        #repo = 'vsts'
+        #commit = '14080'
+        image_tag = 'latest'
+        #docker_image_name = "{}-e2e-v2".format(language)
+        image_path = '{}/edge-e2e-node6'.format(docker_repo)
+        docker_image_name = "{}-e2e-v2".format(language)
+        #docker_full_image_name = "{}/{}".format(repo, docker_image_name)
+
         api_client = None
-        acr_containers = []
+        #acr_containers = []
         try:
             api_client = docker.APIClient(base_url=docker_base, timeout=600)
         except Exception as e:
@@ -117,12 +119,14 @@ class DeployHorton:
                 print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
                 traceback.print_exc()
                 print(Fore.RESET, file=sys.stderr)
+
+        #image_path = '{}/edge-e2e-node6'.format(docker_repo)
+
         try:
-            for line in api_client.containers(all=True):
-                acr_containers.append(line)
+            for line in api_client.pull(image_path, 'latest', stream=True, auth_config=auth_config):
                 print(line)
         except Exception as e:
-             print(Fore.RED + "Exception listing to Docker: " + docker_base, file=sys.stderr)
+             print(Fore.RED + "Exception pulling from Docker: " + docker_base, file=sys.stderr)
              traceback.print_exc()
              print(Fore.RESET, file=sys.stderr)
 
