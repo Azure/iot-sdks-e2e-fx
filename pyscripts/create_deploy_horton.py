@@ -90,7 +90,9 @@ class DeployHorton:
             print("Getting container: " + container)
 
         docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
-        docker_base = 'tcp://' + docker_repo + ':2376'
+        docker_base = 'tcp://' + docker_repo + ':4243'
+        #docker_base = 'tcp://' + docker_repo + '.cloudapp.net:4243'
+        #DOCKER_HOST=tcp://<your-docker-host>.cloudapp.net:4243
 
         language = 'python'
         #repo = 'vsts'
@@ -102,7 +104,6 @@ class DeployHorton:
         #docker_full_image_name = "{}/{}".format(repo, docker_image_name)
 
         api_client = None
-        #acr_containers = []
         try:
             api_client = docker.APIClient(base_url=docker_base, timeout=600)
         except Exception as e:
@@ -110,15 +111,15 @@ class DeployHorton:
              traceback.print_exc()
              print(Fore.RESET, file=sys.stderr)
 
-        if not (api_client):
-            try:
-                docker_base = "unix://var/run/docker.sock"
-                api_client = docker.APIClient(base_url=docker_base, timeout=600)
-                print("APIClient: " + api_client)
-            except Exception as e:
-                print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
-                traceback.print_exc()
-                print(Fore.RESET, file=sys.stderr)
+        #if not (api_client):
+        #    try:
+        #        docker_base = "unix://var/run/docker.sock"
+        #        api_client = docker.APIClient(base_url=docker_base, timeout=600)
+        #        print("APIClient: " + api_client)
+        #    except Exception as e:
+        #        print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
+        #        traceback.print_exc()
+        #        print(Fore.RESET, file=sys.stderr)
 
         #image_path = '{}/edge-e2e-node6'.format(docker_repo)
 
