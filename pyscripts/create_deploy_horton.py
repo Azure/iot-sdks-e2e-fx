@@ -14,7 +14,8 @@ import json
 import shutil
 import traceback
 import base64
-from pathlib import *
+import urllib
+import pathlib
 from colorama import init, Fore, Back, Style
 from os.path import dirname, join, abspath
 sys.path.insert(0, abspath(join(dirname(__file__), '../horton_helpers')))
@@ -25,9 +26,11 @@ class DeployHorton:
     def __init__(self, args):
 
         init(convert=True)
-        home_dir = str(Path.home())
+        home_dir = str(pathlib.Path.home())
         from os.path import expanduser
         home_dir = expanduser("~")
+        #TODO - Fix Typo
+        #input_manifest_file = os.path.normpath(home_dir + "/horton/horton_manifest_template.json")
         input_manifest_file = os.path.normpath(home_dir + "/horton/horton_maifest_template.json")
         save_manifest_file = os.path.normpath(home_dir + "/horton/horton_updated_manifest.json")
 
@@ -85,31 +88,27 @@ class DeployHorton:
                 containers_to_get.append(container)
             else:
                 print("Requested container is not in all_containers: " + container)
-            
+
+        docker_repo_address = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
+        docker_address = 'https://' + docker_repo_address
+        docker_repo_name = 'node-e2e-v2'
+        docker_tag = 'vsts-14244'
+
+         docker_images = []    
         for container in containers_to_get:
             print("Getting container: " + container)
 
-        docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
-        docker_base = 'tcp://' + docker_repo + ':4243'
-        #docker_base = 'tcp://' + docker_repo + '.cloudapp.net:4243'
-        #DOCKER_HOST=tcp://<your-docker-host>.cloudapp.net:4243
+        docker_manifest = self.docker_get_manifest(docker_address, docker_repo_name, docker_tag)
+        docker_image = self.docker_get_image(docker_address, docker_repo_name, docker_tag)
+        print(docker_image)
 
-        language = 'python'
-        #repo = 'vsts'
-        #commit = '14080'
-        image_tag = 'latest'
-        #docker_image_name = "{}-e2e-v2".format(language)
-        image_path = '{}/edge-e2e-node6'.format(docker_repo)
-        docker_image_name = "{}-e2e-v2".format(language)
-        #docker_full_image_name = "{}/{}".format(repo, docker_image_name)
-
-        api_client = None
-        try:
-            api_client = docker.APIClient(base_url=docker_base, timeout=600)
-        except Exception as e:
-             print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
-             traceback.print_exc()
-             print(Fore.RESET, file=sys.stderr)
+        #api_client = None
+        #try:
+        #    api_client = docker.APIClient(base_url=docker_base, timeout=600)
+        #except Exception as e:
+        #     print(Fore.RED + "Exception connecting to Docker: " + docker_base, file=sys.stderr)
+        #     traceback.print_exc()
+        #     print(Fore.RESET, file=sys.stderr)
 
         #if not (api_client):
         #    try:
@@ -123,13 +122,13 @@ class DeployHorton:
 
         #image_path = '{}/edge-e2e-node6'.format(docker_repo)
 
-        try:
-            for line in api_client.pull(image_path, 'latest', stream=True, auth_config=auth_config):
-                print(line)
-        except Exception as e:
-             print(Fore.RED + "Exception pulling from Docker: " + docker_base, file=sys.stderr)
-             traceback.print_exc()
-             print(Fore.RESET, file=sys.stderr)
+        #try:
+        #    for line in api_client.pull(image_path, 'latest', stream=True, auth_config=auth_config):
+        #        print(line)
+        #except Exception as e:
+        #     print(Fore.RED + "Exception pulling from Docker: " + docker_base, file=sys.stderr)
+        #     traceback.print_exc()
+        #     print(Fore.RESET, file=sys.stderr)
 
         #try:
             #client = docker.DockerClient(base_url='192.168.65.1:53')
@@ -165,32 +164,82 @@ class DeployHorton:
 
         return True
 
-    def my_docker_api():
-        repository = 'java-e2e'
-        repo_tag = 'linux-amd64-dockerV18-AzureAzureIotSdkJava-Master'
-        repo_uri =  "{}/v2/{}/manifests/{}".format(repo_address, repository, repo_tag)
-
-        content_type = 'application/vnd.docker.distribution.manifest.v2+json'
+    def docker_get_manifest(self, docker_address, docker_repo, repo_tag):
+        repo_user = os.environ["IOTHUB_E2E_REPO_USER"]
+        repo_password = os.environ["IOTHUB_E2E_REPO_PASSWORD"]
         auth_header = self.build_auth_header(repo_user, repo_password)
+        repo_uri =  "{}/v2/{}/manifests/{}".format(docker_address, docker_repo, repo_tag)
+        content_type = 'application/vnd.docker.distribution.manifest.v2+json'
+        manifest = ''
         try:
             req = urllib.request.Request(repo_uri, method='GET')
             req.add_header('Authorization', auth_header)
             req.add_header('Accept', content_type)
             content = urllib.request.urlopen(req).read()
             manifest = content.decode('ascii')
-            data = json.loads(manifest)
-            save_file = "/iot_testdata/horton/docker_repo.json"
-            docker_json = json.dumps(data, default = lambda x: x.__dict__, sort_keys=False, indent=2)
-            try:
-                with open(save_file, 'w') as f:
-                    f.write(docker_json)
-            except:
-                print(Fore.RED + "ERROR: writing JSON docker to: " + save_filFore.RESET, file=sys.stderr)
-
-        except Exception as e:
-             print(Fore.RED + "Exception connecting to Docker: " + repo_address, file=sys.stderr)
+        except Exception:
+             print(Fore.RED + "Exception connecting to Docker: " + docker_address, file=sys.stderr)
              traceback.print_exc()
              print(Fore.RESET, file=sys.stderr)
+        return manifest
+
+    def docker_get_image(self, docker_address, docker_repo, repo_tag):
+        repo_user = os.environ["IOTHUB_E2E_REPO_USER"]
+        repo_password = os.environ["IOTHUB_E2E_REPO_PASSWORD"]
+        auth_header = self.build_auth_header(repo_user, repo_password)
+        content_type = 'application/vnd.docker.image.rootfs.diff.tar.gzip'
+
+        #GET /v2/<name>/manifests/<reference>
+        image_manifest = None
+        repo_uri =  "{}/v2/{}/manifests/{}".format(docker_address, docker_repo, repo_tag)
+        try:
+            req = urllib.request.Request(repo_uri, method='GET')
+            req.add_header('Authorization', auth_header)
+            req.add_header('Accept', content_type)
+            payload = urllib.request.urlopen(req).read()
+            image_manifest = payload.decode('ascii')
+            print(image_manifest)
+            manifest_json = json.loads(image_manifest)
+            from os.path import expanduser
+            home_dir = expanduser("~")
+            my_manifest_file = os.path.normpath(home_dir + "/horton/my_image_manifest.json")
+            with open(my_manifest_file, 'w') as f:
+                f.write(image_manifest)
+            print(manifest_json)
+        except Exception:
+            print(Fore.RED + "Exception getting Docker image: " + repo_tag, file=sys.stderr)
+            traceback.print_exc()
+            print(Fore.RESET, file=sys.stderr)
+
+        for blob in manifest_json["fsLayers"]:
+            blob_sum = blob["blobSum"]
+            #content_type = blob["mediaType"]
+            print(blob_sum)
+
+            #GET /v2/<name>/blobs/<digest>
+            repo_uri =  "{}/v2/{}/blobs/{}".format(docker_address, docker_repo, blob_sum)
+
+            try:
+                blob_chunk = None
+                req = urllib.request.Request(repo_uri, method='GET')
+                req.add_header('Authorization', auth_header)
+                #req.add_header('Accept', content_type)
+                ret = urllib.request.urlopen(req)
+                blob_chunk = ret.read()
+                #blob_chunk = content.decode('ascii')
+                image_blob += blob_chunk
+            except Exception:
+                print(Fore.RED + "Exception getting Docker image: " + docker_repo, file=sys.stderr)
+                traceback.print_exc()
+                print(Fore.RESET, file=sys.stderr)
+        return image_blob
+
+    def build_auth_header2(self, username, password):
+        puid = username + ':' + password
+        puid_bytes = puid.encode('ascii')
+        encoded_credentials = base64.b64encode(puid_bytes)
+        auth_header = "Basic " + encoded_credentials.decode('ascii')
+        return auth_header    
 
     def create_hotron_devices_from_manifest(self, input_manifest_file, save_manifest_file):
         hub_connect_string = self.get_env_connect_string()
@@ -336,12 +385,12 @@ class DeployHorton:
              print(Fore.RESET, file=sys.stderr)
         return mod_connect
 
-    def create_device_connectstring(self, hub_connectstring, device_name, access_key):
+    def create_device_connectstring2(self, hub_connectstring, device_name, access_key):
         connect_parts = hub_connectstring.split(';')
         device_connectstring = "{};DeviceId={};SharedAccessKey={}".format(connect_parts[0], device_name, access_key)
         return device_connectstring
 
-    def create_module_connectstring(self, hub_connectstring, device_name, module_name, access_key):
+    def create_module_connectstring2(self, hub_connectstring, device_name, module_name, access_key):
         connect_parts = hub_connectstring.split(';')
         device_connectstring = "{};DeviceId={};ModuleId={};SharedAccessKey={}".format(connect_parts[0], device_name, module_name, access_key)
         return device_connectstring
@@ -361,6 +410,17 @@ class DeployHorton:
             traceback.print_exc()
             print(Fore.RESET, file=sys.stderr)
         return json_manifest
+
+class DokerImageObject:  
+    def __init__ (self, image_name, image_state='Unkown', full_image_path='', image_repository='', image_tag='', local_cache_name='', local_repo_name='', local_repo_image=''):
+        self.image_name       = image_name
+        self.image_state      = image_state
+        self.full_image_path  = full_image_path
+        self.image_repository = image_repository
+        self.image_tag        = image_tag
+        self.local_cache_name = local_cache_name
+        self.local_repo_name  = local_repo_name
+        self.local_repo_image = local_repo_image
 
 class DeviceModuleObject:  
     def __init__ (self, module_id, device_name='', module_type='', module_docker_image_name='', module_docker_container_name='', module_docker_creation_args='', module_connect_string=''):
