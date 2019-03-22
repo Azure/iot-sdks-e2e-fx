@@ -139,6 +139,19 @@ def set_runtime_configuration(scenario, language, transport, local):
                 "Leaf device does not appear to have an iothub identity.  You may need to re-run create-new-edgehub-device.sh"
             )
 
+    # use the leaf device identity for our test_device tests for now.  This will change after we
+    # update our deployment scripts
+    if getattr(runtime_config, "test_device", None):
+        runtime_config.test_device.device_id = hub.leaf_device_id
+        runtime_config.test_device.connection_string = hub.leaf_device_connection_string
+        if use_gateway_host:
+            runtime_config.test_device.connection_string += gateway_host_suffix
+        runtime_config.test_device.rest_uri = runtime_config.test_module.rest_uri
+        if not runtime_config.test_device.connection_string:
+            raise Exception(
+                "Leaf device does not appear to have an iothub identity.  You may need to re-run create-new-edgehub-device.sh"
+            )
+
     if language != "ppdirect":
         if container_under_test.registryImpl:
             runtime_config.registry.rest_uri = runtime_config.test_module.rest_uri

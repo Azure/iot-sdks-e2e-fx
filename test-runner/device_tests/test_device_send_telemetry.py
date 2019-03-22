@@ -11,23 +11,18 @@ from runtime_config import get_current_config
 from adapters import print_message as log_message
 
 
-@pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.testgroup_iothub_module_client
-@pytest.mark.callsSendEvent
-def test_module_send_event_to_iothub():
+@pytest.mark.testgroup_iothub_device_client
+def test_device_send_event_to_iothub():
 
-    log_message("connecting module client")
-    module_client = connections.connect_test_module_client()
-    log_message("connecting eventhub client")
+    device_client = connections.connect_test_device_client()
     eventhub_client = connections.connect_eventhub_client()
 
     sent_message = test_utilities.random_string_in_json()
     log_message("sending event: " + str(sent_message))
-    module_client.send_event(sent_message)
+    device_client.send_event(sent_message)
 
-    log_message("wait for event to arrive at eventhub")
     received_message = eventhub_client.wait_for_next_event(
-        get_current_config().test_module.device_id,
+        get_current_config().test_device.device_id,
         test_utilities.default_eventhub_timeout,
         expected=sent_message,
     )
@@ -35,7 +30,5 @@ def test_module_send_event_to_iothub():
         log_message("Message not received")
         assert False
 
-    log_message("disconnecting module client")
-    module_client.disconnect()
-    log_message("disconnecting eventhub client")
+    device_client.disconnect()
     eventhub_client.disconnect()
