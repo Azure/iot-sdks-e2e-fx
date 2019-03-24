@@ -110,6 +110,31 @@
       }
     }
   },
+  "event": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Send an event",
+      "operationId": "Device_SendEvent",
+      "consumes": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/eventBody"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
   "enableC2dMessages": {
     "put": {
       "tags": [
