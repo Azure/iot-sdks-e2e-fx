@@ -121,6 +121,9 @@
     "/device/{connectionId}/enableC2dMessages": {
       "$ref": "device.json#/enableC2dMessages"
     },
+    "/device/{connectionId}/event": {
+      "$ref": "device.json#/event"
+    },
     "/device/{connectionId}/c2dMessage": {
       "$ref": "device.json#/c2dMessage"
     }
