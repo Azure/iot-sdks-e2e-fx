@@ -1,4 +1,24 @@
 {
+  "capabilities": {
+    "get": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "Get capabilities for this test wrapper",
+      "operationId": "Wrapper_GetCapabilities",
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
   "cleanup": {
     "put": {
       "tags": [
@@ -6,35 +26,6 @@
       ],
       "summary": "verify that the clients have cleaned themselves up completely",
       "operationId": "Wrapper_Cleanup",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "session": {
-    "put": {
-      "tags": [
-        "wrapper"
-      ],
-      "summary": "Launch a wrapper, getting ready to test",
-      "operationId": "Wrapper_StartSession",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "get": {
-      "tags": [
-        "wrapper"
-      ],
-      "summary": "Terminate a wrapper, optionally returning the log",
-      "operationId": "Wrapper_EndSession",
-      "produces": [
-        "application/json"
-      ],
       "responses": {
         "200": {
           "description": "OK"

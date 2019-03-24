@@ -109,5 +109,52 @@
         }
       }
     }
+  },
+  "enableC2dMessages": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Enable c2d messages",
+      "operationId": "Device_EnableC2DMessages",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "c2dMessage": {
+    "get": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Wait for a c2d message",
+      "operationId": "Device_WaitForC2dMessage",
+      "produces": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/inputName"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "string"
+          }
+        }
+      }
+    }
   }
 }

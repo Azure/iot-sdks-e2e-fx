@@ -34,11 +34,11 @@
     }
   ],
   "paths": {
+    "/wrapper/capabilities": {
+      "$ref": "wrapper.json#/capabilities"
+    },
     "/wrapper/cleanup": {
       "$ref": "wrapper.json#/cleanup"
-    },
-    "/wrapper/session": {
-      "$ref": "wrapper.json#/session"
     },
     "/wrapper/message": {
       "$ref": "wrapper.json#/message"
@@ -117,6 +117,12 @@
     },
     "/device/{connectionId}/roundtripMethodCall/{methodName}": {
       "$ref": "device.json#/roundtripMethodCall"
+    },
+    "/device/{connectionId}/enableC2dMessages": {
+      "$ref": "device.json#/enableC2dMessages"
+    },
+    "/device/{connectionId}/c2dMessage": {
+      "$ref": "device.json#/c2dMessage"
     }
   }
 }
