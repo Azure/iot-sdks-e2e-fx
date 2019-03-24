@@ -1,0 +1,40 @@
+{
+  "certificate": {
+    "description": "certificate in the body of a message",
+    "type": "object",
+    "properties": {
+      "cert": {
+        "description": "unique identifier for this connection",
+        "type": "string"
+      }
+    }
+  },
+  "roundtripMethodCallBody": {
+    "description": "parameters and response for a sync method call",
+    "type": "object",
+    "properties": {
+      "requestPayload": {
+        "description": "payload for the request that arrived from the service.  Used to verify that the correct request arrived.",
+        "type": "object"
+      },
+      "responsePayload": {
+        "description": "payload for the response to return to the service.  Used to verify that the correct request arrived.",
+        "type": "object"
+      },
+      "statusCode": {
+        "description": "status code to return to the service",
+        "type": "integer"
+      }
+    }
+  },
+  "connectResponse": {
+    "description": "result of a connection to a service, device, or module client",
+    "type": "object",
+    "properties": {
+      "connectionId": {
+        "description": "unique identifier for this connection",
+        "type": "string"
+      }
+    }
+  }
+}

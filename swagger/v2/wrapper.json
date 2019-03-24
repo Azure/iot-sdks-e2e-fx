@@ -1,0 +1,72 @@
+{
+  "cleanup": {
+    "put": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "verify that the clients have cleaned themselves up completely",
+      "operationId": "Wrapper_Cleanup",
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "session": {
+    "put": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "Launch a wrapper, getting ready to test",
+      "operationId": "Wrapper_StartSession",
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    },
+    "get": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "Terminate a wrapper, optionally returning the log",
+      "operationId": "Wrapper_EndSession",
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "message": {
+    "put": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "log a message to output",
+      "operationId": "Wrapper_LogMessage",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "name": "msg",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  }
+}

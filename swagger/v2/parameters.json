@@ -1,0 +1,84 @@
+{
+  "connectionId": {
+    "name": "connectionId",
+    "in": "path",
+    "description": "Id for the connection",
+    "required": true,
+    "type": "string"
+  },
+  "transportType": {
+    "name": "transportType",
+    "in": "path",
+    "description": "Transport to use",
+    "required": true,
+    "type": "string",
+    "enum": [
+      "amqp",
+      "amqpws",
+      "mqtt",
+      "mqttws",
+      "http"
+    ]
+  },
+  "connectionString": {
+    "name": "connectionString",
+    "in": "query",
+    "description": "connection string",
+    "required": true,
+    "type": "string"
+  },
+  "caCertificate": {
+    "name": "caCertificate",
+    "in": "body",
+    "schema": {
+      "$ref": "definitions.json#/certificate"
+    }
+  },
+  "deviceId": {
+    "name": "deviceId",
+    "in": "path",
+    "required": true,
+    "type": "string"
+  },
+  "moduleId": {
+    "name": "moduleId",
+    "in": "path",
+    "required": true,
+    "type": "string"
+  },
+  "methodInvokeParameters": {
+    "name": "methodInvokeParameters",
+    "in": "body",
+    "required": true,
+    "schema": {
+      "type": "object"
+    }
+  },
+  "methodName": {
+    "name": "methodName",
+    "in": "path",
+    "description": "name of the method to handle",
+    "required": true,
+    "type": "string"
+  },
+  "inputName": {
+    "name": "inputName",
+    "in": "path",
+    "required": true,
+    "type": "string"
+  },
+  "outputName": {
+    "name": "outputName",
+    "in": "path",
+    "required": true,
+    "type": "string"
+  },
+  "eventBody": {
+    "name": "eventBody",
+    "in": "body",
+    "required": true,
+    "schema": {
+      "type": "string"
+    }
+  }
+}

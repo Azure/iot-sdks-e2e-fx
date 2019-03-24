@@ -1,0 +1,110 @@
+{ 
+  "connect": {
+    "put": {
+      "tags": [
+        "registry"
+      ],
+      "summary": "Connect to registry",
+      "description": "Connect to the Azure IoTHub registry.  More specifically, the SDK saves the connection string that is passed in for future use.",
+      "operationId": "Registry_Connect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionString"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "disconnect": {
+    "put": {
+      "tags": [
+        "registry"
+      ],
+      "summary": "Disconnect from the registry",
+      "description": "Disconnects from the Azure IoTHub registry.  More specifically, closes all connections and cleans up all resources for the active connection",
+      "operationId": "Registry_Disconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "moduleTwin": {
+    "patch": {
+      "tags": [
+        "registry"
+      ],
+      "summary": "update the module twin for the given deviceId and moduleId",
+      "operationId": "Registry_PatchModuleTwin",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/deviceId"
+        },
+        {
+          "$ref": "parameters.json#/moduleId"
+        },
+        {
+          "name": "props",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    },
+    "get": {
+      "tags": [
+        "registry"
+      ],
+      "summary": "gets the module twin for the given deviceid and moduleid",
+      "operationId": "Registry_GetModuleTwin",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/deviceId"
+        },
+        {
+          "$ref": "parameters.json#/moduleId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}
