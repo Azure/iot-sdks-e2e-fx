@@ -1,0 +1,399 @@
+{
+  "connect": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Connect to the azure IoT Hub as a module",
+      "operationId": "Module_Connect",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/transportType"
+        },
+        {
+          "$ref": "parameters.json#/connectionString"
+        },
+        {
+          "$ref": "parameters.json#/caCertificate"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "connectFromEnvironment": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Connect to the azure IoT Hub as a module using the environment variables",
+      "operationId": "Module_ConnectFromEnvironment",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/transportType"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "disconnect": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Disconnect the module",
+      "description": "Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection",
+      "operationId": "Module_Disconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "enableTwin": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Enable module twins",
+      "operationId": "Module_EnableTwin",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "enableMethods": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Enable methods",
+      "operationId": "Module_EnableMethods",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "enableInputMessages": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Enable input messages",
+      "operationId": "Module_EnableInputMessages",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "twin": {
+    "get": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Get the device twin",
+      "operationId": "Module_GetTwin",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Updates the device twin",
+      "operationId": "Module_PatchTwin",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "name": "props",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "twinDesiredPropPatch": {
+    "get": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Wait for the next desired property patch",
+      "operationId": "Module_WaitForDesiredPropertiesPatch",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "event": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Send an event",
+      "operationId": "Module_SendEvent",
+      "consumes": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/eventBody"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "outputEvent": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Send an event to a module output",
+      "operationId": "Module_SendOutputEvent",
+      "consumes": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/outputName"
+        },
+        {
+          "$ref": "parameters.json#/eventBody"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "inputMessage": {
+    "get": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Wait for a message on a module input",
+      "operationId": "Module_WaitForInputMessage",
+      "produces": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/inputName"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "roundtripMethodCall": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Wait for a method call, verify the request, and return the response.",
+      "description": "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
+      "operationId": "Module_RoundtripMethodCall",
+      "consumes": [
+        "application/json"
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/methodName"
+        },
+        {
+          "name": "requestAndResponse",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "$ref": "definitions.json#/roundtripMethodCallBody"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "moduleMethod": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "call the given method on the given module",
+      "operationId": "Module_InvokeModuleMethod",
+      "consumes": [
+        "application/json"
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/deviceId"
+        },
+        {
+          "$ref": "parameters.json#/moduleId"
+        },
+        {
+          "$ref": "parameters.json#/methodInvokeParameters"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "deviceMethod": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "call the given method on the given device",
+      "operationId": "Module_InvokeDeviceMethod",
+      "consumes": [
+        "application/json"
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/deviceId"
+        },
+        {
+          "$ref": "parameters.json#/methodInvokeParameters"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

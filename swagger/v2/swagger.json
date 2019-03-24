@@ -1,0 +1,128 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Azure IOT End-to-End Test Wrapper Rest Api",
+    "description": "REST API definition for End-to-end testing of the Azure IoT SDKs.  All SDK APIs that are tested by our E2E tests need to be defined in this file.  This file takes some liberties with the API definitions.  In particular, response schemas are undefined, and error responses are also undefined.",
+    "version": "1.0.0"
+  },
+  "schemes": [
+    "https"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "tags": [
+    {
+      "name": "wrapper",
+      "description": "APIs that transcend the individual SDKs"
+    },
+    {
+      "name": "module",
+      "description": "ModuleClient APIs"
+    },
+    {
+      "name": "device",
+      "description": "DeviceClient APIs"
+    },
+    {
+      "name": "service",
+      "description": "ServiceClient APIs"
+    },
+    {
+      "name": "registry",
+      "description": "registry APIs"
+    }
+  ],
+  "paths": {
+    "/wrapper/capabilities": {
+      "$ref": "wrapper.json#/capabilities"
+    },
+    "/wrapper/cleanup": {
+      "$ref": "wrapper.json#/cleanup"
+    },
+    "/wrapper/message": {
+      "$ref": "wrapper.json#/message"
+    },
+    "/registry/connect": {
+      "$ref": "registry.json#/connect"
+    },
+    "/registry/{connectionId}/disconnect/": {
+      "$ref": "registry.json#/disconnect"
+    },
+    "/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}": {
+      "$ref": "registry.json#/moduleTwin"
+    },
+    "/module/connect/{transportType}": {
+      "$ref": "module.json#/connect"
+    },
+    "/module/connectFromEnvironment/{transportType}": {
+      "$ref": "module.json#/connectFromEnvironment"
+    },
+    "/module/{connectionId}/disconnect": {
+      "$ref": "module.json#/disconnect"
+    },
+    "/module/{connectionId}/enableTwin": {
+      "$ref": "module.json#/enableTwin"
+    },
+    "/module/{connectionId}/enableMethods": {
+      "$ref": "module.json#/enableMethods"
+    },
+    "/module/{connectionId}/enableInputMessages": {
+      "$ref": "module.json#/enableInputMessages"
+    },
+    "/module/{connectionId}/twin": {
+      "$ref": "module.json#/twin"
+    },
+    "/module/{connectionId}/twinDesiredPropPatch": {
+      "$ref": "module.json#/twinDesiredPropPatch"
+    },
+    "/module/{connectionId}/event": {
+      "$ref": "module.json#/event"
+    },
+    "/module/{connectionId}/outputEvent/{outputName}": {
+      "$ref": "module.json#/outputEvent"
+    },
+    "/module/{connectionId}/inputMessage/{inputName}": {
+      "$ref": "module.json#/inputMessage"
+    },
+    "/module/{connectionId}/roundtripMethodCall/{methodName}": {
+      "$ref": "module.json#/roundtripMethodCall"
+    },
+    "/module/{connectionId}/moduleMethod/{deviceId}/{moduleId}": {
+      "$ref": "module.json#/moduleMethod"
+    },
+    "/module/{connectionId}/deviceMethod/{deviceId}": {
+      "$ref": "module.json#/deviceMethod"
+    },
+    "/service/connect": {
+      "$ref": "service.json#/connect"
+    },
+    "/service/{connectionId}/disconnect/": {
+      "$ref": "service.json#/disconnect"
+    },
+    "/service/{connectionId}/moduleMethod/{deviceId}/{moduleId}": {
+      "$ref": "service.json#/moduleMethod"
+    },
+    "/service/{connectionId}/deviceMethod/{deviceId}": {
+      "$ref": "service.json#/deviceMethod"
+    },
+    "/device/connect/{transportType}": {
+      "$ref": "device.json#/connect"
+    },
+    "/device/{connectionId}/disconnect": {
+      "$ref": "device.json#/disconnect"
+    },
+    "/device/{connectionId}/enableMethods": {
+      "$ref": "device.json#/enableMethods"
+    },
+    "/device/{connectionId}/roundtripMethodCall/{methodName}": {
+      "$ref": "device.json#/roundtripMethodCall"
+    },
+    "/device/{connectionId}/enableC2dMessages": {
+      "$ref": "device.json#/enableC2dMessages"
+    },
+    "/device/{connectionId}/c2dMessage": {
+      "$ref": "device.json#/c2dMessage"
+    }
+  }
+}

@@ -41,14 +41,24 @@ esac
 
 colorecho $_yellow "Generating wrappers for ${language} using ${swagger_language} generator"
 
-docker run --rm -v ${script_dir}:/local swaggerapi/swagger-codegen-cli generate \
-    -i /local/v2/e2e-restapi.yaml \
-    -l $swagger_language \
-    -o /local/swagger_generated/${language}/
+docker run --rm -v ${script_dir}:/local swaggerapi/swagger-codegen-cli:2.4.2 generate \
+    --verbose \
+    --input-spec /local/v2/swagger.json \
+    --lang $swagger_language \
+    --output /local/swagger_generated/${language}/
 if [ $? -ne 0 ]; then
     colorecho $_red "docker run returned failure"
     exit 1
 else
     colorecho $_green "success.  generated files are at ${script_dir}/swagger_generated/${language}"
 fi
+
+colorecho $_yellow "Taking ownership of generated files"
+sudo chown --recursive ${USER}:${USER} ${script_dir}/swagger_generated
+if [ $? -ne 0 ]; then
+    colorecho $_red "failed to take ownership"
+else
+    colorecho $_green "success."
+fi
+
 
