@@ -6,11 +6,11 @@
 # --------------------------------------------------------------------------
 
 from .connect_response import ConnectResponse
-from .roundtrip_method_call_body import RoundtripMethodCallBody
 from .certificate import Certificate
+from .roundtrip_method_call_body import RoundtripMethodCallBody
 
 __all__ = [
     'ConnectResponse',
-    'RoundtripMethodCallBody',
     'Certificate',
+    'RoundtripMethodCallBody',
 ]

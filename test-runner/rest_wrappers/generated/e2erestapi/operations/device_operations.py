@@ -246,3 +246,151 @@ class DeviceOperations(object):
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
     roundtrip_method_call.metadata = {'url': '/device/{connectionId}/roundtripMethodCall/{methodName}'}
+
+    def enable_c2_dmessages(
+            self, connection_id, custom_headers=None, raw=False, **operation_config):
+        """Enable c2d messages.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.enable_c2_dmessages.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    enable_c2_dmessages.metadata = {'url': '/device/{connectionId}/enableC2dMessages'}
+
+    def send_event(
+            self, connection_id, event_body, custom_headers=None, raw=False, **operation_config):
+        """Send an event.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param event_body:
+        :type event_body: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.send_event.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'text/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        body_content = self._serialize.body(event_body, 'str')
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(
+            request, header_parameters, body_content, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    send_event.metadata = {'url': '/device/{connectionId}/event'}
+
+    def wait_for_c2d_message(
+            self, connection_id, input_name, custom_headers=None, raw=False, **operation_config):
+        """Wait for a c2d message.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param input_name:
+        :type input_name: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: str or ClientRawResponse if raw=true
+        :rtype: str or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.wait_for_c2d_message.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'inputName': self._serialize.url("input_name", input_name, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.get(url, query_parameters)
+        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+
+        if response.status_code == 200:
+            deserialized = self._deserialize('str', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    wait_for_c2d_message.metadata = {'url': '/device/{connectionId}/c2dMessage'}

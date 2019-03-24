@@ -37,7 +37,7 @@ class RegistryOperations(object):
         Connect to the Azure IoTHub registry.  More specifically, the SDK saves
         the connection string that is passed in for future use.
 
-        :param connection_string: Service connection string
+        :param connection_string: connection string
         :type connection_string: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
@@ -129,62 +129,6 @@ class RegistryOperations(object):
             return client_raw_response
     disconnect.metadata = {'url': '/registry/{connectionId}/disconnect/'}
 
-    def patch_module_twin(
-            self, connection_id, device_id, module_id, props, custom_headers=None, raw=False, **operation_config):
-        """update the module twin for the given deviceId and moduleId.
-
-        :param connection_id: Id for the connection
-        :type connection_id: str
-        :param device_id:
-        :type device_id: str
-        :param module_id:
-        :type module_id: str
-        :param props:
-        :type props: object
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.patch_module_twin.metadata['url']
-        path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
-            'deviceId': self._serialize.url("device_id", device_id, 'str'),
-            'moduleId': self._serialize.url("module_id", module_id, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct body
-        body_content = self._serialize.body(props, 'object')
-
-        # Construct and send request
-        request = self._client.patch(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    patch_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}
-
     def get_module_twin(
             self, connection_id, device_id, module_id, custom_headers=None, raw=False, **operation_config):
         """gets the module twin for the given deviceid and moduleid.
@@ -241,3 +185,59 @@ class RegistryOperations(object):
 
         return deserialized
     get_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}
+
+    def patch_module_twin(
+            self, connection_id, device_id, module_id, props, custom_headers=None, raw=False, **operation_config):
+        """update the module twin for the given deviceId and moduleId.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param device_id:
+        :type device_id: str
+        :param module_id:
+        :type module_id: str
+        :param props:
+        :type props: object
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.patch_module_twin.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'deviceId': self._serialize.url("device_id", device_id, 'str'),
+            'moduleId': self._serialize.url("module_id", module_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        body_content = self._serialize.body(props, 'object')
+
+        # Construct and send request
+        request = self._client.patch(url, query_parameters)
+        response = self._client.send(
+            request, header_parameters, body_content, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    patch_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}

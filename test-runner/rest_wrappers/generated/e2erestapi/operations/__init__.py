@@ -9,7 +9,6 @@ from .wrapper_operations import WrapperOperations
 from .registry_operations import RegistryOperations
 from .module_operations import ModuleOperations
 from .service_operations import ServiceOperations
-from .event_hub_operations import EventHubOperations
 from .device_operations import DeviceOperations
 
 __all__ = [
@@ -17,6 +16,5 @@ __all__ = [
     'RegistryOperations',
     'ModuleOperations',
     'ServiceOperations',
-    'EventHubOperations',
     'DeviceOperations',
 ]

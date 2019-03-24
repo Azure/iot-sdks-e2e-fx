@@ -13,7 +13,6 @@ from .operations.wrapper_operations import WrapperOperations
 from .operations.registry_operations import RegistryOperations
 from .operations.module_operations import ModuleOperations
 from .operations.service_operations import ServiceOperations
-from .operations.event_hub_operations import EventHubOperations
 from .operations.device_operations import DeviceOperations
 from . import models
 
@@ -51,8 +50,6 @@ class AzureIOTEndToEndTestWrapperRestApi(object):
     :vartype module: e2erestapi.operations.ModuleOperations
     :ivar service: Service operations
     :vartype service: e2erestapi.operations.ServiceOperations
-    :ivar event_hub: EventHub operations
-    :vartype event_hub: e2erestapi.operations.EventHubOperations
     :ivar device: Device operations
     :vartype device: e2erestapi.operations.DeviceOperations
 
@@ -77,8 +74,6 @@ class AzureIOTEndToEndTestWrapperRestApi(object):
         self.module = ModuleOperations(
             self._client, self.config, self._serialize, self._deserialize)
         self.service = ServiceOperations(
-            self._client, self.config, self._serialize, self._deserialize)
-        self.event_hub = EventHubOperations(
             self._client, self.config, self._serialize, self._deserialize)
         self.device = DeviceOperations(
             self._client, self.config, self._serialize, self._deserialize)
