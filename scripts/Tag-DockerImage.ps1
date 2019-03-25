@@ -30,11 +30,13 @@ if($Repository -eq "" -or $TAG_OLD   -eq "" -or $TAG_NEW   -eq "" -or
     $EvnRepo   -eq "" -or $UserName  -eq "" -or
     $Password  -eq "") {
         Write-Output "ERROR- Missing parameter or environment variable"
+        Write-Output "ENV must have IOTHUB_E2E_REPO_ADDRESS, IOTHUB_E2E_REPO_USER, IOTHUB_E2E_REPO_PASSWORD"
         Write-Output "Usage:"
-        Write-Output "           <repository_Name> <current_tag_name>  <tag_to_add_to_image"
-        Write-Output "           <repository_Name> <tag_name_to_verify> --VerifyTagExists"
-        Write-Output "           <repository_Name> --ListAll"
-        }
+        Write-Output "Tag-DockerImage.ps1 <repository_Name> <current_tag_name>  <tag_to_add_to_image"
+        Write-Output "Tag-DockerImage.ps1 <repository_Name> <tag_name_to_verify> --VerifyTagExists"
+        Write-Output "Tag-DockerImage.ps1 <repository_Name> --ListAll"
+        exit 1
+    }
 
 $ContentType = 'application/vnd.docker.distribution.manifest.v2+json'
 
