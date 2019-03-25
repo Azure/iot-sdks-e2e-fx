@@ -6,7 +6,7 @@
 # filename: Tag-DockerImage.ps1
 # author:   v-greach@microsoft.com
 # created:  03/11/2019
-# Rev: 03/11/2019 D
+# Rev: 03/11/2019 E
 
 Param
 (
@@ -22,20 +22,15 @@ $EnvRepo = $Env:IOTHUB_E2E_REPO_ADDRESS
 $UserName = $Env:IOTHUB_E2E_REPO_USER
 $Password   = $Env:IOTHUB_E2E_REPO_PASSWORD
 $Registry = "https://" + $EnvRepo
-
-if($Repository -eq "" -or
-    $TAG_OLD -eq "" -or
-    $TAG_NEW -eq "" -or
-    $EvnRepo -eq "" -or
-    $UserName -eq "" -or
-    $Password -eq "") {
+      
+if($Repository -eq "" -or $TAG_OLD   -eq "" -or $TAG_NEW   -eq "" -or
+    $EvnRepo   -eq "" -or $UserName  -eq "" -or
+    $Password  -eq "") {
         Write-Output "ERROR- Missing parameter or environment variable"
         Write-Output "Usage:"
-        Write-Output "    Tag-DockerImage <Repository> <CurrentTag> <NewTag>"
-        Write-Output "Additionally these environment variables must be set:"
-        Write-Output "IOTHUB_E2E_REPO_ADDRESS, IOTHUB_E2E_REPO_USER, IOTHUB_E2E_REPO_PASSWORD"
-        exit
-    }
+        Write-Output "           <module_Name>  <current_tag_name>  <tag_to_add_to_image"
+        Write-Output "           <nodule_name>   <tag_name_to_verifu  --verify_tag_exitst"
+        }
 
 $ContentType = 'application/vnd.docker.distribution.manifest.v2+json'
 
@@ -61,7 +56,12 @@ catch {
     exit
 }
 
-$Params = @{
+if($TAG_OLD -eq "--VerifyTagExists")
+    if manifest
+        exit 1
+    else {
+        exit 0
+    }
     UseBasicParsing    = $true
     Method             = 'Put'
     Uri                = "$Registry/v2/$Repository/manifests/$TAG_NEW"
