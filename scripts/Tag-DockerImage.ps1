@@ -52,16 +52,16 @@ try {
     $Manifest = ConvertFrom-ByteArray -Data $Response.Content -Encoding ASCII
 }
 catch {
-    Write-Output $Error[0]
-    exit
+    Write-Output Write-Output "ERROR: Getting Tag [$TAG_OLD] in [$Repository]"
+    exit 1
 }
 
-if($TAG_OLD -eq "--VerifyTagExists")
-    if manifest
-        exit 1
-    else {
+if($TAG_NEW -eq "--VerifyTagExists") {
+        Write-Output "Tag [$TAG_OLD] exits in [$Repository]"
         exit 0
     }
+
+$Params = @{    
     UseBasicParsing    = $true
     Method             = 'Put'
     Uri                = "$Registry/v2/$Repository/manifests/$TAG_NEW"

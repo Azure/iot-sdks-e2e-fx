@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/24/2019 C
+# Rev: 03/25/2019 D
 
 import sys
 import os
@@ -253,7 +253,7 @@ class DeployHorton:
             for azure_device in identity_json:
                 az_device_id = identity_json[azure_device]
                 # TEST_TEST_TEST  - NextLines:1
-                az_device_name = 'C25_' + azure_device + "_" + self.get_random_num_string(100)
+                az_device_name = 'E25_' + azure_device + "_" + self.get_random_num_string(100)
 
                 dev_object = self.populate_device_object(az_device_id, az_device_name, azure_device)
                 dev_object.connectionString = self.create_iot_device(hub_connect_string, az_device_name)
