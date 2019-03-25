@@ -70,12 +70,16 @@ class DeviceApi(AbstractDeviceApi):
 
     @log_entry_and_exit
     def send_event(self, body):
-        raise NotImplementedError()
+        self.rest_endpoint.send_event(self.connection_id, body)
 
     @log_entry_and_exit
     def enable_c2d(self):
-        raise NotImplementedError()
+        self.rest_endpoint.enable_c2d_messages(self.connection_id)
 
     @log_entry_and_exit
     def wait_for_c2d_message_async(self):
-        raise NotImplementedError()
+        thread = self.pool.apply_async(
+            log_entry_and_exit(self.rest_endpoint.wait_for_c2d_message),
+            (self.connection_id,),
+        )
+        return thread

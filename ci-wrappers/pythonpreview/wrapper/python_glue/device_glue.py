@@ -33,8 +33,8 @@ class DeviceGlue:
     def enable_methods(self, connection_id):
         self.object_map[connection_id].enable_methods()
 
-    def enable_twin(self, connection_id):
-        self.object_map[connection_id].enable_twin()
+    def enable_c2d(self, connection_id):
+        self.object_map[connection_id].enable_c2d()
 
     def send_event(self, connection_id, event_body):
         self.object_map[connection_id].send_event(event_body)

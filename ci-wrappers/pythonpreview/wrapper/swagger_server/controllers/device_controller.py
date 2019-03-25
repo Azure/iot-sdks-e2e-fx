@@ -6,6 +6,9 @@ from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
 from swagger_server import util
 
+from device_glue import DeviceGlue
+
+device_glue = DeviceGlue()
 
 def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a device
@@ -23,7 +26,7 @@ def device_connect(transportType, connectionString, caCertificate=None):  # noqa
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    return device_glue.connect(transportType, connectionString, caCertificate)
 
 
 def device_disconnect(connectionId):  # noqa: E501
@@ -36,10 +39,10 @@ def device_disconnect(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    device_glue.disconnect(connectionId)
 
 
-def device_enable_c2_d_messages(connectionId):  # noqa: E501
+def device_enable_c2d_messages(connectionId):  # noqa: E501
     """Enable c2d messages
 
      # noqa: E501
@@ -49,7 +52,7 @@ def device_enable_c2_d_messages(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    device_glue.enable_c2d(connectionId)
 
 
 def device_enable_methods(connectionId):  # noqa: E501
@@ -62,7 +65,7 @@ def device_enable_methods(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    device_glue.enable_methods(connectionId)
 
 
 def device_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
@@ -81,7 +84,9 @@ def device_roundtrip_method_call(connectionId, methodName, requestAndResponse): 
     """
     if connexion.request.is_json:
         requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    return device_glue.roundtrip_method_call(
+        connectionId, methodName, requestAndResponse
+    )
 
 
 def device_send_event(connectionId, eventBody):  # noqa: E501
@@ -96,19 +101,17 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    device_glue.send_event(connectionId, eventBody)
 
 
-def device_wait_for_c2d_message(connectionId, inputName):  # noqa: E501
+def device_wait_for_c2d_message(connectionId):  # noqa: E501
     """Wait for a c2d message
 
      # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param inputName: 
-    :type inputName: str
 
     :rtype: str
     """
-    return 'do some magic!'
+    return device_glue.wait_for_c2d_message(connectionId)

@@ -141,7 +141,7 @@
         "device"
       ],
       "summary": "Enable c2d messages",
-      "operationId": "Device_EnableC2DMessages",
+      "operationId": "Device_EnableC2dMessages",
       "parameters": [
         {
           "$ref": "parameters.json#/connectionId"
@@ -167,9 +167,6 @@
       "parameters": [
         {
           "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/inputName"
         }
       ],
       "responses": {

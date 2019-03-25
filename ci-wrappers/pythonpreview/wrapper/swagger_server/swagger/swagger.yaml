@@ -632,6 +632,29 @@ paths:
           schema:
             type: "object"
       x-swagger-router-controller: "swagger_server.controllers.service_controller"
+  /service/{connectionId}/sendC2d:
+    put:
+      tags:
+      - "service"
+      summary: "Send a c2d message"
+      operationId: "service_send_c2d"
+      consumes:
+      - "text/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "eventBody"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.service_controller"
   /device/connect/{transportType}:
     put:
       tags:
@@ -744,7 +767,7 @@ paths:
       tags:
       - "device"
       summary: "Enable c2d messages"
-      operationId: "device_enable_c2_d_messages"
+      operationId: "device_enable_c2d_messages"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -790,10 +813,6 @@ paths:
       - name: "connectionId"
         in: "path"
         description: "Id for the connection"
-        required: true
-        type: "string"
-      - name: "inputName"
-        in: "path"
         required: true
         type: "string"
       responses:
