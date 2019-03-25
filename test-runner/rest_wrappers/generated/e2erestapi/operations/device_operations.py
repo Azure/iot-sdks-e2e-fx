@@ -247,7 +247,7 @@ class DeviceOperations(object):
             return client_raw_response
     roundtrip_method_call.metadata = {'url': '/device/{connectionId}/roundtripMethodCall/{methodName}'}
 
-    def enable_c2_dmessages(
+    def enable_c2d_messages(
             self, connection_id, custom_headers=None, raw=False, **operation_config):
         """Enable c2d messages.
 
@@ -264,7 +264,7 @@ class DeviceOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.enable_c2_dmessages.metadata['url']
+        url = self.enable_c2d_messages.metadata['url']
         path_format_arguments = {
             'connectionId': self._serialize.url("connection_id", connection_id, 'str')
         }
@@ -289,7 +289,7 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    enable_c2_dmessages.metadata = {'url': '/device/{connectionId}/enableC2dMessages'}
+    enable_c2d_messages.metadata = {'url': '/device/{connectionId}/enableC2dMessages'}
 
     def send_event(
             self, connection_id, event_body, custom_headers=None, raw=False, **operation_config):
@@ -342,13 +342,11 @@ class DeviceOperations(object):
     send_event.metadata = {'url': '/device/{connectionId}/event'}
 
     def wait_for_c2d_message(
-            self, connection_id, input_name, custom_headers=None, raw=False, **operation_config):
+            self, connection_id, custom_headers=None, raw=False, **operation_config):
         """Wait for a c2d message.
 
         :param connection_id: Id for the connection
         :type connection_id: str
-        :param input_name:
-        :type input_name: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -362,8 +360,7 @@ class DeviceOperations(object):
         # Construct URL
         url = self.wait_for_c2d_message.metadata['url']
         path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
-            'inputName': self._serialize.url("input_name", input_name, 'str')
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
         }
         url = self._client.format_url(url, **path_format_arguments)
 

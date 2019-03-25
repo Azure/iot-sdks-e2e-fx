@@ -122,5 +122,30 @@
         }
       }
     }
+  },
+  "sendC2d": {
+    "put": {
+      "tags": [
+        "service"
+      ],
+      "summary": "Send a c2d message",
+      "operationId": "Service_SendC2d",
+      "consumes": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/eventBody"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
   }
 }

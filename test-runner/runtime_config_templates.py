@@ -237,8 +237,8 @@ class IotHubModuleRuntimeConfigDirect:
 
 class IotHubModuleAndDeviceRuntimeConfig:
     def __init__(self):
-        self.service = IotHubServiceRest()
-        self.registry = IotHubRegistryRest()
+        self.service = IotHubServiceDirect()
+        self.registry = IotHubRegistryDirect()
         self.eventhub = EventHubDirect()
         self.test_module = IotHubModuleRest("TestModuleClient")
         self.test_device = IotHubDeviceRest("TestDeviceClient")

@@ -106,6 +106,9 @@
     "/service/{connectionId}/deviceMethod/{deviceId}": {
       "$ref": "service.json#/deviceMethod"
     },
+    "/service/{connectionId}/sendC2d": {
+      "$ref": "service.json#/sendC2d"
+    },
     "/device/connect/{transportType}": {
       "$ref": "device.json#/connect"
     },
