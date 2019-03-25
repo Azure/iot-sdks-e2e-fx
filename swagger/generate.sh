@@ -32,6 +32,9 @@ case $language in
     node)
         swagger_language=nodejs-server
         ;;
+    yaml)
+        swagger_language=swagger-yaml
+        ;;
     *)
         colorecho _red "Unkonwn language: $(language)"
         usage

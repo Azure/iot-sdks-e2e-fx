@@ -37,7 +37,7 @@ class ServiceOperations(object):
         Connect to the Azure IoTHub service.  More specifically, the SDK saves
         the connection string that is passed in for future use.
 
-        :param connection_string: Service connection string
+        :param connection_string: connection string
         :type connection_string: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
