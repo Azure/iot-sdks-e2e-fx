@@ -6,7 +6,7 @@
 # filename: deploy_horton.py
 # author:   v-greach@microsoft.com
 # created:  03/15/2019
-# Rev: 03/21/2019 H
+# Rev: 03/24/2019 C
 
 import sys
 import os
@@ -29,14 +29,12 @@ class DeployHorton:
         home_dir = str(pathlib.Path.home())
         from os.path import expanduser
         home_dir = expanduser("~")
-        #TODO - Fix Typo
-        #input_manifest_file = os.path.normpath(home_dir + "/horton/horton_manifest_template.json")
-        input_manifest_file = os.path.normpath(home_dir + "/horton/horton_maifest_template.json")
-        save_manifest_file = os.path.normpath(home_dir + "/horton/horton_updated_manifest.json")
+        input_manifest_file = os.path.normpath(home_dir + "/horton/iothub_module_and_device.json")
+        save_manifest_file = os.path.normpath(home_dir + "/horton/iothub_updated_module_and_device.json")
 
-        #self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
+        self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
 
-        self.setup_docker_containers(save_manifest_file)
+        #self.setup_docker_containers(save_manifest_file)
 
     def setup_docker_containers(self, input_manifest_file):
         import urllib
@@ -66,9 +64,9 @@ class DeployHorton:
         }
 
         deployment_json = self.get_deployment_model_json(input_manifest_file)
-        azure_ids = deployment_json['azure_identities']
+        identity_json = deployment_json['azure_identities']
         containers_needed = []
-        for azure_device in azure_ids:
+        for azure_device in identity_json:
             az_device_name = self.get_json_value(azure_device, 'device_name')
             docker_container = self.get_json_value(azure_device, "docker_container")
             if not (docker_container in containers_needed):
@@ -94,7 +92,7 @@ class DeployHorton:
         docker_repo_name = 'node-e2e-v2'
         docker_tag = 'vsts-14244'
 
-         docker_images = []    
+        docker_images = []    
         for container in containers_to_get:
             print("Getting container: " + container)
 
@@ -250,60 +248,30 @@ class DeployHorton:
         module_count = 0
 
         try:
-            azure_ids = deployment_json['azure_identities']
-            for azure_device in azure_ids:
-                device_connectstring = ''
-                children_modules = []
-                az_device_name = self.get_json_value(azure_device, 'device_name')
+            deployment_containers = deployment_json['containers']
+            identity_json = deployment_json['identities']
+            for azure_device in identity_json:
+                az_device_id = identity_json[azure_device]
                 # TEST_TEST_TEST  - NextLines:1
-                az_device_name      = 'F21_' + az_device_name + "_" + self.get_random_num_string(100)
-                az_device_type      = self.get_json_value(azure_device, 'device_type')
-                az_device_id_suffix = self.get_json_value(azure_device, 'device_id_suffix')
-                az_docker_image     = self.get_json_value(azure_device, 'docker_image')
-                az_docker_container = self.get_json_value(azure_device, 'docker_container')
-                az_docker_args      = self.get_json_value(azure_device, 'docker_args')
-                
-                if(self.node_has_children(azure_device)):
-                    children = azure_device['children']
-                    for child in children:
-                        child_module_id        = self.get_json_value(child, 'module_id')
-                        child_module_type      = self.get_json_value(child, 'module_type')
-                        child_docker_image     = self.get_json_value(child, 'module_docker_image_name')
-                        child_docker_container = self.get_json_value(child, 'module_docker_container_name')
-                        child_docker_args      = self.get_json_value(child, 'module_docker_creation_args')
-                        new_module = DeviceModuleObject(
-                            child_module_id, 
-                            az_device_name, 
-                            child_module_type, 
-                            child_docker_image, 
-                            child_docker_container, 
-                            child_docker_args,
-                            '')
-                        children_modules.append(new_module)
+                az_device_name = 'C25_' + azure_device + "_" + self.get_random_num_string(100)
 
-                if(az_device_type == 'iothub_device'):
-                    new_device = self.create_iot_device(hub_connect_string, az_device_name + az_device_id_suffix)
-                    if(new_device):
-                        device_connectstring = new_device
-                else:
-                    new_device = None
+                dev_object = self.populate_device_object(az_device_id, az_device_name, azure_device)
+                dev_object.connectionString = self.create_iot_device(hub_connect_string, az_device_name)
+                dev_object.deviceId = azure_device
+                child_modules = []
+                if(self.node_has_children(identity_json, azure_device, 'modules')):
+                    modules = identity_json[azure_device]['modules']
+                    for module in modules:
+                        module_obj = self.populate_device_object(modules[module], az_device_name, module)
+                        module_obj.deviceId = az_device_name
+                        module_obj.moduleId = module
+                        module_obj.connectionString = self.create_device_module(hub_connect_string, az_device_name, module)
+                        child_modules.append(module_obj)
+                        module_count += 1
 
-                child_module_objects = []
-                for child_module in children_modules:
-                    if(child_module.module_type == 'iothub_module'):
-                        new_module = self.create_device_module(
-                            hub_connect_string, 
-                            az_device_name + az_device_id_suffix, 
-                            child_module.module_id
-                            )
-                        if(new_module):
-                            child_module.module_connect_string = new_module
-                            child_module_objects.append(child_module)
-                            module_count += 1
-
-                new_device_obj = IotDeviceObject(az_device_name, az_device_type, az_device_id_suffix, device_connectstring, az_docker_image, az_docker_container, az_docker_args)
-                new_device_obj.children = children_modules
-                az_devices.append(new_device_obj)
+                if(len(child_modules) > 0):
+                    dev_object.modules = child_modules
+                az_devices.append(dev_object)
 
         except Exception as e:
             print(Fore.RED + "Exception Processing HortonManifest: " + input_manifest_file, file=sys.stderr)
@@ -313,7 +281,7 @@ class DeployHorton:
         print(Fore.GREEN + "Created {} Devices and {} Modules".format(len(az_devices), module_count) + Fore.RESET)
 
         # add device id's and connection strings back to horton_manifest & save it
-        deployment_obj = DeploymentObject(deployment_name, az_devices)
+        deployment_obj = DeploymentObject(deployment_name, az_devices, deployment_containers)
         new_manifest_json = json.dumps(deployment_obj, default = lambda x: x.__dict__, sort_keys=False, indent=2)
         try:
             with open(save_manifest_file, 'w') as f:
@@ -331,11 +299,26 @@ class DeployHorton:
         auth_header = "Basic " + encoded_credentials.decode('ascii')
         return auth_header    
 
-    def node_has_children(self, node):
+    def populate_device_object(self, device_json, az_device_name, object_name):
+        device_object = DeviceObject(object_name)
+        device_object.az_device_name    = az_device_name
+        device_object.deviceId          = self.get_json_value(device_json, 'deviceId')
+        device_object.objectName        = self.get_json_value(device_json, 'objectName')
+        device_object.objectType        = self.get_json_value(device_json, 'objectType')
+        device_object.apiSurface        = self.get_json_value(device_json, 'apiSurface')
+        device_object.adapterName       = self.get_json_value(device_json, 'adapterName')
+        device_object.tcpPort           = self.get_json_value(device_json, 'tcpPort')
+        device_object.connectionString  = self.get_json_value(device_json, 'connectionString')
+        return device_object
+
+    def node_has_children(self, json, node, name):
         try:
-            children = node['children']
+            children = json[node]
             if(children):
-                return True
+                if(children[name]):
+                    return True
+                else:
+                    return False
             else:
                 return False
         except:
@@ -346,7 +329,7 @@ class DeployHorton:
         try:
             value = node[name]
         except:
-            print(Fore.YELLOW + "ERROR: value not found in JSON: ({}/{})".format(node, name) + Fore.RESET, file=sys.stderr)
+            print(Fore.YELLOW + "ERROR: [{}] not found in JSON: ({})".format(name, node) + Fore.RESET, file=sys.stderr)
         return value
         
     def get_env_connect_string(self):
@@ -411,51 +394,21 @@ class DeployHorton:
             print(Fore.RESET, file=sys.stderr)
         return json_manifest
 
-class DokerImageObject:  
-    def __init__ (self, image_name, image_state='Unkown', full_image_path='', image_repository='', image_tag='', local_cache_name='', local_repo_name='', local_repo_image=''):
-        self.image_name       = image_name
-        self.image_state      = image_state
-        self.full_image_path  = full_image_path
-        self.image_repository = image_repository
-        self.image_tag        = image_tag
-        self.local_cache_name = local_cache_name
-        self.local_repo_name  = local_repo_name
-        self.local_repo_image = local_repo_image
-
-class DeviceModuleObject:  
-    def __init__ (self, module_id, device_name='', module_type='', module_docker_image_name='', module_docker_container_name='', module_docker_creation_args='', module_connect_string=''):
-        self.module_id                    = module_id
-        self.device_name                  = device_name
-        self.module_type                  = module_type
-        self.module_docker_image_name     = module_docker_image_name
-        self.module_docker_container_name = module_docker_container_name
-        self.module_docker_creation_args  = module_docker_creation_args
-        self.module_connect_string        = module_connect_string
-
-class IotDeviceObject:  
-    def __init__ (self, device_name='', device_type='', device_id_suffix='', device_connect_string='', docker_image='', docker_container='', docker_args='', children=None):
-        self.device_name             = device_name
-        self.device_type             = device_type
-        self.device_id_suffix        = device_id_suffix
-        self.device_connect_string   = device_connect_string
-        self.docker_image            = docker_image
-        self.docker_container        = docker_container
-        self.docker_args             = docker_args
-        self.children                = children
+class DeviceObject:
+    def __init__ (self, objectName, objectType='', apiSurface='', adapterName='', tcpPort='', deviceId='', connectionString=''):
+        self.objectName       = objectName
+        self.objectType       = objectType
+        self.apiSurface       = apiSurface
+        self.adapterName      = adapterName
+        self.tcpPort          = tcpPort
+        self.deviceId         = deviceId
+        self.connectionString = connectionString
 
 class DeploymentObject:  
-    def __init__ (self, deployment_name, azure_identities=None):
+    def __init__ (self, deployment_name, identities=None, deployment_containers=None):
         self.deployment_name  = deployment_name
-        self.azure_identities = azure_identities
-
-class AzureIdObject:  
-    def __init__ (self, azure_devices=None, ks=[], vs=[]):
-        self.azure_identities = azure_devices
-        self.__dict__ = dict(zip(ks, vs))
-
-class DeviceChildrenObject:  
-    def __init__ (self, ks=[], vs=[]):
-        self.__dict__ = dict(zip(ks, vs))
+        self.containers       = deployment_containers
+        self.identities = identities
 
 if __name__ == "__main__":
     horton_deploymnet = DeployHorton(sys.argv[1:])
