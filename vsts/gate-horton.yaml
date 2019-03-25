@@ -71,8 +71,8 @@ jobs:
       java_edgehub_module_amqpws:           { language: java, suite: edgehub_module_amqp_ws }
       csharp_iothub_module_mqtt:            { language: csharp, suite: iothub_module_mqtt }
       csharp_edgehub_module_mqttws:         { language: csharp, suite: edgehub_module_mqtt_ws }
-      pythonpreview_iothub_module_mqtt:     { language: pythonpreview, suite: iothub_module_mqtt }
       pythonpreview_edgehub_module_mqtt:    { language: pythonpreview, suite: edgehub_module_mqtt }
+      pythonpreview_iothub_module_and_device_mqtt:     { language: pythonpreview, suite: iothub_module_and_device_mqtt }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml

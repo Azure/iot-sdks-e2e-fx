@@ -11,8 +11,8 @@ jobs:
     - "build_linux_container"
   strategy:
     matrix:
-      iothub_module_mqtt: { suite: iothub_module_mqtt }
       edgehub_module_mqtt: { suite: edgehub_module_mqtt }
+      iothub_module_and_device_mqtt: { suite: iothub_module_and_device_mqtt }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml
