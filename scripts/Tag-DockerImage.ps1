@@ -22,22 +22,33 @@ $EnvRepo = $Env:IOTHUB_E2E_REPO_ADDRESS
 $UserName = $Env:IOTHUB_E2E_REPO_USER
 $Password   = $Env:IOTHUB_E2E_REPO_PASSWORD
 $Registry = "https://" + $EnvRepo
-      
+if($TAG_OLD -eq "--ListAll") {
+    $TAG_NEW = " "
+}
+
 if($Repository -eq "" -or $TAG_OLD   -eq "" -or $TAG_NEW   -eq "" -or
     $EvnRepo   -eq "" -or $UserName  -eq "" -or
     $Password  -eq "") {
         Write-Output "ERROR- Missing parameter or environment variable"
         Write-Output "Usage:"
-        Write-Output "           <module_Name>  <current_tag_name>  <tag_to_add_to_image"
-        Write-Output "           <nodule_name>   <tag_name_to_verifu  --verify_tag_exitst"
+        Write-Output "           <repository_Name> <current_tag_name>  <tag_to_add_to_image"
+        Write-Output "           <repository_Name> <tag_name_to_verify> --VerifyTagExists"
+        Write-Output "           <repository_Name> --ListAll"
         }
 
 $ContentType = 'application/vnd.docker.distribution.manifest.v2+json'
 
+if($TAG_OLD -eq "--ListAll") {
+    $TAG_URI = "$Registry/v2/$Repository/tags/list"
+}
+else {
+    $TAG_URI = "$Registry/v2/$Repository/manifests/$TAG_OLD"
+}
+
 $Params = @{
     UseBasicParsing = $true
     Method          = 'Get'
-    Uri             = "$Registry/v2/$Repository/manifests/$TAG_OLD"
+    Uri             = "$TAG_URI"
     Headers         = @{
         Accept      = $ContentType
     }
@@ -49,10 +60,19 @@ $Params.Headers.Add('Authorization', "Basic $encodedCredentials")
 
 try {
     $Response = Invoke-WebRequest @Params
-    $Manifest = ConvertFrom-ByteArray -Data $Response.Content -Encoding ASCII
+    if($TAG_OLD -eq "--ListAll") {
+        $tag_json = ConvertFrom-Json $Response.Content
+        foreach($tag in $tag_json.tags) {
+            Write-Output $tag
+        }
+        exit 0
+    }else{
+        $Manifest = ConvertFrom-ByteArray -Data $Response.Content -Encoding ASCII
+    }
 }
 catch {
-    Write-Output Write-Output "ERROR: Getting Tag [$TAG_OLD] in [$Repository]"
+    Write-Output $_
+    Write-Output "ERROR: Getting Tag [$TAG_OLD] in [$Repository]"
     exit 1
 }
 

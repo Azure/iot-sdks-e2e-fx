@@ -250,28 +250,36 @@ class DeployHorton:
         try:
             deployment_containers = deployment_json['containers']
             identity_json = deployment_json['identities']
+            id_prefix = "horton_{}_{}".format(self.get_random_num_string(1000),self.get_random_num_string(1000))
             for azure_device in identity_json:
                 az_device_id = identity_json[azure_device]
-                # TEST_TEST_TEST  - NextLines:1
-                az_device_name = 'E25_' + azure_device + "_" + self.get_random_num_string(100)
+                objectType = self.get_json_value(az_device_id, 'objectType')
+                objectName = self.get_json_value(az_device_id, 'objectName')
+                if objectType == "iothub_device":
+                    device_id = "{}_{}".format(id_prefix, objectName)
+                    dev_object = self.populate_device_object(az_device_id, objectName, device_id)
+                    dev_object.connectionString = self.create_iot_device(hub_connect_string, device_id)
+                    dev_object.deviceId = device_id
+                    child_modules = []
+                    if(self.node_has_children(identity_json, azure_device, 'modules')):
+                        modules = identity_json[azure_device]['modules']
+                        for module in modules:
+                            module_obj = self.populate_device_object(modules[module], module, device_id)
+                            module_obj.deviceId = device_id
+                            module_obj.moduleId = module
+                            module_obj.connectionString = self.create_device_module(hub_connect_string, device_id, module)
+                            child_modules.append(module_obj)
+                            module_count += 1
 
-                dev_object = self.populate_device_object(az_device_id, az_device_name, azure_device)
-                dev_object.connectionString = self.create_iot_device(hub_connect_string, az_device_name)
-                dev_object.deviceId = azure_device
-                child_modules = []
-                if(self.node_has_children(identity_json, azure_device, 'modules')):
-                    modules = identity_json[azure_device]['modules']
-                    for module in modules:
-                        module_obj = self.populate_device_object(modules[module], az_device_name, module)
-                        module_obj.deviceId = az_device_name
-                        module_obj.moduleId = module
-                        module_obj.connectionString = self.create_device_module(hub_connect_string, az_device_name, module)
-                        child_modules.append(module_obj)
-                        module_count += 1
+                    if(len(child_modules) > 0):
+                        dev_object.modules = child_modules
+                    az_devices.append(dev_object)
 
-                if(len(child_modules) > 0):
-                    dev_object.modules = child_modules
-                az_devices.append(dev_object)
+                elif(objectType in ["iothub_service", "iothub_registry"]):
+                    #dev_object = DeviceObject(objectName)
+                    dev_object = self.populate_device_object(az_device_id, objectName, '')
+                    dev_object.connectionString = hub_connect_string
+                    az_devices.append(dev_object)
 
         except Exception as e:
             print(Fore.RED + "Exception Processing HortonManifest: " + input_manifest_file, file=sys.stderr)
@@ -299,10 +307,12 @@ class DeployHorton:
         auth_header = "Basic " + encoded_credentials.decode('ascii')
         return auth_header    
 
-    def populate_device_object(self, device_json, az_device_name, object_name):
+    def populate_device_object(self, device_json, object_name, deviceId=''):
         device_object = DeviceObject(object_name)
-        device_object.az_device_name    = az_device_name
-        device_object.deviceId          = self.get_json_value(device_json, 'deviceId')
+        if deviceId:
+            device_object.deviceId     = deviceId
+        else:
+            device_object.deviceId      = self.get_json_value(device_json, 'deviceId')
         device_object.objectName        = self.get_json_value(device_json, 'objectName')
         device_object.objectType        = self.get_json_value(device_json, 'objectType')
         device_object.apiSurface        = self.get_json_value(device_json, 'apiSurface')
