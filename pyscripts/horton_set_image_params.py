@@ -14,7 +14,6 @@ from colorama import init, Fore, Back, Style
 
 class HortonSetImageParams:
 
-    #deployment_template.json serviceObject '"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": "8071"}],"22/tcp": [{"HostPort": "8171"}]},"CapAdd": "SYS_PTRACE"}'
     def __init__(self, manifest_name, object_name, image_path, create_options=''):
         init(convert=True)
 

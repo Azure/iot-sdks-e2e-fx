@@ -16,6 +16,7 @@ from colorama import init, Fore, Back, Style
 
 from horton_set_image_params import HortonSetImageParams
 from horton_create_identities import HortonCreateIdentities
+from horton_create_containers import HortonCreateContainers
 
 class DeployHorton:
 
@@ -39,7 +40,9 @@ class DeployHorton:
             "iotsdke2e.azurecr.io/pythonpreview-e2e-v2:vsts-14334",
             '"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": "8071"}],"22/tcp": [{"HostPort": "8171"}]},"CapAdd": "SYS_PTRACE"}')
 
-        HortonCreateIdentities(save_manifest_file, save_manifest_file + 'xx')
+        #HortonCreateIdentities(save_manifest_file)
+
+        HortonCreateContainers(save_manifest_file)
 
         print("Complete")
         exit(0)

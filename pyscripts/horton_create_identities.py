@@ -24,8 +24,6 @@ class HortonCreateIdentities:
 
     def horton_create_identities(self, input_manifest_file, save_manifest_file=''):
         hub_connect_string = self.get_env_connect_string()
-        base_hostname = "hortondeploytest"
-        deployment_name = base_hostname + '-' + self.get_random_num_string(10000)
         if not save_manifest_file:
             save_manifest_file = input_manifest_file
         deployment_json = self.get_deployment_model_json(input_manifest_file)
@@ -33,6 +31,7 @@ class HortonCreateIdentities:
         module_count = 0
 
         try:
+            deployment_name = deployment_json["deploymentName"]
             deployment_containers = deployment_json['containers']
             identity_json = deployment_json['identities']
             id_prefix = "horton_{}_{}".format(self.get_random_num_string(1000),self.get_random_num_string(1000))
