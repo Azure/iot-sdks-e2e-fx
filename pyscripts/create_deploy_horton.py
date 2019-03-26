@@ -276,7 +276,6 @@ class DeployHorton:
                     az_devices.append(dev_object)
 
                 elif(objectType in ["iothub_service", "iothub_registry"]):
-                    #dev_object = DeviceObject(objectName)
                     dev_object = self.populate_device_object(az_device_id, objectName, '')
                     dev_object.connectionString = hub_connect_string
                     az_devices.append(dev_object)
