@@ -13,7 +13,10 @@ import shutil
 import pathlib
 import traceback
 from colorama import init, Fore, Back, Style
+
 from horton_set_image_params import HortonSetImageParams
+from horton_create_identities import HortonCreateIdentities
+
 class DeployHorton:
 
     def __init__(self, args):
@@ -30,7 +33,13 @@ class DeployHorton:
             traceback.print_exc()
             print(Fore.RESET, file=sys.stderr)
 
-        HortonSetImageParams(save_manifest_file, 'testObject', "iotsdke2e.azurecr.io/pythonpreview-e2e-v2:vsts-14334")
+        HortonSetImageParams(
+            save_manifest_file, 
+            'testObject', 
+            "iotsdke2e.azurecr.io/pythonpreview-e2e-v2:vsts-14334",
+            '"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": "8071"}],"22/tcp": [{"HostPort": "8171"}]},"CapAdd": "SYS_PTRACE"}')
+
+        HortonCreateIdentities(save_manifest_file, save_manifest_file + 'xx')
 
         print("Complete")
         exit(0)
@@ -64,7 +73,6 @@ Uber script:
 4. call script to remove identities
     python ./horton_delete_identities.py deployment_template.json
 """
-
 
 if __name__ == "__main__":
     horton_deploymnet = DeployHorton(sys.argv[1:])

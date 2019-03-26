@@ -14,14 +14,18 @@ from colorama import init, Fore, Back, Style
 
 class HortonSetImageParams:
 
-    def __init__(self, manifest_name, object_name, image_path):
+    #deployment_template.json serviceObject '"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": "8071"}],"22/tcp": [{"HostPort": "8171"}]},"CapAdd": "SYS_PTRACE"}'
+    def __init__(self, manifest_name, object_name, image_path, create_options=''):
         init(convert=True)
 
         manifest_json = self.get_deployment_model_json(manifest_name)
         object_json = manifest_json['containers'][object_name]
         object_json['image'] = image_path
-        manifest_json['containers'][object_name] = object_json
 
+        if create_options:
+            object_json['createOptions'] = create_options
+
+        manifest_json['containers'][object_name] = object_json
         with open(manifest_name + 'x', 'w') as f:
             f.write(json.dumps(manifest_json, default = lambda x: x.__dict__, sort_keys=False, indent=2))
 

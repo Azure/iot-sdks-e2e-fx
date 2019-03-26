@@ -299,13 +299,6 @@ class DeployHorton:
         print("create_hotron_devices_from_manifest Complete")
         return True
 
-    def build_auth_header(self, username, password):
-        puid = username + ':' + password
-        puid_bytes = puid.encode('ascii')
-        encoded_credentials = base64.b64encode(puid_bytes)
-        auth_header = "Basic " + encoded_credentials.decode('ascii')
-        return auth_header    
-
     def populate_device_object(self, device_json, object_name, deviceId=''):
         device_object = DeviceObject(object_name)
         if deviceId:
@@ -357,7 +350,7 @@ class DeployHorton:
             helper.create_device(device_name)
             print("create_iot_device: ({}) returned: ({})".format(device_name, 'OK'))
             dev_connect = helper.get_device_connection_string(device_name)
-        except Exception as e:
+        except:
              print(Fore.RED + "Exception creating device: " + device_name, file=sys.stderr)
              traceback.print_exc()
              print(Fore.RESET, file=sys.stderr)
@@ -371,21 +364,11 @@ class DeployHorton:
             helper.create_device_module(device_name, module_name)
             print("create_device_module: ({}/{}) returned: ({})".format(device_name, module_name, 'OK'))
             mod_connect = helper.get_module_connection_string(device_name, module_name)
-        except Exception as e:
+        except:
              print(Fore.RED + "Exception creating device: {}/{}".format(device_name, module_name), file=sys.stderr)
              traceback.print_exc()
              print(Fore.RESET, file=sys.stderr)
         return mod_connect
-
-    def create_device_connectstring2(self, hub_connectstring, device_name, access_key):
-        connect_parts = hub_connectstring.split(';')
-        device_connectstring = "{};DeviceId={};SharedAccessKey={}".format(connect_parts[0], device_name, access_key)
-        return device_connectstring
-
-    def create_module_connectstring2(self, hub_connectstring, device_name, module_name, access_key):
-        connect_parts = hub_connectstring.split(';')
-        device_connectstring = "{};DeviceId={};ModuleId={};SharedAccessKey={}".format(connect_parts[0], device_name, module_name, access_key)
-        return device_connectstring
 
     def get_random_num_string(self, maxval):
         from random import randrange
@@ -397,11 +380,18 @@ class DeployHorton:
         try:
             with open(json_filename, 'r') as f:
                 json_manifest = json.loads(f.read())
-        except Exception as e:
+        except:
             print(Fore.RED + "ERROR: in JSON manifest: " + json_filename + Fore.RESET, file=sys.stderr)
             traceback.print_exc()
             print(Fore.RESET, file=sys.stderr)
         return json_manifest
+
+    def build_auth_header(self, username, password):
+        puid = username + ':' + password
+        puid_bytes = puid.encode('ascii')
+        encoded_credentials = base64.b64encode(puid_bytes)
+        auth_header = "Basic " + encoded_credentials.decode('ascii')
+        return auth_header    
 
 class DeviceObject:
     def __init__ (self, objectName, objectType='', apiSurface='', adapterName='', tcpPort='', deviceId='', connectionString=''):
