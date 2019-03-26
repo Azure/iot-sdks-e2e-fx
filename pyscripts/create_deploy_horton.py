@@ -34,7 +34,7 @@ class DeployHorton:
 
         self.create_hotron_devices_from_manifest(input_manifest_file, save_manifest_file)
 
-        #self.setup_docker_containers(save_manifest_file)
+        self.setup_docker_containers(save_manifest_file)
 
     def setup_docker_containers(self, input_manifest_file):
         import urllib
