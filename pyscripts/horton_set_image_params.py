@@ -4,7 +4,7 @@
 # full license information.
 #
 # filename: horton_set_image_params.py
-# author:   v-greach@microsoft.com
+# author:   v-greach@microsoft.com 
 
 import sys
 import os

@@ -4,7 +4,7 @@
 # full license information.
 #
 # filename: horton_deploy_runner.py
-# author:   v-greach@microsoft.com
+# author:   v-greach@microsoft.com 
 
 import sys
 import os
