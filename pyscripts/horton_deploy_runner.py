@@ -28,6 +28,7 @@ class DeployHorton:
         save_manifest_file  = home_dir + "/horton/deployment_template.json"
 
         try:
+            shutil.copy(home_dir + "/repos/iot/iot-sdks-e2e-fx/pyscripts/iothub_module_and_device.json", input_manifest_file)
             shutil.copy(input_manifest_file, save_manifest_file)
         except:
             print(Fore.RED + "Exception copying file: " + input_manifest_file, file=sys.stderr)
