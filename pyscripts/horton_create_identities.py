@@ -116,7 +116,7 @@ class HortonCreateIdentities:
         try:
             value = node[name]
         except:
-            print(Fore.YELLOW + "ERROR: [{}] not found in JSON: ({})".format(name, node) + Fore.RESET, file=sys.stderr)
+            print(Fore.YELLOW + "WARN: [{}] not found in JSON: ({})".format(name, node) + Fore.RESET, file=sys.stderr)
         return value
         
     def get_env_connect_string(self):
@@ -195,4 +195,4 @@ class DeploymentObject:
         self.identities = identities
 
 if __name__ == "__main__":
-    horton_create_devices = HortonCreateDevices(sys.argv[1:])
+    horton_create_devices = HortonCreateIdentities(sys.argv[1:])
