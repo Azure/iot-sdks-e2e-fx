@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE file in the project root for
-# full license information.
-import base64
-import json
+# --------------------------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See License.txt in the project root for license information.
+# --------------------------------------------------------------------------------------------
+
 from multiprocessing.pool import ThreadPool
 from internal_module_glue import InternalModuleGlue
-from ..print_message import print_message
 from ..abstract_module_api import AbstractModuleApi
 
-object_list = []
+module_object_list = []
 
 
 class ModuleApi(AbstractModuleApi):
@@ -19,7 +18,7 @@ class ModuleApi(AbstractModuleApi):
         self.pool = ThreadPool()
 
     def connect(self, transport, connection_string, ca_certificate):
-        object_list.append(self)
+        module_object_list.append(self)
         if "cert" in ca_certificate:
             cert = ca_certificate["cert"]
         else:
@@ -27,12 +26,12 @@ class ModuleApi(AbstractModuleApi):
         self.glue.connect(transport, connection_string, cert)
 
     def connect_from_environment(self, transport):
-        object_list.append(self)
+        module_object_list.append(self)
         self.glue.connect_from_environment(transport)
 
     def disconnect(self):
-        if self in object_list:
-            object_list.remove(self)
+        if self in module_object_list:
+            module_object_list.remove(self)
 
         self.glue.disconnect()
         self.glue = None

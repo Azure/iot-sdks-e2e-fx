@@ -87,4 +87,9 @@ steps:
   displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
+- script: |
+    sleep 30
+  displayName: 'give edgeHub 30 seconds to start up'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+
 

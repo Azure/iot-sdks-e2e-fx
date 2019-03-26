@@ -60,6 +60,11 @@ steps:
         $Transport="amqpws"
         $Scenario="edgehub_module_fi"
       }
+      "iothub_module_and_device_mqtt" {
+        $Transport="mqtt"
+        $Scenario="iothub_module_and_device"
+      }
+
       default {
         throw("Unknown suite: " + $env:Suite)
       }

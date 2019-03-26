@@ -37,7 +37,7 @@ class ServiceOperations(object):
         Connect to the Azure IoTHub service.  More specifically, the SDK saves
         the connection string that is passed in for future use.
 
-        :param connection_string: Service connection string
+        :param connection_string: connection string
         :type connection_string: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
@@ -251,3 +251,53 @@ class ServiceOperations(object):
 
         return deserialized
     invoke_device_method.metadata = {'url': '/service/{connectionId}/deviceMethod/{deviceId}'}
+
+    def send_c2d(
+            self, connection_id, event_body, custom_headers=None, raw=False, **operation_config):
+        """Send a c2d message.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param event_body:
+        :type event_body: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.send_c2d.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'text/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        body_content = self._serialize.body(event_body, 'str')
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(
+            request, header_parameters, body_content, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    send_c2d.metadata = {'url': '/service/{connectionId}/sendC2d'}

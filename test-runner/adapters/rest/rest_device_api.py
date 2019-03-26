@@ -10,12 +10,13 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 from multiprocessing.pool import ThreadPool
 from ..decorators import log_entry_and_exit
 from .. import adapter_config
+from ..abstract_device_api import AbstractDeviceApi
 
 # Amount of time to wait after submitting async request.  Gives server time to call API before calling the next API.
 wait_time_for_async_start = 1
 
 
-class DeviceApi:
+class DeviceApi(AbstractDeviceApi):
     def __init__(self, hostname):
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).device
         self.rest_endpoint.config.retry_policy.retries = 0
@@ -64,5 +65,21 @@ class DeviceApi:
             log_entry_and_exit(self.rest_endpoint.roundtrip_method_call),
             (self.connection_id, method_name, request_and_response),
             dict(timeout=adapter_config.default_api_timeout),
+        )
+        return thread
+
+    @log_entry_and_exit
+    def send_event(self, body):
+        self.rest_endpoint.send_event(self.connection_id, body)
+
+    @log_entry_and_exit
+    def enable_c2d(self):
+        self.rest_endpoint.enable_c2d_messages(self.connection_id)
+
+    @log_entry_and_exit
+    def wait_for_c2d_message_async(self):
+        thread = self.pool.apply_async(
+            log_entry_and_exit(self.rest_endpoint.wait_for_c2d_message),
+            (self.connection_id,),
         )
         return thread

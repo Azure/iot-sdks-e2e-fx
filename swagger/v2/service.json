@@ -1,0 +1,151 @@
+{
+  "connect": {
+    "put": {
+      "tags": [
+        "service"
+      ],
+      "summary": "Connect to service",
+      "description": "Connect to the Azure IoTHub service.  More specifically, the SDK saves the connection string that is passed in for future use.",
+      "operationId": "Service_Connect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionString"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "disconnect": {
+    "put": {
+      "tags": [
+        "service"
+      ],
+      "summary": "Disconnect from the service",
+      "description": "Disconnects from the Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection",
+      "operationId": "Service_Disconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "moduleMethod": {
+    "put": {
+      "tags": [
+        "service"
+      ],
+      "summary": "call the given method on the given module",
+      "operationId": "Service_InvokeModuleMethod",
+      "consumes": [
+        "application/json"
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/deviceId"
+        },
+        {
+          "$ref": "parameters.json#/moduleId"
+        },
+        {
+          "name": "methodInvokeParameters",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "deviceMethod": {
+    "put": {
+      "tags": [
+        "service"
+      ],
+      "summary": "call the given method on the given device",
+      "operationId": "Service_InvokeDeviceMethod",
+      "consumes": [
+        "application/json"
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/deviceId"
+        },
+        {
+          "name": "methodInvokeParameters",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "sendC2d": {
+    "put": {
+      "tags": [
+        "service"
+      ],
+      "summary": "Send a c2d message",
+      "operationId": "Service_SendC2d",
+      "consumes": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/eventBody"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  }
+}

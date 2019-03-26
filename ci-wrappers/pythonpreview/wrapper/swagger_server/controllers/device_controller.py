@@ -3,11 +3,14 @@ import six
 
 from swagger_server.models.certificate import Certificate  # noqa: E501
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
-from swagger_server.models.method_request_response import MethodRequestResponse  # noqa: E501
+from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
 from swagger_server import util
 
+from device_glue import DeviceGlue
 
-def device_connect_transport_type_put(transportType, connectionString, caCertificate=None):  # noqa: E501
+device_glue = DeviceGlue()
+
+def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a device
 
      # noqa: E501
@@ -23,10 +26,10 @@ def device_connect_transport_type_put(transportType, connectionString, caCertifi
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    return device_glue.connect(transportType, connectionString, caCertificate)
 
 
-def device_connection_id_disconnect_put(connectionId):  # noqa: E501
+def device_disconnect(connectionId):  # noqa: E501
     """Disconnect the device
 
     Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection # noqa: E501
@@ -36,10 +39,23 @@ def device_connection_id_disconnect_put(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    device_glue.disconnect(connectionId)
 
 
-def device_connection_id_enable_methods_put(connectionId):  # noqa: E501
+def device_enable_c2d_messages(connectionId):  # noqa: E501
+    """Enable c2d messages
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    device_glue.enable_c2d(connectionId)
+
+
+def device_enable_methods(connectionId):  # noqa: E501
     """Enable methods
 
      # noqa: E501
@@ -49,38 +65,53 @@ def device_connection_id_enable_methods_put(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    device_glue.enable_methods(connectionId)
 
 
-def device_connection_id_method_request_method_name_get(connectionId, methodName):  # noqa: E501
-    """Wait for a method call with the given name
+def device_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
+    """Wait for a method call, verify the request, and return the response.
 
-     # noqa: E501
+    This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call) # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param methodName: 
+    :param methodName: name of the method to handle
     :type methodName: str
-
-    :rtype: MethodRequestResponse
-    """
-    return 'do some magic!'
-
-
-def device_connection_id_method_response_response_id_status_code_put(connectionId, responseId, statusCode, responseBody):  # noqa: E501
-    """Respond to the method call with the given name
-
-     # noqa: E501
-
-    :param connectionId: Id for the connection
-    :type connectionId: str
-    :param responseId: 
-    :type responseId: str
-    :param statusCode: 
-    :type statusCode: str
-    :param responseBody: 
-    :type responseBody: 
+    :param requestAndResponse: 
+    :type requestAndResponse: dict | bytes
 
     :rtype: None
     """
-    return 'do some magic!'
+    if connexion.request.is_json:
+        requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
+    return device_glue.roundtrip_method_call(
+        connectionId, methodName, requestAndResponse
+    )
+
+
+def device_send_event(connectionId, eventBody):  # noqa: E501
+    """Send an event
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param eventBody: 
+    :type eventBody: str
+
+    :rtype: None
+    """
+    device_glue.send_event(connectionId, eventBody)
+
+
+def device_wait_for_c2d_message(connectionId):  # noqa: E501
+    """Wait for a c2d message
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: str
+    """
+    return device_glue.wait_for_c2d_message(connectionId)
