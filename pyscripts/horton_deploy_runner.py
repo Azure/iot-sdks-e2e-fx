@@ -40,7 +40,7 @@ class DeployHorton:
             "iotsdke2e.azurecr.io/pythonpreview-e2e-v2:vsts-14334",
             '"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": "8071"}],"22/tcp": [{"HostPort": "8171"}]},"CapAdd": "SYS_PTRACE"}')
 
-        #HortonCreateIdentities(save_manifest_file)
+        HortonCreateIdentities(save_manifest_file)
 
         HortonCreateContainers(save_manifest_file)
 

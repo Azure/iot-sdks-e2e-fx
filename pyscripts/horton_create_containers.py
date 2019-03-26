@@ -23,18 +23,11 @@ class HortonCreateContainers:
         manifest_json = self.get_deployment_model_json(manifest_name)
         deployment_containers = manifest_json['containers']
         for container in deployment_containers:
-            self.create_container(container)
+            self.create_container(deployment_containers[container])
 
     def create_container(self, container):
         print(container)
         repo_name =  os.environ["IOTHUB_E2E_REPO_ADDRESS"]
-        #client = docker.from_env()
-        #acr_url = "tcp://127.0.0.1:2376"
-        acr_url = "tcp://127.0.0.1:2376"
-        repo_port = ":2376"
-        #acr_url = "tcp://" + repo_name + repo_port
-        api_client = docker.APIClient(base_url=acr_url, tls=True)
-
         repo_user = os.environ["IOTHUB_E2E_REPO_USER"]
         repo_password = os.environ["IOTHUB_E2E_REPO_PASSWORD"]
         auth_config = {
@@ -42,16 +35,14 @@ class HortonCreateContainers:
             "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"]
         }
 
+        print(container)
+        #docker_image = "iotsdke2e.azurecr.io/edge-e2e-node6:latest"
+        docker_image = container['image']
 
         try:
-            #container = client.containers.get(container_name)
-            ret = api_client.login(repo_user, repo_password)
-            ret = api_client.pull(
-                    "iotsdke2e.azurecr.io/edge-e2e-node6",
-                    "latest",
-                    auth_config=auth_config)
+            self.pull_docker_image(docker_image)
         except:
-             print(Fore.RED + "Exception from Docker_Api_Client: " + acr_url, file=sys.stderr)
+             print(Fore.RED + "Exception from Docker_Api_Client: " + docker_image, file=sys.stderr)
              traceback.print_exc()
              print(Fore.RESET, file=sys.stderr)
 
@@ -65,6 +56,36 @@ class HortonCreateContainers:
             traceback.print_exc()
             print(Fore.RESET, file=sys.stderr)
         return json_manifest
+
+    def pull_docker_image(self, image_path):
+        docker_exe = 'docker.exe'
+        docker_cmd = 'pull ' + image_path
+        self.run_shell_command(docker_exe + " " + docker_cmd)
+
+    def run_shell_command(self, cmd_to_run):
+        import subprocess
+        home_path = self.get_home_path()
+        run_path = home_path + '/run_cmd.bat'
+        print(run_path)
+        try:
+            with open(run_path, 'w') as f:
+                f.write(cmd_to_run + '\n')
+            subprocess.call(run_path) 
+        except:
+            print(Fore.RED + "ERROR: creating file: " + run_path + Fore.RESET, file=sys.stderr)
+            traceback.print_exc()
+            print(Fore.RESET, file=sys.stderr)
+
+    def get_home_path(self):
+        import pathlib
+        home_dir = str(pathlib.Path.home())
+        from os.path import expanduser
+        home_dir = expanduser("~")
+        home_dir = os.path.normpath(home_dir)
+        home_dir = home_dir.replace('\\', '/')
+        if ':/' in home_dir:
+            home_dir = home_dir[2:]
+        return home_dir
 
 if __name__ == "__main__":
     horton_create_containers = HortonCreateContainers(sys.argv[1:])

@@ -25,7 +25,7 @@ class HortonSetImageParams:
             object_json['createOptions'] = create_options
 
         manifest_json['containers'][object_name] = object_json
-        with open(manifest_name + 'x', 'w') as f:
+        with open(manifest_name, 'w') as f:
             f.write(json.dumps(manifest_json, default = lambda x: x.__dict__, sort_keys=False, indent=2))
 
     def get_deployment_model_json(self, json_filename):
