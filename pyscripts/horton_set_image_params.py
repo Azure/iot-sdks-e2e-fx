@@ -22,7 +22,13 @@ class HortonSetImageParams:
         object_json['image'] = image_path
 
         if create_options:
-            object_json['createOptions'] = create_options
+            try:
+                object_json['createOptions'] = json.loads(create_options)
+            except:
+                print(Fore.RED + "ERROR: in JSON create_options: " + create_options, file=sys.stderr)
+                traceback.print_exc()
+                print(Fore.RESET, file=sys.stderr)
+                return
 
         manifest_json['containers'][object_name] = object_json
         with open(manifest_name, 'w') as f:

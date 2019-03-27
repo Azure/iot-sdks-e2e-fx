@@ -23,14 +23,8 @@ class HortonCreateContainers:
         manifest_json = self.get_deployment_model_json(manifest_name)
         deployment_containers = manifest_json['containers']
 
-        image_list = []
-
         for container in deployment_containers:
-            image_list.append(deployment_containers[container]['image'])
             self.create_container(deployment_containers[container])
-
-        for image in image_list:
-            print("Container Images: " + image)
 
     def create_container(self, container):
         repo_name =  os.environ["IOTHUB_E2E_REPO_ADDRESS"]
