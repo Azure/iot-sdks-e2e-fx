@@ -1,35 +1,35 @@
 {
-  "deployment_name": "iothub_module_and_device",
+  "deploymentName": "iothub_module_and_device",
   "containers": {
     "testObject": {
       "image": "iotsdke2e.azurecr.io/pythonpreview-e2e-v2:vsts-14334",
       "name": "hortonTestObj",
-      "createOptions": "\"HostConfig\": {\"PortBindings\": {\"8080/tcp\": [{\"HostPort\": \"8071\"}],\"22/tcp\": [{\"HostPort\": \"8171\"}]},\"CapAdd\": \"SYS_PTRACE\"}",
-      "serviceObjects": {
-        "image": "iotsdke2e.azurecr.io/edge-e2e-node6:latest",
-        "name": "hortonServiceObj",
-        "createOptions": {
-          "HostConfig": {
-            "PortBindings": {
-              "8080/tcp": [
-                {
-                  "HostPort": "8071"
-                }
-              ],
-              "22/tcp": [
-                {
-                  "HostPort": "8171"
-                }
-              ]
-            },
-            "CapAdd": "SYS_PTRACE"
-          }
+      "createOptions": "\"HostConfig\": {\"PortBindings\": {\"8080/tcp\": [{\"HostPort\": \"8071\"}],\"22/tcp\": [{\"HostPort\": \"8171\"}]},\"CapAdd\": \"SYS_PTRACE\"}"
+    },
+    "serviceObjects": {
+      "image": "iotsdke2e.azurecr.io/edge-e2e-node6:latest",
+      "name": "hortonServiceObj",
+      "createOptions": {
+        "HostConfig": {
+          "PortBindings": {
+            "8080/tcp": [
+              {
+                "HostPort": "8071"
+              }
+            ],
+            "22/tcp": [
+              {
+                "HostPort": "8171"
+              }
+            ]
+          },
+          "CapAdd": "SYS_PTRACE"
         }
       }
     }
   },
-  "identities": [
-    {
+  "identities": {
+    "testDevice": {
       "objectName": "test_device",
       "objectType": "iothub_device",
       "apiSurface": "DeviceApi",
@@ -38,7 +38,7 @@
       "deviceId": "Unset. will be inserted at deployment time.",
       "connectionString": "Unset.  will be inserted at deployment time."
     },
-    {
+    "otherTestDevice": {
       "objectName": "other_test_device",
       "objectType": "iothub_device",
       "apiSurface": "DeviceApi",
@@ -46,8 +46,8 @@
       "tcpPort": "8070",
       "deviceId": "Unset.  will be inserted at deployment time.",
       "connectionString": "Unset.  will be inserted at deployment time.",
-      "modules": [
-        {
+      "modules": {
+        "testModule1": {
           "objectName": "test_module",
           "objectType": "iothub_module",
           "apiSurface": "ModuleApi",
@@ -57,7 +57,7 @@
           "connectionString": "Unset.  will be inserted at deployment time.",
           "moduleId": "Unset.  will be inserted at deployment time."
         },
-        {
+        "testModule2": {
           "objectName": "2ndtest_module",
           "objectType": "iothub_module",
           "apiSurface": "ModuleApi",
@@ -67,25 +67,23 @@
           "connectionString": "Unset.  will be inserted at deployment time.",
           "moduleId": "Unset.  will be inserted at deployment time."
         }
-      ]
+      }
     },
-    {
+    "service": {
       "objectName": "service",
       "objectType": "iothub_service",
       "apiSurface": "ServieApi",
       "adapterName": "ServiceApiClient",
       "tcpPort": "8071",
-      "deviceId": "",
       "connectionString": "Unset.  will be inserted at deployment time."
     },
-    {
+    "registry": {
       "objectName": "registry",
       "objectType": "iothub_registry",
       "apiSurface": "RegistryApi",
       "adapterName": "RegistryApiClient",
       "tcpPort": "8071",
-      "deviceId": "",
       "connectionString": "Unset.  will be inserted at deployment time."
     }
-  ]
+  }
 }

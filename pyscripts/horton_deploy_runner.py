@@ -28,7 +28,11 @@ class DeployHorton:
         save_manifest_file  = home_dir + "/horton/deployment_template.json"
 
         try:
-            shutil.copy(home_dir + "/repos/iot/iot-sdks-e2e-fx/pyscripts/iothub_module_and_device.json", input_manifest_file)
+            base_dir = os.path.dirname(save_manifest_file)
+            if not os.path.exists(base_dir):
+                os.makedirs(base_dir)
+            cwd = self.norm_path(os.path.dirname(os.path.realpath(__file__)))
+            shutil.copy(cwd + "/iothub_module_and_device.json", input_manifest_file)
             shutil.copy(input_manifest_file, save_manifest_file)
         except:
             print(Fore.RED + "Exception copying file: " + input_manifest_file, file=sys.stderr)
@@ -53,10 +57,13 @@ class DeployHorton:
         from os.path import expanduser
         home_dir = expanduser("~")
         home_dir = os.path.normpath(home_dir)
-        home_dir = home_dir.replace('\\', '/')
-        if ':/' in home_dir:
-            home_dir = home_dir[2:]
-        return home_dir
+        return self.norm_path(home_dir)
+
+    def norm_path(self, file_path):
+        file_path = file_path.replace('\\', '/')
+        if ':/' in file_path:
+            file_path = file_path[2:]
+        return file_path
 
 """
 Uber script:

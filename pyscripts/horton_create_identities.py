@@ -35,6 +35,7 @@ class HortonCreateIdentities:
             deployment_containers = deployment_json['containers']
             identity_json = deployment_json['identities']
             id_prefix = "horton_{}_{}".format(self.get_random_num_string(1000),self.get_random_num_string(1000))
+            deployment_name += '_' + id_prefix
             for azure_device in identity_json:
                 az_device_id = identity_json[azure_device]
                 objectType = self.get_json_value(az_device_id, 'objectType')
@@ -60,7 +61,7 @@ class HortonCreateIdentities:
                     az_devices.append(dev_object)
 
                 elif(objectType in ["iothub_service", "iothub_registry"]):
-                    dev_object = self.populate_device_object(az_device_id, objectName, '')
+                    dev_object = self.populate_device_object(az_device_id, objectName, 'None')
                     dev_object.connectionString = hub_connect_string
                     az_devices.append(dev_object)
 
@@ -86,7 +87,8 @@ class HortonCreateIdentities:
     def populate_device_object(self, device_json, object_name, deviceId=''):
         device_object = DeviceObject(object_name)
         if deviceId:
-            device_object.deviceId     = deviceId
+            if deviceId != 'None':
+                device_object.deviceId     = deviceId
         else:
             device_object.deviceId      = self.get_json_value(device_json, 'deviceId')
         device_object.objectName        = self.get_json_value(device_json, 'objectName')
@@ -165,17 +167,10 @@ class HortonCreateIdentities:
             with open(json_filename, 'r') as f:
                 json_manifest = json.loads(f.read())
         except:
-            print(Fore.RED + "ERROR: in JSON manifest: " + json_filename + Fore.RESET, file=sys.stderr)
+            print(Fore.RED + "ERROR: in JSON manifest: " + json_filename, file=sys.stderr)
             traceback.print_exc()
             print(Fore.RESET, file=sys.stderr)
         return json_manifest
-
-    def build_auth_header(self, username, password):
-        puid = username + ':' + password
-        puid_bytes = puid.encode('ascii')
-        encoded_credentials = base64.b64encode(puid_bytes)
-        auth_header = "Basic " + encoded_credentials.decode('ascii')
-        return auth_header    
 
 class DeviceObject:
     def __init__ (self, objectName, objectType='', apiSurface='', adapterName='', tcpPort='', deviceId='', connectionString=''):
@@ -184,7 +179,7 @@ class DeviceObject:
         self.apiSurface       = apiSurface
         self.adapterName      = adapterName
         self.tcpPort          = tcpPort
-        self.deviceId         = deviceId
+        #self.deviceId         = deviceId
         self.connectionString = connectionString
 
 class DeploymentObject:  

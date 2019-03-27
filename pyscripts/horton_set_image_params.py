@@ -34,7 +34,7 @@ class HortonSetImageParams:
             with open(json_filename, 'r') as f:
                 json_manifest = json.loads(f.read())
         except:
-            print(Fore.RED + "ERROR: in JSON manifest: " + json_filename + Fore.RESET, file=sys.stderr)
+            print(Fore.RED + "ERROR: in JSON manifest: " + json_filename, file=sys.stderr)
             traceback.print_exc()
             print(Fore.RESET, file=sys.stderr)
         return json_manifest
