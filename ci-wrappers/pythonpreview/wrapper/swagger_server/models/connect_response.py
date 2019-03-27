@@ -15,7 +15,7 @@ class ConnectResponse(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, connection_id: str=None):  # noqa: E501
+    def __init__(self, connection_id=None):  # noqa: E501
         """ConnectResponse - a model defined in Swagger
 
         :param connection_id: The connection_id of this ConnectResponse.  # noqa: E501
@@ -32,7 +32,7 @@ class ConnectResponse(Model):
         self._connection_id = connection_id
 
     @classmethod
-    def from_dict(cls, dikt) -> 'ConnectResponse':
+    def from_dict(cls, dikt):
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -43,7 +43,7 @@ class ConnectResponse(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def connection_id(self) -> str:
+    def connection_id(self):
         """Gets the connection_id of this ConnectResponse.
 
         unique identifier for this connection  # noqa: E501
@@ -54,7 +54,7 @@ class ConnectResponse(Model):
         return self._connection_id
 
     @connection_id.setter
-    def connection_id(self, connection_id: str):
+    def connection_id(self, connection_id):
         """Sets the connection_id of this ConnectResponse.
 
         unique identifier for this connection  # noqa: E501

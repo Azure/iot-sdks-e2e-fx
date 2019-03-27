@@ -45,7 +45,7 @@ esac
 colorecho $_yellow "Generating wrappers for ${language} using ${swagger_language} generator"
 
 docker run --rm -v ${script_dir}:/local swaggerapi/swagger-codegen-cli:2.4.2 generate \
-    --verbose \
+    --config /local/config_${language}.json \
     --input-spec /local/v2/swagger.json \
     --lang $swagger_language \
     --output /local/swagger_generated/${language}/

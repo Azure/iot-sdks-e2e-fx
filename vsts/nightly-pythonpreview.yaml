@@ -1,0 +1,79 @@
+name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
+
+jobs:
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: $(Horton.Language)
+    repo: $(Horton.Repo)
+    commit: $(Horton.Commit)
+    forced_image: $(Horton.ForcedImage)
+    job_tag: py27
+    variant: py27
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: $(Horton.Language)
+    repo: $(Horton.Repo)
+    commit: $(Horton.Commit)
+    forced_image: $(Horton.ForcedImage)
+    job_tag: py35
+    variant: py35
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: $(Horton.Language)
+    repo: $(Horton.Repo)
+    commit: $(Horton.Commit)
+    forced_image: $(Horton.ForcedImage)
+    job_tag: py36
+    variant: py36
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: $(Horton.Language)
+    repo: $(Horton.Repo)
+    commit: $(Horton.Commit)
+    forced_image: $(Horton.ForcedImage)
+    job_tag: py37
+    variant: py37
+
+- job: "test"
+  dependsOn:
+    - "build_py27_container"
+    - "build_py35_container"
+    - "build_py36_container"
+    - "build_py37_container"
+  strategy:
+    matrix:
+      edgehub_module_mqtt_27:
+        suite: edgehub_module_mqtt 
+        variant: py27
+      iothub_module_and_device_mqtt27:
+        suite: iothub_module_and_device_mqtt
+        variant: py27
+      edgehub_module_mqtt_35:
+        suite: edgehub_module_mqtt 
+        variant: py35
+      iothub_module_and_device_mqtt_35:
+        suite: iothub_module_and_device_mqtt 
+        variant: py35
+      edgehub_module_mqtt_36:
+        suite: edgehub_module_mqtt 
+        variant: py36
+      iothub_module_and_device_mqtt36:
+        suite: iothub_module_and_device_mqtt
+        variant: py36
+      edgehub_module_mqtt_37:
+        suite: edgehub_module_mqtt 
+        variant: py37
+      iothub_module_and_device_mqtt37:
+        suite: iothub_module_and_device_mqtt
+        variant: py37
+
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      language: $(Horton.Language)
+      forced_image: $(Horton.ForcedImage)
+      suite: $(suite)
+      variant: $(variant)
+

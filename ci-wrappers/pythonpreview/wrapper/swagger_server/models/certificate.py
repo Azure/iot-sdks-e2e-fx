@@ -15,7 +15,7 @@ class Certificate(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, cert: str=None):  # noqa: E501
+    def __init__(self, cert=None):  # noqa: E501
         """Certificate - a model defined in Swagger
 
         :param cert: The cert of this Certificate.  # noqa: E501
@@ -32,7 +32,7 @@ class Certificate(Model):
         self._cert = cert
 
     @classmethod
-    def from_dict(cls, dikt) -> 'Certificate':
+    def from_dict(cls, dikt):
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -43,7 +43,7 @@ class Certificate(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def cert(self) -> str:
+    def cert(self):
         """Gets the cert of this Certificate.
 
         unique identifier for this connection  # noqa: E501
@@ -54,7 +54,7 @@ class Certificate(Model):
         return self._cert
 
     @cert.setter
-    def cert(self, cert: str):
+    def cert(self, cert):
         """Sets the cert of this Certificate.
 
         unique identifier for this connection  # noqa: E501
