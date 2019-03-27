@@ -23,15 +23,6 @@ class HortonCreateContainers:
         manifest_json = self.get_deployment_model_json(manifest_name)
         deployment_containers = manifest_json['containers']
 
-        try:
-            client = docker.from_env()
-            for image in client.images.list():
-                print("In Docker: " + image.id)
-        except:
-             print(Fore.RED + "Exception from Docker_Api_Client: ", file=sys.stderr)
-             traceback.print_exc()
-             print(Fore.RESET, file=sys.stderr)
-
         image_list = []
 
         for container in deployment_containers:
@@ -51,22 +42,42 @@ class HortonCreateContainers:
         }
 
         docker_image = container['image']
+
+        #api_client = docker.APIClient(base_url='tcp://iotsdke2e.azurecr.io:2375')
+        api_client = docker.APIClient(base_url='https://localhost:2375')
         try:
             print("Pulling: " + docker_image)
             #self.pull_docker_image(docker_image)
+            #ret = api_client.pull(docker_image, '', stream=True, auth_config=auth_config)
         except:
-             print(Fore.RED + "Exception from Docker_Api_Client: " + docker_image, file=sys.stderr)
+             print(Fore.RED + "Exception from Docker_Api_Client.pull: " + docker_image, file=sys.stderr)
              traceback.print_exc()
              print(Fore.RESET, file=sys.stderr)
 
-        # read updated horton_manifest
-        # docker login
-        # for each docker container, 
-        # a. fetch the image, fail if it's missing.
-        # b. start it using args and the container_name,
-        # c. use ensure_container.py to make sure it's responding.
-        #
-        # a & c will be used for edgehub deployments eventually
+        try:
+            container_name = container['name']
+            print("Creating Container: " + container_name)
+            create_opts = container['createOptions']
+
+            container_id = api_client.create_container(
+                docker_image, '', name=container_name, ports=[1111, 2222],
+                host_config=api_client.create_host_config(port_bindings={
+                    1111: 4567,
+                    2222: None
+                })
+            )
+            #Deprecation warning: Passing configuration options in start is no longer supported. Users are expected to provide host config options in the host_config parameter of create_container().
+            try:
+                ret = api_client.start(container=container.get(container_name))
+                # ensure_container(container_name)
+            except:
+                print(Fore.RED + "Exception from Docker_Api_Client.start: " + container_name, file=sys.stderr)
+                traceback.print_exc()
+                print(Fore.RESET, file=sys.stderr)
+        except:
+             print(Fore.RED + "Exception from Docker_Api_Client.create_container: " + container_name, file=sys.stderr)
+             traceback.print_exc()
+             print(Fore.RESET, file=sys.stderr)
 
     def get_deployment_model_json(self, json_filename):
         json_manifest = ''

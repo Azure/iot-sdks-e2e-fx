@@ -4,7 +4,23 @@
     "testObject": {
       "image": "iotsdke2e.azurecr.io/pythonpreview-e2e-v2:vsts-14334",
       "name": "hortonTestObj",
-      "createOptions": "\"HostConfig\": {\"PortBindings\": {\"8080/tcp\": [{\"HostPort\": \"8071\"}],\"22/tcp\": [{\"HostPort\": \"8171\"}]},\"CapAdd\": \"SYS_PTRACE\"}"
+      "createOptions": {
+        "HostConfig": {
+          "PortBindings": {
+            "8080/tcp": [
+              {
+                "HostPort": "8071"
+              }
+            ],
+            "22/tcp": [
+              {
+                "HostPort": "8171"
+              }
+            ]
+          },
+          "CapAdd": "SYS_PTRACE"
+        }
+      }
     },
     "serviceObjects": {
       "image": "iotsdke2e.azurecr.io/edge-e2e-node6:latest",
