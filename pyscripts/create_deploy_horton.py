@@ -133,7 +133,6 @@ class DeployHorton:
             #client = docker.DockerClient(base_url="unix://var/run/docker.sock")
 
             #client = docker.DockerClient(base_url=repo_connect, version='auto', timeout=120)
-            #resp = client.login(username="iotsdke2e", password="H034BRLUTtNFHg8Sw0jiiX8Km8=uCHkn", dockercfg_path=config_file)
 
             #client = docker.DockerClient(base_url=repo_connect)
             #resp = client.login(username=repo_user, password=repo_password)
