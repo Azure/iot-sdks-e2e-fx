@@ -4,6 +4,7 @@ parameters:
   suite: ''
   testcase: ''
   repeat_count: ''
+  variant: ''
 
 steps:
 - powershell: |
@@ -102,6 +103,9 @@ steps:
     $LogFolderName=$LogFolderName + "_" + $env:SYSTEM_JOBPOSITIONINPHASE
 
     $TestImage=$env:DefaultImage
+    if ($env:Variant -ne "") {
+        $TestImage=$TestImage + "-" + $env:Variant
+    }
     if ($env:ForcedImage -ne "") {
       $TestImage=$env:ForcedImage
     }
@@ -131,6 +135,7 @@ steps:
     ForcedImage: ${{ parameters.forced_image }}
     TestCase: ${{ parameters.testcase }}
     RepeatCount: ${{ parameters.repeat_count }}
+    Variant: ${{ parameters.variant }}
   ignoreLASTEXITCODE: false
   errorActionPreference: Stop
   failOnStderr: true

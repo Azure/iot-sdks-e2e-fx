@@ -15,7 +15,7 @@ class RoundtripMethodCallBody(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, request_payload: object=None, response_payload: object=None, status_code: int=None):  # noqa: E501
+    def __init__(self, request_payload=None, response_payload=None, status_code=None):  # noqa: E501
         """RoundtripMethodCallBody - a model defined in Swagger
 
         :param request_payload: The request_payload of this RoundtripMethodCallBody.  # noqa: E501
@@ -42,7 +42,7 @@ class RoundtripMethodCallBody(Model):
         self._status_code = status_code
 
     @classmethod
-    def from_dict(cls, dikt) -> 'RoundtripMethodCallBody':
+    def from_dict(cls, dikt):
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -53,7 +53,7 @@ class RoundtripMethodCallBody(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def request_payload(self) -> object:
+    def request_payload(self):
         """Gets the request_payload of this RoundtripMethodCallBody.
 
         payload for the request that arrived from the service.  Used to verify that the correct request arrived.  # noqa: E501
@@ -64,7 +64,7 @@ class RoundtripMethodCallBody(Model):
         return self._request_payload
 
     @request_payload.setter
-    def request_payload(self, request_payload: object):
+    def request_payload(self, request_payload):
         """Sets the request_payload of this RoundtripMethodCallBody.
 
         payload for the request that arrived from the service.  Used to verify that the correct request arrived.  # noqa: E501
@@ -76,7 +76,7 @@ class RoundtripMethodCallBody(Model):
         self._request_payload = request_payload
 
     @property
-    def response_payload(self) -> object:
+    def response_payload(self):
         """Gets the response_payload of this RoundtripMethodCallBody.
 
         payload for the response to return to the service.  Used to verify that the correct request arrived.  # noqa: E501
@@ -87,7 +87,7 @@ class RoundtripMethodCallBody(Model):
         return self._response_payload
 
     @response_payload.setter
-    def response_payload(self, response_payload: object):
+    def response_payload(self, response_payload):
         """Sets the response_payload of this RoundtripMethodCallBody.
 
         payload for the response to return to the service.  Used to verify that the correct request arrived.  # noqa: E501
@@ -99,7 +99,7 @@ class RoundtripMethodCallBody(Model):
         self._response_payload = response_payload
 
     @property
-    def status_code(self) -> int:
+    def status_code(self):
         """Gets the status_code of this RoundtripMethodCallBody.
 
         status code to return to the service  # noqa: E501
@@ -110,7 +110,7 @@ class RoundtripMethodCallBody(Model):
         return self._status_code
 
     @status_code.setter
-    def status_code(self, status_code: int):
+    def status_code(self, status_code):
         """Sets the status_code of this RoundtripMethodCallBody.
 
         status code to return to the service  # noqa: E501
