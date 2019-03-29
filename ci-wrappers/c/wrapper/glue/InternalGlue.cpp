@@ -25,6 +25,10 @@
 
 using namespace std;
 
+#ifndef MU_ENUM_TO_STRING
+#define MU_ENUM_TO_STRING ENUM_TO_STRING
+#endif
+
 struct twin_callback_struct
 {
     condition_variable cv;
@@ -66,7 +70,7 @@ void ThrowIfFailed(IOTHUB_CLIENT_RESULT ret, string functionName)
 {
     if (ret != IOTHUB_CLIENT_OK)
     {
-        throw new runtime_error(functionName + " returned " + ENUM_TO_STRING(IOTHUB_CLIENT_RESULT, ret));
+        throw new runtime_error(functionName + " returned " + MU_ENUM_TO_STRING(IOTHUB_CLIENT_RESULT, ret));
     }
 }
 
@@ -290,7 +294,7 @@ void InternalGlue::EnableTwin(string connectionId)
 
 void sendEventCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback)
 {
-    cout << "sendEventCallback called with " << ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result) << endl;
+    cout << "sendEventCallback called with " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result) << endl;
     condition_variable *cv = (condition_variable *)userContextCallback;
     cv->notify_one();
 }
@@ -367,7 +371,7 @@ IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback(IOTHUB_MESSAGE_HANDLE me
         }
         else
         {
-            response->response_string = string("WARNING: IoTHubMessage_GetByteArray returned ") + ENUM_TO_STRING(IOTHUB_MESSAGE_RESULT, ret);
+            response->response_string = string("WARNING: IoTHubMessage_GetByteArray returned ") + MU_ENUM_TO_STRING(IOTHUB_MESSAGE_RESULT, ret);
             cout << response->response_string << endl;
         }
     }
