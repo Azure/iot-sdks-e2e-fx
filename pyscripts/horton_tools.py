@@ -50,7 +50,6 @@ class HortonTools:
         #print(Fore.RED + "######################################")
         #print(conn_string)
         #code = input("Enter the secret code to NUKE ALL DEVICES: ")
-        #if(code == 'WtF'):
 
         print('NUKING ' + conn_string)
 
