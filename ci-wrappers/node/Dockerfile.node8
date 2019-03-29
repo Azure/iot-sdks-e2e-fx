@@ -1,6 +1,7 @@
 FROM node:8.15.1-alpine
 
 RUN apk add \
+    rsync \
     vim \
     git
 
