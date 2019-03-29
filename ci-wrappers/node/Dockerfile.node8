@@ -1,10 +1,8 @@
-FROM node:6-slim
+FROM node:8.15.1-alpine
 
-RUN apt update \
-  && apt install --fix-missing -y \
-    vim.tiny \
-    git \
-  && apt clean
+RUN apk add \
+    vim \
+    git
 
 RUN npm install lerna -g
 
