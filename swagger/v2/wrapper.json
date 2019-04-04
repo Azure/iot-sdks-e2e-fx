@@ -59,5 +59,32 @@
         }
       }
     }
+  },
+  "flags": {
+    "put": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "set flags for the wrapper to use",
+      "operationId": "Wrapper_SetFlags",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "name": "flags",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
   }
 }

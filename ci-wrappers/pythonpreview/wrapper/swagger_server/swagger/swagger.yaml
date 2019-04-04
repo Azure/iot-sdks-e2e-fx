@@ -67,6 +67,24 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
+  /wrapper/flags:
+    put:
+      tags:
+      - "wrapper"
+      summary: "set flags for the wrapper to use"
+      operationId: "wrapper_set_flags"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "flags"
+        required: true
+        schema:
+          type: "object"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
   /registry/connect:
     put:
       tags:

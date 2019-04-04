@@ -56,13 +56,18 @@ def add_rest_adapter(name, api_surface, uri):
             name, api_surface, uri
         )
     )
-    AdapterClass = getattr(rest_adapters, api_surface)
 
-    def factory():
-        object = AdapterClass(uri)
-        return object
+    def _add_rest_factory(factory_name, factory_surface):
+        AdapterClass = getattr(rest_adapters, factory_surface)
 
-    setattr(this_module, name, factory)
+        def factory():
+            object = AdapterClass(uri)
+            return object
+
+        setattr(this_module, factory_name, factory)
+
+    _add_rest_factory(name, api_surface)
+    _add_rest_factory(name + "Wrapper", "WrapperApi")
     rest_adapters.add_rest_uri(uri)
 
 

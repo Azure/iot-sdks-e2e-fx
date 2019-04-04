@@ -43,6 +43,9 @@
     "/wrapper/message": {
       "$ref": "wrapper.json#/message"
     },
+    "/wrapper/flags": {
+      "$ref": "wrapper.json#/flags"
+    },
     "/registry/connect": {
       "$ref": "registry.json#/connect"
     },

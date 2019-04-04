@@ -7,6 +7,7 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 )
 import msrest
 from .. import adapter_config
+from ..abstract_wrapper_api import AbstractWrapperApi
 
 rest_endpoints = None
 
@@ -53,3 +54,32 @@ def print_message(message):
         except msrest.exceptions.ClientRequestError:
             print("PYTEST: error logging to " + str(rest_endpoint))
             # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
+
+
+class WrapperApi(AbstractWrapperApi):
+    def __init__(self, hostname):
+        self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).wrapper
+        self.rest_endpoint.config.retry_policy.retries = 0
+
+    def log_message(self, message):
+        try:
+            self.rest_endpoint.log_message(
+                {"message": "PYTEST: " + message},
+                timeout=adapter_config.print_message_timeout,
+            )
+        except msrest.exceptions.ClientRequestError:
+            print("PYTEST: error logging to " + str(self.lrest_endpoint))
+            # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
+
+    def cleanup(self):
+        self.rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
+
+    def get_capabilities(self):
+        return self.rest_endpoint.get_capabilities(
+            timeout=adapter_config.default_api_timeout
+        )
+
+    def set_flags(self, flags):
+        return self.rest_endpoint.set_flags(
+            flags, timeout=adapter_config.default_api_timeout
+        )

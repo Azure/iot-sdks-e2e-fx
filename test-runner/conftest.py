@@ -15,6 +15,7 @@ from docker_log_watcher import DockerLogWatcher
 from identity_helpers import ensure_edge_environment_variables
 import runtime_config_templates
 import runtime_config
+import runtime_capabilities
 import scenarios
 
 # default to logging.INFO
@@ -95,6 +96,12 @@ def pytest_addoption(parser):
         default=False,
         help="adjust run for container debugging (disable timeouts)",
     )
+    parser.addoption(
+        "--test-async",
+        action="store_true",
+        default=False,
+        help="run async tests (currently pythonpreview only)",
+    )
 
 
 # langauge that we're running against
@@ -103,33 +110,6 @@ language = ""
 # Transport to use for test
 transport = "mqtt"
 
-skip_for_node = set([])
-
-skip_for_csharp = set(
-    ["module_under_test_has_device_wrapper", "handlesLoopbackMessages"]
-)
-
-
-skip_for_python = set(
-    [
-        "module_under_test_has_device_wrapper",
-        "invokesModuleMethodCalls",
-        "invokesDeviceMethodCalls",
-    ]
-)
-
-skip_for_pythonpreview = set(
-    [
-        "receivesMethodCalls",
-        "invokesModuleMethodCalls",
-        "invokesDeviceMethodCalls",
-        "supportsTwin",
-        "handlesLoopbackMessages",
-        "module_under_test_has_device_wrapper",
-    ]
-)
-
-skip_for_c = set(["module_under_test_has_device_wrapper"])
 
 skip_for_c_amqp = set(["receivesInputMessages", "callsSendOutputEvent"])
 
@@ -138,8 +118,6 @@ skip_for_c_mqttws = set(["receivesInputMessages"])
 skip_for_c_connection_string = set(
     ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"]
 )
-
-skip_for_java = set(["module_under_test_has_device_wrapper", "supportsTwin"])
 
 
 def remove_tests_not_in_marker_list(items, markers):
@@ -266,25 +244,15 @@ def pytest_collection_modifyitems(config, items):
     if config.getoption("--node-wrapper"):
         print("Using node wrapper")
         language = "node"
-        skip_tests_by_marker(
-            items, skip_for_node, "it isn't implemented in the node wrapper"
-        )
     elif config.getoption("--csharp-wrapper"):
         print("Using csharp wrapper")
         language = "csharp"
-        skip_tests_by_marker(
-            items, skip_for_csharp, "it isn't implemented in the csharp wrapper"
-        )
     elif config.getoption("--python-wrapper"):
         print("Using python wrapper")
         language = "python"
-        skip_tests_by_marker(
-            items, skip_for_python, "it isn't implemented in the python wrapper"
-        )
     elif config.getoption("--c-wrapper"):
         print("Using C wrapper")
         language = "c"
-        skip_tests_by_marker(items, skip_for_c, "it isn't implemented in the c wrapper")
         if test_module_use_connection_string:
             skip_tests_by_marker(
                 items,
@@ -306,30 +274,33 @@ def pytest_collection_modifyitems(config, items):
     elif config.getoption("--java-wrapper"):
         print("Using Java wrapper")
         language = "java"
-        skip_tests_by_marker(
-            items, skip_for_java, "it isn't implemented in the java wrapper"
-        )
     elif config.getoption("--pythonpreview-wrapper"):
         print("Using python-preview wrapper")
         language = "pythonpreview"
-        skip_tests_by_marker(
-            items,
-            skip_for_pythonpreview,
-            "it isn't implemented in the new python wrapper",
-        )
     elif config.getoption("--ppdirect-wrapper"):
         print("Using python-preview wrapper in-proc")
         language = "ppdirect"
-        skip_tests_by_marker(
-            items,
-            skip_for_pythonpreview,
-            "it isn't implemented in the new python wrapper",
-        )
     else:
         print("you must specify a wrapper")
         raise Exception("no wrapper specified")
 
     runtime_config.set_runtime_configuration(scenario, language, transport, local)
+    skip_list = runtime_capabilities.get_skip_list(language)
+    skip_tests_by_marker(
+        items, skip_list, "it isn't implemented in the {} wrapper".format(language)
+    )
+
+    if config.getoption("--test-async"):
+        test_module_supports_async = runtime_capabilities.get_test_module_capabilities_flag(
+            "supports_async"
+        )
+        if test_module_supports_async:
+            runtime_capabilities.set_test_module_flag("test_async", True)
+        else:
+            raise Exception(
+                "--test-async specified, but test module does not support async"
+            )
+
     adapters.print_message("HORTON: starting run: {}".format(config._origargs))
     set_up_log_watcher()
 
