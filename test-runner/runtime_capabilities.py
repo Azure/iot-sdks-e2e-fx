@@ -30,6 +30,8 @@ got_caps = False
 
 
 def get_skip_list(language):
+    if language is "ppdirect":
+        language = "pythonpreview"
     caps = get_test_module_capabilities()
     if caps and "skip_list" in caps:
         return caps["skip_list"]

@@ -97,7 +97,7 @@ def pytest_addoption(parser):
         help="adjust run for container debugging (disable timeouts)",
     )
     parser.addoption(
-        "--test-async",
+        "--async",
         action="store_true",
         default=False,
         help="run async tests (currently pythonpreview only)",
@@ -290,16 +290,14 @@ def pytest_collection_modifyitems(config, items):
         items, skip_list, "it isn't implemented in the {} wrapper".format(language)
     )
 
-    if config.getoption("--test-async"):
+    if config.getoption("--async"):
         test_module_supports_async = runtime_capabilities.get_test_module_capabilities_flag(
             "supports_async"
         )
         if test_module_supports_async:
             runtime_capabilities.set_test_module_flag("test_async", True)
         else:
-            raise Exception(
-                "--test-async specified, but test module does not support async"
-            )
+            raise Exception("--async specified, but test module does not support async")
 
     adapters.print_message("HORTON: starting run: {}".format(config._origargs))
     set_up_log_watcher()
