@@ -11,7 +11,7 @@ if [ -s /${temp}/source.tar.gz ]; then
   [ $? -eq 0 ] || { echo "mkdir /temp/source failed"; exit 1; }
   tar -zxf /${temp}/source.tar.gz -C /${temp}/source 
   [ $? -eq 0 ] || { echo "tar -zxf failed"; exit 1; }
-  rsync --recursive --checksum --update /${temp}/source/ . 
+  rsync --recursive --checksum --update --delete-during  /${temp}/source/ .
   [ $? -eq 0 ] || { echo "rsync failed"; exit 1; }
 else
   git fetch origin 
