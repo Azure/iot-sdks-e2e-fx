@@ -43,7 +43,7 @@ jobs:
       cd ${BUILD_SOURCESDIRECTORY} &&
       tar --exclude .git/ -zcf ${AGENT_BUILDDIRECTORY}/source.tar.gz . &&
       mkdir -p $(Build.SourcesDirectory)/source_artifact/${{ parameters.job_tag }}
-      cp ${AGENT_BUILDDIRECTORY}/source.tar.gz $(Build.SourcesDirectory)/source_artifacts/${{ parameters.job_tag }} &&
+      cp ${AGENT_BUILDDIRECTORY}/source.tar.gz $(Build.SourcesDirectory)/source_artifacts/${{ parameters.job_tag }}/ &&
       mv ${AGENT_BUILDDIRECTORY}/source.tar.gz ${HORTON_FRAMEWORKROOT}/ci-wrappers/${{ parameters.language }}/ 
     displayName: "pack local language repo"
     condition: and(
