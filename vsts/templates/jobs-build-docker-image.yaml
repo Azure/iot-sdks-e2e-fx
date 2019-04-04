@@ -26,6 +26,7 @@ jobs:
       if ($NormalizedRepo -like 'https://github.com/*') {
         $NormalizedRepo=$NormalizedRepo.Substring('https://github.com/'.length)
       }
+
       Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
       Write-Host "##vso[task.setvariable variable=normalizedRepo]${NormalizedRepo}"
       Write-Host "BuildImage=${BuildImage}"
@@ -41,7 +42,9 @@ jobs:
   - script: |
       cd ${BUILD_SOURCESDIRECTORY} &&
       tar --exclude .git/ -zcf ${AGENT_BUILDDIRECTORY}/source.tar.gz . &&
-      mv ${AGENT_BUILDDIRECTORY}/source.tar.gz ${HORTON_FRAMEWORKROOT}/ci-wrappers/${{ parameters.language }}/
+      mkdir -p $(Build.SourcesDirectory)/source_artifact/${{ parameters.job_tag }}
+      cp ${AGENT_BUILDDIRECTORY}/source.tar.gz $(Build.SourcesDirectory)/source_artifacts/${{ parameters.job_tag }} &&
+      mv ${AGENT_BUILDDIRECTORY}/source.tar.gz ${HORTON_FRAMEWORKROOT}/ci-wrappers/${{ parameters.language }}/ 
     displayName: "pack local language repo"
     condition: and(
         succeeded(), 
@@ -70,4 +73,22 @@ jobs:
       IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
       NormalizedRepo: $(NormalizedRepo)
 
+  - task: CopyFiles@2
+    displayName: 'Copy source tar to artifact staging'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/source_artifacts'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    condition: and(
+        always(), 
+        eq(variables['Horton.SaveTar'], 'yes')
+        )
 
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifacts'
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'sources'
+    condition: and(
+        always(), 
+        eq(variables['Horton.SaveTar'], 'yes')
+        )
