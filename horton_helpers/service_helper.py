@@ -82,7 +82,7 @@ class Helper:
             device_id, device, custom_headers=self.headers()
         )
 
-    def create_device_module(self, device_id, module_id, is_edge=False):
+    def create_device_module(self, device_id, module_id):
         print("creating module {}/{}".format(device_id, module_id))
         try:
             module = self.service.get_module(device_id, module_id, custom_headers=self.headers())
@@ -90,8 +90,6 @@ class Helper:
         except HttpOperationError:
             module = Module(module_id, None, device_id)
 
-        if is_edge:
-            module.capabilities = DeviceCapabilities(True)
         self.service.create_or_update_module(
             device_id, module_id, module, custom_headers=self.headers()
         )
@@ -100,6 +98,15 @@ class Helper:
         try:
             self.service.delete_device(
                 device_id, if_match="*", custom_headers=self.headers()
+            )
+            return True
+        except HttpOperationError:
+            return False
+
+    def try_delete_module(self, device_id, module_id):
+        try:
+            self.service.delete_module(
+                device_id, module_id, if_match="*", custom_headers=self.headers()
             )
             return True
         except HttpOperationError:

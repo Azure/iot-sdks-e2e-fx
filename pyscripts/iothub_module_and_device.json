@@ -2,19 +2,20 @@
   "deploymentName": "iothub_module_and_device",
   "containers": {
     "testObject": {
-      "image": "iotsdke2e.azurecr.io/pythonpreview-e2e-v2:vsts-14334",
+      "image": "iotsdke2e.azurecr.io/pythonpreview-e2e-v2",
+      "imageTag": "vsts-14334",
       "name": "hortonTestObj",
       "createOptions": {
         "HostConfig": {
           "PortBindings": {
             "8080/tcp": [
               {
-                "HostPort": "8071"
+                "HostPort": ""
               }
             ],
             "22/tcp": [
               {
-                "HostPort": "8171"
+                "HostPort": ""
               }
             ]
           },
@@ -23,7 +24,8 @@
       }
     },
     "serviceObjects": {
-      "image": "iotsdke2e.azurecr.io/edge-e2e-node6:latest",
+      "image": "iotsdke2e.azurecr.io/edge-e2e-node6",
+      "imageTag": "latest",
       "name": "hortonServiceObj",
       "createOptions": {
         "HostConfig": {
