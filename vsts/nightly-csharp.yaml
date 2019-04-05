@@ -1,0 +1,32 @@
+name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
+
+jobs:
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: $(Horton.Language)
+    repo: $(Horton.Repo)
+    commit: $(Horton.Commit)
+
+- job: "test"
+  dependsOn:
+    - "build_linux_container"
+  strategy:
+    maxParallel: 4
+    matrix:
+      iothub_module_mqtt: { suite: iothub_module_mqtt }
+      edgehub_module_mqtt: { suite: edgehub_module_mqtt }
+      iothub_module_mqtt_ws: { suite: iothub_module_mqtt_ws }
+      edgehub_module_mqtt_ws: { suite: edgehub_module_mqtt_ws }
+      iothub_module_amqp: { suite: iothub_module_amqp }
+      edgehub_module_amqp: { suite: edgehub_module_amqp }
+      iothub_module_amqp_ws: { suite: iothub_module_amqp_ws }
+      edgehub_module_amqp_ws: { suite: edgehub_module_amqp_ws }
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      language: $(Horton.Language)
+      forced_image: $(Horton.ForcedImage)
+      suite: $(suite)
+
