@@ -23,20 +23,11 @@ jobs:
     matrix:
       edgehub_module_mqtt_py36:
         suite: edgehub_module_mqtt
-        variant: py36
       iothub_module_and_device_mqtt_py36:
         suite: iothub_module_and_device_mqtt
-        variant: py36
       iothub_module_and_device_mqtt_py36_async:
         suite: iothub_module_and_device_mqtt
-        variant: py36
         async: yes
-      edgehub_module_mqtt_py27:
-        suite: edgehub_module_mqtt
-        variant: py27
-      iothub_module_and_device_mqtt_py27:
-        suite: iothub_module_and_device_mqtt
-        variant: py27
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
@@ -44,6 +35,7 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
       async: $(async)
+      variant: py36
 
 - job: "test_py27"
   dependsOn:
@@ -52,10 +44,8 @@ jobs:
     matrix:
       edgehub_module_mqtt_py27:
         suite: edgehub_module_mqtt
-        variant: py27
       iothub_module_and_device_mqtt_py27:
         suite: iothub_module_and_device_mqtt
-        variant: py27
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
@@ -63,4 +53,5 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
       async: $(async)
+      variant: py27
 
