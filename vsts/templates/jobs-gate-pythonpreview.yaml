@@ -22,4 +22,5 @@ jobs:
       language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
+      async: $(async)
 
