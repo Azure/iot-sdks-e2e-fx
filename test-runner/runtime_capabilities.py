@@ -4,6 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 import adapters
 import runtime_config
+from msrest.exceptions import HttpOperationError
 
 hardcoded_skip_list = {
     "node": [],
@@ -59,8 +60,12 @@ def get_test_module_capabilities():
     else:
         test_wrapper = runtime_config.get_test_module_wrapper_api()
         if test_wrapper:
-            capabilities = test_wrapper.get_capabilities()
+            try:
+                capabilities = test_wrapper.get_capabilities()
+            except HttpOperationError:
+                capabilities = None
         got_caps = True
+        return capabilities
 
 
 def set_test_module_flag(flag_name, flag_value):
