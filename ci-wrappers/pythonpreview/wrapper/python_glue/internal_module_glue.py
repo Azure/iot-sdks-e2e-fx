@@ -6,10 +6,12 @@
 import logging
 import internal_wrapper_glue
 from internal_module_glue_sync import InternalModuleGlueSync
-from internal_module_glue_async import InternalModuleGlueAsync
+try:
+    from internal_module_glue_async import InternalModuleGlueAsync
+except SyntaxError:
+    pass
 
 logger = logging.getLogger(__name__)
-
 
 def InternalModuleGlue():
     if internal_wrapper_glue.do_async:

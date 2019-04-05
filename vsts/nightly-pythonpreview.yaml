@@ -43,31 +43,64 @@ jobs:
     - "build_py36_container"
     - "build_py37_container"
   strategy:
+    maxParallel: 4
     matrix:
       edgehub_module_mqtt_27:
-        suite: edgehub_module_mqtt 
+        suite: edgehub_module_mqtt
         variant: py27
+        async: no
       iothub_module_and_device_mqtt27:
         suite: iothub_module_and_device_mqtt
         variant: py27
+        async: no
       edgehub_module_mqtt_35:
-        suite: edgehub_module_mqtt 
+        suite: edgehub_module_mqtt
         variant: py35
+        async: no
       iothub_module_and_device_mqtt_35:
-        suite: iothub_module_and_device_mqtt 
+        suite: iothub_module_and_device_mqtt
         variant: py35
+        async: no
       edgehub_module_mqtt_36:
-        suite: edgehub_module_mqtt 
+        suite: edgehub_module_mqtt
         variant: py36
+        async: no
       iothub_module_and_device_mqtt36:
         suite: iothub_module_and_device_mqtt
         variant: py36
+        async: no
       edgehub_module_mqtt_37:
-        suite: edgehub_module_mqtt 
+        suite: edgehub_module_mqtt
         variant: py37
+        async: no
       iothub_module_and_device_mqtt37:
         suite: iothub_module_and_device_mqtt
         variant: py37
+        async: no
+      edgehub_module_mqtt_35_async:
+        suite: edgehub_module_mqtt
+        variant: py35
+        async: yes
+      iothub_module_and_device_mqtt_35_async:
+        suite: iothub_module_and_device_mqtt
+        variant: py35
+        async: yes
+      edgehub_module_mqtt_36_async:
+        suite: edgehub_module_mqtt
+        variant: py36
+        async: yes
+      iothub_module_and_device_mqtt36_async:
+        suite: iothub_module_and_device_mqtt
+        variant: py36
+        async: yes
+      edgehub_module_mqtt_37_async:
+        suite: edgehub_module_mqtt
+        variant: py37
+        async: yes
+      iothub_module_and_device_mqtt37_async:
+        suite: iothub_module_and_device_mqtt
+        variant: py37
+        async: yes
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
@@ -76,4 +109,5 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
       variant: $(variant)
+      async: $(async)
 
