@@ -190,3 +190,10 @@ def set_runtime_configuration(scenario, language, transport, local):
                 )
 
     pprint(runtime_config_serializer.obj_to_dict(runtime_config))
+
+
+def get_test_module_wrapper_api():
+    if getattr(adapters, "TestModuleClientWrapper", None):
+        return adapters.TestModuleClientWrapper()
+    else:
+        return None
