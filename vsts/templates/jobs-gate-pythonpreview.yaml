@@ -13,7 +13,6 @@ jobs:
     matrix:
       edgehub_module_mqtt: { suite: edgehub_module_mqtt }
       iothub_module_and_device_mqtt: { suite: iothub_module_and_device_mqtt }
-      edgehub_module_mqtt_async: { suite: edgehub_module_mqtt, async: yes }
       iothub_module_and_device_mqtt_async: { suite: iothub_module_and_device_mqtt, async: yes }
 
   steps:

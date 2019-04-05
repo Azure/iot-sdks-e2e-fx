@@ -97,16 +97,20 @@ steps:
     }
 
     # parameters for async
-    if ($env:Async -ne "") {
+    if ($env:Async -eq "yes") {
       $TestArgs=$TestArgs + " --async"
     }
 
     $JunitSuiteName="${env:Language}_${Scenario}_${Transport}"
+    if ($env:Async -eq "yes") {
+      $JunitSuiteName="${JunitSuiteName}_Async"
+    }
+    $JunitSuiteName=$JunitSuiteName + "_" + $env:SYSTEM_JOBPOSITIONINPHASE
+
     $LogFolderName=$JunitSuiteName
     if ($env:AGENT_JOBNAME -ne "Job") {
       $LogFolderName=$env:AGENT_JOBNAME.replace(" + ","").replace(" ","_")
     }
-    $LogFolderName=$LogFolderName + "_" + $env:SYSTEM_JOBPOSITIONINPHASE
 
     $TestImage=$env:DefaultImage
     if ($env:Variant -ne "") {
