@@ -21,20 +21,20 @@ jobs:
     - "build_py36_container"
   strategy:
     matrix:
-      edgehub_module_mqtt_py36
+      edgehub_module_mqtt_py36:
         suite: edgehub_module_mqtt
         variant: py36
-      iothub_module_and_device_mqtt_py36
+      iothub_module_and_device_mqtt_py36:
         suite: iothub_module_and_device_mqtt
         variant: py36
-      iothub_module_and_device_mqtt_py36_async
+      iothub_module_and_device_mqtt_py36_async:
         suite: iothub_module_and_device_mqtt
         variant: py36
         async: yes
-      edgehub_module_mqtt_py27
+      edgehub_module_mqtt_py27:
         suite: edgehub_module_mqtt
         variant: py27
-      iothub_module_and_device_mqtt_py27
+      iothub_module_and_device_mqtt_py27:
         suite: iothub_module_and_device_mqtt
         variant: py27
   steps:
@@ -50,10 +50,10 @@ jobs:
     - "build_py27_container"
   strategy:
     matrix:
-      edgehub_module_mqtt_py27
+      edgehub_module_mqtt_py27:
         suite: edgehub_module_mqtt
         variant: py27
-      iothub_module_and_device_mqtt_py27
+      iothub_module_and_device_mqtt_py27:
         suite: iothub_module_and_device_mqtt
         variant: py27
   steps:
