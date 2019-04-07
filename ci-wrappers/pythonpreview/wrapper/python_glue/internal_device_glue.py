@@ -6,7 +6,10 @@
 import logging
 import internal_wrapper_glue
 from internal_device_glue_sync import InternalDeviceGlueSync
-from internal_device_glue_async import InternalDeviceGlueAsync
+try:
+    from internal_device_glue_async import InternalDeviceGlueAsync
+except SyntaxError:
+    pass
 
 logger = logging.getLogger(__name__)
 
