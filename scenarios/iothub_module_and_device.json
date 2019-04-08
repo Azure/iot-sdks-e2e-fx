@@ -1,107 +1,69 @@
 {
   "deploymentName": "iothub_module_and_device",
   "containers": {
-    "testObject": {
-      "image": "iotsdke2e.azurecr.io/pythonpreview-e2e-v2",
-      "imageTag": "vsts-14334",
-      "name": "hortonTestObj",
+    "moduleParent": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "moduleParent",
       "createOptions": {
-        "HostConfig": {
-          "PortBindings": {
-            "8080/tcp": [
-              {
-                "HostPort": ""
-              }
-            ],
-            "22/tcp": [
-              {
-                "HostPort": ""
-              }
-            ]
-          },
-          "CapAdd": "SYS_PTRACE"
-        }
       }
     },
-    "serviceObjects": {
-      "image": "iotsdke2e.azurecr.io/edge-e2e-node6",
-      "imageTag": "latest",
-      "name": "hortonServiceObj",
+    "testDevice": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "testDevice",
       "createOptions": {
-        "HostConfig": {
-          "PortBindings": {
-            "8080/tcp": [
-              {
-                "HostPort": "8071"
-              }
-            ],
-            "22/tcp": [
-              {
-                "HostPort": "8171"
-              }
-            ]
-          },
-          "CapAdd": "SYS_PTRACE"
-        }
+      }
+    },
+    "hortonService": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "hortonService",
+      "createOptions": {
       }
     }
   },
   "identities": {
-    "testDevice": {
-      "objectName": "test_device",
+    "moduleParent": {
+      "objectName": "moduleParent",
       "objectType": "iothub_device",
       "apiSurface": "DeviceApi",
-      "adapterName": "testDeviceClient",
-      "tcpPort": "8070",
-      "deviceId": "Unset. will be inserted at deployment time.",
-      "connectionString": "Unset.  will be inserted at deployment time."
-    },
-    "otherTestDevice": {
-      "objectName": "other_test_device",
-      "objectType": "iothub_device",
-      "apiSurface": "DeviceApi",
-      "adapterName": "testDeviceClient",
-      "tcpPort": "8070",
-      "deviceId": "Unset.  will be inserted at deployment time.",
-      "connectionString": "Unset.  will be inserted at deployment time.",
+      "tcpPort": "UNDEFINED",
+      "deviceId": "UNDEFINED",
+      "connectionString": "UNDEFINED",
       "modules": {
-        "testModule1": {
-          "objectName": "test_module",
+        "testModule": {
+          "objectName": "testModule",
           "objectType": "iothub_module",
           "apiSurface": "ModuleApi",
-          "adapterName": "testModuleClient",
-          "tcpPort": "8070",
-          "deviceId": "Unset.  will be inserted at deployment time.",
-          "connectionString": "Unset.  will be inserted at deployment time.",
-          "moduleId": "Unset.  will be inserted at deployment time."
-        },
-        "testModule2": {
-          "objectName": "2ndtest_module",
-          "objectType": "iothub_module",
-          "apiSurface": "ModuleApi",
-          "adapterName": "testModuleClient",
-          "tcpPort": "8070",
-          "deviceId": "Unset.  will be inserted at deployment time.",
-          "connectionString": "Unset.  will be inserted at deployment time.",
-          "moduleId": "Unset.  will be inserted at deployment time."
+          "tcpPort": "UNDEFINED",
+          "deviceId": "UNDEFINED",
+          "connectionString": "UNDEFINED",
+          "moduleId": "UNDEFINED"
         }
+    },
+    "testDevice": {
+      "objectName": "testDevice",
+      "objectType": "iothub_device",
+      "apiSurface": "DeviceApi",
+      "tcpPort": "UNDEFINED",
+      "deviceId": "UNDEFINED",
+      "connectionString": "UNDEFINED"
       }
     },
     "service": {
       "objectName": "service",
       "objectType": "iothub_service",
-      "apiSurface": "ServieApi",
-      "adapterName": "ServiceApiClient",
-      "tcpPort": "8071",
-      "connectionString": "Unset.  will be inserted at deployment time."
+      "apiSurface": "ServiceApi",
+      "tcpPort": "UNDEFINED",
+      "connectionString": "UNDEFINED"
     },
     "registry": {
       "objectName": "registry",
       "objectType": "iothub_registry",
       "apiSurface": "RegistryApi",
-      "adapterName": "RegistryApiClient",
-      "tcpPort": "8071",
-      "connectionString": "Unset.  will be inserted at deployment time."
+      "tcpPort": "UNDEFINED"
+      "connectionString": "UNDEFINED"
     }
   }
 }
