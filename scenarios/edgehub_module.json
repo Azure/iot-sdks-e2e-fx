@@ -1,0 +1,73 @@
+{
+  "deploymentName": "iothub_module_and_device",
+  "containers": {
+    "leafDevice": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "leafDevice",
+      "createOptions": {}
+    },
+    "hortonService": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "hortonService",
+      "createOptions": {}
+    }
+  },
+  "identities": {
+    "iotEdge": {
+      "objectName": "iotEdge",
+      "objectType": "iotdge_device",
+      "apiSurface": "DeviceApi",
+      "deviceId": "UNDEFINED",
+      "connectionString": "UNDEFINED",
+      "modules": {
+        "testModule": {
+          "objectName": "testModule",
+          "objectType": "iothub_module",
+          "apiSurface": "ModuleApi",
+          "tcpPort": "UNDEFINED",
+          "containerPort": "UNDEFINED",
+          "connectionString": "UNDEFINED",
+          "moduleId": "UNDEFINED",
+          "image": "UNDEFINED",
+          "imageTag": "UNDEFINED",
+        },
+        "friendModule": {
+          "objectName": "friendModule",
+          "objectType": "iothub_module",
+          "apiSurface": "ModuleApi",
+          "tcpPort": "UNDEFINED",
+          "containerPort": "UNDEFINED",
+          "deviceId": "UNDEFINED",
+          "connectionString": "UNDEFINED",
+          "moduleId": "UNDEFINED",
+          "image": "UNDEFINED",
+          "imageTag": "UNDEFINED",
+        }
+      }
+    },
+    "testDevice": {
+      "objectName": "testDevice",
+      "objectType": "iothub_device",
+      "apiSurface": "DeviceApi",
+      "tcpPort": "UNDEFINED",
+      "deviceId": "UNDEFINED",
+      "connectionString": "UNDEFINED"
+    },
+    "service": {
+      "objectName": "service",
+      "objectType": "iothub_service",
+      "apiSurface": "ServiceApi",
+      "tcpPort": "UNDEFINED",
+      "connectionString": "UNDEFINED"
+    },
+    "registry": {
+      "objectName": "registry",
+      "objectType": "iothub_registry",
+      "apiSurface": "RegistryApi",
+      "tcpPort": "UNDEFINED"
+      "connectionString": "UNDEFINED"
+    }
+  }
+}
