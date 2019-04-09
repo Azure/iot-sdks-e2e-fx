@@ -1,0 +1,69 @@
+{
+  "deploymentName": "iothub_module_and_device",
+  "containers": {
+    "moduleParent": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "moduleParent",
+      "createOptions": {
+      }
+    },
+    "testDevice": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "testDevice",
+      "createOptions": {
+      }
+    },
+    "hortonService": {
+      "image": "UNDEFINED",
+      "imageTag": "UNDEFINED",
+      "name": "hortonService",
+      "createOptions": {
+      }
+    }
+  },
+  "identities": {
+    "moduleParent": {
+      "objectName": "moduleParent",
+      "objectType": "iothub_device",
+      "apiSurface": "DeviceApi",
+      "tcpPort": "UNDEFINED",
+      "deviceId": "UNDEFINED",
+      "connectionString": "UNDEFINED",
+      "modules": {
+        "testModule": {
+          "objectName": "testModule",
+          "objectType": "iothub_module",
+          "apiSurface": "ModuleApi",
+          "tcpPort": "UNDEFINED",
+          "deviceId": "UNDEFINED",
+          "connectionString": "UNDEFINED",
+          "moduleId": "UNDEFINED"
+        }
+    },
+    "testDevice": {
+      "objectName": "testDevice",
+      "objectType": "iothub_device",
+      "apiSurface": "DeviceApi",
+      "tcpPort": "UNDEFINED",
+      "deviceId": "UNDEFINED",
+      "connectionString": "UNDEFINED"
+      }
+    },
+    "service": {
+      "objectName": "service",
+      "objectType": "iothub_service",
+      "apiSurface": "ServiceApi",
+      "tcpPort": "UNDEFINED",
+      "connectionString": "UNDEFINED"
+    },
+    "registry": {
+      "objectName": "registry",
+      "objectType": "iothub_registry",
+      "apiSurface": "RegistryApi",
+      "tcpPort": "UNDEFINED"
+      "connectionString": "UNDEFINED"
+    }
+  }
+}
