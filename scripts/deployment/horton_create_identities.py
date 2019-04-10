@@ -42,12 +42,12 @@ class HortonCreateIdentities:
                     device_count += 1
                     if 'modules' in device_json:
                         modules = device_json['modules']
-                        for module in modules:
-                            module_json = modules[module]
-                            module_json['moduleId']  = module
-                            module_json['deviceId']  = device_id
-                            module_json['connectionString']  = self.create_device_module(hub_connect_string, device_id, module)
-                            deployment_json['identities'][azure_device][module] = module_json
+                        for module_name in modules:
+                            module_json = modules[module_name]
+                            module_json['moduleId'] = module_name
+                            module_json['deviceId'] = device_id
+                            module_json['connectionString'] = self.create_device_module(hub_connect_string, device_id, module_name)
+                            deployment_json['identities'][azure_device][module_name] = module_json
                             module_count += 1
 
                 elif objectType in ["iothub_service", "iothub_registry"]:
@@ -61,20 +61,20 @@ class HortonCreateIdentities:
                     device_count += 1
                     if 'modules' in device_json:
                         modules = device_json['modules']
-                        for module in modules:
-                            module_json = modules[module]
-                            module_json['moduleId']  = module
+                        for module_name in modules:
+                            module_json = modules[module_name]
+                            module_json['moduleId']  = module_name
                             module_json['deviceId']  = device_id
 
                             mod = containers.Container()
-                            mod.module_id = module
+                            mod.module_id = module_name
                             mod.image_to_deploy = module_json['image'] + '/' + module_json['imageTag']
                             mod.host_port = self.get_int_from_string(module_json['tcpPort'])
                             mod.container_port = self.get_int_from_string(module_json['containerPort'])
 
                             edge_config = EdgeConfiguration()
                             edge_config.add_module(mod)
-                            print("Dev/Mod {}/{}".format(device_id, module))
+                            print("Dev/Mod {}/{}".format(device_id, module_name))
                             module_edge_config = edge_config.get_module_config()
 
                             service_helper = Helper(hub_connect_string)
@@ -84,11 +84,11 @@ class HortonCreateIdentities:
                             module_connection_string = service_helper.get_module_connection_string(device_id, module_edge_config)
 
                             module_json['connectionString'] = module_connection_string
-                            deployment_json['identities'][azure_device][module] = module_json
+                            deployment_json['identities'][azure_device][module_name] = module_json
                             module_count += 1
 
             deployment_json['identities'][azure_device] = device_json
-            
+
         except:
             print(Fore.RED + "Exception Processing HortonManifest: " + save_manifest_file, file=sys.stderr)
             traceback.print_exc()
