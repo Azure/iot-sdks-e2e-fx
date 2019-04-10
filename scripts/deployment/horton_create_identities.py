@@ -35,6 +35,7 @@ class HortonCreateIdentities:
                 objectType = device_json['objectType']
                 objectName = device_json['objectName']
                 device_id = "{}_{}".format(id_prefix, objectName)
+
                 if objectType == "iothub_device":
                     device_json['deviceId'] = device_id
                     device_json['connectionString'] = self.create_iot_device(hub_connect_string, device_id)
@@ -48,10 +49,12 @@ class HortonCreateIdentities:
                             module_json['connectionString']  = self.create_device_module(hub_connect_string, device_id, module)
                             deployment_json['identities'][azure_device][module] = module_json
                             module_count += 1
+
                 elif objectType in ["iothub_service", "iothub_registry"]:
                     print("creating service {}".format(device_id))
                     device_json['connectionString'] = hub_connect_string
                     device_count += 1
+
                 elif objectType == "iotedge_device":
                     device_json['deviceId'] = device_id
                     device_json['connectionString'] = self.create_iot_device(hub_connect_string, device_id, True)
@@ -83,7 +86,9 @@ class HortonCreateIdentities:
                             module_json['connectionString'] = module_connection_string
                             deployment_json['identities'][azure_device][module] = module_json
                             module_count += 1
+
             deployment_json['identities'][azure_device] = device_json
+            
         except:
             print(Fore.RED + "Exception Processing HortonManifest: " + save_manifest_file, file=sys.stderr)
             traceback.print_exc()
