@@ -17,7 +17,7 @@
   "identities": {
     "iotEdge": {
       "objectName": "iotEdge",
-      "objectType": "iotdge_device",
+      "objectType": "iotedge_device",
       "apiSurface": "DeviceApi",
       "deviceId": "UNDEFINED",
       "connectionString": "UNDEFINED",
@@ -31,7 +31,7 @@
           "connectionString": "UNDEFINED",
           "moduleId": "UNDEFINED",
           "image": "UNDEFINED",
-          "imageTag": "UNDEFINED",
+          "imageTag": "UNDEFINED"
         },
         "friendModule": {
           "objectName": "friendModule",
@@ -43,7 +43,7 @@
           "connectionString": "UNDEFINED",
           "moduleId": "UNDEFINED",
           "image": "UNDEFINED",
-          "imageTag": "UNDEFINED",
+          "imageTag": "UNDEFINED"
         }
       }
     },
@@ -66,7 +66,7 @@
       "objectName": "registry",
       "objectType": "iothub_registry",
       "apiSurface": "RegistryApi",
-      "tcpPort": "UNDEFINED"
+      "tcpPort": "UNDEFINED",
       "connectionString": "UNDEFINED"
     }
   }

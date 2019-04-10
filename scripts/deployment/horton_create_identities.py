@@ -14,6 +14,8 @@ import traceback
 import argparse
 from colorama import init, Fore, Back, Style
 from service_helper import Helper
+import containers
+from edge_configuration import EdgeConfiguration
 
 class HortonCreateIdentities:
     def __init__(self, args):
@@ -50,7 +52,38 @@ class HortonCreateIdentities:
                     print("creating service {}".format(device_id))
                     device_json['connectionString'] = hub_connect_string
                     device_count += 1
-                deployment_json['identities'][azure_device] = device_json
+                elif objectType == "iotedge_device":
+                    device_json['deviceId'] = device_id
+                    device_json['connectionString'] = self.create_iot_device(hub_connect_string, device_id, True)
+                    device_count += 1
+                    if 'modules' in device_json:
+                        modules = device_json['modules']
+                        for module in modules:
+                            module_json = modules[module]
+                            module_json['moduleId']  = module
+                            module_json['deviceId']  = device_id
+
+                            mod = containers.Container()
+                            mod.module_id = module
+                            mod.image_to_deploy = module_json['image'] + '/' + module_json['imageTag']
+                            mod.host_port = self.get_int_from_string(module_json['tcpPort'])
+                            mod.container_port = self.get_int_from_string(module_json['containerPort'])
+
+                            edge_config = EdgeConfiguration()
+                            edge_config.add_module(mod)
+                            print("Dev/Mod {}/{}".format(device_id, module))
+                            module_edge_config = edge_config.get_module_config()
+
+                            service_helper = Helper(hub_connect_string)
+                            service_helper.apply_configuration(device_id, module_edge_config)
+
+                            module_edge_config = edge_config.get_module_config()
+                            module_connection_string = service_helper.get_module_connection_string(device_id, module_edge_config)
+
+                            module_json['connectionString'] = module_connection_string
+                            deployment_json['identities'][azure_device][module] = module_json
+                            module_count += 1
+            deployment_json['identities'][azure_device] = device_json
         except:
             print(Fore.RED + "Exception Processing HortonManifest: " + save_manifest_file, file=sys.stderr)
             traceback.print_exc()
@@ -75,11 +108,11 @@ class HortonCreateIdentities:
             sys.exit(-1)
         return service_connection_string
 
-    def create_iot_device(self, connect_string, device_name):
+    def create_iot_device(self, connect_string, device_name, is_edge=False):
         dev_connect = ""
         try:
             helper = Helper(connect_string)
-            helper.create_device(device_name)
+            helper.create_device(device_name, is_edge)
             dev_connect = helper.get_device_connection_string(device_name)
         except:
             print(Fore.RED + "Exception creating device: " + device_name, file=sys.stderr)
@@ -98,6 +131,13 @@ class HortonCreateIdentities:
             traceback.print_exc()
             sys.exit(-1)
         return mod_connect
+
+    def get_int_from_string(self, strval=''):
+        try:
+            ret_val = int(module_tcp_port)
+        except:
+            ret_val = 0
+        return ret_val
 
     def get_random_num_string(self, maxval):
         from random import randrange
