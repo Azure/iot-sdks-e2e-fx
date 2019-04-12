@@ -20,7 +20,8 @@ include_directories(${SHARED_UTIL_INC_FOLDER})
 include_directories(${IOTHUB_SERVICE_CLIENT_INC_FOLDER})
 include_directories(${IOTHUB_CLIENT_INC_FOLDER})
 include_directories("${PROJECT_SOURCE_DIR}/deps/restbed/source")
-
+include_directories(${MACRO_UTILS_INC_FOLDER})
+include_directories(${UMOCK_C_INC_FOLDER})
 
 set(iothub_client_libs
     iothub_client
