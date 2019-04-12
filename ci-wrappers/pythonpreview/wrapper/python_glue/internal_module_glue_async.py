@@ -3,11 +3,8 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from azure.iot.hub.devicesdk.aio import ModuleClient
-from azure.iot.hub.devicesdk.auth.authentication_provider_factory import (
-    from_connection_string,
-    from_environment,
-)
+from azure.iot.device.aio import IoTHubModuleClient
+from azure.iot.device import auth
 import json
 import async_helper
 
@@ -32,8 +29,8 @@ class InternalModuleGlueAsync:
         loop = (
             async_helper.get_event_loop()
         )  # creates the loop.  do before creating objects
-        auth_provider = from_environment()
-        self.client = ModuleClient.from_authentication_provider(
+        auth_provider = auth.from_environment()
+        self.client = IoTHubModuleClient.from_authentication_provider(
             auth_provider, transport_type
         )
         loop.run_until_complete(self.client.connect())
@@ -43,10 +40,10 @@ class InternalModuleGlueAsync:
         loop = (
             async_helper.get_event_loop()
         )  # creates the loop.  do before creating objects
-        auth_provider = from_connection_string(connection_string)
+        auth_provider = auth.from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
             auth_provider.ca_cert = cert
-        self.client = ModuleClient.from_authentication_provider(
+        self.client = IoTHubModuleClient.from_authentication_provider(
             auth_provider, transport_type
         )
         loop.run_until_complete(self.client.connect())
