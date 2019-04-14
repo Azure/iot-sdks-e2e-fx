@@ -47,7 +47,7 @@ class HortonCreateIdentities:
                             module_json['moduleId'] = module_name
                             module_json['deviceId'] = device_id
                             module_json['connectionString'] = self.create_device_module(hub_connect_string, device_id, module_name)
-                            deployment_json['identities'][azure_device][module_name] = module_json
+                            device_json['modules'][module_name] = module_json
                             module_count += 1
 
                 elif objectType in ["iothub_service", "iothub_registry"]:
@@ -57,8 +57,10 @@ class HortonCreateIdentities:
 
                 elif objectType == "iotedge_device":
                     device_json['deviceId'] = device_id
-                    device_json['connectionString'] = self.create_iot_device(hub_connect_string, device_id, True)
+                    device_connect_string = self.create_iot_device(hub_connect_string, device_id, True)
+                    device_json['connectionString'] = device_connect_string
                     device_count += 1
+                    
                     if 'modules' in device_json:
                         modules = device_json['modules']
                         for module_name in modules:
@@ -68,26 +70,29 @@ class HortonCreateIdentities:
 
                             mod = containers.Container()
                             mod.module_id = module_name
-                            mod.image_to_deploy = module_json['image'] + '/' + module_json['imageTag']
+                            full_module_name = "{}/{}".format(device_id, module_name)
+                            mod.name = full_module_name
+                            mod.image_to_deploy = module_json['image'] + ':' + module_json['imageTag']
                             mod.host_port = self.get_int_from_string(module_json['tcpPort'])
                             mod.container_port = self.get_int_from_string(module_json['containerPort'])
 
                             edge_config = EdgeConfiguration()
                             edge_config.add_module(mod)
-                            print("Dev/Mod {}/{}".format(device_id, module_name))
                             module_edge_config = edge_config.get_module_config()
 
                             service_helper = Helper(hub_connect_string)
                             service_helper.apply_configuration(device_id, module_edge_config)
 
-                            module_edge_config = edge_config.get_module_config()
-                            module_connection_string = service_helper.get_module_connection_string(device_id, module_edge_config)
+                            try:
+                                module_connect_string = service_helper.get_module_connection_string(device_id, full_module_name)
+                            except:
+                                module_connect_string = "Not Found"
 
-                            module_json['connectionString'] = module_connection_string
-                            deployment_json['identities'][azure_device][module_name] = module_json
+                            module_json['connectionString'] = module_connect_string
+                            device_json['modules'][module_name] = module_json
                             module_count += 1
 
-            deployment_json['identities'][azure_device] = device_json
+                deployment_json['identities'][azure_device] = device_json
 
         except:
             print(Fore.RED + "Exception Processing HortonManifest: " + save_manifest_file, file=sys.stderr)
@@ -102,8 +107,41 @@ class HortonCreateIdentities:
             print(Fore.RED + "ERROR: writing JSON manifest to: " + save_manifest_file, file=sys.stderr)
             traceback.print_exc()
             sys.exit(-1)
+
+        self.get_edge_modules_connect_string(save_manifest_file)
         return True
-        
+
+    def get_edge_modules_connect_string(self, save_manifest_file):
+        deployment_json = self.get_deployment_model_json(save_manifest_file)
+        hub_connect_string = self.get_env_connect_string()
+        json_updated = False
+        try:
+            identity_json = deployment_json['identities']
+            for azure_device in identity_json:
+                device_json = identity_json[azure_device]
+                if device_json['objectType'] == "iotedge_device":
+                    if 'modules' in device_json:
+                        modules = device_json['modules']
+                        for module_name in modules:
+                            module_json = modules[module_name]
+                            service_helper = Helper(hub_connect_string)
+                            try:
+                                module_connect_string = service_helper.get_module_connection_string(device_id, module_name)
+                            except:
+                                module_connect_string = "Module connect Not Found"
+                            module_json['connectionString'] = module_connect_string
+                            json_updated = True
+
+                        device_json['modules'][module_name] = module_json
+                    deployment_json['identities'][azure_device] = device_json
+            if json_updated:
+                with open(save_manifest_file, 'w') as f:
+                    f.write(json.dumps(deployment_json, default = lambda x: x.__dict__, sort_keys=False, indent=2))
+        except:
+            print(Fore.RED + "Exception Processing HortonManifest: " + save_manifest_file, file=sys.stderr)
+            traceback.print_exc()
+            sys.exit(-1)
+
     def get_env_connect_string(self):
         service_connection_string = ""
         try:  
@@ -113,10 +151,10 @@ class HortonCreateIdentities:
             sys.exit(-1)
         return service_connection_string
 
-    def create_iot_device(self, connect_string, device_name, is_edge=False):
+    def create_iot_device(self, hub_connect_string, device_name, is_edge=False):
         dev_connect = ""
         try:
-            helper = Helper(connect_string)
+            helper = Helper(hub_connect_string)
             helper.create_device(device_name, is_edge)
             dev_connect = helper.get_device_connection_string(device_name)
         except:

@@ -41,15 +41,8 @@ class HortonDeleteIdentities:
             for azure_device in identity_json:
                 device_json = identity_json[azure_device]
                 objectType = device_json['objectType']
-                if objectType == "iothub_device":
+                if objectType in ["iothub_device", "iotedge_device"]:
                     device_id = device_json['deviceId']
-                    if 'modules' in device_json:
-                        modules = device_json['modules']
-                        for module in modules:
-                            module_json = modules[module]
-                            module_json['moduleId'] = module
-                            print("deleting module {}/{}".format(device_id, module))
-                            helper.try_delete_module(device_id, module)
                     print("deleting device {}".format(device_id))
                     helper.try_delete_device(device_id)
         except:
