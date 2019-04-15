@@ -28,6 +28,7 @@ class HortonCreateIdentities:
         id_prefix = "horton_{}_{}".format(self.get_random_num_string(1000),self.get_random_num_string(1000))
         device_count = 0
         module_count = 0
+        other_count = 0
         try:
             identity_json = deployment_json['identities']
             for azure_device in identity_json:
@@ -53,14 +54,16 @@ class HortonCreateIdentities:
                 elif objectType in ["iothub_service", "iothub_registry"]:
                     print("creating service {}".format(device_id))
                     device_json['connectionString'] = hub_connect_string
-                    device_count += 1
+                    other_count += 1
 
                 elif objectType == "iotedge_device":
                     device_json['deviceId'] = device_id
                     device_connect_string = self.create_iot_device(hub_connect_string, device_id, True)
                     device_json['connectionString'] = device_connect_string
                     device_count += 1
-                    
+                    service_helper = Helper(hub_connect_string)
+                    edge_config = EdgeConfiguration()
+
                     if 'modules' in device_json:
                         modules = device_json['modules']
                         for module_name in modules:
@@ -71,26 +74,18 @@ class HortonCreateIdentities:
                             mod = containers.Container()
                             mod.module_id = module_name
                             full_module_name = "{}/{}".format(device_id, module_name)
-                            mod.name = full_module_name
+                            print("creating Edge module {}".format(full_module_name))
+                            mod.name = module_name
                             mod.image_to_deploy = module_json['image'] + ':' + module_json['imageTag']
                             mod.host_port = self.get_int_from_string(module_json['tcpPort'])
                             mod.container_port = self.get_int_from_string(module_json['containerPort'])
 
-                            edge_config = EdgeConfiguration()
                             edge_config.add_module(mod)
-                            module_edge_config = edge_config.get_module_config()
-
-                            service_helper = Helper(hub_connect_string)
-                            service_helper.apply_configuration(device_id, module_edge_config)
-
-                            try:
-                                module_connect_string = service_helper.get_module_connection_string(device_id, full_module_name)
-                            except:
-                                module_connect_string = "Not Found"
-
-                            module_json['connectionString'] = module_connect_string
                             device_json['modules'][module_name] = module_json
                             module_count += 1
+
+                    module_edge_config = edge_config.get_module_config()
+                    service_helper.apply_configuration(device_id, module_edge_config)
 
                 deployment_json['identities'][azure_device] = device_json
 
@@ -99,7 +94,7 @@ class HortonCreateIdentities:
             traceback.print_exc()
             sys.exit(-1)
 
-        print(Fore.GREEN + "Created {} Devices and {} Modules".format(device_count, module_count))
+        print(Fore.GREEN + "Created {} Devices, {} Modules and {} Others".format(device_count, module_count, other_count))
         try:
             with open(save_manifest_file, 'w') as f:
                 f.write(json.dumps(deployment_json, default = lambda x: x.__dict__, sort_keys=False, indent=2))
@@ -117,14 +112,16 @@ class HortonCreateIdentities:
         json_updated = False
         try:
             identity_json = deployment_json['identities']
+            service_helper = Helper(hub_connect_string)
+
             for azure_device in identity_json:
                 device_json = identity_json[azure_device]
                 if device_json['objectType'] == "iotedge_device":
+                    device_id = device_json['deviceId']
                     if 'modules' in device_json:
                         modules = device_json['modules']
                         for module_name in modules:
                             module_json = modules[module_name]
-                            service_helper = Helper(hub_connect_string)
                             try:
                                 module_connect_string = service_helper.get_module_connection_string(device_id, module_name)
                             except:
@@ -177,7 +174,7 @@ class HortonCreateIdentities:
 
     def get_int_from_string(self, strval=''):
         try:
-            ret_val = int(module_tcp_port)
+            ret_val = int(strval)
         except:
             ret_val = 0
         return ret_val

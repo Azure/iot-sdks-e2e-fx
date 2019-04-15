@@ -38,7 +38,7 @@ class DeployHortonIdsAndContainers:
             traceback.print_exc()
             sys.exit(-1)
 
-        set_params = True
+        set_params = False
         if set_params:
             HortonSetImageParams(
                 save_manifest_file, 
@@ -56,7 +56,7 @@ class DeployHortonIdsAndContainers:
 
         # Run TESTS
         print(Fore.YELLOW + "Running TESTS.. (stub)")
-        time.sleep(5)
+        time.sleep(3)
 
         HortonDeleteIdentities(save_manifest_file)
 

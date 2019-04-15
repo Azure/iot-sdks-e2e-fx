@@ -52,6 +52,7 @@ class HortonCreateContainers:
             for _ in api_client.pull(docker_image, docker_tag, stream=True, auth_config=auth_config):
                 self.progress(image_progress, status="Pulling: {}".format(image_path))
                 image_progress += 1
+            time.sleep(2)
         except docker.errors.APIError as e:
             if e.response.status_code == 500: #Internal Server Error
                 print("Removing: " + image_path)
