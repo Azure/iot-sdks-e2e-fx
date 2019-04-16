@@ -4,6 +4,9 @@
 cd /sdk
 [ $? -eq 0 ] || { echo "cd shared failed"; exit 1; }
 
+npm install
+[ $? -eq 0 ] || { echo "npm install failed"; exit 1; }
+
 lerna bootstrap --scope iot-sdk-device-client-rest-api --include-filtered-dependencies
 [ $? -eq 0 ] || { echo "lerna bootstrap failed"; exit 1; }
 
