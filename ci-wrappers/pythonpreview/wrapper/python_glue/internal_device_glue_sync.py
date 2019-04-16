@@ -3,11 +3,8 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from azure.iot.hub.devicesdk import DeviceClient
-from azure.iot.hub.devicesdk.auth.authentication_provider_factory import (
-    from_connection_string,
-    from_environment,
-)
+from azure.iot.device import IoTHubDeviceClient
+from azure.iot.device import auth
 import json
 
 
@@ -31,10 +28,10 @@ class InternalDeviceGlueSync:
 
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
-        auth_provider = from_connection_string(connection_string)
+        auth_provider = auth.from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
             auth_provider.ca_cert = cert
-        self.client = DeviceClient.from_authentication_provider(
+        self.client = IoTHubDeviceClient.from_authentication_provider(
             auth_provider, transport_type
         )
         self.client.connect()

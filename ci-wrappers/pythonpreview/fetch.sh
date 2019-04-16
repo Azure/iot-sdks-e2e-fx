@@ -11,8 +11,14 @@ if [ -s /${temp}/source.tar.gz ]; then
   [ $? -eq 0 ] || { echo "mkdir /temp/source failed"; exit 1; }
   tar -zxf /${temp}/source.tar.gz -C /${temp}/source 
   [ $? -eq 0 ] || { echo "tar -zxf failed"; exit 1; }
-  rsync --recursive --checksum --update --delete-during  /${temp}/source/ .
-  [ $? -eq 0 ] || { echo "rsync failed"; exit 1; }
+  if [ -f /etc/alpine-release ]; then
+    echo "On alpine - using less efficient rsync opts" 
+    rsync --recursive --delete-during  /${temp}/source/ .
+    [ $? -eq 0 ] || { echo "rsync failed"; exit 1; }
+  else
+    rsync --recursive --checksum --update --delete-during  /${temp}/source/ .
+    [ $? -eq 0 ] || { echo "rsync failed"; exit 1; }
+  fi
 else
   git fetch origin 
   [ $? -eq 0 ] || { echo "git fetch failed"; exit 1; }
