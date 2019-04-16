@@ -38,12 +38,17 @@ class DeployHortonIdsAndContainers:
             traceback.print_exc()
             sys.exit(-1)
 
-        HortonSetImageParams(
-            save_manifest_file, 
-            'serviceObjects', 
-            'iotsdke2e.azurecr.io/edge-e2e-node6',
-            'latest',
-            '{"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": ""}],"22/tcp": [{"HostPort": ""}]},"CapAdd": "SYS_PTRACE"}}')
+        set_params = False
+        if set_params:
+            HortonSetImageParams(
+                save_manifest_file, 
+                'iotEdge',
+                'testModule',
+                'iotsdke2e.azurecr.io/edge-e2e-node6',
+                'latest',
+                123,
+                789,
+                '{"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": ""}],"22/tcp": [{"HostPort": ""}]},"CapAdd": "SYS_PTRACE"}}')
 
         HortonCreateIdentities(save_manifest_file)
 
@@ -51,7 +56,7 @@ class DeployHortonIdsAndContainers:
 
         # Run TESTS
         print(Fore.YELLOW + "Running TESTS.. (stub)")
-        time.sleep(5)
+        time.sleep(3)
 
         HortonDeleteIdentities(save_manifest_file)
 

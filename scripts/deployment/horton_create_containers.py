@@ -52,6 +52,7 @@ class HortonCreateContainers:
             for _ in api_client.pull(docker_image, docker_tag, stream=True, auth_config=auth_config):
                 self.progress(image_progress, status="Pulling: {}".format(image_path))
                 image_progress += 1
+            time.sleep(2)
         except docker.errors.APIError as e:
             if e.response.status_code == 500: #Internal Server Error
                 print("Removing: " + image_path)
@@ -69,14 +70,19 @@ class HortonCreateContainers:
             host_config = None
             print("Creating Container for: " + container_name)
             if 'createOptions' in container:
-                opts_json = container['createOptions']['HostConfig']
-                ports = opts_json['PortBindings']
-                host_config = api_client.create_host_config(port_bindings=ports)
-
+                if 'HostConfig' in container['createOptions']:
+                    opts_json = container['createOptions']['HostConfig']
+                    ports = opts_json['PortBindings']
+                    host_config = api_client.create_host_config(port_bindings=ports)
             try:
-                container_id = api_client.create_container(
-                image_path, 
-                name=container_name, host_config=host_config)
+                if host_config:
+                    container_id = api_client.create_container(
+                        image_path, 
+                        name=container_name, host_config=host_config)
+                else:
+                    container_id = api_client.create_container(
+                        image_path, 
+                        name=container_name)
             except docker.errors.APIError as e:
                 if e.response.status_code == 409: #Container_Exists
                     try:
@@ -210,7 +216,7 @@ class HortonCreateContainers:
         return t_ret
 
     def progress(self, count, status=''):
-        sys.stdout.write('[%s] %s ...%s\r' % (self.get_tick(count, 0, 4), count, status))
+        sys.stdout.write('[%s] %s ...%s\r' % (self.get_tick(count, 1, 4), count, status))
         sys.stdout.flush()
 
     def get_random_num_string(self, maxval):

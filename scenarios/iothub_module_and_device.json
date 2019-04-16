@@ -62,7 +62,7 @@
       "objectName": "registry",
       "objectType": "iothub_registry",
       "apiSurface": "RegistryApi",
-      "tcpPort": "UNDEFINED"
+      "tcpPort": "UNDEFINED",
       "connectionString": "UNDEFINED"
     }
   }
