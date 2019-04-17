@@ -89,6 +89,18 @@ jobs:
         suite: iothub_module_and_device_mqtt
         variant: py37
         async: yes
+      _mqtt_35_async:
+        suite: edgehub_module
+        variant: py35
+        async: yes
+      _mqtt36_async:
+        suite: edgehub_module
+        variant: py36
+        async: yes
+      _mqtt37_async:
+        suite: edgehub_module
+        variant: py37
+        async: yes
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
