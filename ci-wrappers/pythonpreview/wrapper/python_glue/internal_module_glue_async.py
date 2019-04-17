@@ -5,6 +5,7 @@
 # full license information.
 from azure.iot.device.aio import IoTHubModuleClient
 from azure.iot.device import auth
+from threading import Event
 import json
 import async_helper
 
@@ -23,35 +24,31 @@ def message_to_object(message):
 class InternalModuleGlueAsync:
     def __init__(self):
         self.client = None
+        # make sure we have an event loop
+        async_helper.get_event_loop()
 
     def connect_from_environment(self, transport_type):
         print("connecting from environment")
-        loop = (
-            async_helper.get_event_loop()
-        )  # creates the loop.  do before creating objects
         auth_provider = auth.from_environment()
         self.client = IoTHubModuleClient.from_authentication_provider(
             auth_provider, transport_type
         )
-        loop.run_until_complete(self.client.connect())
+        async_helper.run_coroutine_sync(self.client.connect())
 
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
-        loop = (
-            async_helper.get_event_loop()
-        )  # creates the loop.  do before creating objects
         auth_provider = auth.from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
             auth_provider.ca_cert = cert
         self.client = IoTHubModuleClient.from_authentication_provider(
             auth_provider, transport_type
         )
-        loop.run_until_complete(self.client.connect())
+        async_helper.run_coroutine_sync(self.client.connect())
 
     def disconnect(self):
         print("disconnecting")
         if self.client:
-            async_helper.get_event_loop().run_until_complete(self.client.disconnect())
+            async_helper.run_coroutine_sync(self.client.disconnect())
             self.client = None
 
     def enable_input_messages(self):
@@ -65,14 +62,14 @@ class InternalModuleGlueAsync:
 
     def send_event(self, event_body):
         print("sending event")
-        async_helper.get_event_loop().run_until_complete(
+        async_helper.run_coroutine_sync(
             self.client.send_event(normalize_event_body(event_body))
         )
         print("send confirmation received")
 
     def wait_for_input_message(self, input_name):
         print("Waiting for input message")
-        message = async_helper.get_event_loop().run_until_complete(
+        message = async_helper.run_coroutine_sync(
             self.client.receive_input_message(input_name)
         )
         print("Message received")
@@ -89,7 +86,7 @@ class InternalModuleGlueAsync:
 
     def send_output_event(self, output_name, event_body):
         print("sending output event")
-        async_helper.get_event_loop().run_until_complete(
+        async_helper.run_coroutine_sync(
             self.client.send_to_output(normalize_event_body(event_body), output_name)
         )
         print("send confirmation received")

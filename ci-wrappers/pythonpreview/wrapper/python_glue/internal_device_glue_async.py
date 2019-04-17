@@ -26,11 +26,10 @@ def message_to_object(message):
 class InternalDeviceGlueAsync:
     def __init__(self):
         self.client = None
+        # make sure we have an event loop
+        async_helper.get_event_loop()
 
     def connect(self, transport_type, connection_string, cert):
-        loop = (
-            async_helper.get_event_loop()
-        )  # creates the loop.  do before creating objects
         print("connecting using " + transport_type)
         auth_provider = auth.from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
@@ -38,12 +37,12 @@ class InternalDeviceGlueAsync:
         self.client = IoTHubDeviceClient.from_authentication_provider(
             auth_provider, transport_type
         )
-        loop.run_until_complete(self.client.connect())
+        async_helper.run_coroutine_sync(self.client.connect())
 
     def disconnect(self):
         print("disconnecting")
         if self.client:
-            async_helper.get_event_loop().run_until_complete(self.client.disconnect())
+            async_helper.run_coroutine_sync(self.client.disconnect())
             self.client = None
 
     def enable_methods(self):
@@ -57,16 +56,14 @@ class InternalDeviceGlueAsync:
 
     def send_event(self, event_body):
         print("sending event")
-        async_helper.get_event_loop().run_until_complete(
+        async_helper.run_coroutine_sync(
             self.client.send_event(normalize_event_body(event_body))
         )
         print("send confirmation received")
 
     def wait_for_c2d_message(self):
         print("Waiting for c2d message")
-        message = async_helper.get_event_loop().run_until_complete(
-            self.client.receive_c2d_message()
-        )
+        message = async_helper.run_coroutine_sync(self.client.receive_c2d_message())
         print("Message received")
         return message_to_object(message)
 
