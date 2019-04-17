@@ -101,15 +101,15 @@ steps:
       $TestArgs=$TestArgs + " --async"
     }
 
-    $JunitSuiteName="${env:Language}_${Scenario}_${Transport}"
-    if ($env:Async -eq "yes") {
-      $JunitSuiteName="${JunitSuiteName}_Async"
-    }
-    $JunitSuiteName=$JunitSuiteName + "_" + $env:SYSTEM_JOBPOSITIONINPHASE
 
-    $LogFolderName=$JunitSuiteName
     if ($env:AGENT_JOBNAME -ne "Job") {
       $LogFolderName=$env:AGENT_JOBNAME.replace(" + ","").replace(" ","_")
+    } else {
+        $LogFolderName="${env:Language}_${Scenario}_${Transport}_${Variant}"
+        if ($env:Async -eq "yes") {
+          $LogFolderName="${LogFolderName}_Async"
+        }
+        $LogFolderName=$LogFolderName + "_" + $env:SYSTEM_JOBPOSITIONINPHASE
     }
 
     $TestImage=$env:DefaultImage
@@ -120,7 +120,6 @@ steps:
       $TestImage=$env:ForcedImage
     }
 
-    Write-Host "##vso[task.setvariable variable=junitSuiteName]${JunitSuiteName}"
     Write-Host "##vso[task.setvariable variable=logFolderName]${LogFolderName}"
     Write-Host "##vso[task.setvariable variable=skipTest]${SkipTest}"
     Write-Host "##vso[task.setvariable variable=scenario]${Scenario}"
@@ -129,7 +128,6 @@ steps:
     Write-Host "##vso[task.setvariable variable=testImage]${TestImage}"
 
     Write-Host "AgentJobName=${env:AGENT_JOBNAME}"
-    Write-Host "JunitSuiteName=${JunitSuiteName}"
     Write-Host "LogFolderName=${LogFolderName}"
     Write-Host "SkipTest=${SkipTest}"
     Write-Host "Scenario=${Scenario}"
@@ -163,7 +161,6 @@ steps:
     language: ${{ parameters.language }}
     transport: $(transport)
     scenario: $(scenario)
-    junit_suite_name: $(junitSuiteName)
     log_folder_name: $(logFolderName)
     extra_args: $(testArgs)
 
