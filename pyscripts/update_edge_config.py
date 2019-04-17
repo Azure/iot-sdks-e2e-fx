@@ -147,11 +147,12 @@ class UpdateEdgeConfig:
 
     def enable_http_sockets(self, workingfile):
         yaml = YAML()
+        local_ip = self.get_local_ip()
         try:
             with open(workingfile) as input_file:
                 config_yaml = yaml.load(input_file)
-                config_yaml["connect"]["management_uri"] = "http://127.0.0.1:15581"
-                config_yaml["connect"]["workload_uri"] = "http://127.0.0.1:15580"
+                config_yaml["connect"]["management_uri"] = "http://" + local_ip + ":15581"
+                config_yaml["connect"]["workload_uri"] = "http://" + local_ip + ":15580"
                 config_yaml["listen"]["management_uri"] = "http://0.0.0.0:15581"
                 config_yaml["listen"]["workload_uri"] = "http://0.0.0.0:15580"
             with open(workingfile, "w") as file:
@@ -161,6 +162,18 @@ class UpdateEdgeConfig:
             print(e)
             return False
         return True
+
+    def get_local_ip(self):
+        import netifaces
+        ip_addresses = []
+        for interface in netifaces.interfaces():
+            interface_addresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET not in interface_addresses:
+                continue
+            for address_data in interface_addresses[netifaces.AF_INET]:
+                if address_data.get('addr') != '127.0.0.1':
+                    ip_addresses.append(address_data.get('addr'))
+        return ip_addresses[0]
 
 if __name__ == "__main__":
     edge_processor = UpdateEdgeConfig(sys.argv[1:])
