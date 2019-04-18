@@ -233,9 +233,9 @@ class DockerLogProcessor:
                     if log_line:
                         if "PYTEST" in log_line:
                             if not pytest_owner:
-                                pytest_owner = base_filename
+                                pytest_owner = module_name
                             else:
-                                if pytest_owner != base_filename:
+                                if pytest_owner != module_name:
                                     ok_to_log = False
                         if ok_to_log:
                             for filter in filter_list:
@@ -268,7 +268,10 @@ class DockerLogProcessor:
         # display the results to stdout
         for log_line in loglines:
             logline_timestamp = log_line.timestamp
-            date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
+            if  "HORTON: Entering function" in log_line.log_data or "HORTON: Exiting function" in log_line.log_data:
+                date_delta = str(logline_timestamp)
+            else:
+                date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
             line_count += 1
             out_line = log_line.module_name + " : " + date_delta + " " + split_char + " " +  log_line.log_data
             last_timestamp = logline_timestamp
@@ -287,7 +290,10 @@ class DockerLogProcessor:
         while True:
             log_line = self.queue.get()
             logline_timestamp = log_line.timestamp
-            date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
+            if  "HORTON: Entering function" in log_line.log_data or "HORTON: Exiting function" in log_line.log_data:
+                date_delta = str(logline_timestamp)
+            else:
+                date_delta = self.get_timestamp_delta(str(logline_timestamp), str(last_timestamp), line_count)
             line_count += 1
             last_timestamp = logline_timestamp
             out_line = log_line.module_name + " : " + date_delta + " " + split_char +  " " + log_line.log_data
