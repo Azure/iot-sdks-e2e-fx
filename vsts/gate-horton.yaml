@@ -68,7 +68,6 @@ jobs:
       c_iothub_module_mqtt:                 { language: c, suite: iothub_module_mqtt }
       c_edgehub_module_mqttws:              { language: c, suite: edgehub_module_mqtt_ws }
       java_iothub_module_mqtt:              { language: java, suite: iothub_module_mqtt }
-      java_edgehub_module_amqpws:           { language: java, suite: edgehub_module_amqp_ws }
       csharp_iothub_module_mqtt:            { language: csharp, suite: iothub_module_mqtt }
       csharp_edgehub_module_mqttws:         { language: csharp, suite: edgehub_module_mqtt_ws }
       pythonpreview_edgehub_module_mqtt:    { language: pythonpreview, suite: edgehub_module_mqtt }
