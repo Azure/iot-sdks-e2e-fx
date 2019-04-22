@@ -12,10 +12,6 @@ class DockerTags:
         self.commit_name = None
         self.commit_sha = None
         self.langauge = None
-        if running_on_azure_pipelines():
-            self.docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
-        else:
-            self.docker_repo = "localhost:5000"
         self.image_tags = []
         self.image_tag_to_use_for_cache = None
 
@@ -71,18 +67,14 @@ def get_commit_name(commit):
         return commit
 
 
-def get_docker_tags_from_commit(language, repo, commit, variant):
+def get_docker_tags_from_commit(repo, commit, variant, dockerfile_path):
     tags = DockerTags()
-    tags.docker_image_name = "{}-e2e-v2".format(language)
-    tags.docker_full_image_name = "{}/{}".format(
-        tags.docker_repo, tags.docker_image_name
-    )
-    tags.language = language
     tags.repo = repo
     tags.commit_name = get_commit_name(commit)
     tags.commit_sha = github.get_sha_from_commit(repo, commit)
+    tags.dockerfile_path = dockerfile_path
 
-    default_variant = get_default_variant(language)
+    default_variant = get_default_variant(dockerfile_path)
     tags.variant = variant or default_variant
     tags.using_default_variant = tags.variant == default_variant
 

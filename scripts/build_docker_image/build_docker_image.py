@@ -12,18 +12,13 @@ from colorama import Fore
 
 colorama.init(autoreset=True)
 
-default_repo = "(Azure/azure-iot-sdk-BLAH)"
-all_languages = ["c", "csharp", "python", "pythonpreview", "node", "java"]
-
 parser = argparse.ArgumentParser(description="build docker image for testing")
+
 parser.add_argument(
-    "--language",
-    help="language to build",
-    type=str,
-    required=True,
-    choices=all_languages,
+    "--dockerfile_path", help="path with the dockerfile", type=str, required=True
 )
-parser.add_argument("--repo", help="repo with source", type=str, default=default_repo)
+parser.add_argument("--image_name", help="name for the image", type=str, required=True)
+parser.add_argument("--repo", help="repo with source", type=str, required=True)
 parser.add_argument(
     "--commit", help="commit to apply (ref or branch)", type=str, default="master"
 )
@@ -36,24 +31,12 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-if args.repo == default_repo:
-    if args.language == "pythonpreview":
-        args.repo = "Azure/azure-iot-sdk-python-preview"
-    else:
-        args.repo = "Azure/azure-iot-sdk-" + args.language
-    print(Fore.YELLOW + "Repo not specified.  Defaulting to " + args.repo)
-
 print_separator = "".join("/\\" for _ in range(80))
 
 auth_config = {
     "username": os.environ["IOTHUB_E2E_REPO_USER"],
     "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
 }
-
-
-def get_dockerfile_directory(tags):
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    return os.path.normpath(os.path.join(script_dir, "../ci-wrappers/" + tags.language))
 
 
 def print_filtered_docker_line(line):
@@ -83,13 +66,21 @@ def print_filtered_docker_line(line):
             print(line)
 
 
+def get_full_image_name():
+    if docker_tags.running_on_azure_pipelines():
+        docker_repo = os.environ.get("IOTHUB_E2E_REPO_ADDRESS")
+    else:
+        docker_repo = "localhost:5000"
+    return "{}/{}".format(docker_repo, args.image_name)
+
+
 def build_image(tags):
     print(print_separator)
     print("BUILDING IMAGE")
     print(print_separator)
 
     force_flag = 0
-    if os.stat(get_dockerfile_directory(tags) + "/source.tar.gz").st_size > 0:
+    if os.stat(args.dockerfile_path + "/source.tar.gz").st_size > 0:
         print("source.tar.gz exists.  Setting force flag.")
         force_flag = datetime.datetime.now().timestamp()
 
@@ -102,9 +93,7 @@ def build_image(tags):
     }
 
     if tags.image_tag_to_use_for_cache:
-        cache_from = [
-            tags.docker_full_image_name + ":" + tags.image_tag_to_use_for_cache
-        ]
+        cache_from = [get_full_image_name() + ":" + tags.image_tag_to_use_for_cache]
         print("using {} for cache".format(cache_from[0]))
     else:
         cache_from = []
@@ -115,15 +104,11 @@ def build_image(tags):
         dockerfile = "Dockerfile"
 
     print(
-        Fore.YELLOW
-        + "Building image for "
-        + tags.docker_image_name
-        + " using "
-        + dockerfile
+        Fore.YELLOW + "Building image for " + args.image_name + " using " + dockerfile
     )
     for line in api_client.build(
-        path=get_dockerfile_directory(tags),
-        tag=tags.docker_image_name,
+        path=args.dockerfile_path,
+        tag=args.image_name,
         buildargs=build_args,
         cache_from=cache_from,
         dockerfile=dockerfile,
@@ -140,20 +125,22 @@ def tag_images(tags):
     print(print_separator)
     api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
     print("Adding tags")
+    full_image_name = get_full_image_name()
     for image_tag in tags.image_tags:
         print("Adding " + image_tag)
-        api_client.tag(tags.docker_image_name, tags.docker_full_image_name, image_tag)
+        api_client.tag(args.image_name, full_image_name, image_tag)
 
 
 def push_images(tags):
     print(print_separator)
     print("PUSHING IMAGE")
     print(print_separator)
+    full_image_name = get_full_image_name()
     api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
     for image_tag in tags.image_tags:
-        print("Pushing {}:{}".format(tags.docker_full_image_name, image_tag))
+        print("Pushing {}:{}".format(full_image_name, image_tag))
         for line in api_client.push(
-            tags.docker_full_image_name, image_tag, stream=True, auth_config=auth_config
+            full_image_name, image_tag, stream=True, auth_config=auth_config
         ):
             print_filtered_docker_line(line)
 
@@ -165,19 +152,15 @@ def prefetch_cached_images(tags):
         print(print_separator)
         tags.image_tag_to_use_for_cache = None
         api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+        full_image_name = get_full_image_name()
         for image_tag in tags.image_tags:
             print(
                 Fore.YELLOW
-                + "trying to prefetch {}:{}".format(
-                    tags.docker_full_image_name, image_tag
-                )
+                + "trying to prefetch {}:{}".format(full_image_name, image_tag)
             )
             try:
                 for line in api_client.pull(
-                    tags.docker_full_image_name,
-                    image_tag,
-                    stream=True,
-                    auth_config=auth_config,
+                    full_image_name, image_tag, stream=True, auth_config=auth_config
                 ):
                     print_filtered_docker_line(line)
                 tags.image_tag_to_use_for_cache = image_tag
@@ -191,19 +174,10 @@ def prefetch_cached_images(tags):
 
 
 tags = docker_tags.get_docker_tags_from_commit(
-    args.language, args.repo, args.commit, args.variant
+    args.repo, args.commit, args.variant, args.dockerfile_path
 )
 
 prefetch_cached_images(tags)
 build_image(tags)
 tag_images(tags)
 push_images(tags)
-
-if not docker_tags.running_on_azure_pipelines():
-    print(Fore.GREEN + "Done.  Deploy with the following command:")
-    print(
-        Fore.GREEN
-        + "./deploy-test-containers.sh --{} {}:{}".format(
-            tags.language, tags.docker_full_image_name, tags.image_tags[0]
-        )
-    )
