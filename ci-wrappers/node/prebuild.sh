@@ -7,6 +7,6 @@ cd /sdk
 npm install
 [ $? -eq 0 ] || { echo "npm install failed"; exit 1; }
 
-lerna bootstrap --scope iot-sdk-device-client-rest-api --include-filtered-dependencies
+lerna bootstrap --scope iot-sdk-device-client-rest-api --include-filtered-dependencies --hoist
 [ $? -eq 0 ] || { echo "lerna bootstrap failed"; exit 1; }
 
