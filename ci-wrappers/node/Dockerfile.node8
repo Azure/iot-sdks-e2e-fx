@@ -15,6 +15,9 @@ env DEBUG=rhea*,azure*
 EXPOSE 9229
 EXPOSE 8080
 
+# rev1: switch to lerna hoist.  This echo also forces all clients to refetch and rebuild master
+RUN echo rev1 > /rev.txt
+
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
 WORKDIR /sdk
