@@ -105,30 +105,43 @@ def test_service_can_set_multiple_desired_property_patches_and_module_can_retrie
         )
         log_message("patch " + str(i) + " triggered")
 
-        log_message("getting patch " + str(i) + " on module client")
-        patch_received = patch_thread.get()
-        log_message("patch received:" + json.dumps(patch_received))
+        done = False
+        mistakes_left = 1
+        while not done:
+            log_message("getting patch " + str(i) + " on module client")
+            patch_received = patch_thread.get()
+            log_message("patch received:" + json.dumps(patch_received))
 
-        log_message(
-            "desired properties sent:     "
-            + str(twin_sent["properties"]["desired"]["foo"])
-        )
+            log_message(
+                "desired properties sent:     "
+                + str(twin_sent["properties"]["desired"]["foo"])
+            )
 
-        # Most of the time, the C wrapper returns a patch with "foo" at the root.  Sometimes it
-        # returns a patch with "properties/desired" at the root.  I know that this has to do with timing and
-        # the difference between the code that handles the initial GET and the code that handles
-        # the PATCH that arrives later.  I suspect it has something to do with the handling for
-        # DEVICE_TWIN_UPDATE_COMPLETE and maybe we occasionally get a full twin when we're waiting
-        # for a patch, but that's just an educated guess.
-        #
-        # I don't know if this is happening in the SDK or in the glue.
-        # this happens relatively rarely.  Maybe 1/20, maybe 1/100 times
-        foo_val = get_patch_received(patch_received)
-        if foo_val == -1:
-            log_message("patch received of invalid format!")
-            assert 0
-        log_message("desired properties recieved: " + str(foo_val))
-        assert twin_sent["properties"]["desired"]["foo"] == foo_val
+            foo_val = get_patch_received(patch_received)
+            if foo_val == -1:
+                log_message("patch received of invalid format!")
+                assert 0
+            log_message("desired properties recieved: " + str(foo_val))
+
+            if twin_sent["properties"]["desired"]["foo"] == foo_val:
+                log_message("success")
+                done = True
+            else:
+                if mistakes_left:
+                    # We sometimes get the old value before we get the new value, and that's
+                    # perfectly valid (especially with QOS 1 on MQTT).  If we got the wrong
+                    # value, we just try again.
+                    mistakes_left = mistakes_left - 1
+                    log_message(
+                        "trying again.  We still have {} mistakes left".format(
+                            mistakes_left
+                        )
+                    )
+                    log_message("start waiting for patch #{} again".format(i))
+                    patch_thread = module_client.wait_for_desired_property_patch_async()
+                else:
+                    log_message("too many mistakes.  Failing")
+                    assert False
 
     registry_client.disconnect()
     module_client.disconnect()
