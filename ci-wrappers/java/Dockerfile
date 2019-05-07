@@ -22,19 +22,17 @@ EXPOSE 8080
 ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
-RUN git submodule update --init --recursive
+
 COPY ./prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
-ARG HORTON_FORCEFLAG
-VOLUME /t
-COPY ./source.tar.gz /t/
-COPY ./fetch.sh /
-RUN /fetch.sh /t
-COPY ./rebuild.sh /
-RUN /rebuild.sh
+RUN git pull
+RUN git checkout $HORTON_COMMIT_SHA
+
+COPY ./patchfile /
+RUN if [ -s /patchfile ]; then git apply /patchfile; fi
 
 ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]

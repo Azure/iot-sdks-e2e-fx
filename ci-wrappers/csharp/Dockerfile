@@ -31,20 +31,22 @@ RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
 ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
-RUN git submodule update --init --recursive
+
+COPY wrapper /wrapper
+
 COPY ./prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
-ARG HORTON_COMMIT_SHA
 ARG HORTON_COMMIT_NAME
-ARG HORTON_FORCEFLAG
-VOLUME /t
-COPY ./source.tar.gz /t/
-COPY ./fetch.sh /
-RUN /fetch.sh /t
+ARG HORTON_COMMIT_SHA
+RUN git pull 
+RUN git checkout $HORTON_COMMIT_SHA
+
+COPY ./patchfile /
+RUN if [ -s /patchfile ]; then git apply /patchfile; fi
+
 COPY ./rebuild.sh /
-COPY wrapper /wrapper
 run /rebuild.sh
 
 WORKDIR /app

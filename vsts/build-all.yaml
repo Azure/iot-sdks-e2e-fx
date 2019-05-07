@@ -1,14 +1,34 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
+  variant: ''
 jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
     language: node
+    variant: node10
     repo: Azure/azure-iot-sdk-node
     commit: master
-    job_tag: node
+    job_tag: node10
+    forced_image: $(Horton.ForcedImage)
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: node
+    variant: node6
+    repo: Azure/azure-iot-sdk-node
+    commit: master
+    job_tag: node6
+    forced_image: $(Horton.ForcedImage)
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: node
+    variant: node8
+    repo: Azure/azure-iot-sdk-node
+    commit: master
+    job_tag: node8
     forced_image: $(Horton.ForcedImage)
 
 - template: templates/jobs-build-docker-image.yaml
@@ -46,31 +66,56 @@ jobs:
 - template: templates/jobs-build-docker-image.yaml
   parameters:
     language: pythonpreview
+    variant: py27
     repo: Azure/azure-iot-sdk-python-preview  
     commit: master
-    job_tag: pythonpreview
+    job_tag: py27
+    forced_image: $(Horton.ForcedImage)
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: pythonpreview
+    variant: py35
+    repo: Azure/azure-iot-sdk-python-preview  
+    commit: master
+    job_tag: py35
+    forced_image: $(Horton.ForcedImage)
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: pythonpreview
+    variant: py36
+    repo: Azure/azure-iot-sdk-python-preview  
+    commit: master
+    job_tag: py36
+    forced_image: $(Horton.ForcedImage)
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: pythonpreview
+    variant: py37
+    repo: Azure/azure-iot-sdk-python-preview  
+    commit: master
+    job_tag: py37
     forced_image: $(Horton.ForcedImage)
 
 - job: "test"
   dependsOn:
-    - "build_node_container"
+    - "build_node10_container"
+    - "build_node6_container"
+    - "build_node8_container"
     - "build_c_container"
     - "build_java_container"
     - "build_csharp_container"
     - "build_python_container"
-    - "build_pythonpreview_container"
+    - "build_py27_container"
+    - "build_py35_container"
+    - "build_py36_container"
+    - "build_py37_container"
 
   strategy:
-    maxParallel: 4
+    maxParallel: 10
     matrix:
-      node_iothub_module_mqtt:              { language: node, suite: iothub_module_mqtt }
-      node_edgehub_module_mqtt:             { language: node, suite: edgehub_module_mqtt }
-      node_iothub_module_mqtt_ws:           { language: node, suite: iothub_module_mqtt_ws }
-      node_edgehub_module_mqtt_ws:          { language: node, suite: edgehub_module_mqtt_ws }
-      node_iothub_module_amqp:              { language: node, suite: iothub_module_amqp }
-      node_edgehub_module_amqp:             { language: node, suite: edgehub_module_amqp }
-      node_iothub_module_amqp_ws:           { language: node, suite: iothub_module_amqp_ws }
-      node_edgehub_module_amqp_ws:          { language: node, suite: edgehub_module_amqp_ws }
       c_iothub_module_mqtt:                 { language: c, suite: iothub_module_mqtt }
       c_edgehub_module_mqtt:                { language: c, suite: edgehub_module_mqtt }
       c_iothub_module_mqtt_ws:              { language: c, suite: iothub_module_mqtt_ws }
@@ -79,6 +124,34 @@ jobs:
       # c_edgehub_module_amqp:                { language: c, suite: edgehub_module_amqp }
       c_iothub_module_amqp_ws:              { language: c, suite: iothub_module_amqp_ws }
       # c_edgehub_module_amqp_ws:             { language: c, suite: edgehub_module_amqp_ws }
+
+      node10_iothub_module_mqtt:              { language: node, variant: node10, suite: iothub_module_mqtt }
+      node10_edgehub_module_mqtt:             { language: node, variant: node10, suite: edgehub_module_mqtt }
+      node10_iothub_module_mqtt_ws:           { language: node, variant: node10, suite: iothub_module_mqtt_ws }
+      node10_edgehub_module_mqtt_ws:          { language: node, variant: node10, suite: edgehub_module_mqtt_ws }
+      node10_iothub_module_amqp:              { language: node, variant: node10, suite: iothub_module_amqp }
+      node10_edgehub_module_amqp:             { language: node, variant: node10, suite: edgehub_module_amqp }
+      node10_iothub_module_amqp_ws:           { language: node, variant: node10, suite: iothub_module_amqp_ws }
+      node10_edgehub_module_amqp_ws:          { language: node, variant: node10, suite: edgehub_module_amqp_ws }
+
+      node6_iothub_module_mqtt:              { language: node, variant: node6, suite: iothub_module_mqtt }
+      node6_edgehub_module_mqtt:             { language: node, variant: node6, suite: edgehub_module_mqtt }
+      node6_iothub_module_mqtt_ws:           { language: node, variant: node6, suite: iothub_module_mqtt_ws }
+      node6_edgehub_module_mqtt_ws:          { language: node, variant: node6, suite: edgehub_module_mqtt_ws }
+      node6_iothub_module_amqp:              { language: node, variant: node6, suite: iothub_module_amqp }
+      node6_edgehub_module_amqp:             { language: node, variant: node6, suite: edgehub_module_amqp }
+      node6_iothub_module_amqp_ws:           { language: node, variant: node6, suite: iothub_module_amqp_ws }
+      node6_edgehub_module_amqp_ws:          { language: node, variant: node6, suite: edgehub_module_amqp_ws }
+
+      node8_iothub_module_mqtt:              { language: node, variant: node8, suite: iothub_module_mqtt }
+      node8_edgehub_module_mqtt:             { language: node, variant: node8, suite: edgehub_module_mqtt }
+      node8_iothub_module_mqtt_ws:           { language: node, variant: node8, suite: iothub_module_mqtt_ws }
+      node8_edgehub_module_mqtt_ws:          { language: node, variant: node8, suite: edgehub_module_mqtt_ws }
+      node8_iothub_module_amqp:              { language: node, variant: node8, suite: iothub_module_amqp }
+      node8_edgehub_module_amqp:             { language: node, variant: node8, suite: edgehub_module_amqp }
+      node8_iothub_module_amqp_ws:           { language: node, variant: node8, suite: iothub_module_amqp_ws }
+      node8_edgehub_module_amqp_ws:          { language: node, variant: node8, suite: edgehub_module_amqp_ws }
+
       java_iothub_module_mqtt:              { language: java, suite: iothub_module_mqtt }
       java_edgehub_module_mqtt:             { language: java, suite: edgehub_module_mqtt }
       java_iothub_module_mqtt_ws:           { language: java, suite: iothub_module_mqtt_ws }
@@ -87,6 +160,7 @@ jobs:
       java_edgehub_module_amqp:             { language: java, suite: edgehub_module_amqp }
       java_iothub_module_amqp_ws:           { language: java, suite: iothub_module_amqp_ws }
       java_edgehub_module_amqp_ws:          { language: java, suite: edgehub_module_amqp_ws }
+
       csharp_iothub_module_mqtt:            { language: csharp, suite: iothub_module_mqtt }
       csharp_edgehub_module_mqtt:           { language: csharp, suite: edgehub_module_mqtt }
       csharp_iothub_module_mqtt_ws:         { language: csharp, suite: iothub_module_mqtt_ws }
@@ -95,6 +169,7 @@ jobs:
       csharp_edgehub_module_amqp:           { language: csharp, suite: edgehub_module_amqp }
       csharp_iothub_module_amqp_ws:         { language: csharp, suite: iothub_module_amqp_ws }
       csharp_edgehub_module_amqp_ws:        { language: csharp, suite: edgehub_module_amqp_ws }
+
       python_iothub_module_mqtt:            { language: python, suite: iothub_module_mqtt }
       python_edgehub_module_mqtt:           { language: python, suite: edgehub_module_mqtt }
       python_iothub_module_mqtt_ws:         { language: python, suite: iothub_module_mqtt_ws }
@@ -103,8 +178,24 @@ jobs:
       # python_edgehub_module_amqp:         { language: python, suite: edgehub_module_amqp }
       python_iothub_module_amqp_ws:         { language: python, suite: iothub_module_amqp_ws }
       # python_edgehub_module_amqp_ws:        { language: python, suite: edgehub_module_amqp_ws }
-      pythonpreview_iothub_module_mqtt:     { language: pythonpreview, suite: iothub_module_mqtt }
-      pythonpreview_edgehub_module_mqtt:    { language: pythonpreview, suite: edgehub_module_mqtt }
+
+      py27_iothub_module_and_device_mqtt:   { language: pythonpreview, variant: py27, suite: iothub_module_and_device_mqtt }
+      py27_edgehub_module_mqtt:             { language: pythonpreview, variant: py27, suite: edgehub_module_mqtt }
+
+      py35_iothub_module_and_device_mqtt:         { language: pythonpreview, variant: py35, suite: iothub_module_and_device_mqtt }
+      py35_edgehub_module_mqtt:                   { language: pythonpreview, variant: py35, suite: edgehub_module_mqtt }
+      py35_iothub_module_and_device_mqtt_async:   { language: pythonpreview, variant: py35, async: yes, suite: iothub_module_and_device_mqtt }
+      py35_edgehub_module_mqtt_async:             { language: pythonpreview, variant: py35, async: yes, suite: edgehub_module_mqtt }
+
+      py36_iothub_module_and_device_mqtt:         { language: pythonpreview, variant: py36, suite: iothub_module_and_device_mqtt }
+      py36_edgehub_module_mqtt:                   { language: pythonpreview, variant: py36, suite: edgehub_module_mqtt }
+      py36_iothub_module_and_device_mqtt_async:   { language: pythonpreview, variant: py36, async: yes, suite: iothub_module_and_device_mqtt }
+      py36_edgehub_module_mqtt_async:             { language: pythonpreview, variant: py36, async: yes, suite: edgehub_module_mqtt }
+
+      py37_iothub_module_and_device_mqtt:         { language: pythonpreview, variant: py37, suite: iothub_module_and_device_mqtt }
+      py37_edgehub_module_mqtt:                   { language: pythonpreview, variant: py37, suite: edgehub_module_mqtt }
+      py37_iothub_module_and_device_mqtt_async:   { language: pythonpreview, variant: py37, async: yes, suite: iothub_module_and_device_mqtt }
+      py37_edgehub_module_mqtt_async:             { language: pythonpreview, variant: py37, async: yes, suite: edgehub_module_mqtt }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
@@ -112,4 +203,6 @@ jobs:
       language: $(language)
       suite: $(suite)
       forced_image: $(Horton.ForcedImage)
+      async: $(async)
+      variant: $(variant)
 

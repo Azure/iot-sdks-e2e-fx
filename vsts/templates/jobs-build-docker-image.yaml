@@ -27,12 +27,24 @@ jobs:
         $NormalizedRepo=$NormalizedRepo.Substring('https://github.com/'.length)
       }
 
+      $IsPr = "no"
+      $CommitToPass = $env:Commit
+      if ("$env:SYSTEM_PULLREQUEST_TARGETBRANCH" -ne "") {
+        $CommitToPass = $env:SYSTEM_PULLREQUEST_TARGETBRANCH
+        $IsPr = "yes"
+      }
+
       Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
-      Write-Host "##vso[task.setvariable variable=normalizedRepo]${NormalizedRepo}"
+      Write-Host "##vso[task.setvariable variable=NormalizedRepo]${NormalizedRepo}"
+      Write-Host "##vso[task.setvariable variable=IsPr]${IsPr}"
+      Write-Host "##vso[task.setvariable variable=CommitToPass]${CommitToPass}"
       Write-Host "BuildImage=${BuildImage}"
-      Write-Host "normalizedRepo=${NormalizedRepo}"
+      Write-Host "NormalizedRepo=${NormalizedRepo}"
+      Write-Host "IsPr=${IsPr}"
+      Write-Host "CommitToPass=${CommitToPass}"
     displayName: Custom task execution logic
     env:
+      Commit: ${{ parameters.commit }}
       ForcedImage: ${{ parameters.forced_image }}
       Repo: ${{ parameters.repo }}
     ignoreLASTEXITCODE: false
@@ -41,16 +53,20 @@ jobs:
 
   - script: |
       cd ${BUILD_SOURCESDIRECTORY} &&
-      tar --exclude .git/ -zcf ${AGENT_BUILDDIRECTORY}/source.tar.gz . &&
-      mkdir -p $(Build.SourcesDirectory)/source_artifacts/${{ parameters.job_tag }}
-      cp ${AGENT_BUILDDIRECTORY}/source.tar.gz $(Build.SourcesDirectory)/source_artifacts/${{ parameters.job_tag }}/ &&
-      mv ${AGENT_BUILDDIRECTORY}/source.tar.gz ${HORTON_FRAMEWORKROOT}/ci-wrappers/${{ parameters.language }}/ 
+      echo "saving patch from ${CommitToPass} to HEAD" &&
+      git diff -p origin/${CommitToPass} > ${AGENT_BUILDDIRECTORY}/patchfile &&
+      mkdir -p $(Build.ArtifactStagingDirectory)/${{ parameters.job_tag }} &&
+      cp ${AGENT_BUILDDIRECTORY}/patchfile $(Build.ArtifactStagingDirectory)/${{ parameters.job_tag }} &&
+      mv ${AGENT_BUILDDIRECTORY}/patchfile ${HORTON_FRAMEWORKROOT}/ci-wrappers/${{ parameters.language }}
     displayName: "pack local language repo"
     condition: and(
         succeeded(), 
         eq(variables['buildImage'],'yes'),
-        not(eq(variables['Horton.FrameworkRoot'], variables['Build.SourcesDirectory']))
+        not(eq(variables['Horton.FrameworkRoot'], variables['Build.SourcesDirectory'])),
+        eq(variables['IsPr'],'yes')
         )
+    env:
+      CommitToPass: $(CommitToPass)
 
   - task: UsePythonVersion@0
     inputs:
@@ -64,7 +80,7 @@ jobs:
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
   - script: |
-      python3 $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language ${{ parameters.language }}  --repo ${NormalizedRepo}  --commit ${{ parameters.commit }} --variant ${{ parameters.variant }}
+      python3 $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language ${{ parameters.language }}  --repo ${NormalizedRepo}  --commit ${CommitToPass} --variant ${{ parameters.variant }}
     displayName: "build docker image ${{ parameters.language }}"
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
     env: 
@@ -72,23 +88,11 @@ jobs:
       IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
       IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
       NormalizedRepo: $(NormalizedRepo)
-
-  - task: CopyFiles@2
-    displayName: 'Copy source tar to artifact staging'
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)/source_artifacts'
-      TargetFolder: '$(Build.ArtifactStagingDirectory)'
-    condition: and(
-        always(), 
-        eq(variables['Horton.SaveTar'], 'yes')
-        )
+      CommitToPass: $(CommitToPass)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifacts'
     inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'sources'
-    condition: and(
-        always(), 
-        eq(variables['Horton.SaveTar'], 'yes')
-        )
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)/'
+      ArtifactName: 'patch'
+    condition: always()
