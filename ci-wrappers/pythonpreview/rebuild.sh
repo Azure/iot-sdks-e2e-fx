@@ -6,3 +6,9 @@ cd /sdk
 
 python env_setup.py --no_dev
 [ $? -eq 0 ] || { echo "env_setup.py failed "; exit 1; }
+
+cd /wrapper
+pip install -r requirements.txt
+[ $? -eq 0 ] || { echo "pip install requirements.txt"; exit 1; }
+
+

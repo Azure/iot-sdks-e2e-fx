@@ -85,16 +85,12 @@ def build_image(tags):
     print(print_separator)
 
     force_flag = 0
-    if os.stat(get_dockerfile_directory(tags) + "/source.tar.gz").st_size > 0:
-        print("source.tar.gz exists.  Setting force flag.")
-        force_flag = datetime.datetime.now().timestamp()
 
     api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
     build_args = {
         "HORTON_REPO": tags.repo,
         "HORTON_COMMIT_NAME": tags.commit_name,
         "HORTON_COMMIT_SHA": tags.commit_sha,
-        "HORTON_FORCEFLAG": str(force_flag),
     }
 
     if tags.image_tag_to_use_for_cache:

@@ -49,6 +49,7 @@ ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 RUN git submodule update --init --recursive
+
 COPY ./prebuild.sh /
 RUN /prebuild.sh
 
@@ -58,13 +59,20 @@ COPY ./wrapper .
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
-VOLUME /t
-COPY ./source.tar.gz /t/
-COPY ./fetch.sh /
-RUN /fetch.sh /t
+WORKDIR /sdk
+RUN git pull 
+RUN git checkout $HORTON_COMMIT_SHA
+
+COPY ./patchfile /
+RUN if [ -s /patchfile ]; then git apply /patchfile; fi
+
+# must update submodules after applying the patch
+RUN git submodule update --init --recursive
+
 COPY ./rebuild.sh /
 RUN /rebuild.sh
 
+WORKDIR /wrapper
 RUN pip3 install -r requirements.txt
 RUN python3 setup.py install
 
