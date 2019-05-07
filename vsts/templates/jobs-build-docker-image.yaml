@@ -58,7 +58,7 @@ jobs:
       mkdir -p $(Build.ArtifactStagingDirectory)/${{ parameters.job_tag }} &&
       cp ${AGENT_BUILDDIRECTORY}/patchfile $(Build.ArtifactStagingDirectory)/${{ parameters.job_tag }} &&
       mv ${AGENT_BUILDDIRECTORY}/patchfile ${HORTON_FRAMEWORKROOT}/ci-wrappers/${{ parameters.language }}
-    displayName: "pack local language repo"
+    displayName: "create patch for pull request changes"
     condition: and(
         succeeded(), 
         eq(variables['buildImage'],'yes'),
