@@ -28,7 +28,7 @@ steps:
 
 - script: |
     docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} &&
-    docker pull ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v2:${{ parameters.test_image }} &&
+    docker pull ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }} &&
     docker pull ${{ parameters.image_edgeAgent }} &&
     docker pull ${{ parameters.image_edgeHub }} &&
     docker pull ${{ parameters.image_friendmod }} 
@@ -47,7 +47,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: |
-    python3 $(Horton.FrameworkRoot)/pyscripts/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v2:${{ parameters.test_image }}
+    python3 $(Horton.FrameworkRoot)/pyscripts/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
   displayName: 'Deploy manifest (${{ parameters.test_image }})'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
@@ -73,7 +73,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: |
-    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v2:${{ parameters.test_image }}
+    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
   displayName: 'Verify ${{ parameters.language }}Mod deployment (${{ parameters.test_image }})'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 

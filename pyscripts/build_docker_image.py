@@ -74,6 +74,7 @@ def print_filtered_docker_line(line):
             else:
                 print(obj["status"])
         elif "error" in obj:
+            print ("docker error: {}".format(line))
             raise Exception(obj["error"])
         else:
             print(line)
