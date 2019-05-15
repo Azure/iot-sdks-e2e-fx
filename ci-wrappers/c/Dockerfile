@@ -74,7 +74,7 @@ RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
 
 COPY ./patchfile /
-RUN if [ -s /patchfile ]; then git apply /patchfile; fi
+RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 # must update submodules after applying the patch
 RUN git submodule update --init
