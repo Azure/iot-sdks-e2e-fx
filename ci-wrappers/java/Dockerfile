@@ -29,10 +29,13 @@ RUN /prebuild.sh
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
+WORKDIR /sdk
 RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
 
 COPY ./patchfile /
-RUN if [ -s /patchfile ]; then git apply /patchfile; fi
+# our base image might have some files checked out.  revert these.
+RUN git reset HEAD && git checkout && git clean  -df
+RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
