@@ -61,7 +61,7 @@ jobs:
     - "build_pythonpreview_container"
 
   strategy:
-    maxParallel: 4
+    maxParallel: 10
     matrix:
       node_iothub_module_amqp:              { language: node, suite: iothub_module_amqp }
       node_edgehub_module_amqpws:           { language: node, suite: edgehub_module_amqp_ws }
