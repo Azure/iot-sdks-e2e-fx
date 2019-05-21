@@ -70,7 +70,7 @@ class InternalDeviceGlueAsync:
     def roundtrip_method_call(self, methodName, requestAndResponse):
        # receive method request
         print("Waiting for method request")
-        request = self.client.receive_method_request(method_name=methodName)
+        request = async_helper.run_coroutine_sync(self.client.receive_method_request(methodName))
         print("Method request received")
 
         # verify name and payload
@@ -95,8 +95,8 @@ class InternalDeviceGlueAsync:
             resp_payload = None
 
         # send method response
-        response = MethodResponse(request.request_id, resp_status, resp_payload)
-        self.client.send_method_response(response)
+        response = MethodResponse(request_id=request.request_id, status=resp_status, payload=resp_payload)
+        async_helper.run_coroutine_sync(self.client.send_method_response(response))
         print("Method response sent")
 
     def wait_for_desired_property_patch(self):
