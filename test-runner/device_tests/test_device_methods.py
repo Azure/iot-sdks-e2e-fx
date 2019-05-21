@@ -67,7 +67,7 @@ def do_device_method_call(source_module, destination_device, destination_device_
 
 
 @pytest.mark.timeout(180)
-@pytest.mark.testgroup_iothub_module_client
+@pytest.mark.testgroup_iothub_device_client
 @pytest.mark.receivesMethodCalls
 def test_device_method_call_invoked_from_service():
     """
@@ -88,7 +88,7 @@ def test_device_method_call_invoked_from_service():
     service_client.disconnect()
 
 
-@pytest.mark.testgroup_iothub_module_client
+@pytest.mark.testgroup_iothub_device_client
 @pytest.mark.receivesMethodCalls
 def test_device_method_from_friend_to_test():
     """
