@@ -28,7 +28,6 @@ def get_capabilities():
     return {
         "flags": {"supports_async": True},
         "skip_list": [
-            "receivesMethodCalls",
             "invokesModuleMethodCalls",
             "invokesDeviceMethodCalls",
             "supportsTwin",
