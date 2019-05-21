@@ -3,7 +3,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from azure.iot.device import IoTHubDeviceClient
+from azure.iot.device import IoTHubDeviceClient, MethodResponse
 from azure.iot.device import auth
 import json
 
@@ -43,12 +43,14 @@ class InternalDeviceGlueSync:
             self.client = None
 
     def enable_methods(self):
+        # Unnecessary, methods are enabled implicity when method operations are initiated.
         pass
 
     def enable_twin(self):
         raise NotImplementedError()
 
     def enable_c2d(self):
+        # Unnecessary, C2D messages are enabled implicitly when C2D operations are initiated.
         pass
 
     def send_event(self, event_body):
@@ -63,7 +65,37 @@ class InternalDeviceGlueSync:
         return message_to_object(message)
 
     def roundtrip_method_call(self, methodName, requestAndResponse):
-        raise NotImplementedError()
+        # receive method request
+        print("Waiting for method request")
+        request = self.client.receive_method_request(method_name=methodName)
+        print("Method request received")
+
+        # verify name and payload
+        expected_name = methodName
+        expected_payload = requestAndResponse.request_payload['payload']
+        if (request.name == expected_name):
+            if (request.payload == expected_payload):
+                print("Method name and payload matched. Returning response")
+                resp_status = requestAndResponse.status_code
+                resp_payload = requestAndResponse.response_payload
+            else:
+                print("Request payload doesn't match")
+                print("expected: " + expected_payload)
+                print("received: " + request.payload)
+                resp_status = 500
+                resp_payload = None
+        else:
+            print("Method name doesn't match")
+            print("expected: '" + expected_name + "'")
+            print("received: '" + request.name + "'")
+            resp_status = 404
+            resp_payload = None
+
+        # send method response
+        response = MethodResponse(request.request_id, resp_status, resp_payload)
+        self.client.send_method_response(response)
+        print("Method response sent")
+
 
     def wait_for_desired_property_patch(self):
         raise NotImplementedError()

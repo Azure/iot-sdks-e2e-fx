@@ -68,7 +68,36 @@ class InternalDeviceGlueAsync:
         return message_to_object(message)
 
     def roundtrip_method_call(self, methodName, requestAndResponse):
-        raise NotImplementedError()
+       # receive method request
+        print("Waiting for method request")
+        request = self.client.receive_method_request(method_name=methodName)
+        print("Method request received")
+
+        # verify name and payload
+        expected_name = methodName
+        expected_payload = requestAndResponse.request_payload['payload']
+        if (request.name == expected_name):
+            if (request.payload == expected_payload):
+                print("Method name and payload matched. Returning response")
+                resp_status = requestAndResponse.status_code
+                resp_payload = requestAndResponse.response_payload
+            else:
+                print("Request payload doesn't match")
+                print("expected: " + expected_payload)
+                print("received: " + request.payload)
+                resp_status = 500
+                resp_payload = None
+        else:
+            print("Method name doesn't match")
+            print("expected: '" + expected_name + "'")
+            print("received: '" + request.name + "'")
+            resp_status = 404
+            resp_payload = None
+
+        # send method response
+        response = MethodResponse(request.request_id, resp_status, resp_payload)
+        self.client.send_method_response(response)
+        print("Method response sent")
 
     def wait_for_desired_property_patch(self):
         raise NotImplementedError()
