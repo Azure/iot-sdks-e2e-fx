@@ -15,8 +15,6 @@ from runtime_config import get_current_config
 # How long do we have to wait after a module registers to receive
 # method calls until we can actually call a method.
 time_for_method_to_fully_register = 5
-# when we're invoking from the service, we give it more time
-time_for_method_to_fully_register_service_call = 15
 
 method_name = "test_method"
 method_payload = '"Look at me, I\'ve got payload!"'
@@ -80,8 +78,7 @@ def test_device_method_call_invoked_from_service():
     do_device_method_call(
         service_client,
         device_client,
-        get_current_config().test_device.device_id,
-        registration_sleep=time_for_method_to_fully_register_service_call,
+        get_current_config().test_device.device_id
     )
 
     device_client.disconnect()
@@ -101,7 +98,7 @@ def test_device_method_from_friend_to_test():
     do_device_method_call(
         friend_client,
         device_client,
-        get_current_config().test_device.device_id,
+        get_current_config().test_device.device_id
     )
 
     device_client.disconnect()
