@@ -3,7 +3,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from azure.iot.device.aio import IoTHubModuleClient
+from azure.iot.device.aio import IoTHubModuleClient, MethodResponse
 from azure.iot.device import auth
 from threading import Event
 import json
