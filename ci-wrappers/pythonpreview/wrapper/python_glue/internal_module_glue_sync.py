@@ -48,10 +48,12 @@ class InternalModuleGlueSync:
             self.client = None
 
     def enable_input_messages(self):
+        # Unnecessary, input messages are enabled implicitly when input operations are initiated.
         pass
 
     def enable_methods(self):
-        raise NotImplementedError()
+        # Unnecessary, methods are enabled implicity when method operations are initiated.
+        pass
 
     def enable_twin(self):
         raise NotImplementedError()

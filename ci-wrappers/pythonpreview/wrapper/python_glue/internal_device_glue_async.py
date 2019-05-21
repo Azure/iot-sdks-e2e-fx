@@ -46,12 +46,14 @@ class InternalDeviceGlueAsync:
             self.client = None
 
     def enable_methods(self):
+        # Unnecessary, methods are enabled implicity when method operations are initiated.
         pass
 
     def enable_twin(self):
         raise NotImplementedError()
 
     def enable_c2d(self):
+        # Unnecessary, C2D messages are enabled implicitly when C2D operations are initiated.
         pass
 
     def send_event(self, event_body):
