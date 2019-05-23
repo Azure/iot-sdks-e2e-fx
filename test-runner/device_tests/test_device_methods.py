@@ -82,23 +82,3 @@ def test_device_method_call_invoked_from_service():
 
     device_client.disconnect()
     service_client.disconnect()
-
-
-@pytest.mark.testgroup_iothub_device_client
-@pytest.mark.receivesMethodCalls
-def test_device_method_from_friend_to_test():
-    """
-    invoke a method call from the friend module and respond to it from the test device
-    """
-
-    device_client = connections.connect_test_device_client()
-    friend_client = connections.connect_friend_module_client()
-
-    do_device_method_call(
-        friend_client,
-        device_client,
-        get_current_config().test_device.device_id
-    )
-
-    device_client.disconnect()
-    friend_client.disconnect()
