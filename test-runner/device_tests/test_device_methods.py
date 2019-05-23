@@ -30,7 +30,6 @@ method_invoke_parameters = {
 method_response_body = {"response": "Look at me.  I'm a response!"}
 
 
-
 def do_device_method_call(source_module, destination_device, destination_device_id):
     """
     Helper function which invokes a method call on one module and responds to it from a device
