@@ -100,6 +100,27 @@ def test_module_method_call_invoked_from_service():
 
 
 @pytest.mark.testgroup_edgehub_module_client
+@pytest.mark.receivesMethodCalls
+def test_module_method_from_friend_to_test():
+    """
+    invoke a method call from the friend module and respond to it from the test module
+    """
+
+    module_client = connections.connect_test_module_client()
+    friend_client = connections.connect_friend_module_client()
+
+    do_module_method_call(
+        friend_client,
+        module_client,
+        get_current_config().test_module.device_id,
+        get_current_config().test_module.module_id,
+    )
+
+    module_client.disconnect()
+    friend_client.disconnect()
+
+
+@pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.invokesModuleMethodCalls
 def test_module_method_from_test_to_friend():
     """
@@ -114,28 +135,6 @@ def test_module_method_from_test_to_friend():
         friend_client,
         get_current_config().friend_module.device_id,
         get_current_config().friend_module.module_id,
-    )
-
-    module_client.disconnect()
-    friend_client.disconnect()
-
-
-@pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.receivesMethodCalls
-@pytest.mark.invokesModuleMethodCalls
-def test_module_method_from_friend_to_test():
-    """
-    invoke a method call from the friend module and respond to it from the test module
-    """
-
-    module_client = connections.connect_test_module_client()
-    friend_client = connections.connect_friend_module_client()
-
-    do_module_method_call(
-        friend_client,
-        module_client,
-        get_current_config().test_module.device_id,
-        get_current_config().test_module.module_id,
     )
 
     module_client.disconnect()

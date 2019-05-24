@@ -4,7 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from azure.iot.device import IoTHubModuleClient
-from azure.iot.device import auth
+from azure.iot.device import auth, MethodResponse
 import json
 
 
@@ -48,10 +48,12 @@ class InternalModuleGlueSync:
             self.client = None
 
     def enable_input_messages(self):
+        # Unnecessary, input messages are enabled implicitly when input operations are initiated.
         pass
 
     def enable_methods(self):
-        raise NotImplementedError()
+        # Unnecessary, methods are enabled implicity when method operations are initiated.
+        pass
 
     def enable_twin(self):
         raise NotImplementedError()
@@ -74,7 +76,36 @@ class InternalModuleGlueSync:
         raise NotImplementedError()
 
     def roundtrip_method_call(self, methodName, requestAndResponse):
-        raise NotImplementedError()
+        # receive method request
+        print("Waiting for method request")
+        request = self.client.receive_method_request(methodName)
+        print("Method request received")
+
+        # verify name and payload
+        expected_name = methodName
+        expected_payload = requestAndResponse.request_payload['payload']
+        if (request.name == expected_name):
+            if (request.payload == expected_payload):
+                print("Method name and payload matched. Returning response")
+                resp_status = requestAndResponse.status_code
+                resp_payload = requestAndResponse.response_payload
+            else:
+                print("Request payload doesn't match")
+                print("expected: " + expected_payload)
+                print("received: " + request.payload)
+                resp_status = 500
+                resp_payload = None
+        else:
+            print("Method name doesn't match")
+            print("expected: '" + expected_name + "'")
+            print("received: '" + request.name + "'")
+            resp_status = 404
+            resp_payload = None
+
+        # send method response
+        response = MethodResponse(request_id=request.request_id, status=resp_status, payload=resp_payload)
+        self.client.send_method_response(response)
+        print("Method response sent")
 
     def send_output_event(self, output_name, event_body):
         print("sending output event")
