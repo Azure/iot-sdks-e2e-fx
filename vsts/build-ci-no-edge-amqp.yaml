@@ -1,6 +1,0 @@
-name: $(BuildID)_$(Horton.Language)_$(Horton.Commit)_$(BuildDefinitionName)
-variables:
-  Horton.FrameworkRoot: $(Build.SourcesDirectory)
-
-jobs:
-- template: templates/jobs-build-ci-no-edge-amqp.yaml
