@@ -17,12 +17,12 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: |
-    $(Horton.FrameworkRoot)/scripts/setup-python36.sh
+    $(Horton.FrameworkRoot)/scripts/setup/setup-python36.sh
   displayName: 'install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: |
-    $(Horton.FrameworkRoot)/scripts/setup-iotedge.sh
+    $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
   displayName: 'install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 

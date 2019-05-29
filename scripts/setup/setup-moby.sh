@@ -2,7 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
-source "$script_dir/colorecho.sh"
+source "$script_dir/../colorecho.sh"
 
 colorecho $_yellow "Checking for moby install"
 unset moby_cli_installed
