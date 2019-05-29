@@ -1,7 +1,8 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 script_dir=$(cd "$(dirname "$0")" && pwd)
-source "$script_dir/colorecho.sh"
+root_dir=$(cd ${script_dir}/../.. && pwd)
+source "$script_dir/../colorecho.sh"
 
 # Make sure we're running python 3.5 or higher
 colorecho $_yellow "checking for python 3.5+"
@@ -30,30 +31,30 @@ if [ $? -ne 0 ]; then
 fi
 
 colorecho $_yellow "Installing python libraries"
-cd ${script_dir}/../ci-wrappers/pythonpreview/wrapper  &&  \
+cd ${root_dir}/ci-wrappers/pythonpreview/wrapper  &&  \
     python3 -m pip install --user -e python_glue
 if [ $? -ne 0 ]; then 
     colorecho $_yellow "user path not accepted.  Installing globally"
-    cd ${script_dir}/../ci-wrappers/pythonpreview/wrapper  &&  \
+    cd ${root_dir}/ci-wrappers/pythonpreview/wrapper  &&  \
         python3 -m pip install -e python_glue
     [ $? -eq 0 ] || { colorecho $_red "install python_glue failed"; exit 1; }
 fi
 
-cd ${script_dir}/.. &&  \
+cd ${root_dir} &&  \
     python3 -m pip install --user -e horton_helpers
 if [ $? -ne 0 ]; then 
     colorecho $_yellow "user path not accepted.  Installing globally"
-    cd ${script_dir}/.. &&  \
+    cd ${root_dir} &&  \
         python3 -m pip install -e horton_helpers
     [ $? -eq 0 ] || { colorecho $_red "install horton_helpers failed"; exit 1; }
 fi
 
 # install requirements for our test runner
-cd ${script_dir}/../test-runner &&  \
+cd ${root_dir}/test-runner &&  \
     python3 -m pip install --user -r requirements.txt
 if [ $? -ne 0 ]; then 
     colorecho $_yellow "user path not accepted.  Installing globally"
-    cd ${script_dir}/../test-runner &&  \
+    cd ${root_dir}/test-runner &&  \
         python3 -m pip install -r requirements.txt
     [ $? -eq 0 ] || { colorecho $_red "pip install requirements.txt failed"; exit 1; }
 fi

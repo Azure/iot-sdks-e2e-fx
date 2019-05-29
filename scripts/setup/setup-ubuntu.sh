@@ -3,7 +3,7 @@
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
 
-source "$script_dir/colorecho.sh"
+source "$script_dir/../colorecho.sh"
 
 function header {
   color="$1"
