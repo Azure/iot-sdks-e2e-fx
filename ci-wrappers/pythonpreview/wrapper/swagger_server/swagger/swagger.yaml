@@ -11,9 +11,9 @@ tags:
 - name: "wrapper"
   description: "APIs that transcend the individual SDKs"
 - name: "module"
-  description: "IoTHubModuleClient APIs"
+  description: "ModuleClient APIs"
 - name: "device"
-  description: "IoTHubDeviceClient APIs"
+  description: "DeviceClient APIs"
 - name: "service"
   description: "ServiceClient APIs"
 - name: "registry"
@@ -169,6 +169,56 @@ paths:
         required: true
         type: "string"
       - name: "moduleId"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "props"
+        required: true
+        schema:
+          type: "object"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
+  /registry/{connectionId}/deviceTwin/{deviceId}:
+    get:
+      tags:
+      - "registry"
+      summary: "gets the device twin for the given deviceid"
+      operationId: "registry_get_device_twin"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "swagger_server.controllers.registry_controller"
+    patch:
+      tags:
+      - "registry"
+      summary: "update the device twin for the given deviceId"
+      operationId: "registry_patch_device_twin"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "deviceId"
         in: "path"
         required: true
         type: "string"
@@ -838,6 +888,84 @@ paths:
           description: "OK"
           schema:
             type: "string"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/enableTwin:
+    put:
+      tags:
+      - "device"
+      summary: "Enable device twins"
+      operationId: "device_enable_twin"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/twin:
+    get:
+      tags:
+      - "device"
+      summary: "Get the device twin"
+      operationId: "device_get_twin"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+    patch:
+      tags:
+      - "device"
+      summary: "Updates the device twin"
+      operationId: "device_patch_twin"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "props"
+        required: true
+        schema:
+          type: "object"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/twinDesiredPropPatch:
+    get:
+      tags:
+      - "device"
+      summary: "Wait for the next desired property patch"
+      operationId: "device_wait_for_desired_properties_patch"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
 definitions:
   connectResponse:

@@ -87,6 +87,8 @@ def add_direct_python_sdk_adapter(name, api_surface):
     # failed, and that's probably because you don't have the iot sdk packages installed.
     AdapterClass = getattr(direct_python_sdk_adapters, api_surface)
     setattr(this_module, name, AdapterClass)
+    WrapperAdapterClass = getattr(direct_python_sdk_adapters, "WrapperApi")
+    setattr(this_module, name + "Wrapper", WrapperAdapterClass)
 
 
 def cleanup_test_objects():

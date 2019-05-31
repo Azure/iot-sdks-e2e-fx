@@ -8,11 +8,12 @@
 from multiprocessing.pool import ThreadPool
 from internal_module_glue import InternalModuleGlue
 from ..abstract_module_api import AbstractModuleApi
+from .base_module_or_device_api import BaseModuleOrDeviceApi
 
 module_object_list = []
 
 
-class ModuleApi(AbstractModuleApi):
+class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
     def __init__(self):
         self.glue = InternalModuleGlue()
         self.pool = ThreadPool()
@@ -36,29 +37,8 @@ class ModuleApi(AbstractModuleApi):
         self.glue.disconnect()
         self.glue = None
 
-    def enable_twin(self):
-        self.glue.enable_twin()
-
-    def enable_methods(self):
-        self.glue.enable_methods()
-
     def enable_input_messages(self):
         self.glue.enable_input_messages()
-
-    def get_twin(self):
-        return self.glue.get_twin()
-
-    def patch_twin(self, patch):
-        self.glue.patch_twin(patch)
-
-    def wait_for_desired_property_patch_async(self):
-        return self.glue.wait_for_desired_property_patch()
-
-    def send_event(self, body):
-        self.glue.send_event(body)
-
-    def send_event_async(self, body):
-        raise NotImplementedError()
 
     def send_output_event(self, output_name, body):
         self.glue.send_output_event(output_name, body)
@@ -76,8 +56,3 @@ class ModuleApi(AbstractModuleApi):
         return self.pool.apply_async(
             self.glue.invoke_device_method, (device_id, method_invoke_parameters)
         )
-
-    def roundtrip_method_async(
-        self, method_name, status_code, request_payload, response_payload
-    ):
-        raise NotImplementedError()

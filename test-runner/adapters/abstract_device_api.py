@@ -37,3 +37,19 @@ class AbstractDeviceApi:
         self, method_name, status_code, request_payload, response_payload
     ):
         pass
+
+    @abc.abstractmethod
+    def enable_twin(self):
+        pass
+
+    @abc.abstractmethod
+    def get_twin(self):
+        pass
+
+    @abc.abstractmethod
+    def patch_twin(self, patch):
+        pass
+
+    @abc.abstractmethod
+    def wait_for_desired_property_patch_async(self):
+        pass

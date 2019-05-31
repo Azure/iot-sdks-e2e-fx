@@ -178,5 +178,102 @@
         }
       }
     }
+  },
+  "enableTwin": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Enable device twins",
+      "operationId": "Device_EnableTwin",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "twin": {
+    "get": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Get the device twin",
+      "operationId": "Device_GetTwin",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "patch": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Updates the device twin",
+      "operationId": "Device_PatchTwin",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "name": "props",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "twinDesiredPropPatch": {
+    "get": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Wait for the next desired property patch",
+      "operationId": "Device_WaitForDesiredPropertiesPatch",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
   }
 }
