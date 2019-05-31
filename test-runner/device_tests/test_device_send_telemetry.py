@@ -12,6 +12,7 @@ from adapters import print_message as log_message
 
 
 @pytest.mark.testgroup_iothub_device_client
+@pytest.mark.timeout(timeout=180) # extra timeout in case eventhub needs to retry due to resource error
 def test_device_send_event_to_iothub():
 
     device_client = connections.connect_test_device_client()

@@ -27,6 +27,7 @@ There's a rule in the routing table that sends the 'telemetry' output event to e
 
 @pytest.mark.callsSendOutputEvent
 @pytest.mark.testgroup_edgehub_fault_injection
+@pytest.mark.timeout(timeout=180) # extra timeout in case eventhub needs to retry due to resource error
 def test_module_output_routed_upstream_fi():
     try:
         module_client = connections.connect_test_module_client()

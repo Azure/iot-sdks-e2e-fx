@@ -14,6 +14,7 @@ from adapters import print_message as log_message
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.callsSendEvent
+@pytest.mark.timeout(timeout=180) # extra timeout in case eventhub needs to retry due to resource error
 def test_module_send_event_to_iothub():
 
     log_message("connecting module client")
