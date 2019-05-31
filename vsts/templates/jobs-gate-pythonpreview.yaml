@@ -82,6 +82,7 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
       async: $(async)
+      variant: py36
 
 - job: "test_py35"
   dependsOn:
@@ -119,7 +120,6 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
       async: $(async)
-      variant: py34
       variant: py34
 
 - job: "test_py27"
