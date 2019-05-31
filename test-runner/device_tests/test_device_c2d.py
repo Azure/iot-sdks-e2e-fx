@@ -10,6 +10,7 @@ import random
 import time
 import test_utilities
 from runtime_config import get_current_config
+from adapters import print_message as log_message
 
 receive_timeout = 60
 
@@ -27,7 +28,9 @@ def test_device_receive_c2d():
         device_client.enable_c2d()
         test_input_thread = device_client.wait_for_c2d_message_async()
 
+        log_message("sending {}".format(sent_message))
         service.send_c2d(get_current_config().test_device.device_id, sent_message)
+        log_message("done sending")
 
         received_message = test_input_thread.get(receive_timeout)
         assert received_message == sent_message
