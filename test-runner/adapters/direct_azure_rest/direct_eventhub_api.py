@@ -43,6 +43,7 @@ class EventHubApi:
             print("EventHubApi: enabling EventHub telemetry")
             # partition_ids = self.client.get_eventhub_info()["partition_ids"]
             partition_ids = [0, 1, 2, 3]
+            self.receivers = []
             for id in partition_ids:
                 print_message("EventHubApi: adding receiver for partition {}".format(id))
                 receiver = self.client.add_receiver(
