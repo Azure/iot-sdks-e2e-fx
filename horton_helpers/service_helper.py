@@ -35,7 +35,13 @@ class Helper:
         }
 
     def get_device_connection_string(self, device_id):
-        device = self.service.get_device(device_id, custom_headers=self.headers())
+        try:
+            device = self.service.get_device(device_id, custom_headers=self.headers())
+        except HttpOperationError as e:
+            print("HttpOperationError detail:")
+            print(e.response.text)
+            raise e
+
         primary_key = device.authentication.symmetric_key.primary_key
         return (
             "HostName="
@@ -47,9 +53,15 @@ class Helper:
         )
 
     def get_module_connection_string(self, device_id, module_id):
-        module = self.service.get_module(
-            device_id, module_id, custom_headers=self.headers()
-        )
+        try:
+            module = self.service.get_module(
+                device_id, module_id, custom_headers=self.headers()
+            )
+        except HttpOperationError as e:
+            print("HttpOperationError detail:")
+            print(e.response.text)
+            raise e
+
         primary_key = module.authentication.symmetric_key.primary_key
         return (
             "HostName="
@@ -64,9 +76,15 @@ class Helper:
 
     def apply_configuration(self, device_id, modules_content):
         content = ConfigurationContent(modules_content=modules_content)
-        self.service.apply_configuration_on_edge_device(
-            device_id, content, custom_headers=self.headers()
-        )
+
+        try:
+            self.service.apply_configuration_on_edge_device(
+                device_id, content, custom_headers=self.headers()
+            )
+        except HttpOperationError as e:
+            print("HttpOperationError detail:")
+            print(e.response.text)
+            raise e
 
     def create_device(self, device_id, is_edge=False):
         print("creating device {}".format(device_id))
@@ -78,21 +96,34 @@ class Helper:
 
         if is_edge:
             device.capabilities = DeviceCapabilities(True)
-        self.service.create_or_update_device(
-            device_id, device, custom_headers=self.headers()
-        )
+
+        try:
+            self.service.create_or_update_device(
+                device_id, device, custom_headers=self.headers()
+            )
+        except HttpOperationError as e:
+            print("HttpOperationError detail:")
+            print(e.response.text)
+            raise e
 
     def create_device_module(self, device_id, module_id):
         print("creating module {}/{}".format(device_id, module_id))
         try:
-            module = self.service.get_module(device_id, module_id, custom_headers=self.headers())
+            module = self.service.get_module(
+                device_id, module_id, custom_headers=self.headers()
+            )
             print("using existing device module")
         except HttpOperationError:
             module = Module(module_id, None, device_id)
 
-        self.service.create_or_update_module(
-            device_id, module_id, module, custom_headers=self.headers()
-        )
+        try:
+            self.service.create_or_update_module(
+                device_id, module_id, module, custom_headers=self.headers()
+            )
+        except HttpOperationError as e:
+            print("HttpOperationError detail:")
+            print(e.response.text)
+            raise e
 
     def try_delete_device(self, device_id):
         try:
