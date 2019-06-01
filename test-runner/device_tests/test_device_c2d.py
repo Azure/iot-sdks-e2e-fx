@@ -27,6 +27,7 @@ def test_device_receive_c2d():
 
         device_client.enable_c2d()
         test_input_thread = device_client.wait_for_c2d_message_async()
+        time.sleep(2)   # wait for receive pipeline to finish setting up
 
         log_message("sending {}".format(sent_message))
         service.send_c2d(get_current_config().test_device.device_id, sent_message)
