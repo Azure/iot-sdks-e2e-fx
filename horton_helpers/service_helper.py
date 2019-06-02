@@ -17,6 +17,27 @@ from msrest.exceptions import HttpOperationError
 import connection_string
 import uuid
 
+max_failure_count = 5
+
+
+def run_with_retry(fun, *args, **kwargs):
+    failures_left = max_failure_count
+
+    try:
+        return fun(*args, **kwargs)
+    except HttpOperationError as e:
+        print("Exception: HttpOperationError detail:")
+        print(e.response.text)
+        retry = False
+        if hasattr(e.response, "Message"):
+            if e.response.Message.startsWith("ErrorCode:ThrottlingBacklogTimeout"):
+                retry = True
+        if retry:
+            failures_left = failures_left - 1
+            print("{} failures left before giving up".format(failures_left))
+        else:
+            raise e
+
 
 class Helper:
     def __init__(self, service_connection_string):
@@ -35,12 +56,9 @@ class Helper:
         }
 
     def get_device_connection_string(self, device_id):
-        try:
-            device = self.service.get_device(device_id, custom_headers=self.headers())
-        except HttpOperationError as e:
-            print("HttpOperationError detail:")
-            print(e.response.text)
-            raise e
+        device = run_with_retry(
+            self.service.get_device, (device_id,), {"custom_headers": self.headers()}
+        )
 
         primary_key = device.authentication.symmetric_key.primary_key
         return (
@@ -53,14 +71,11 @@ class Helper:
         )
 
     def get_module_connection_string(self, device_id, module_id):
-        try:
-            module = self.service.get_module(
-                device_id, module_id, custom_headers=self.headers()
-            )
-        except HttpOperationError as e:
-            print("HttpOperationError detail:")
-            print(e.response.text)
-            raise e
+        module = run_with_retry(
+            self.service.get_module,
+            (device_id, module_id),
+            {"custom_headers": self.headers()},
+        )
 
         primary_key = module.authentication.symmetric_key.primary_key
         return (
@@ -77,14 +92,11 @@ class Helper:
     def apply_configuration(self, device_id, modules_content):
         content = ConfigurationContent(modules_content=modules_content)
 
-        try:
-            self.service.apply_configuration_on_edge_device(
-                device_id, content, custom_headers=self.headers()
-            )
-        except HttpOperationError as e:
-            print("HttpOperationError detail:")
-            print(e.response.text)
-            raise e
+        run_with_retry(
+            self.service.apply_configuration_on_edge_device,
+            (device_id, content),
+            {"custom_headers": self.headers()},
+        )
 
     def create_device(self, device_id, is_edge=False):
         print("creating device {}".format(device_id))
@@ -97,14 +109,11 @@ class Helper:
         if is_edge:
             device.capabilities = DeviceCapabilities(True)
 
-        try:
-            self.service.create_or_update_device(
-                device_id, device, custom_headers=self.headers()
-            )
-        except HttpOperationError as e:
-            print("HttpOperationError detail:")
-            print(e.response.text)
-            raise e
+        run_with_retry(
+            self.service.create_or_update_device,
+            (device_id, device),
+            {"custom_headers": self.headers()},
+        )
 
     def create_device_module(self, device_id, module_id):
         print("creating module {}/{}".format(device_id, module_id))
@@ -116,14 +125,11 @@ class Helper:
         except HttpOperationError:
             module = Module(module_id, None, device_id)
 
-        try:
-            self.service.create_or_update_module(
-                device_id, module_id, module, custom_headers=self.headers()
-            )
-        except HttpOperationError as e:
-            print("HttpOperationError detail:")
-            print(e.response.text)
-            raise e
+        run_with_retry(
+            self.service.create_or_update_module,
+            (device_id, module_id, module),
+            {"custom_headers": self.headers()},
+        )
 
     def try_delete_device(self, device_id):
         try:
