@@ -20,7 +20,7 @@ import uuid
 max_failure_count = 5
 
 
-def run_with_retry(fun, *args, **kwargs):
+def run_with_retry(fun, args, kwargs):
     failures_left = max_failure_count
 
     try:
