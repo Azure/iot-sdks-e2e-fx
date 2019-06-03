@@ -11,7 +11,7 @@ steps:
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - script: |
-    $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }}
+    $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml
     mkdir -p $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}
     mv $(Horton.FrameworkRoot)/results/logs/* $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}/
     mv $(Build.SourcesDirectory)/TEST-* $(Build.SourcesDirectory)/results
