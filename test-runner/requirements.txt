@@ -11,3 +11,4 @@ docker==3.5.0
 azure-eventhub>=1.2.0
 pytest-repeat>=0.7.0
 uamqp>=1.1.0
+junitparser>=1.3.2
