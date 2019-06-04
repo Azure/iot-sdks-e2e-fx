@@ -9,7 +9,6 @@ from image_variants import get_default_variant
 class DockerTags:
     def __init__(self):
         self.repo = None
-        self.commit_name = None
         self.commit_sha = None
         self.langauge = None
         if running_on_azure_pipelines():
@@ -60,15 +59,6 @@ def running_on_azure_pipelines():
     return "BUILD_BUILDID" in os.environ
 
 
-def get_commit_name(commit):
-    if commit.startswith("refs/heads/"):
-        return commit.split("/")[2]
-    elif commit.startswith("refs/tags/"):
-        return commit.split("/")[2]
-    elif commit.startswith("refs/pull/"):
-        return "PR" + commit.split("/")[2]
-    else:
-        return commit
 
 
 def get_docker_tags_from_commit(language, repo, commit, variant):
@@ -79,7 +69,6 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
     )
     tags.language = language
     tags.repo = repo
-    tags.commit_name = get_commit_name(commit)
     tags.commit_sha = github.get_sha_from_commit(repo, commit)
 
     default_variant = get_default_variant(language)
@@ -159,8 +148,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                 0,
                 "{}-{}-{}".format(
                     image_tag_prefix(),
-                    sanitize_string(tags.repo),
-                    sanitize_string(tags.commit_name),
+                    sanitize_string(tags.repo)
                 ),
             )
             # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-AzureAzureIotSdkPythonPreview-Pr59-510b1f9
@@ -169,8 +157,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                 "{}-{}-{}-{}".format(
                     image_tag_prefix(),
                     sanitize_string(tags.repo),
-                    sanitize_string(tags.commit_name),
-                    shorten_sha(tags.commit_sha),
+                    shorten_sha(tags.commit_sha)
                 ),
             )
 
@@ -194,8 +181,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                 "{}-{}-{}-{}".format(
                     image_tag_prefix(),
                     tags.variant,
-                    sanitize_string(tags.repo),
-                    sanitize_string(tags.commit_name),
+                    sanitize_string(tags.repo)
                 ),
             )
             # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-3.7.2-slim-AzureAzureIotSdkPythonPreview-Pr59-510b1f9
@@ -205,8 +191,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                     image_tag_prefix(),
                     tags.variant,
                     sanitize_string(tags.repo),
-                    sanitize_string(tags.commit_name),
-                    shorten_sha(tags.commit_sha),
+                    shorten_sha(tags.commit_sha)
                 ),
             )
     else:

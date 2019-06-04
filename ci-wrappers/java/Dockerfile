@@ -27,7 +27,6 @@ COPY ./prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
-ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
 WORKDIR /sdk
 RUN git pull

@@ -90,8 +90,7 @@ def build_image(tags):
     api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
     build_args = {
         "HORTON_REPO": tags.repo,
-        "HORTON_COMMIT_NAME": tags.commit_name,
-        "HORTON_COMMIT_SHA": tags.commit_sha,
+        "HORTON_COMMIT_SHA": tags.commit_sha
     }
 
     if tags.image_tag_to_use_for_cache:
