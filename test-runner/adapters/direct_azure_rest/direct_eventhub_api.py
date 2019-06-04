@@ -8,6 +8,7 @@ import json
 import ast
 from azure.eventhub import EventHubClient
 from azure.eventhub.common import Offset
+from azure.eventhub.common import EventHubError
 from ..print_message import print_message
 
 # our receive loop cycles through our 4 partitions, waiting for
@@ -35,20 +36,36 @@ class EventHubApi:
         object_list.append(self)
 
     def connect(self, connection_string):
-        print_message("EventHubApi: connecting EventHubClient")
-        self.client = EventHubClient.from_iothub_connection_string(connection_string)
-        print("EventHubApi: enabling EventHub telemetry")
-        # partition_ids = self.client.get_eventhub_info()["partition_ids"]
-        partition_ids = [0, 1, 2, 3]
-        for id in partition_ids:
-            print_message("EventHubApi: adding receiver for partition {}".format(id))
-            receiver = self.client.add_receiver(
-                "$default", id, operation="/messages/events", offset=Offset("@latest")
-            )
-            self.receivers.append(receiver)
-        print_message("EventHubApi: starting client")
-        self.client.run()
-        print_message("EventHubApi: ready")
+        started = False
+        while not started:
+            print_message("EventHubApi: connecting EventHubClient")
+            self.client = EventHubClient.from_iothub_connection_string(connection_string)
+            print("EventHubApi: enabling EventHub telemetry")
+            # partition_ids = self.client.get_eventhub_info()["partition_ids"]
+            partition_ids = [0, 1, 2, 3]
+            self.receivers = []
+            for id in partition_ids:
+                print_message("EventHubApi: adding receiver for partition {}".format(id))
+                receiver = self.client.add_receiver(
+                    "$default", id, operation="/messages/events", offset=Offset("@latest")
+                )
+                self.receivers.append(receiver)
+
+            print_message("EventHubApi: starting client")
+
+            try:
+                self.client.run()
+                started = True
+            except EventHubError as e:
+                if e.message.startswith("ErrorCodes.ResourceLimitExceeded"):
+                    print("eventhub ResourceLimitExceeded.  Sleeping and trying again")
+                    self.client.stop()
+                    self.client = None
+                    time.sleep(20)
+                else:
+                    raise e
+                
+            print_message("EventHubApi: ready")
 
     def disconnect(self):
         if self in object_list:

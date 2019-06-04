@@ -68,6 +68,47 @@ def device_enable_methods(connectionId):  # noqa: E501
     device_glue.enable_methods(connectionId)
 
 
+def device_enable_twin(connectionId):  # noqa: E501
+    """Enable device twins
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    device_glue.enable_twin(connectionId)
+    
+
+def device_get_twin(connectionId):  # noqa: E501
+    """Get the device twin
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: object
+    """
+    return device_glue.get_twin(connectionId)
+
+
+def device_patch_twin(connectionId, props):  # noqa: E501
+    """Updates the device twin
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param props: 
+    :type props: 
+
+    :rtype: None
+    """
+    device_glue.send_twin_patch(connectionId, props)
+
+
 def device_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
     """Wait for a method call, verify the request, and return the response.
 
@@ -115,3 +156,16 @@ def device_wait_for_c2d_message(connectionId):  # noqa: E501
     :rtype: str
     """
     return device_glue.wait_for_c2d_message(connectionId)
+
+
+def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
+    """Wait for the next desired property patch
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: object
+    """
+    return device_glue.wait_for_desired_property_patch(connectionId)

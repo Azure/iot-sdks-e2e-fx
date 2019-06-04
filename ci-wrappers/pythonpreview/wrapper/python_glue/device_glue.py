@@ -49,13 +49,16 @@ class DeviceGlue:
         )
 
     def wait_for_desired_property_patch(self, connection_id):
-        self.object_map[connection_id].wait_for_desired_property_patch()
+        return self.object_map[connection_id].wait_for_desired_property_patch()
+
+    def enable_twin(self, connection_id):
+        self.object_map[connection_id].enable_twin()
 
     def get_twin(self, connection_id):
-        self.object_map[connection_id].get_twin()
+        return self.object_map[connection_id].get_twin()
 
     def send_twin_patch(self, connection_id, props):
-        self.object_map[connection_id].send_twin_patch()
+        self.object_map[connection_id].send_twin_patch(props)
 
     def cleanup_resources(self):
         listcopy = list(self.object_map.keys())

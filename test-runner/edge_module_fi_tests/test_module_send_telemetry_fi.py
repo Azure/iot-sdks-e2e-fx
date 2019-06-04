@@ -24,6 +24,7 @@ local_timeout = 60  # Seconds
 
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.callsSendEvent
+@pytest.mark.timeout(timeout=180) # extra timeout in case eventhub needs to retry due to resource error
 def test_module_send_event_iothub_fi():
     """ Sends event through Edge Hub to IoT Hub and validates the message is received using the Event Hub API.
 

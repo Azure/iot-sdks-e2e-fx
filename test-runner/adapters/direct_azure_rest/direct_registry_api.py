@@ -47,3 +47,10 @@ class RegistryApi:
         self.service.update_module_twin(
             device_id, module_id, twin, custom_headers=self.headers()
         )
+
+    def get_device_twin(self, device_id):
+        return self.service.get_twin(device_id, custom_headers=self.headers()).as_dict()
+
+    def patch_device_twin(self, device_id, patch):
+        twin = models.Twin.from_dict(patch)
+        self.service.update_twin(device_id, twin, custom_headers=self.headers())

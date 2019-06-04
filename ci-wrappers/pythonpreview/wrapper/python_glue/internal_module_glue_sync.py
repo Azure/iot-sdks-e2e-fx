@@ -56,7 +56,7 @@ class InternalModuleGlueSync:
         pass
 
     def enable_twin(self):
-        raise NotImplementedError()
+        pass
 
     def send_event(self, event_body):
         print("sending event")
@@ -83,9 +83,9 @@ class InternalModuleGlueSync:
 
         # verify name and payload
         expected_name = methodName
-        expected_payload = requestAndResponse.request_payload['payload']
-        if (request.name == expected_name):
-            if (request.payload == expected_payload):
+        expected_payload = requestAndResponse.request_payload["payload"]
+        if request.name == expected_name:
+            if request.payload == expected_payload:
                 print("Method name and payload matched. Returning response")
                 resp_status = requestAndResponse.status_code
                 resp_payload = requestAndResponse.response_payload
@@ -103,7 +103,9 @@ class InternalModuleGlueSync:
             resp_payload = None
 
         # send method response
-        response = MethodResponse(request_id=request.request_id, status=resp_status, payload=resp_payload)
+        response = MethodResponse(
+            request_id=request.request_id, status=resp_status, payload=resp_payload
+        )
         self.client.send_method_response(response)
         print("Method response sent")
 
@@ -113,10 +115,18 @@ class InternalModuleGlueSync:
         print("send confirmation received")
 
     def wait_for_desired_property_patch(self):
-        raise NotImplementedError()
+        print("Waiting for desired property patch")
+        patch = self.client.receive_twin_desired_properties_patch()
+        print("patch received")
+        return patch
 
     def get_twin(self):
-        raise NotImplementedError()
+        print("getting twin")
+        twin = self.client.get_twin()
+        print("done getting twin")
+        return {"properties": twin}
 
     def send_twin_patch(self, props):
-        raise NotImplementedError()
+        print("setting reported property patch")
+        self.client.patch_twin_reported_properties(props)
+        print("done setting reported properties")

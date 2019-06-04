@@ -54,27 +54,11 @@ class EdgeHub:
             self.leaf_device_connection_string = self.helper.get_device_connection_string(
                 self.leaf_device_id
             )
-        except:
+        except Exception:
             self.helper.create_device(self.leaf_device_id)
             self.leaf_device_connection_string = self.helper.get_device_connection_string(
                 self.leaf_device_id
             )
-
-        self._discoverAllExistingModules()
-
-    def _discoverAllExistingModules(self):
-        self.modules = []
-        for name in all_containers:
-            mod = all_containers[name]
-            try:
-                thisModString = self.helper.get_module_connection_string(
-                    self.edge_hub_device_id, mod.module_id
-                )
-            except:
-                pass
-            else:
-                mod.connection_string = thisModString
-                self.modules.append(mod)
 
     def deployModules(self, modules):
         configuration = EdgeConfiguration()

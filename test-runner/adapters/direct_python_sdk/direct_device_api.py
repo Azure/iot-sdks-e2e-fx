@@ -6,11 +6,12 @@
 from multiprocessing.pool import ThreadPool
 from internal_device_glue import InternalDeviceGlue
 from ..abstract_device_api import AbstractDeviceApi
+from .base_module_or_device_api import BaseModuleOrDeviceApi
 
 device_object_list = []
 
 
-class DeviceApi(AbstractDeviceApi):
+class DeviceApi(BaseModuleOrDeviceApi, AbstractDeviceApi):
     def __init__(self):
         self.glue = InternalDeviceGlue()
         self.pool = ThreadPool()
@@ -30,19 +31,8 @@ class DeviceApi(AbstractDeviceApi):
         self.glue.disconnect()
         self.glue = None
 
-    def send_event(self, body):
-        self.glue.send_event(body)
-
     def enable_c2d(self):
         self.glue.enable_c2d()
 
     def wait_for_c2d_message_async(self):
         return self.pool.apply_async(self.glue.wait_for_c2d_message)
-
-    def enable_methods(self):
-        self.glue.enable_methods()
-
-    def roundtrip_method_async(
-        self, method_name, status_code, request_payload, response_payload
-    ):
-        raise NotImplementedError

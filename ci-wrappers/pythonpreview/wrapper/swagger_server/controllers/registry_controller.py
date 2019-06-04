@@ -31,6 +31,21 @@ def registry_disconnect(connectionId):  # noqa: E501
     return 'do some magic!'
 
 
+def registry_get_device_twin(connectionId, deviceId):  # noqa: E501
+    """gets the device twin for the given deviceid
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param deviceId: 
+    :type deviceId: str
+
+    :rtype: object
+    """
+    return 'do some magic!'
+
+
 def registry_get_module_twin(connectionId, deviceId, moduleId):  # noqa: E501
     """gets the module twin for the given deviceid and moduleid
 
@@ -44,6 +59,23 @@ def registry_get_module_twin(connectionId, deviceId, moduleId):  # noqa: E501
     :type moduleId: str
 
     :rtype: object
+    """
+    return 'do some magic!'
+
+
+def registry_patch_device_twin(connectionId, deviceId, props):  # noqa: E501
+    """update the device twin for the given deviceId
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param deviceId: 
+    :type deviceId: str
+    :param props: 
+    :type props: 
+
+    :rtype: None
     """
     return 'do some magic!'
 
