@@ -16,6 +16,7 @@ output_name = "telemetry"
 
 @pytest.mark.callsSendOutputEvent
 @pytest.mark.testgroup_edgehub_module_client
+@pytest.mark.timeout(timeout=180) # extra timeout in case eventhub needs to retry due to resource error
 def test_module_output_routed_upstream():
 
     module_client = connections.connect_test_module_client()

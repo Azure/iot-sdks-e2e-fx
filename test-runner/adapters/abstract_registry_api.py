@@ -24,3 +24,11 @@ class AbstractRegistryApi:
     @abc.abstractmethod
     def patch_module_twin(self, device_id, module_id, patch):
         pass
+
+    @abc.abstractmethod
+    def get_device_twin(self, device_id):
+        pass
+
+    @abc.abstractmethod
+    def patch_device_twin(self, device_id, patch):
+        pass

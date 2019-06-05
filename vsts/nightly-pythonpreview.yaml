@@ -17,6 +17,14 @@ jobs:
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
+    job_tag: py34
+    variant: py34
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: $(Horton.Language)
+    repo: $(Horton.Repo)
+    commit: $(Horton.Commit)
+    forced_image: $(Horton.ForcedImage)
     job_tag: py35
     variant: py35
 - template: templates/jobs-build-docker-image.yaml
@@ -39,6 +47,7 @@ jobs:
 - job: "test"
   dependsOn:
     - "build_py27_container"
+    - "build_py34_container"
     - "build_py35_container"
     - "build_py36_container"
     - "build_py37_container"
@@ -52,6 +61,14 @@ jobs:
       iothub_module_and_device_mqtt_27:
         suite: iothub_module_and_device_mqtt
         variant: py27
+        async: no
+      edgehub_module_mqtt_34:
+        suite: edgehub_module_mqtt
+        variant: py34
+        async: no
+      iothub_module_and_device_mqtt_34:
+        suite: iothub_module_and_device_mqtt
+        variant: py34
         async: no
       edgehub_module_mqtt_35:
         suite: edgehub_module_mqtt

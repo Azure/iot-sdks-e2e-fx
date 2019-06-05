@@ -50,3 +50,18 @@ class RegistryApi(AbstractRegistryApi):
             patch,
             timeout=adapter_config.default_api_timeout,
         )
+
+    @log_entry_and_exit
+    def get_device_twin(self, device_id):
+        return self.rest_endpoint.get_device_twin(
+            self.connection_id, device_id, timeout=adapter_config.default_api_timeout
+        )
+
+    @log_entry_and_exit
+    def patch_device_twin(self, device_id, patch):
+        self.rest_endpoint.patch_device_twin(
+            self.connection_id,
+            device_id,
+            patch,
+            timeout=adapter_config.default_api_timeout,
+        )

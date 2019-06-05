@@ -17,7 +17,7 @@ cd ${root_dir}/swagger
 [ $? -eq 0 ] || { echo "cd swagger failed"; exit 1; }
 
 rm -r swagger_generated/yaml
-[ $? -eq 0 ] || { echo "rm swagger_generated/yaml failed"; exit 1; }
+# OK to fail
 
 ./generate.sh yaml
 [ $? -eq 0 ] || { echo "generate.sh failed"; exit 1; }

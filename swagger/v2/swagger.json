@@ -55,6 +55,9 @@
     "/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}": {
       "$ref": "registry.json#/moduleTwin"
     },
+    "/registry/{connectionId}/deviceTwin/{deviceId}": {
+      "$ref": "registry.json#/deviceTwin"
+    },
     "/module/connect/{transportType}": {
       "$ref": "module.json#/connect"
     },
@@ -132,6 +135,15 @@
     },
     "/device/{connectionId}/c2dMessage": {
       "$ref": "device.json#/c2dMessage"
+    },
+    "/device/{connectionId}/enableTwin": {
+      "$ref": "device.json#/enableTwin"
+    },
+    "/device/{connectionId}/twin": {
+      "$ref": "device.json#/twin"
+    },
+    "/device/{connectionId}/twinDesiredPropPatch": {
+      "$ref": "device.json#/twinDesiredPropPatch"
     }
   }
 }

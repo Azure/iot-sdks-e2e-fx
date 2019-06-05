@@ -6,6 +6,7 @@
 
 from .direct_module_api import ModuleApi, module_object_list
 from .direct_device_api import DeviceApi, device_object_list
+from .direct_wrapper_api import WrapperApi
 
 
 def cleanup_test_objects():

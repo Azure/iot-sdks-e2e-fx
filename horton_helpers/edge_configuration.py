@@ -39,7 +39,7 @@ class EdgeConfiguration:
         ):
             self.agentImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE"]
         else:
-            self.agentImage = "mcr.microsoft.com/azureiotedge-agent:1.0.6"
+            self.agentImage = "mcr.microsoft.com/azureiotedge-agent:1.0.7"
 
         if (
             False
@@ -47,7 +47,7 @@ class EdgeConfiguration:
         ):
             self.hubImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE"]
         else:
-            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:1.0.6"
+            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:1.0.7"
 
         self.config = {
             "moduleContent": {
