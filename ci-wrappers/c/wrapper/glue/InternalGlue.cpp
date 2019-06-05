@@ -164,6 +164,7 @@ string InternalGlue::ConnectFromEnvironment(const char *transportType)
         IoTHubModuleClient_SetOption(client, "logtrace", &traceOn);
         IoTHubModuleClient_SetOption(client, "rawlogtrace", &rawTraceOn);
         IoTHubModuleClient_SetOption(client, "sas_token_lifetime", &sasTokenLifetime);
+        cout << "Module client(" << (void*)client << ") created" << endl;
         
 
         string clientId = getNextClientId();
@@ -184,6 +185,7 @@ void InternalGlue::Disconnect(string connectionId)
     if (client)
     {
         this->clientMap.erase(connectionId);
+        cout << "Destroying module client(" << (void*)client << ")" << endl;
         IoTHubModuleClient_Destroy(client);
     }
     twin_callback_struct *twin_cb = (twin_callback_struct *)this->twinMap[connectionId];
@@ -515,11 +517,11 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result, IOT
     std::time_t timetime = std::time(nullptr);
     if (result == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED)
     {
-        cout << std::asctime(std::localtime(&timetime)) << "the module client is connected to edgehub / iothub" << endl;
+        cout << std::asctime(std::localtime(&timetime)) << "the module client (" << user_context << ") is connected to edgehub / iothub" << endl;
     }
     else
     {
-        cout << std::asctime(std::localtime(&timetime)) << "the module client has been disconnected" << endl;
+        cout << std::asctime(std::localtime(&timetime)) << "the module client (" << user_context << ") has been disconnected" << endl;
     }
 }
 
@@ -532,7 +534,7 @@ void setConnectionStatusCallback(IOTHUB_MODULE_CLIENT_HANDLE client)
     }
 
     // Setting connection status callback to get indication of connection to edgehub / iothub
-    ret = IoTHubModuleClient_SetConnectionStatusCallback(client, connectionStatusCallback, NULL);
+    ret = IoTHubModuleClient_SetConnectionStatusCallback(client, connectionStatusCallback, client);
     ThrowIfFailed(ret, "IoTHubModuleClient_SetConnectionStatusCallback");
 }
 
