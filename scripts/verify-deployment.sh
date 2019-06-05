@@ -12,8 +12,8 @@ if [ -z ${CONTAINERNAME} ] ||
 fi
 
 # each iteration = ~ 10 seconds.  
-# 90 iterations = 15 minutes (which can happen if the registry is being throttled)
-for i in {1..60}; do
+# 120 iterations = 20 minutes (which can happen if the registry is really being throttled)
+for i in {1..120}; do
   echo "getting image ID for $IMAGENAME"
   EXPECTED_IMAGE_ID=$(sudo docker image inspect $IMAGENAME --format="{{.Id}}")
   if [ $? -eq 0 ]; then
