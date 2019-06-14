@@ -48,3 +48,4 @@ def remove_edgehub_device():
 
 if __name__ == "__main__":
     remove_edgehub_device()
+    
