@@ -12,6 +12,7 @@ import sys
 import os
 import argparse
 import shutil
+import re
 
 class InjectIntoJunit:
 
@@ -67,15 +68,26 @@ class InjectIntoJunit:
             print(e)
             return
 
+        #remove offending characters
+        with open(junit_save_path) as f:
+            file_content = f.read()
+            filtered = self.filter_esc_to_ascii7(file_content)
+        with open(junit_save_path) as f:
+            f.write(filtered)
+
         try:
             shutil.copyfile(junit_save_path, junit_path)
-            os.remove(junit_save_path)
         except Exception as e:
             print("Exception copying JUNIT file: " + junit_path )
             print(e)
 
         print("SUCCESS!")
         return
+
+    def filter_esc_to_ascii7(self, file_str):
+        ascii7 = ''.join([i if ord(i) < 128 else '#' for i in file_str])
+        ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
+        return ansi_escape.sub('', str(ascii7))
 
     def get_suite_lines_from_log(self, log_lines, suite_name):
         lines_for_junit = []
@@ -94,4 +106,3 @@ class InjectIntoJunit:
 
 if __name__ == "__main__":
     junit_processor = InjectIntoJunit(sys.argv[1:])
-    
