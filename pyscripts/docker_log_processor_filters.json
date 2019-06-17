@@ -1,0 +1,14 @@
+{
+    "filters":
+    [
+        "Getting next batch",
+        "Obtained next batch",
+        "Request finished in",
+        "Executing HttpStatusCodeResult",
+        "Microsoft.AspNetCore.Mvc",
+        "Executed action IO.Swagger.Controllers",
+        "Microsoft.AspNetCore.Hosting.Internal.",
+        "Executing action method IO.Swagger.Controllers",
+        "Request starting HTTP/1.1"
+    ]
+}
