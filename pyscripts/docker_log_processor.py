@@ -11,6 +11,7 @@
 from multiprocessing import Process, Queue, Event
 from threading import Thread
 from datetime import datetime, timedelta
+import tracebsack
 import docker
 import time
 import argparse
@@ -195,13 +196,13 @@ class DockerLogProcessor:
                 }
             """
             try:
-                filter_json = open(filter_filename, encoding="utf8").read()
+                filter_json = open(filter_filename, "r", encoding="utf8").read()
                 if filter_json:
                     json_data  = json.loads(filter_json)
                     filter_list = json_data['filters']
             except Exception as e:
                 self.write_err("Exception processing JSON file: " + filter_filename)
-                self.write_err(e)
+                traceback.print_exc()
 
         # find the max_name_len of every staticfile filename basename
         for static_filename in static_filenames:
