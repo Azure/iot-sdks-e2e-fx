@@ -3,41 +3,31 @@ parameters:
   repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
   repo_user: $(IOTHUB-E2E-REPO-USER)
   repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
-  image_edgeHub: mcr.microsoft.com/azureiotedge-hub:1.0.7
-  image_edgeAgent: mcr.microsoft.com/azureiotedge-agent:1.0.7
+  image_edgeHub: mcr.microsoft.com/azureiotedge-hub:1.0.6
+  image_edgeAgent: mcr.microsoft.com/azureiotedge-agent:1.0.6
   image_friendMod: $(IOTHUB-E2E-REPO-ADDRESS)/default-friend-module:latest
   test_image: ''
 
 steps:
-
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '3.x'
     architecture: 'x64'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    $(Horton.FrameworkRoot)/scripts/setup/setup-python36.sh
-  displayName: 'install python libs'
+- powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'POWERSHELL: install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
-  displayName: 'install iotedge packages'
+- powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.ps1
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'POWERSHELL: install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} &&
-    docker pull ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }} &&
-    docker pull ${{ parameters.image_edgeAgent }} &&
-    docker pull ${{ parameters.image_edgeHub }} &&
-    docker pull ${{ parameters.image_friendmod }} 
-  displayName: 'pre-cache docker images'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
-
-- script: |
-    $(Horton.FrameworkRoot)/scripts/create-new-edgehub-device.sh 
-  displayName: 'Create new edgehub identity'
+- powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-precache-images.ps1 ${{ parameters.language }} ${{ parameters.test_image }} ${{ parameters.image_edgeAgent }} ${{ parameters.image_edgeHub }} ${{ parameters.image_friendmod }}
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'POWERSHELL: pre-cache docker images'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -46,9 +36,9 @@ steps:
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    python3 $(Horton.FrameworkRoot)/pyscripts/deploy_test_containers.py --friend --${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
-  displayName: 'Deploy manifest (${{ parameters.test_image }})'
+- powershell: $(Horton.FrameworkRoot)/scripts/create-new-edgehub-device.ps1
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'POWERSHELL: Create new edgehub identity'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -57,39 +47,44 @@ steps:
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh edgeHub ${{ parameters.image_edgeHub }}
-  displayName: 'Verify edgeHub deployment'
+- powershell: $(Horton.FrameworkRoot)/scripts/deploy-test-containers.ps1 ${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'POWERSHELL: Deploy manifest (${{ parameters.test_image }})'
+  env:
+    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh edgeAgent ${{ parameters.image_edgeAgent }}
-  displayName: 'Verify edgeAgent deployment'
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment-pwsh.ps1 edgeHub ${{ parameters.image_edgeHub }}
+  displayName: 'POWERSHELL: Verify edgeHub deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh friendMod ${{ parameters.image_friendMod }}
-  displayName: 'Verify friendMod deployment'
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment-pwsh.ps1 edgeAgent ${{ parameters.image_edgeAgent }}
+  displayName: 'POWERSHELL: Verify edgeAgent deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    $(Horton.FrameworkRoot)/scripts/verify-deployment.sh ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
-  displayName: 'Verify ${{ parameters.language }}Mod deployment (${{ parameters.test_image }})'
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment-pwsh.ps1 friendMod ${{ parameters.image_friendMod }}
+  displayName: 'POWERSHELL: Verify friendMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-   python3 $(Horton.FrameworkRoot)/pyscripts/ensure-container.py ${{ parameters.language }}Mod
-  displayName: 'Verify that ${{ parameters.language }}Mod is responding'
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment-pwsh.ps1 ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
+  displayName: 'POWERSHELL: Verify deploymet ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-   python3 $(Horton.FrameworkRoot)/pyscripts/ensure-container.py friendMod
-  displayName: 'Verify that friendMod is responding'
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-container-running.ps1 ${{ parameters.language }}Mod
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'POWERSHELL: Verify that ${{ parameters.language }}Mod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    sleep 30
-  displayName: 'give edgeHub 30 seconds to start up'
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-container-running.ps1 friendMod
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'POWERSHELL: Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-
+- powershell: |
+    Start-Sleep -s 30  
+  displayName: 'POWERSHELL: give edgeHub 30 seconds to start up'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))

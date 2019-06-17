@@ -1,5 +1,5 @@
 jobs:
-- template: jobs-build-docker-image.yaml
+- template: jobs-build-docker-image-pwsh.yaml
   parameters:
     language: $(Horton.Language)
     repo: $(Horton.Repo)
@@ -25,5 +25,5 @@ jobs:
     parameters:
       language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
+      repo: $(Horton.Repo)
       suite: $(suite)
-

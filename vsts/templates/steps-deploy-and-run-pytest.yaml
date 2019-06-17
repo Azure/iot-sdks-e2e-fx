@@ -156,7 +156,7 @@ steps:
     language: ${{ parameters.language }}
     test_image: $(testImage)
 
-- template: pytest-test-steps.yaml
+- template: pytest-test-steps-pwsh.yaml
   parameters:
     language: ${{ parameters.language }}
     transport: $(transport)
@@ -164,8 +164,7 @@ steps:
     log_folder_name: $(logFolderName)
     extra_args: $(testArgs)
 
-- template: post-test-steps.yaml
+- template: post-test-steps-pwsh.yaml
   parameters:
     language: ${{ parameters.language }}
     log_folder_name: $(logFolderName)
-

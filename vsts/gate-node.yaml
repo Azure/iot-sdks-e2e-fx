@@ -3,3 +3,4 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 jobs:
 - template: templates/jobs-gate-node.yaml
+#- template: templates/jobs-gate-node-pwsh.yaml

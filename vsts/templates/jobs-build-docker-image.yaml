@@ -5,6 +5,13 @@ parameters:
   forced_image: ''
   job_tag: 'linux'
   variant: ''
+  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
+  repo_user: $(IOTHUB-E2E-REPO-USER)
+  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
+  image_edgeHub: mcr.microsoft.com/azureiotedge-hub:1.0.6
+  image_edgeAgent: mcr.microsoft.com/azureiotedge-agent:1.0.6
+  image_friendMod: $(IOTHUB-E2E-REPO-ADDRESS)/default-friend-module:latest
+  test_image: ''
 
 jobs:
 - job: 'build_${{ parameters.job_tag }}_container'
@@ -34,6 +41,9 @@ jobs:
         $IsPr = "yes"
       }
 
+      $Lang = $env:language
+      $Veryant = $env:variant
+
       Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
       Write-Host "##vso[task.setvariable variable=NormalizedRepo]${NormalizedRepo}"
       Write-Host "##vso[task.setvariable variable=IsPr]${IsPr}"
@@ -47,6 +57,8 @@ jobs:
       Commit: ${{ parameters.commit }}
       ForcedImage: ${{ parameters.forced_image }}
       Repo: ${{ parameters.repo }}
+      Lang: ${{ parameters.language }}
+      Veryant: ${{ parameters.variant }}
     ignoreLASTEXITCODE: false
     errorActionPreference: Stop
     failOnStderr: true
@@ -74,21 +86,27 @@ jobs:
       architecture: 'x64'
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-  - script: |
+  - powershell: |
       python3 -m pip install -r $(Horton.FrameworkRoot)/pyscripts/requirements.txt
-    displayName: "pip install requirements.txt"
+    displayName: "POWERSHELL: pip install requirements.txt"
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-  - script: |
-      python3 $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language ${{ parameters.language }}  --repo ${NormalizedRepo}  --commit ${CommitToPass} --variant ${{ parameters.variant }}
-    displayName: "build docker image ${{ parameters.language }}"
-    condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+  - powershell: $(Horton.FrameworkRoot)/scripts/build-docker-image.ps1 ${{ parameters.language }} $(NormalizedRepo) "master" ${{ parameters.variant }}
+    displayName: "POWERSHELL: build docker image ${{ parameters.language }} $(NormalizedRepo) ${CommitToPass} ${{ parameters.variant }}"
     env: 
+      IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
       IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
       IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
       IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+      IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
       NormalizedRepo: $(NormalizedRepo)
       CommitToPass: $(CommitToPass)
+      Commit: ${{ parameters.commit }}
+      ForcedImage: ${{ parameters.forced_image }}
+      Repo: ${{ parameters.repo }}
+      Lang: $(Lang)
+      Veryant: ${{ parameters.variant }}
+    condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifacts'
@@ -96,3 +114,4 @@ jobs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)/'
       ArtifactName: 'patch'
     condition: always()
+    
