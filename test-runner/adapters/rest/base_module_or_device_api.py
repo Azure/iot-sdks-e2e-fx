@@ -26,14 +26,14 @@ class BaseModuleOrDeviceApi:
     def disconnect(self):
         if self.connection_id:
             # give client a chance to finish up any IO (such as sending input message ACK)
-            time.sleep(2)
+            time.sleep(10)
             self.rest_endpoint.disconnect(
                 self.connection_id, timeout=adapter_config.default_api_timeout
             )
             self.connection_id = ""
             # give edgeHub a chance to disconnect MessagingServiceClient from IoTHub.  It does this lazily after the module disconnects from edgeHub
+            time.sleep(2)
 
-            time.sleep(10)
 
     @log_entry_and_exit
     def enable_twin(self):
