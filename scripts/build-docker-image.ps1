@@ -23,6 +23,7 @@ $pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
 $py = PyCmd-Run "-m pip install --upgrade pip"; Invoke-Expression  $py
 $py = PyCmd-Run "-m pip install -r $pyscripts/requirements.txt"; Invoke-Expression  $py
 $py = PyCmd-Run "-m pip install docker"; Invoke-Expression  $py
+$py = PyCmd-Run "-m pip install colorama"; Invoke-Expression  $py
 #$py = PyCmd-Run "-m pip install -I docker"; Invoke-Expression  $py
 #$py = PyCmd-Run "-m pip install -I colorama"; Invoke-Expression  $py
 
