@@ -17,7 +17,7 @@ steps:
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/fetch-logs-pwsh.ps1 ${{ parameters.language }} $(Build.SourcesDirectory) ${{ parameters.log_folder_name }}
+- powershell: $(Horton.FrameworkRoot)/scripts/fetch-logs.ps1 ${{ parameters.language }} $(Build.SourcesDirectory) ${{ parameters.log_folder_name }}
   displayName: 'POWERSHELL: Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
