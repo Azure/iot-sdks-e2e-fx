@@ -72,7 +72,7 @@ class InjectIntoJunit:
         with open(junit_save_path) as f:
             file_content = f.read()
             filtered = self.filter_esc_to_ascii7(file_content)
-        with open(junit_save_path) as f:
+        with open(junit_save_path, "w") as f:
             f.write(filtered)
 
         try:
