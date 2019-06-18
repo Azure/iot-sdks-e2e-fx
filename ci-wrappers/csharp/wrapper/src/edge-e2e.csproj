@@ -9,6 +9,9 @@
     <PackageId>IO.Swagger</PackageId>
   </PropertyGroup>
   <PropertyGroup>
+    <CommonTest>..\..\sdk\common\test</CommonTest>
+  </PropertyGroup>
+  <PropertyGroup>
     <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
@@ -30,5 +33,10 @@
     <ProjectReference Include="..\..\sdk\iothub\device\src\Microsoft.Azure.Devices.Client.csproj" />
     <ProjectReference Include="..\..\sdk\iothub\service\src\Microsoft.Azure.Devices.csproj" />
     <ProjectReference Include="..\..\sdk\shared\src\Microsoft.Azure.Devices.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(CommonTest)\ConsoleEventListener.cs">
+      <Link>Common\ConsoleEventListener.cs</Link>
+    </Compile>
   </ItemGroup>
 </Project>
