@@ -22,23 +22,23 @@ foreach($o in $out) {
 if($isWin32 -eq $false) {
     sudo systemctl restart iotedge
 }
-else {
-    $devTag = "new edgeHub device created with device_id="
-    $devTagLen = $devTag.Length
-    $deviceName = ""
-    foreach($o in $out) {
-        $devNamePos = $o.IndexOf($devTag)
-        if($devNamePos -ge 0) {
-            $oLen = $o.Length
-            $startPos = $devNamePos + $devTagLen
-            $strSize = $oLen - ($devNamePos + $devTagLen)
-            $deviceName = $o.Substring($startPos, $strSize)
-            if( "$deviceName" -ne "") {
-                break
-            }
-        }
-    }
-    if( "$deviceName" -ne "") {
-        Write-Host "Setting IOTHUB_E2E_EDGEHUB_DEVICE_ID=$deviceName" -ForegroundColor Yellow
-        Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_DEVICE_ID -Value $deviceName    }    
-}
+#else {
+#    $devTag = "new edgeHub device created with device_id="
+#    $devTagLen = $devTag.Length
+#    $deviceName = ""
+#    foreach($o in $out) {
+#        $devNamePos = $o.IndexOf($devTag)
+#        if($devNamePos -ge 0) {
+#            $oLen = $o.Length
+#            $startPos = $devNamePos + $devTagLen
+#            $strSize = $oLen - ($devNamePos + $devTagLen)
+#            $deviceName = $o.Substring($startPos, $strSize)
+#            if( "$deviceName" -ne "") {
+#                break
+#            }
+#        }
+#    }
+#    if( "$deviceName" -ne "") {
+#        Write-Host "Setting IOTHUB_E2E_EDGEHUB_DEVICE_ID=$deviceName" -ForegroundColor Yellow
+#        Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_DEVICE_ID -Value $deviceName    }    
+#}
