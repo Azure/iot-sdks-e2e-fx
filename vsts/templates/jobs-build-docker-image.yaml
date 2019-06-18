@@ -86,8 +86,7 @@ jobs:
       architecture: 'x64'
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-  - powershell: |
-      python3 -m pip install -r $(Horton.FrameworkRoot)/pyscripts/requirements.txt
+  - powershell: $(Horton.FrameworkRoot)/scripts/install-pyscript-reqs.ps1
     displayName: "POWERSHELL: pip install requirements.txt"
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
