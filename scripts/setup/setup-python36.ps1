@@ -245,8 +245,8 @@ else
 } 
 if($isWin32 -eq $false)
 {
-    set-location $root_dir/test-runner
-    sudo apt install python-pytest
+    #set-location $root_dir/test-runner
+    #sudo -H -E apt install python-pytest
 }
 
 
