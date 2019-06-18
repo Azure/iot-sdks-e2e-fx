@@ -53,14 +53,14 @@ if($isWin32 -eq $false) {
     }
 }
 
-$cert_val = $env:IOTHUB_E2E_EDGEHUB_CA_CERT
-if("$cert_val" -ne "") {
-    $cert_val = $cert_val.SubString(0,18)
-    Write-Host "XOTHUB_E2E_EDGEHUB_CA_CERX($cert_val)" -ForegroundColor Red -BackgroundColor Yellow
-}
-else {
-    Write-Host "(NULL) XOTHUB_E2E_EDGEHUB_CA_CERX" -ForegroundColor Red -BackgroundColor Yellow   
-}
+#$cert_val = $env:IOTHUB_E2E_EDGEHUB_CA_CERT
+#if("$cert_val" -ne "") {
+#    $cert_val = $cert_val.SubString(0,18)
+#    Write-Host "XOTHUB_E2E_EDGEHUB_CA_CERX($cert_val)" -ForegroundColor Red -BackgroundColor Yellow
+#}
+#else {
+#    Write-Host "(NULL) XOTHUB_E2E_EDGEHUB_CA_CERX" -ForegroundColor Red -BackgroundColor Yellow   
+#}
 
 set-location $testpath
 write-host "###### pytest -v --scenario $test_scenario --transport=$test_transport --$test_lang-wrapper --junitxml=$test_junitxml -o $test_o $test_extra_args"

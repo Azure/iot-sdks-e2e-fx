@@ -243,6 +243,11 @@ else
 {
     Write-Host "horton testrunner installed successfully" -ForegroundColor Green
 } 
+if($isWin32 -eq $false)
+{
+    set-location $root_dir/test-runner
+    sudo apt install python-pytest
+}
 
 
 Write-Host "Python3 and Python libraries installed successfully" -ForegroundColor Green
