@@ -30,13 +30,20 @@ else {
     New-Item -ItemType directory -Path $resultsdir
 }
 
+#$dock_log = ""
+$dock_log = @()
 $languageMod = $langmod + "Mod"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
         Write-Host "getting log for $mod" -ForegroundColor Green 
-        $out = docker logs -t $mod
-        $out | Out-File $resultsdir/${mod}.log
+        if($isWin32) {
+            $dock_log = docker logs -t $mod
+        }
+        else {
+            $dock_log = sudo docker logs -t $mod
+        }
+        $dock_log | Out-File $resultsdir/${mod}.log
     }
 }
 
