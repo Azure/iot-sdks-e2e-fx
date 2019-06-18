@@ -72,20 +72,20 @@ else {
 }
 
 set-location $resultsdir
-$log_file = "$resultsdir/merged.log"
+#$log_file = "$resultsdir/merged.log"
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 #Write-Host "{root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $log_file"
 
-$py = PyCmd-Run "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $log_fie"; $out = Invoke-Expression  $py
+$py = PyCmd-Run "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; $out = Invoke-Expression  $py
 foreach($o in $out) {
     Write-Host $o
 }
 
 $files = Get-ChildItem "$build_dir/TEST-*" | Where-Object { !$_.PSIsContainer }
 if($files) {
-    foreach($f in $files) {
-        Write-Host "FILE: $f"
-    }
+    #foreach($f in $files) {
+    #    Write-Host "FILE: $f"
+    #}
     Move-Item $files "$build_dir/results/logs"
 }
 exit 0
