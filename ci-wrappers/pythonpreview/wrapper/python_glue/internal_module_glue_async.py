@@ -4,7 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from azure.iot.device.aio import IoTHubModuleClient
-from azure.iot.device import auth, MethodResponse
+from azure.iot.device import MethodResponse
 from threading import Event
 import json
 import async_helper
@@ -29,20 +29,14 @@ class InternalModuleGlueAsync:
 
     def connect_from_environment(self, transport_type):
         print("connecting from environment")
-        auth_provider = auth.from_environment()
-        self.client = IoTHubModuleClient.from_authentication_provider(
-            auth_provider, transport_type
-        )
+        self.client = IoTHubModuleClient.create_from_edge_environment()
         async_helper.run_coroutine_sync(self.client.connect())
 
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
-        auth_provider = auth.from_connection_string(connection_string)
-        if "GatewayHostName" in connection_string:
-            auth_provider.ca_cert = cert
-        self.client = IoTHubModuleClient.from_authentication_provider(
-            auth_provider, transport_type
-        )
+        # if "GatewayHostName" in connection_string:
+        #     auth_provider.ca_cert = cert
+        self.client = IoTHubModuleClient.create_from_connection_string(connection_string)
         async_helper.run_coroutine_sync(self.client.connect())
 
     def disconnect(self):
