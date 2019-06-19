@@ -22,7 +22,8 @@ Write-Host "Fetching Logs"
 
 $log_folder_name = $log_folder_name.trim("/")
 $tryresultsdir="$build_dir/results/logs/$log_folder_name"
-$junit_file = "$build_dir/$log_folder_name.xml"
+$junit_file = "$build_dir/TEST-$log_folder_name.xml"
+Write-Host "junit_file:($junit_file)"
 
 if( -Not (Test-Path -Path $tryresultsdir ) )
 {
