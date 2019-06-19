@@ -54,7 +54,7 @@ foreach($mod in $modulelist) {
         }
         catch {
             Write-Host "Exception getting log for $mod" -ForegroundColor Red
-            Write-Host $_ -ForegroundColor Red
+            $_
         }
         if("$stderr" -ne "") {
             $stdout | Out-File $resultsdir/$mod.log -Append
