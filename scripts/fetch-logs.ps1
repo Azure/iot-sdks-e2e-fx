@@ -37,6 +37,7 @@ $resultsdir = $tryresultsdir
 
 $stdout = @()
 $stderr = @()
+$got_mods = @()
 $languageMod = $langmod + "Mod"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
@@ -51,6 +52,7 @@ foreach($mod in $modulelist) {
                 $stdout = sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
                 $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
             }
+            $got_mods += $mod
         }
         catch {
             Write-Host "Exception getting log for $mod" -ForegroundColor Red
@@ -79,8 +81,10 @@ $arglist = ""
 $modlist = ""
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
-        $arglist += "-staticfile $resultsdir/$mod.log "
-        $modlist += "$mod "
+        if($mod -contains $got_mods) {
+            $arglist += "-staticfile $resultsdir/$mod.log "
+            $modlist += "$mod "
+        }
     }
 }
 
