@@ -32,8 +32,8 @@ else {
 }
 
 #$dock_log = @()
-$stdout = ""
-$stderr = ""
+$stdout = @()
+$stderr = @()
 $languageMod = $langmod + "Mod"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
@@ -49,7 +49,7 @@ foreach($mod in $modulelist) {
         else {
             #Invoke-Expression "sudo docker logs -t $mod 2>&1 | Out-File "$resultsdir/$mod.log" -Append"
             #$dock_log = Invoke-Expression  "sudo docker logs -t $mod"
-            $stdout = docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
+            $stdout = sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
             #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
         }
         $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
