@@ -48,7 +48,7 @@ foreach($mod in $modulelist) {
                 $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
             }
             else {
-                $stdout = & sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
+                $stdout = sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
                 $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
             }
         }
