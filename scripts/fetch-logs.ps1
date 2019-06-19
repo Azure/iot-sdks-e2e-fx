@@ -92,7 +92,7 @@ foreach($o in $out) {
 }
 
 #$files = Get-ChildItem "$build_dir/TEST-*" | Where-Object { !$_.PSIsContainer }
-$files = Get-ChildItem "$build_dir/TEST-*"
+$files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
     Move-Item $files "$build_dir/results/logs"
 }
