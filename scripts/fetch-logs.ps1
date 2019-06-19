@@ -20,6 +20,7 @@ $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $junit_file = "$build_dir/TEST-$log_folder_name.xml".Trim()
 $resultsdir="$build_dir/results/logs/$log_folder_name"
 
+Write-Host "Fetching Logs"
 if( -Not (Test-Path -Path $resultsdir ) )
 {
     New-Item -ItemType directory -Path $resultsdir
@@ -30,8 +31,8 @@ else {
     New-Item -ItemType directory -Path $resultsdir
 }
 
-#$dock_log = ""
-$dock_log = @()
+$dock_log = ""
+#$dock_log = @()
 $languageMod = $langmod + "Mod"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {

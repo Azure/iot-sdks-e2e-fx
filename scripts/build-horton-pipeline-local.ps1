@@ -88,7 +88,7 @@ New-Item -Path $logdir -Type Directory
 # pytest-steps
 $scenario = "edgehub_module"
 $xport = "mqtt"
-$build_dir = ""
+#$build_dir = ""
 $junit_xml = "$logdir/TEST-test_edgehub_module_mqtt.xml"
 $opts = "test_edgehub_module_mqtt"
 $xtra_params = ""
