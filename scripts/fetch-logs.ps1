@@ -21,60 +21,33 @@ $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 Write-Host "Fetching Logs"
 
 $log_folder_name = $log_folder_name.trim("/")
-$tryresultsdir="$build_dir/results/logs/$log_folder_name"
+$resultsdir="$build_dir/results/logs/$log_folder_name"
 $junit_file = "$build_dir/TEST-$log_folder_name.xml"
 Write-Host "junit_file:($junit_file)"
 
-if( -Not (Test-Path -Path $tryresultsdir ) )
+if( -Not (Test-Path -Path $resultsdir ) )
 {
-    New-Item -ItemType directory -Path $tryresultsdir
+    New-Item -ItemType directory -Path $resultsdir
 }
 else {
-    Get-ChildItem -Path "$tryresultsdir/*" -Recurse | Remove-Item -Force -Recurse
-    Remove-Item -Path $tryresultsdir -Force -Recurse
-    New-Item -ItemType directory -Path $tryresultsdir
+    Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
+    Remove-Item -Path $resultsdir -Force -Recurse
+    New-Item -ItemType directory -Path $resultsdir
 }
-$resultsdir = $tryresultsdir
 
-$stdout = @()
-$stderr = @()
 $got_mods = @()
 $languageMod = $langmod + "Mod"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
         Write-Host "getting log for $mod" -ForegroundColor Green
-        try {
-            if($isWin32) {
-                #$stdout = docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
-                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
-                docker logs -t $mod  | Out-File $resultsdir/$mod.log -Append
-                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
-            }
-            else {
-                #$stdout = sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
-                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
-                #$o | Out-File $resultsdir/$mod.log -Append
-                sudo docker logs -t $mod | Out-File $resultsdir/$mod.log -Append
-                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
-            }
-            $got_mods += $mod
+        if($isWin32) {
+            docker logs -t $mod  | Out-File $resultsdir/$mod.log
         }
-        catch {
-            Write-Host "Exception getting log for $mod" -ForegroundColor Red
-            $_
+        else {
+            sudo docker logs -t $mod | Out-File $resultsdir/$mod.log
         }
-        #if("$stderr" -ne "") {
-        #    $stdout | Out-File $resultsdir/$mod.log -Append
-        #    foreach($o in $stderr) {
-        #        Write-Host $o -ForegroundColor Red
-        #    }
-        #}
-        #if("$stdout" -ne "") {
-        #    foreach($o in $stderr) {
-        #        $o | Out-File $resultsdir/$mod.log -Append
-        #    }
-        #}
+        $got_mods += $mod
     }
 }
 
