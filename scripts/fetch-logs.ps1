@@ -17,23 +17,26 @@ if ( $path) {$path = split-path $path -Parent}
 . $path/pwsh-helpers.ps1
 $isWin32 = IsWin32
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
-#$resultsdir="$build_dir/results/logs/$log_folder_name"
-$log_folder_name = $log_folder_name.trim("/")
-$junit_file = Join-Path -Path $build_dir -ChildPath "TEST-$log_folder_name.xml".Trim() -Resolve
-#$resultsdir="$build_dir/results/logs/$log_folder_name"
-$resultsdir = Join-Path -Path $build_dir -ChildPath "results/logs/$log_folder_name" -Resolve
-#$junit_file = "$build_dir/TEST-$log_folder_name.xml".Trim()
 
 Write-Host "Fetching Logs"
-if( -Not (Test-Path -Path $resultsdir ) )
+
+$log_folder_name = $log_folder_name.trim("/")
+$tryresultsdir="$build_dir/results/logs/$log_folder_name"
+#$junit_file = Join-Path -Path $build_dir -ChildPath "$log_folder_name.xml".Trim() -Resolve
+$junit_file = "$build_dir/$log_folder_name.xml"
+
+if( -Not (Test-Path -Path $tryresultsdir ) )
 {
-    New-Item -ItemType directory -Path $resultsdir
+    New-Item -ItemType directory -Path $tryresultsdir
 }
 else {
-    Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
-    Remove-Item -Path $resultsdir -Force -Recurse
-    New-Item -ItemType directory -Path $resultsdir
+    Get-ChildItem -Path "$tryresultsdir/*" -Recurse | Remove-Item -Force -Recurse
+    Remove-Item -Path $tryresultsdir -Force -Recurse
+    New-Item -ItemType directory -Path $tryresultsdir
 }
+#$resultsdir = Join-Path -Path $build_dir -ChildPath $tryresultsdir -Resolve
+$resultsdir = $tryresultsdir
+
 
 $stdout = @()
 $stderr = @()
@@ -43,20 +46,13 @@ foreach($mod in $modulelist) {
     if("$mod" -ne "") {
         Write-Host "getting log for $mod" -ForegroundColor Green 
         if($isWin32) {
-            #$dock_log = Invoke-Expression  "docker logs -t $mod"
-            #Invoke-Expression "docker logs -t $mod 2>&1 | Out-File "$resultsdir/$mod.log" -Append"
             $stdout = docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
-            $stderr = Get-Content $tmpFilexa; Remove-Item $tmpFile
-
+            $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
         }
         else {
-            #Invoke-Expression "sudo docker logs -t $mod 2>&1 | Out-File "$resultsdir/$mod.log" -Append"
-            #$dock_log = Invoke-Expression  "sudo docker logs -t $mod"
             $stdout = & sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
             $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
         }
-        #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
-        #$dock_log | Out-File "$resultsdir/$mod.log"
         if("$stderr" -ne "") {
             $stdout | Out-File $resultsdir/$mod.log -Append
             foreach($o in $stderr) {
