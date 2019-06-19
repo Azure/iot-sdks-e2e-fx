@@ -91,8 +91,11 @@ foreach($o in $out) {
     Write-Host $o -ForegroundColor Yellow
 }
 
-#$files = Get-ChildItem "$build_dir/TEST-*" | Where-Object { !$_.PSIsContainer }
 $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
     Move-Item $files "$build_dir/results/logs"
+}
+if(Test-Path -Path $junit_file )
+{
+    Copy-Item $junit_file -Destination "$build_dir/results/logs"
 }
