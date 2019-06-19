@@ -40,6 +40,6 @@ foreach($o in $out) {
 }
 
 if("$env:IOTHUB_E2E_EDGEHUB_CA_CERT" -eq "") {
-    Write-Host "Reverting to previous IOTHUB_E2E_EDGEHUB_CA_CERT" -ForegroundColor Red
+    #Write-Host "Reverting to previous IOTHUB_E2E_EDGEHUB_CA_CERT" -ForegroundColor Red
     Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_CA_CERT -Value $edge_cert
 }

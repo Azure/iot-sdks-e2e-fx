@@ -9,9 +9,6 @@ $scripts = Join-Path -Path $root_dir -ChildPath 'scripts' -Resolve
 . $scripts/pwsh-helpers.ps1
 $isWin32 = IsWin32
 
-#$py = PyCmd-Run "-m pip install --upgrade pip"; Invoke-Expression  $py
-#$py = PyCmd-Run "-m pip install --upgrade setuptools"; Invoke-Expression  $py
-
 if($isWin32 -eq $false) {
     Write-Host "Installing iotedge..." -ForegroundColor Yellow
     sudo apt-get install -y iotedge

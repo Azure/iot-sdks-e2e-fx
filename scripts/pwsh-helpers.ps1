@@ -15,7 +15,6 @@ function PyCmd-Run($py_cmd) {
         return "python $py_cmd"
     }
     else { 
-        #return "sudo -H -E python3 $py_cmd"
         return "python3 $py_cmd"
     }
 }

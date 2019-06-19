@@ -64,7 +64,6 @@ foreach($mod in $modulelist) {
 set-location $resultsdir
 $out = @()
 Write-Host "merging logs for $modlist" -ForegroundColor Green
-#Write-Host "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 
 $py = PyCmd-Run "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out = Invoke-Expression  $py
 
@@ -76,13 +75,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 else {
     $out | Out-File $resultsdir/merged.log
-    #$Write-Host $out
 }
 
 set-location $resultsdir
-#$log_file = "$resultsdir/merged.log"
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
-#Write-Host "{root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $log_file"
 
 $py = PyCmd-Run "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; $out = Invoke-Expression  $py
 foreach($o in $out) {
@@ -91,9 +87,6 @@ foreach($o in $out) {
 
 $files = Get-ChildItem "$build_dir/TEST-*" | Where-Object { !$_.PSIsContainer }
 if($files) {
-    #foreach($f in $files) {
-    #    Write-Host "FILE: $f"
-    #}
     Move-Item $files "$build_dir/results/logs"
 }
 exit 0
