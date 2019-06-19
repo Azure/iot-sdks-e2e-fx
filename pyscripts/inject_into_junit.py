@@ -86,7 +86,8 @@ class InjectIntoJunit:
         return
 
     def filter_esc_to_ascii7(self, file_str):
-        ascii7 = ''.join([i if ord(i) < 128 else '#' for i in file_str])
+        #ascii7 = ''.join([i if ord(i) < 128 else '#' for i in file_str])
+        ascii7 = ''.join([i if i < 128 else '#' for i in bytearray(file_str)])
         ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
         return ansi_escape.sub('', str(ascii7))
 
