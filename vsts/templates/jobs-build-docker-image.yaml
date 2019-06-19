@@ -87,11 +87,11 @@ jobs:
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
   - powershell: $(Horton.FrameworkRoot)/scripts/install-pyscript-reqs.ps1
-    displayName: "POWERSHELL: pip install requirements.txt"
+    displayName: "pip install requirements.txt"
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
   - powershell: $(Horton.FrameworkRoot)/scripts/build-docker-image.ps1 ${{ parameters.language }} $(NormalizedRepo) "master" ${{ parameters.variant }}
-    displayName: "POWERSHELL: build docker image ${{ parameters.language }} $(NormalizedRepo) ${CommitToPass} ${{ parameters.variant }}"
+    displayName: "build docker image ${{ parameters.language }} $(NormalizedRepo) ${CommitToPass} ${{ parameters.variant }}"
     env: 
       IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
       IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)

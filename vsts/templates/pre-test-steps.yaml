@@ -17,17 +17,17 @@ steps:
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'POWERSHELL: install python libs'
+  displayName: 'install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.ps1
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'POWERSHELL: install iotedge packages'
+  displayName: 'install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-precache-images.ps1 ${{ parameters.language }} ${{ parameters.test_image }} ${{ parameters.image_edgeAgent }} ${{ parameters.image_edgeHub }} ${{ parameters.image_friendmod }}
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'POWERSHELL: pre-cache docker images'
+  displayName: 'pre-cache docker images'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -38,7 +38,7 @@ steps:
 
 - powershell: $(Horton.FrameworkRoot)/scripts/create-new-edgehub-device.ps1
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'POWERSHELL: Create new edgehub identity'
+  displayName: 'Create new edgehub identity'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -49,7 +49,7 @@ steps:
 
 - powershell: $(Horton.FrameworkRoot)/scripts/deploy-test-containers.ps1 ${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'POWERSHELL: Deploy manifest (${{ parameters.test_image }})'
+  displayName: 'Deploy manifest (${{ parameters.test_image }})'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -59,32 +59,32 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 edgeHub ${{ parameters.image_edgeHub }}
-  displayName: 'POWERSHELL: Verify edgeHub deployment'
+  displayName: 'Verify edgeHub deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 edgeAgent ${{ parameters.image_edgeAgent }}
-  displayName: 'POWERSHELL: Verify edgeAgent deployment'
+  displayName: 'Verify edgeAgent deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 friendMod ${{ parameters.image_friendMod }}
-  displayName: 'POWERSHELL: Verify friendMod deployment'
+  displayName: 'Verify friendMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
-  displayName: 'POWERSHELL: Verify deploymet ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}'
+  displayName: 'Verify deploymet ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-container-running.ps1 ${{ parameters.language }}Mod
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'POWERSHELL: Verify that ${{ parameters.language }}Mod is responding'
+  displayName: 'Verify that ${{ parameters.language }}Mod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-container-running.ps1 friendMod
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'POWERSHELL: Verify that friendMod is responding'
+  displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: |
     Start-Sleep -s 30  
-  displayName: 'POWERSHELL: give edgeHub 30 seconds to start up'
+  displayName: 'give edgeHub 30 seconds to start up'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))

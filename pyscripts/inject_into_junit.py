@@ -77,6 +77,7 @@ class InjectIntoJunit:
 
         try:
             shutil.copyfile(junit_save_path, junit_path)
+            os.remove(junit_save_path) 
         except Exception as e:
             print("Exception copying JUNIT file: " + junit_path )
             print(e)
