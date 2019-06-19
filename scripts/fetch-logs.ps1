@@ -51,20 +51,21 @@ foreach($mod in $modulelist) {
                 $stdout = & sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
                 $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
             }
-            if("$stderr" -ne "") {
-                $stdout | Out-File $resultsdir/$mod.log -Append
-                foreach($o in $stderr) {
-                    Write-Host $o -ForegroundColor Red
-                }
-            }
-            if("$stdout" -ne "") {
-                foreach($o in $stderr) {
-                    $o | Out-File $resultsdir/$mod.log -Append
-                }
-            }
         }
         catch {
             Write-Host "Exception getting log for $mod" -ForegroundColor Red
+            Write-Host $_ -ForegroundColor Red
+        }
+        if("$stderr" -ne "") {
+            $stdout | Out-File $resultsdir/$mod.log -Append
+            foreach($o in $stderr) {
+                Write-Host $o -ForegroundColor Red
+            }
+        }
+        if("$stdout" -ne "") {
+            foreach($o in $stderr) {
+                $o | Out-File $resultsdir/$mod.log -Append
+            }
         }
     }
 }
