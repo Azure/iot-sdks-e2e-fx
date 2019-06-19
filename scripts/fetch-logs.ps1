@@ -23,7 +23,6 @@ Write-Host "Fetching Logs"
 $log_folder_name = $log_folder_name.trim("/")
 $resultsdir="$build_dir/results/logs/$log_folder_name"
 $junit_file = "$build_dir/TEST-$log_folder_name.xml"
-Write-Host "junit_file:($junit_file)"
 
 if( -Not (Test-Path -Path $resultsdir ) )
 {
@@ -35,19 +34,20 @@ else {
     New-Item -ItemType directory -Path $resultsdir
 }
 
-$got_mods = @()
 $languageMod = $langmod + "Mod"
+$modulefiles = @()
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
+        $modFile ="$resultsdir/$mod.log"
+        $modulefiles += $modFile
         Write-Host "getting log for $mod" -ForegroundColor Green
         if($isWin32) {
-            docker logs -t $mod  | Out-File $resultsdir/$mod.log
+            docker logs -t $mod  | Out-File $modFile
         }
         else {
-            sudo docker logs -t $mod | Out-File $resultsdir/$mod.log
+            sudo docker logs -t $mod | Out-File $modFile
         }
-        $got_mods += $mod
     }
 }
 
@@ -57,39 +57,16 @@ if($isWin32 -eq $false)  {
 }
 
 $arglist = ""
-$modlist = ""
-foreach($mod in $modulelist) {
-    if("$mod" -ne "") {
-        if($got_mods -contains $mod) {
-            $arglist += "-staticfile $resultsdir/$mod.log "
-            $modlist += "$mod "
-        }
-    }
+foreach($mod in $modulefiles) {
+    $arglist += "-staticfile $mod "
 }
 
-set-location $resultsdir
-$out = @()
-Write-Host "merging logs for $modlist" -ForegroundColor Green
-
-$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out = Invoke-Expression  $py
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "error merging logs" -ForegroundColor Red
-    foreach($o in $out) {
-        Write-Host $o
-    }
-}
-else {
-    $out | Out-File $resultsdir/merged.log
-}
+Write-Host "merging logs for $modulelist" -ForegroundColor Green
+$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; Invoke-Expression  $py  | Out-File $resultsdir/merged.log
 
 set-location $resultsdir
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
-
-$py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; $out = Invoke-Expression  $py
-foreach($o in $out) {
-    Write-Host $o -ForegroundColor Yellow
-}
+$py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression  $py
 
 $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
