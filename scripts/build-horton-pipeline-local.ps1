@@ -14,21 +14,9 @@ Param
 $path = $MyInvocation.MyCommand.Path
 if (!$path) {$path = $psISE.CurrentFile.Fullpath}
 if ( $path) {$path = split-path $path -Parent}
-set-location $path
+. $path/pwsh-helpers.ps1
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
-set-location $root_dir
-
-
-function IsWin32 {
-    if("$env:OS" -ne "") {
-        if ($env:OS.Indexof('Windows') -ne -1) {
-            Write-Host "$isWin32" -ForegroundColor Yellow
-            return $true
-        }
-    }
-    return $false
-}
-
+$pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
 $isWin32 = IsWin32
 
 $horton_user = $env:IOTHUB_E2E_REPO_USER
@@ -36,11 +24,10 @@ $horton_pw = $env:IOTHUB_E2E_REPO_PASSWORD
 $horton_repo = $env:IOTHUB_E2E_REPO_ADDRESS
 
 # export to global ENV
-Set-Item "env:IOTHUB-E2E-REPO-USER" $horton_user
-Set-Item "env:IOTHUB-E2E-REPO-PASSWORD" $horton_pw
-Set-Item "env:IOTHUB-E2E-REPO-ADDRESS" $horton_repo
-
-set-location $root_dir
+#Set-Item "env:IOTHUB-E2E-REPO-USER" $horton_user
+#Set-Item "env:IOTHUB-E2E-REPO-PASSWORD" $horton_pw
+#Set-Item "env:IOTHUB-E2E-REPO-ADDRESS" $horton_repo
+#set-location $root_dir
 # Build Images:
 
 #scripts/build-docker-image.ps1 "node" "azure/azure-iot-sdk-node" "master"
