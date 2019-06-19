@@ -22,7 +22,6 @@ Write-Host "Fetching Logs"
 
 $log_folder_name = $log_folder_name.trim("/")
 $tryresultsdir="$build_dir/results/logs/$log_folder_name"
-#$junit_file = Join-Path -Path $build_dir -ChildPath "$log_folder_name.xml".Trim() -Resolve
 $junit_file = "$build_dir/$log_folder_name.xml"
 
 if( -Not (Test-Path -Path $tryresultsdir ) )
@@ -34,9 +33,7 @@ else {
     Remove-Item -Path $tryresultsdir -Force -Recurse
     New-Item -ItemType directory -Path $tryresultsdir
 }
-#$resultsdir = Join-Path -Path $build_dir -ChildPath $tryresultsdir -Resolve
 $resultsdir = $tryresultsdir
-
 
 $stdout = @()
 $stderr = @()
@@ -68,7 +65,8 @@ foreach($mod in $modulelist) {
 }
 
 if($isWin32 -eq $false)  {
-    sudo journalctl -u iotedge -n 500 -e
+    $out = sudo journalctl -u iotedge -n 500 -e 2>&1
+    $out  | Out-File $resultsdir/iotedged.log -Append
 }
 
 $arglist = ""
@@ -101,11 +99,11 @@ Write-Host "injecting merged.log into junit" -ForegroundColor Green
 
 $py = PyCmd-Run "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; $out = Invoke-Expression  $py
 foreach($o in $out) {
-    Write-Host $o
+    Write-Host $o -ForegroundColor Yellow
 }
 
-$files = Get-ChildItem "$build_dir/TEST-*" | Where-Object { !$_.PSIsContainer }
+#$files = Get-ChildItem "$build_dir/TEST-*" | Where-Object { !$_.PSIsContainer }
+$files = Get-ChildItem "$build_dir/TEST-*"
 if($files) {
     Move-Item $files "$build_dir/results/logs"
 }
-exit 0
