@@ -41,25 +41,30 @@ $languageMod = $langmod + "Mod"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
-        Write-Host "getting log for $mod" -ForegroundColor Green 
-        if($isWin32) {
-            $stdout = docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
-            $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
-        }
-        else {
-            $stdout = & sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
-            $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
-        }
-        if("$stderr" -ne "") {
-            $stdout | Out-File $resultsdir/$mod.log -Append
-            foreach($o in $stderr) {
-                Write-Host $o -ForegroundColor Red
+        Write-Host "getting log for $mod" -ForegroundColor Green
+        try {
+            if($isWin32) {
+                $stdout = docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
+                $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
+            }
+            else {
+                $stdout = & sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
+                $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
+            }
+            if("$stderr" -ne "") {
+                $stdout | Out-File $resultsdir/$mod.log -Append
+                foreach($o in $stderr) {
+                    Write-Host $o -ForegroundColor Red
+                }
+            }
+            if("$stdout" -ne "") {
+                foreach($o in $stderr) {
+                    $o | Out-File $resultsdir/$mod.log -Append
+                }
             }
         }
-        if("$stdout" -ne "") {
-            foreach($o in $stderr) {
-                $o | Out-File $resultsdir/$mod.log -Append
-            }
+        catch {
+            Write-Host "Exception getting log for $mod" -ForegroundColor Red
         }
     }
 }
