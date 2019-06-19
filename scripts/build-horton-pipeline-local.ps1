@@ -39,7 +39,7 @@ Write-Host 'install python libs' -ForegroundColor Blue
 
 if(!$isWin32) {
     Write-Host 'install iotedge packages' -ForegroundColor Blue
-    scripts/setup/setup-iotedge.ps1    
+    Invoke-Expression "$root_dir/scripts/setup/setup-iotedge.ps1"   
 }
 
 Write-Host 'pre-cache docker images' -ForegroundColor Blue
@@ -49,35 +49,34 @@ $eaimg = "mcr.microsoft.com/azureiotedge-agent:1.0.7"
 $ehimg = "mcr.microsoft.com/azureiotedge-hub:1.0.7"
 $frimg = "$horton_repo/default-friend-module:latest"
 
-#set-location $root_dir
-
-scripts/setup/setup-precache-images.ps1 $lang $timg $eaimg $ehimg $frimg
+set-location $root_dir
+Invoke-Expression "$root_dir/scripts/setup/setup-precache-images.ps1 $lang $timg $eaimg $ehimg $frimg"
 
 Write-Host 'Create new edgehub identity' -ForegroundColor Blue
-scripts/create-new-edgehub-device.ps1
+Invoke-Expression "$root_dir/scripts/create-new-edgehub-device.ps1"
 
 Write-Host 'Deploy manifest (${{ parameters.test_image }})' -ForegroundColor Blue
 Write-Host "#### scripts/deploy-test-containers.ps1 $lang $horton_repo/$lang-e2e-v3:$timg" -ForegroundColor Yellow
-scripts/deploy-test-containers.ps1 $lang $horton_repo/$lang-e2e-v3:$timg
+Invoke-Expression "$root_dir/scripts/deploy-test-containers.ps1 $lang $horton_repo/$lang-e2e-v3:$timg"
 
 Write-Host 'Verify edgeHub deployment' -ForegroundColor Blue
 set-location $root_dir
-scripts/verify-deployment-pwsh.ps1 edgeHub $ehimg
+Invoke-Expression "$root_dir/scripts/verify-deployment-pwsh.ps1 edgeHub $ehimg"
 
 Write-Host 'Verify edgeAgent deployment' -ForegroundColor Blue
-scripts/verify-deployment-pwsh.ps1 edgeAgent $eaimg
+Invoke-Expression "$root_dir/scripts/verify-deployment-pwsh.ps1 edgeAgent $eaimg"
 
 Write-Host 'Verify friendMod deployment' -ForegroundColor Blue
-scripts/verify-deployment-pwsh.ps1 friendMod $frimg
+Invoke-Expression "$root_dir/scripts/verify-deployment-pwsh.ps1 friendMod $frimg"
 
 Write-Host "Verify deploymet $lang-Mod $horton_repo/$lang-e2e-v3:$timg" -ForegroundColor Blue
-scripts/verify-deployment-pwsh.ps1 $lang+"-Mod" $horton_repo/$lang-e2e-v3:$timg
+Invoke-Expression "$root_dir/scripts/verify-deployment-pwsh.ps1 $lang+"-Mod" $horton_repo/$lang-e2e-v3:$timg"
 
 Write-Host 'Verify that $lang-Mod is responding' -ForegroundColor Blue
-scripts/setup/verify-container-running.ps1 $lang + "-Mod"
+Invoke-Expression "$root_dir/scripts/setup/verify-container-running.ps1 $lang-Mod"
 
 Write-Host 'Verify that friendMod is responding' -ForegroundColor Blue
-scripts/setup/verify-container-running.ps1 friendMod
+Invoke-Expression "$root_dir/scripts/setup/verify-container-running.ps1 friendMod"
 
 Write-Host 'give edgeHub 30 seconds to start up' -ForegroundColor Yellow
 Start-Sleep -s 30
@@ -96,7 +95,7 @@ $xtra_params = ""
 #pytest -v --scenario edgehub_module --transport=mqtt --node-wrapper --junitxml=/home/vsts/work/1/s/TEST-test_edgehub_module_mqtt.xml -o junit_suite_name=test_edgehub_module_mqtt 
 
 Write-Host 'run PYTEST module' -ForegroundColor Green
-scripts/setup/run-pytest-module.ps1 $scenario $xport $lang $junit_xml $opts $xtra_params
+Invoke-Expression "$root_dir/scripts/setup/run-pytest-module.ps1 $scenario $xport $lang $junit_xml $opts $xtra_params"
 
 #$(Horton.FrameworkRoot)/scripts/run-pytest-module.ps1 ${{ parameters.scenario }} ${{ parameters.transport }} ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
 #Write-Host "run-pytest-module.ps1 $scenario $xport $lang $build_dir'/TEST-'$log_folder'.xml' junit_suite_name=$log_folder $xtra_params"
@@ -107,7 +106,7 @@ scripts/setup/run-pytest-module.ps1 $scenario $xport $lang $junit_xml $opts $xtr
 #fetch-logs
 Write-Host 'Fetch logs' -ForegroundColor Green
 
-scripts/fetch-logs-pwsh.ps1 $lang
+Invoke-Expression "$root_dir/scripts/fetch-logs-pwsh.ps1 $lang"
 
 #try {
 #    New-Item -Path $build_dir/results/$log_folder -ItemType Directory

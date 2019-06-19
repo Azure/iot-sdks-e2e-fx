@@ -32,19 +32,18 @@ else {
 }
 
 $dock_log = ""
-#$dock_log = @()
 $languageMod = $langmod + "Mod"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
         Write-Host "getting log for $mod" -ForegroundColor Green 
         if($isWin32) {
-            $dock_log = docker logs -t $mod
+            $dock_log = Invoke-Expression  "docker logs -t $mod"
         }
         else {
-            $dock_log = sudo docker logs -t $mod
+            $dock_log = Invoke-Expression  "sudo docker logs -t $mod"
         }
-        $dock_log | Out-File $resultsdir/${mod}.log
+        $dock_log | Out-File "$resultsdir/$mod.log"
     }
 }
 

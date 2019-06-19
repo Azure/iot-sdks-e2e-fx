@@ -69,10 +69,9 @@ class InjectIntoJunit:
             return
 
         #remove offending characters
-        with open(junit_save_path) as f:
+        with open(junit_save_path,'r+') as f:
             file_content = f.read()
             filtered = self.filter_esc_to_ascii7(file_content)
-        with open(junit_save_path) as f:
             f.write(filtered)
 
         try:
