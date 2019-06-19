@@ -45,12 +45,17 @@ foreach($mod in $modulelist) {
         Write-Host "getting log for $mod" -ForegroundColor Green
         try {
             if($isWin32) {
-                $stdout = docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
-                $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
+                #$stdout = docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
+                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
+                docker logs -t $mod  | Out-File $resultsdir/$mod.log -Append
+                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
             }
             else {
-                $stdout = sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
-                $stderr = Get-Content $tmpFile; Remove-Item $tmpFile
+                #$stdout = sudo docker logs -t $mod 2>($tmpFile=New-TemporaryFile)
+                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
+                #$o | Out-File $resultsdir/$mod.log -Append
+                sudo docker logs -t $mod | Out-File $resultsdir/$mod.log -Append
+                #$stderr = Get-Content $tmpFile; Remove-Item $tmpFile
             }
             $got_mods += $mod
         }
@@ -58,17 +63,17 @@ foreach($mod in $modulelist) {
             Write-Host "Exception getting log for $mod" -ForegroundColor Red
             $_
         }
-        if("$stderr" -ne "") {
-            $stdout | Out-File $resultsdir/$mod.log -Append
-            foreach($o in $stderr) {
-                Write-Host $o -ForegroundColor Red
-            }
-        }
-        if("$stdout" -ne "") {
-            foreach($o in $stderr) {
-                $o | Out-File $resultsdir/$mod.log -Append
-            }
-        }
+        #if("$stderr" -ne "") {
+        #    $stdout | Out-File $resultsdir/$mod.log -Append
+        #    foreach($o in $stderr) {
+        #        Write-Host $o -ForegroundColor Red
+        #    }
+        #}
+        #if("$stdout" -ne "") {
+        #    foreach($o in $stderr) {
+        #        $o | Out-File $resultsdir/$mod.log -Append
+        #    }
+        #}
     }
 }
 
@@ -81,7 +86,7 @@ $arglist = ""
 $modlist = ""
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
-        if($mod -contains $got_mods) {
+        if($got_mods -contains $mod) {
             $arglist += "-staticfile $resultsdir/$mod.log "
             $modlist += "$mod "
         }
