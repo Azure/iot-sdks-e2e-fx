@@ -20,5 +20,5 @@ if ( $path) {$path = split-path $path -Parent}
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
 
-$py = PyCmd-Run "$pyscripts/build_docker_image.py --language $language --repo $repo --commit $commit --variant $variant"; Invoke-Expression  $py
+$py = Run-PyCmd "$pyscripts/build_docker_image.py --language $language --repo $repo --commit $commit --variant $variant"; Invoke-Expression  $py
 

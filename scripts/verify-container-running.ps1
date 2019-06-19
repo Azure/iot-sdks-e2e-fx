@@ -14,5 +14,5 @@ if ( $path) {$path = split-path $path -Parent}
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
 
-$py = PyCmd-Run "$pyscripts/ensure-container.py $container_name"; Invoke-Expression  $py
+$py = Run-PyCmd "$pyscripts/ensure-container.py $container_name"; Invoke-Expression  $py
  

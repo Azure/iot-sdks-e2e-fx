@@ -82,7 +82,7 @@ set-location $resultsdir
 $out = @()
 Write-Host "merging logs for $modlist" -ForegroundColor Green
 
-$py = PyCmd-Run "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out = Invoke-Expression  $py
+$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out = Invoke-Expression  $py
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "error merging logs" -ForegroundColor Red
@@ -97,7 +97,7 @@ else {
 set-location $resultsdir
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 
-$py = PyCmd-Run "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; $out = Invoke-Expression  $py
+$py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; $out = Invoke-Expression  $py
 foreach($o in $out) {
     Write-Host $o -ForegroundColor Yellow
 }

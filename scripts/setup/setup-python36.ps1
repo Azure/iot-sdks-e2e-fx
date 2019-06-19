@@ -143,7 +143,7 @@ if($null -ne $Pip3Path -and $Pip3Path.Length -lt 1)
 
 if($gotPip3) {
     Write-Host "Updating pip" -ForegroundColor Yellow
-    $py = PyCmd-Run "-m pip install --upgrade pip"; Invoke-Expression  $py
+    $py = Run-PyCmd "-m pip install --upgrade pip"; Invoke-Expression  $py
 
     if($LASTEXITCODE -eq 0) {
         Write-Host "pip updated successfully" -ForegroundColor Green
@@ -156,12 +156,12 @@ if($gotPip3) {
 
 Write-Host "Installing python libraries" -ForegroundColor Yellow
 set-location "$root_dir/ci-wrappers/pythonpreview/wrapper"
-$py = PyCmd-Run "-m pip install setuptools"; Invoke-Expression  $py
-$py = PyCmd-Run "-m pip install --user -e python_glue"; Invoke-Expression  $py
+$py = Run-PyCmd "-m pip install setuptools"; Invoke-Expression  $py
+$py = Run-PyCmd "-m pip install --user -e python_glue"; Invoke-Expression  $py
 if($LASTEXITCODE -ne 0)
 {
     Write-Host "user path not accepted.  Installing globally" -ForegroundColor Yellow
-    $py = PyCmd-Run "-m pip install -e python_glue"; Invoke-Expression  $py
+    $py = Run-PyCmd "-m pip install -e python_glue"; Invoke-Expression  $py
     if($LASTEXITCODE -ne 0)
     {
         Write-Host "install python_glue failed" -ForegroundColor Green
@@ -171,11 +171,11 @@ if($LASTEXITCODE -ne 0)
 
 Write-Host "Installing horton_helpers" -ForegroundColor Yellow
 set-location $root_dir
-$py = PyCmd-Run "-m pip install --user -e horton_helpers"; Invoke-Expression  $py
+$py = Run-PyCmd "-m pip install --user -e horton_helpers"; Invoke-Expression  $py
 if($LASTEXITCODE -ne 0)
 {
     Write-Host "user path not accepted.  Installing globally" -ForegroundColor Yellow
-    $py = PyCmd-Run "-m pip install -e horton_helpers"; Invoke-Expression  $py
+    $py = Run-PyCmd "-m pip install -e horton_helpers"; Invoke-Expression  $py
     if($LASTEXITCODE -ne 0) {
         Write-Host "install horton_helpers failed" -ForegroundColor Green
         exit 1
@@ -187,10 +187,10 @@ else {
 
 Write-Host "Installing requirements for Horton test runner" -ForegroundColor Yellow
 set-location $root_dir/test-runner
-$py = PyCmd-Run "-m pip install --user -r requirements.txt"; Invoke-Expression  $py
+$py = Run-PyCmd "-m pip install --user -r requirements.txt"; Invoke-Expression  $py
 if($LASTEXITCODE -ne 0) {
     Write-Host "user path not accepted.  Installing globally" -ForegroundColor Yellow
-    $py = PyCmd-Run "-m pip install -r requirements.txt"; Invoke-Expression  $py
+    $py = Run-PyCmd "-m pip install -r requirements.txt"; Invoke-Expression  $py
     if($LASTEXITCODE -ne 0) {
         Write-Host "install horton testrunner failed" -ForegroundColor Green
         exit 1

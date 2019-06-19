@@ -10,7 +10,7 @@ function IsWin32 {
     return $false
 }
 
-function PyCmd-Run($py_cmd) {
+function Run-PyCmd($py_cmd) {
     if(IsWin32) {
         return "python $py_cmd"
     }
