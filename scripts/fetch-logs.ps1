@@ -32,7 +32,7 @@ if( -Not (Test-Path -Path $resultsdir ) )
 else {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
-    New-Item -ItemType directory -Path $resultsdir >$null
+    (New-Item -ItemType directory -Path $resultsdir) | Out-Null
 }
 
 $languageMod = $langmod + "Mod"
@@ -46,7 +46,7 @@ foreach($mod in $modulelist) {
         #$dkr_out = ""
         #"& 'c:\program files\7-zip\7z.exe' >xxx.txt"
         $dkr_out = Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
-        $dkr_out | Out-Null
+        $dkr_out | Out-File $modFile
 #        if($isWin32) {
 #            $out = Invoke-Expression "docker logs -t $mod > $modFile"
 #        }
