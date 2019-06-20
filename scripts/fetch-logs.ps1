@@ -57,9 +57,9 @@ foreach($mod in $modulefiles) {
     $arglist += "-staticfile $mod "
 }
 #$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
-$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = Invoke-Expression $py > $null
+$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = Invoke-Expression $py
 $out_log > $resultsdir/merged.log
-$out_log | Out-File $resultsdir/merged2.log
+#$out_log | Out-File $resultsdir/merged2.log
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 
