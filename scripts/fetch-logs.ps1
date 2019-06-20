@@ -37,13 +37,15 @@ else {
 set-location $resultsdir
 $languageMod = $langmod + "Mod"
 $modulefiles = @()
+$dkr_log = @("foo", "bar")
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod" -ne "") {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
         Write-Host "Getting log for $modFile" -ForegroundColor Green
-        $dkr_log = (Invoke-Expression "sudo docker logs -t $mod")
+        $dkr_log = Invoke-Expression "sudo docker logs -t $mod"
+        Write-Host "$modFile($dkr_log.length)"
         $dkr_log | Out-File $modFile -Append
     }
 }
