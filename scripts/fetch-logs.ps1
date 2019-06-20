@@ -48,11 +48,12 @@ foreach($mod in $modulelist) {
             Remove-Item $modFile
         }
         Write-Host "Getting log for $modFile" -ForegroundColor Green
-        $dkr_log = Invoke-Expression "sudo docker logs -t $mod" 4>&1 >> $modFile
+        $dkr_log = Invoke-Cmd "sudo docker logs -t $mod"
+        #$dkr_log = Invoke-Expression "sudo docker logs -t $mod" 4>&1 >> $modFile
         $dlen = $dkr_log.length
         Write-Host "($modFile)($dlen)"
         #$dkr_log | Out-File $modFile -Append
-        foreach( $0 in $dkr_log) {
+        foreach( $o in $dkr_log) {
             $o >> $modFile
         }
     }

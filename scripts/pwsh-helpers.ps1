@@ -18,3 +18,15 @@ function Run-PyCmd($py_cmd) {
         return "python3 $py_cmd"
     }
 }
+
+function Invoke-Cmd($run_command) {
+    $scriptToExecute = 
+    {
+        $VerbosePreference='Continue'
+        Write-Output "Standard"
+        Write-Verbose "Verbose" 4>&1
+    }
+    $b = Invoke-Command $run_command -ScriptBlock $scriptToExecute 
+    #Write-Output "Content of variable B"
+    return $b    
+}
