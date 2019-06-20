@@ -28,12 +28,10 @@ class InternalDeviceGlueSync:
 
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
-        auth_provider = auth.from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
-            auth_provider.ca_cert = cert
-        self.client = IoTHubDeviceClient.from_authentication_provider(
-            auth_provider, transport_type
-        )
+            self.client = IoTHubDeviceClient.create_from_connection_string(connection_string, trusted_certificate_chain=cert)
+        else:
+            self.client = IoTHubDeviceClient.create_from_connection_string(connection_string)
         self.client.connect()
 
     def disconnect(self):
