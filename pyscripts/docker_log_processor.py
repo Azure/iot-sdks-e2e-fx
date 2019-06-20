@@ -222,6 +222,7 @@ class DockerLogProcessor:
                     module_name += ' '
                 try:
                     read_file = open(static_filename, encoding="utf8").read().split("\n")
+                    print("Getting log from file: (" + static_filename + "):" + str(len(read_file)))
                 except Exception as e:
                     self.write_err("Exception opening LOG file: " + static_filename )
                     self.write_err(e)
