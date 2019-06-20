@@ -44,8 +44,11 @@ foreach($mod in $modulelist) {
     if("$mod" -ne "") {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
+        if(Test-Path $modFile) {
+            Remove-Item $modFile
+        }
         Write-Host "Getting log for $modFile" -ForegroundColor Green
-        $dkr_log = Invoke-Expression sudo docker logs -t $mod 4>&1
+        $dkr_log = Invoke-Expression "'sudo docker logs -t $mod' 4>&1"
         $dlen = $dkr_log.length
         Write-Host "($modFile)($dlen)"
         #$dkr_log | Out-File $modFile -Append
