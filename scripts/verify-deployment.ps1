@@ -50,7 +50,9 @@ foreach($i in 1..37) {
     }
 
     if("$expectedImg" -ne "") {
-        Write-Host "Inspecting Image ($container_name) for .State.Running" -ForegroundColor Green
+        if("$out_progress" -eq ".") {
+            Write-Host "Inspecting Image ($container_name) for .State.Running" -ForegroundColor Green
+        }
         if($isWin32) {
             $running = docker image inspect --format="{{.State.Running}}" $container_name
         }

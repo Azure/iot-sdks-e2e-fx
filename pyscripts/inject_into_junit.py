@@ -53,12 +53,12 @@ class InjectIntoJunit:
             print(e)
             return
 
-        print("Junit LOGFILE:")
-        for l in read_file:
-            print(l)
-        print("XML:")
-        for l in xml:
-            print(l)
+        print("Junit LOGFILE:(" + str(len(read_file)) + ")")
+        #for l in read_file:
+        #    print(l)
+        print("XML:(" + str(len(xml)) + ")")
+        #for l in xml:
+        #    print(l)
 
         for suite in xml:
             if(suite):
