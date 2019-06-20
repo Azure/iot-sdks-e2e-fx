@@ -51,6 +51,7 @@ foreach($mod in $modulelist) {
     }
 }
 
+$ErrorActionPreference = "SilentlyContinue"
 if($isWin32 -eq $false)  {
     sudo journalctl -u iotedge -n 500 -e >$resultsdir/iotedged.log
 }

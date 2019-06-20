@@ -36,7 +36,7 @@ if($isWin32) {
     $image_name = $image_name.ToLower()
 }
 Write-Host "getting image ID for Image:($image_name) Container:($container_name)" -ForegroundColor Green
-
+$ErrorActionPreference = "SilentlyContinue"
 foreach($i in 1..37) {
     if("$out_progress" -eq ".") {
         Write-Host "calling docker inspect ($image_name)" -ForegroundColor Green
@@ -52,18 +52,18 @@ foreach($i in 1..37) {
     if("$expectedImg" -ne "") {
         Write-Host "Inspecting Image ($container_name) for .State.Running" -ForegroundColor Green
         if($isWin32) {
-            $running = docker image inspect --format="{{.State.Running}}" $container_name 2>$null
+            $running = docker image inspect --format="{{.State.Running}}" $container_name
         }
         else {
-            $running = sudo docker inspect --format="{{.State.Running}}" $container_name 2>$null
+            $running = sudo docker inspect --format="{{.State.Running}}" $container_name
         }
         if($running) {
             Write-Host "Container is running.  Checking image" -ForegroundColor Green
             if($isWin32) {
-                $actualImg = docker inspect $container_name --format="{{.Image}}" 2>$null
+                $actualImg = docker inspect $container_name --format="{{.Image}}"
             }
             else {
-                $actualImg = sudo docker inspect $container_name --format="{{.Image}}" 2>$null
+                $actualImg = sudo docker inspect $container_name --format="{{.Image}}"
             }
             if($expectedImg -eq $actualImg) {
                 Write-Host "IDs match.  Deployment is complete"  -ForegroundColor Green
