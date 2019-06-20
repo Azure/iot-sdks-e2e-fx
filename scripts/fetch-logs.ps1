@@ -53,7 +53,7 @@ foreach($mod in $modulelist) {
         #$dkr_log = Invoke-Expression "sudo docker logs -t $mod" 4>&1 >> $modFile
         $dlen = $dkr_log.length
         Write-Host "($modFile)($dlen)"
-        #$dkr_log | Out-File $modFile -Append
+        $dkr_log | Out-File $modFile + "2"
         foreach( $o in $dkr_log) {
             $o >> $modFile
         }
