@@ -44,7 +44,7 @@ $testpath = Join-Path -Path $root_dir -ChildPath '/test-runner' -Resolve
 #    Write-Host "NOT found IOTHUB_E2E_EDGEHUB_CA_CERT"
 #}
 #set-location $root_dir/scripts
-#./get-environment.ps1
+./get-environment.ps1
 
 #if($isWin32 -eq $false) {
 #    $EncodedText = sudo cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0

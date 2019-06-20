@@ -34,6 +34,7 @@ else {
     mkdir $resultsdir >$null
 }
 
+set-location $resultsdir
 $languageMod = $langmod + "Mod"
 $modulefiles = @()
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
@@ -41,8 +42,8 @@ foreach($mod in $modulelist) {
     if("$mod" -ne "") {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
-        Write-Host "Getting log for $mod" -ForegroundColor Green
-        Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
+        Write-Host "Getting log for $modFile" -ForegroundColor Green
+        Invoke-Expression "sudo docker logs -t $mod > $modFile"
     }
 }
 
@@ -61,7 +62,7 @@ $out_log > $resultsdir/merged.log
 $out_log | Out-File $resultsdir/merged2.log
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
-set-location $resultsdir
+
 $py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression $py
 $py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged2.log"; Invoke-Expression $py
 
