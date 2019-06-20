@@ -43,7 +43,8 @@ foreach($mod in $modulelist) {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
         Write-Host "Getting log for $modFile" -ForegroundColor Green
-        Invoke-Expression "sudo docker logs -t $mod > $modFile"
+        $dkr_log = (Invoke-Expression "sudo docker logs -t $mod")
+        $dkr_log | Out-File $modFile -Append
     }
 }
 
@@ -57,9 +58,9 @@ foreach($mod in $modulefiles) {
     $arglist += "-staticfile $mod "
 }
 #$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
-$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = Invoke-Expression $py
-$out_log > $resultsdir/merged.log
-#$out_log | Out-File $resultsdir/merged2.log
+$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = (Invoke-Expression $py)
+#$out_log > $resultsdir/merged.log
+$out_log | Out-File $resultsdir/merged.log -Append
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 
