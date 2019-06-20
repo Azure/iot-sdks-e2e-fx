@@ -13,7 +13,7 @@ if($isWin32 -eq $false) {
     $py = Run-PyCmd "-m pip install -e $hh"; Invoke-Expression $py
 }
 
-$py = Run-PyCmd "$pyscripts/create_new_edgehub_device.py"; $out = Invoke-Expression $py
+$py = Run-PyCmd "$pyscripts/create_new_edgehub_device.py"; Invoke-Expression $py
 
 if($isWin32 -eq $false) {
     sudo systemctl restart iotedge
