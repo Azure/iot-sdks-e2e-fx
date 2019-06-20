@@ -45,10 +45,13 @@ foreach($mod in $modulelist) {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
         Write-Host "Getting log for $modFile" -ForegroundColor Green
-        $dkr_log = Invoke-Expression "sudo docker logs -t $mod"
+        $dkr_log = Invoke-Expression sudo docker logs -t $mod 4>&1
         $dlen = $dkr_log.length
         Write-Host "($modFile)($dlen)"
-        $dkr_log | Out-File $modFile -Append
+        #$dkr_log | Out-File $modFile -Append
+        foreach( $0 in $dkr_log) {
+            $o >> $modFile
+        }
     }
 }
 
