@@ -48,6 +48,7 @@ foreach($mod in $modulelist) {
             Remove-Item $modFile
         }
         Write-Host "Getting log for $modFile" -ForegroundColor Green
+        #$dkr_log = Invoke-Cmd "sudo docker logs -t $mod"
         $dkr_log = Invoke-Cmd "sudo docker logs -t $mod"
         #$dkr_log = Invoke-Expression "sudo docker logs -t $mod" 4>&1 >> $modFile
         $dlen = $dkr_log.length

@@ -20,6 +20,7 @@ function Run-PyCmd($py_cmd) {
 }
 
 function Invoke-Cmd($run_command) {
+    $ErrorActionPreference = "SilentlyContinue"
     $scriptToExecute = 
     {
         $VerbosePreference='Continue'
