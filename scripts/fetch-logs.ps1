@@ -45,8 +45,9 @@ foreach($mod in $modulelist) {
         Write-Host "Getting log for $mod" -ForegroundColor Green
         #$dkr_out = ""
         #"& 'c:\program files\7-zip\7z.exe' >xxx.txt"
-        $dkr_out = Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
-        $dkr_out | Out-File $modFile
+        #$dkr_out = Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
+        Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
+        #$dkr_out | Out-File $modFile
 #        if($isWin32) {
 #            $out = Invoke-Expression "docker logs -t $mod > $modFile"
 #        }
