@@ -34,11 +34,11 @@ $horton_repo = $env:IOTHUB_E2E_REPO_ADDRESS
 
 # pre-test-steps
 
-Write-Host 'install python libs' -ForegroundColor Blue
+Write-Host 'Install python libs' -ForegroundColor Blue
 #scripts/setup/setup-python36.ps1
 
 if(!$isWin32) {
-    Write-Host 'install iotedge packages' -ForegroundColor Blue
+    Write-Host 'Install iotedge packages' -ForegroundColor Blue
     Invoke-Expression "$root_dir/scripts/setup/setup-iotedge.ps1"   
 }
 

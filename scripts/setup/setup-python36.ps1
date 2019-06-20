@@ -164,7 +164,7 @@ if($LASTEXITCODE -ne 0)
     $py = Run-PyCmd "-m pip install -e python_glue"; Invoke-Expression  $py
     if($LASTEXITCODE -ne 0)
     {
-        Write-Host "install python_glue failed" -ForegroundColor Green
+        Write-Host "Install python_glue failed" -ForegroundColor Green
         exit 1
     } 
 } 

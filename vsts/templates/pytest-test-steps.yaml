@@ -19,7 +19,7 @@ steps:
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'install python libs'
+  displayName: 'Install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/run-pytest-module.ps1 ${{ parameters.scenario }} ${{ parameters.transport }} ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}

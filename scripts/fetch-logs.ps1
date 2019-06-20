@@ -16,15 +16,13 @@ if (!$path) {$path = $psISE.CurrentFile.Fullpath}
 if ( $path) {$path = split-path $path -Parent}
 . $path/pwsh-helpers.ps1
 $isWin32 = IsWin32
-$root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
-
-Write-Host "---Fetching Logs"
-$ErrorActionPreference = "SilentlyContinue"
-
 $log_folder_name = $log_folder_name.trim("/")
+$root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $resultsdir="$build_dir/results/logs/$log_folder_name"
 $junit_file = "$build_dir/TEST-$log_folder_name.xml"
 
+Write-Host "Fetching Logs for $log_folder_name" -ForegroundColor Green
+$ErrorActionPreference = "SilentlyContinue"
 if( -Not (Test-Path -Path $resultsdir ) )
 {
     New-Item -ItemType directory -Path $resultsdir
@@ -32,7 +30,8 @@ if( -Not (Test-Path -Path $resultsdir ) )
 else {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
-    (New-Item -ItemType directory -Path $resultsdir ) 2>&1>$null
+    #New-Item -ItemType directory -Path $resultsdir
+    mkdir $resultsdir >$null
 }
 
 $languageMod = $langmod + "Mod"
@@ -43,17 +42,7 @@ foreach($mod in $modulelist) {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
         Write-Host "Getting log for $mod" -ForegroundColor Green
-        #$dkr_out = ""
-        #"& 'c:\program files\7-zip\7z.exe' >xxx.txt"
-        #$dkr_out = Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
         Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
-        #$dkr_out | Out-File $modFile
-#        if($isWin32) {
-#            $out = Invoke-Expression "docker logs -t $mod > $modFile"
-#        }
-#        else {
-#            $out = Invoke-Expression "sudo docker logs -t $mod > $modFile"
-#        }
     }
 }
 
@@ -66,9 +55,7 @@ $arglist = ""
 foreach($mod in $modulefiles) {
     $arglist += "-staticfile $mod "
 }
-#$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist >$resultsdir/merged.log"; Invoke-Expression $py
 $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist";  Invoke-Expression "& '$py' > $modFile"
-#Invoke-Expression "& 'sudo docker logs -t $mod' > $modFile"
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 set-location $resultsdir

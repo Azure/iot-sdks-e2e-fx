@@ -17,17 +17,17 @@ steps:
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'install python libs'
+  displayName: 'Install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.ps1
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'install iotedge packages'
+  displayName: 'Install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-precache-images.ps1 ${{ parameters.language }} ${{ parameters.test_image }} ${{ parameters.image_edgeAgent }} ${{ parameters.image_edgeHub }} ${{ parameters.image_friendmod }}
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'pre-cache docker images'
+  displayName: 'Pre-cache docker images'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
