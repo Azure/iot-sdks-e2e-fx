@@ -32,7 +32,7 @@ if( -Not (Test-Path -Path $resultsdir ) )
 else {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
-    (New-Item -ItemType directory -Path $resultsdir) | Out-Null
+    (New-Item -ItemType directory -Path $resultsdir ) 2>&1>$null
 }
 
 $languageMod = $langmod + "Mod"

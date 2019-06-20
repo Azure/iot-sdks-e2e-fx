@@ -53,6 +53,11 @@ class InjectIntoJunit:
             print(e)
             return
 
+        print("Junit LOGFILE:")
+        print(read_file)
+        print("XML:")
+        print(xml)
+
         for suite in xml:
             if(suite):
                 suite_name = suite.name
