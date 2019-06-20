@@ -19,6 +19,7 @@ $isWin32 = IsWin32
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 
 Write-Host "Fetching Logs"
+$ErrorActionPreference = "SilentlyContinue"
 
 $log_folder_name = $log_folder_name.trim("/")
 $resultsdir="$build_dir/results/logs/$log_folder_name"
@@ -43,15 +44,14 @@ foreach($mod in $modulelist) {
         $modulefiles += $modFile
         Write-Host "getting log for $mod" -ForegroundColor Green
         if($isWin32) {
-            docker logs -t $mod >$modFile
+            & docker logs -t $mod > $modFile
         }
         else {
-            sudo docker logs -t $mod >$modFile
+            & sudo docker logs -t $mod > $modFile
         }
     }
 }
 
-$ErrorActionPreference = "SilentlyContinue"
 if($isWin32 -eq $false)  {
     sudo journalctl -u iotedge -n 500 -e >$resultsdir/iotedged.log
 }
