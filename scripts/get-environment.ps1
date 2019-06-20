@@ -28,8 +28,7 @@ else {
     Remove-Item Env:IOTHUB_E2E_EDGEHUB_CA_CERT
 }
 
-$out = @()
-$py = Run-PyCmd "$pyscripts/get_environment_variables.py powershell"; $out = Invoke-Expression  $py
+$py = Run-PyCmd "$pyscripts/get_environment_variables.py powershell"; Invoke-Expression $py
 
 foreach($o in $out) {
     $var_name,$var_value = $o.split('=')
@@ -40,6 +39,5 @@ foreach($o in $out) {
 }
 
 if("$env:IOTHUB_E2E_EDGEHUB_CA_CERT" -eq "") {
-    #Write-Host "Reverting to previous IOTHUB_E2E_EDGEHUB_CA_CERT" -ForegroundColor Red
     Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_CA_CERT -Value $edge_cert
 }
