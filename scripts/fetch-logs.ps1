@@ -18,7 +18,7 @@ if ( $path) {$path = split-path $path -Parent}
 $isWin32 = IsWin32
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 
-Write-Host "---1Fetching Logs"
+Write-Host "---Fetching Logs"
 $ErrorActionPreference = "SilentlyContinue"
 
 $log_folder_name = $log_folder_name.trim("/")
@@ -43,12 +43,15 @@ foreach($mod in $modulelist) {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
         Write-Host "Getting log for $mod" -ForegroundColor Green
-        if($isWin32) {
-            Invoke-Expression "docker logs -t $mod > $modFile"
-        }
-        else {
-            Invoke-Expression "sudo docker logs -t $mod > $modFile"
-        }
+        #$dkr_out = ""
+        $dkr_out = Invoke-Expression "sudo docker logs -t $mod > $modFile"
+        $dkr_out | Out-Null
+#        if($isWin32) {
+#            $out = Invoke-Expression "docker logs -t $mod > $modFile"
+#        }
+#        else {
+#            $out = Invoke-Expression "sudo docker logs -t $mod > $modFile"
+#        }
     }
 }
 
