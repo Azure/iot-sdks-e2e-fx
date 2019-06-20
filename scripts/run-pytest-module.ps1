@@ -46,12 +46,12 @@ $testpath = Join-Path -Path $root_dir -ChildPath '/test-runner' -Resolve
 #set-location $root_dir/scripts
 ./get-environment.ps1
 
-#if($isWin32 -eq $false) {
-#    $EncodedText = sudo cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0
-#    if( "$EncodedText" -ne "") {
-#        Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_CA_CERT -Value $EncodedText
-#    }
-#}
+if($isWin32 -eq $false) {
+    $EncodedText = sudo cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0
+    if( "$EncodedText" -ne "") {
+        Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_CA_CERT -Value $EncodedText
+    }
+}
 
 set-location $testpath
 write-host "pytest -v --scenario $test_scenario --transport=$test_transport --$test_lang-wrapper --junitxml=$test_junitxml -o $test_o $test_extra_args"
