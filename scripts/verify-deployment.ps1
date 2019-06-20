@@ -52,19 +52,18 @@ foreach($i in 1..37) {
     if("$expectedImg" -ne "") {
         Write-Host "Inspecting Image ($container_name) for .State.Running" -ForegroundColor Green
         if($isWin32) {
-            ($running = docker image inspect --format="{{.State.Running}}" $container_name ) 2> $null
+            $running = docker image inspect --format="{{.State.Running}}" $container_name 2>$null
         }
         else {
-            ($running = sudo docker inspect --format="{{.State.Running}}" $container_name ) 2> $null
+            $running = sudo docker inspect --format="{{.State.Running}}" $container_name 2>$null
         }
         if($running) {
             Write-Host "Container is running.  Checking image" -ForegroundColor Green
-
             if($isWin32) {
-                ($actualImg = docker inspect $container_name --format="{{.Image}}") 2> $null
+                $actualImg = docker inspect $container_name --format="{{.Image}}" 2>$null
             }
             else {
-                ($actualImg = sudo docker inspect $container_name --format="{{.Image}}") 2> $null
+                $actualImg = sudo docker inspect $container_name --format="{{.Image}}" 2>$null
             }
             if($expectedImg -eq $actualImg) {
                 Write-Host "IDs match.  Deployment is complete"  -ForegroundColor Green

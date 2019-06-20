@@ -31,7 +31,7 @@ if( -Not (Test-Path -Path $resultsdir ) )
 else {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
-    New-Item -ItemType directory -Path $resultsdir
+    New-Item -ItemType directory -Path $resultsdir | Out-Null
 }
 
 $languageMod = $langmod + "Mod"
@@ -43,10 +43,10 @@ foreach($mod in $modulelist) {
         $modulefiles += $modFile
         Write-Host "getting log for $mod" -ForegroundColor Green
         if($isWin32) {
-            docker logs -t $mod 2>&1>$modFile
+            docker logs -t $mod >$modFile
         }
         else {
-            sudo docker logs -t $mod 2>&1>$modFile
+            sudo docker logs -t $mod >$modFile
         }
     }
 }
@@ -55,12 +55,11 @@ if($isWin32 -eq $false)  {
     sudo journalctl -u iotedge -n 500 -e >$resultsdir/iotedged.log
 }
 
+Write-Host "merging logs for ($modulelist)" -ForegroundColor Green
 $arglist = ""
 foreach($mod in $modulefiles) {
     $arglist += "-staticfile $mod "
 }
-
-Write-Host "merging logs for $modulelist" -ForegroundColor Green
 $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist >$resultsdir/merged.log"; Invoke-Expression  $py
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
