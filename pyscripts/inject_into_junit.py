@@ -53,12 +53,8 @@ class InjectIntoJunit:
             print(e)
             return
 
-        print("Junit LOGFILE:(" + str(len(read_file)) + ")")
-        #for l in read_file:
-        #    print(l)
-        print("XML:(" + str(len(xml)) + ")")
-        #for l in xml:
-        #    print(l)
+        print("***Junit LOGFILE:(" + str(len(read_file)) + ")")
+        print("***XML:(" + str(len(xml)) + ")")
 
         for suite in xml:
             if(suite):
@@ -75,6 +71,9 @@ class InjectIntoJunit:
             print(e)
             return
 
+        print("***Junit LOGFILE:(" + str(len(read_file)) + ")")
+        print("***XML:(" + str(len(xml)) + ")")
+
         #remove offending characters
         with open(junit_save_path,'rt+') as f:
             file_content = f.read()
@@ -84,7 +83,7 @@ class InjectIntoJunit:
 
         try:
             shutil.copyfile(junit_save_path, junit_path)
-            os.remove(junit_save_path) 
+            #os.remove(junit_save_path) 
         except Exception as e:
             print("Exception copying JUNIT file: " + junit_path )
             print(e)
@@ -99,8 +98,11 @@ class InjectIntoJunit:
 
     def get_suite_lines_from_log(self, log_lines, suite_name):
         lines_for_junit = []
+        #log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
+        #log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
         log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
         log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
+        print("****: (" + log_start_tag + ")")
 
         got_start = False
         for log_line in log_lines:
