@@ -52,7 +52,7 @@ foreach($mod in $modulelist) {
         #Invoke-Cmd "docker logs -t $mod"
         #$dkr_log = Invoke-Expression "sudo docker logs -t $mod" 4>&1 >> $modFile
         $dkr_cmd = "sudo docker logs -t $mod"
-        $dkr_cmd = "docker image ls"
+        #$dkr_cmd = "docker image ls"
         #$dkr_log = Invoke-Expression $dkr_cmd 
         $dkr_log = Invoke-Expression $dkr_cmd | Out-File $modFile
         #Get-Content -Path $modFile | Measure-Object -Line
