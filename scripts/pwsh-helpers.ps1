@@ -21,13 +21,17 @@ function Run-PyCmd($py_cmd) {
 
 function Invoke-Cmd($run_command) {
     $ErrorActionPreference = "SilentlyContinue"
-    $scriptToExecute = 
-    {
-        $VerbosePreference='Continue'
-        Write-Output "Standard"
-        Write-Verbose "Verbose" 4>&1
-    }
-    $b = Invoke-Command $run_command -ScriptBlock $scriptToExecute 
+    #$scriptToExecute = 
+    #{
+    #    $VerbosePreference='Continue'
+    #    Write-Output "Standard"
+    #    Write-Verbose "Verbose" 4>&1
+    #}
+    #Invoke-Command $run_command -ScriptBlock $scriptToExecute 
+    #Invoke-Command $run_command -ScriptBlock $scriptToExecute 
+    #$b = Invoke-Command -ScriptBlock $scriptToExecute 4>&1 -ComputerName localhost
+    #$b = Invoke-Command $run_command
     #Write-Output "Content of variable B"
+    $b = Invoke-Command $run_command *>&1
     return $b    
 }
