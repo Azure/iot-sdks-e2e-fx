@@ -247,7 +247,7 @@ class DockerLogProcessor:
                             # Made it past filters and PyTest, so Log the line
                             log_line_parts = log_line.split("Z ")
                             if log_line_parts:
-                                valid_line = False
+                                valid_line = True
                                 log_data = ""
                                 num_parts = len(log_line_parts)
 
@@ -258,15 +258,16 @@ class DockerLogProcessor:
                                 else:
                                     if num_parts == 2:
                                         log_data = log_line_parts[1]
+
                                 if num_parts >= 2:
                                     try:
                                         log_time = DockerLogProcessor.format_date_and_time(log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f")
-                                        valid_line = True
                                     except:
-                                        print("INVALID_TIMESTAMP({}):{}".format(module_name, log_line))
-                                    if valid_line:
-                                        log_line_object = LogLineObject(log_time, module_name, log_data)
-                                        loglines.append(log_line_object)
+                                        valid_line = False
+
+                                if valid_line:
+                                    log_line_object = LogLineObject(log_time, module_name, log_data)
+                                    loglines.append(log_line_object)
                                 else:
                                     print("INVALID_LINE({}):{}".format(module_name, log_line))
 
