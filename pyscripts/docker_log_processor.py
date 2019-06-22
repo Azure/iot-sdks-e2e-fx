@@ -256,6 +256,7 @@ class DockerLogProcessor:
                 for log_line in read_file:
                     ok_to_log = True
                     if log_line:
+                        log_line = log_line.strip()
                         if "PYTEST" in log_line:
                             if not pytest_owner:
                                 pytest_owner = module_name
