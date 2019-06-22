@@ -20,7 +20,7 @@ $log_folder_name = $log_folder_name.trim("/")
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $resultsdir="$build_dir/results/logs/$log_folder_name"
 $junit_file = "$build_dir/TEST-$log_folder_name.xml"
-$ErrorActionPreference = 'Continue'
+$ErrorActionPreference = 'SilentlyContinue'
 Write-Host "Fetching Logs for $log_folder_name" -ForegroundColor Green
 
 if( -Not (Test-Path -Path $resultsdir ) )
@@ -84,7 +84,7 @@ $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction Continue > $resultsdir/merged.log
 
-$py_out_array = Invoke-Expression "$py 2>&1" -ErrorAction Continue
+$py_out_array = Invoke-Expression "$py 2>&1" -ErrorAction SilentlyContinue
 $py_out_string = [string]::join("`r`n",$py_out_array)
 $py_out_string | Out-File $resultsdir/merged.log
 
