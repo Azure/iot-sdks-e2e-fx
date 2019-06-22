@@ -47,7 +47,8 @@ foreach($mod in $modulelist) {
         else {
             $dkr_cmd = "sudo docker logs -t $mod"
         }
-        Invoke-Expression $dkr_cmd | Out-File $modFile
+        invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
+        #Invoke-Expression $dkr_cmd | Out-File $modFile
     }
 }
 
