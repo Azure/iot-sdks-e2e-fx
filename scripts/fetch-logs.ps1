@@ -65,8 +65,8 @@ foreach($mod in $modulelist) {
         #$dkr_log = Invoke-Expression $dkr_cmd 
         Invoke-Expression $dkr_cmd | Out-File $modFile
         #Get-Content -Path $modFile | Measure-Object -Line
-        Write-Host "#######################################"
-        Get-Content -Path $modFile
+        #Write-Host "#######################################"
+        #Get-Content -Path $modFile
         #$dkr_log = ( Invoke-Expression $dkr_cmd ) | Out-File $modFile
         #$dlen = $dkr_log.length
         #Write-Host "($modFile)($dlen)"
@@ -84,18 +84,22 @@ if($isWin32 -eq $false)  {
 
 Write-Host "merging logs for ($modulelist)" -ForegroundColor Green
 $arglist = ""
-foreach($mod in $modulefiles) {
-    $arglist += "-staticfile $mod "
+foreach($modFile in $modulefiles) {
+    if(Test-Path $modFile) {
+        $arglist += "-staticfile $modFile "
+    }   
 }
 #$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
 #$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = (Invoke-Expression $py)
+Write-Host "#######################################"
+Write-Host "docker_log_processor $arglist"
 $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; Invoke-Expression $py | Out-File $resultsdir/merged.log
 #$out_log > $resultsdir/merged.log
 #| Out-File $modFile
 #$out_log | Out-File $resultsdir/merged.log -Append
+Get-Content -Path $resultsdir/merged.log
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
-
 $py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression $py
 #$py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged2.log"; Invoke-Expression $py
 
