@@ -33,7 +33,7 @@ $py = Run-PyCmd "$pyscripts/get_environment_variables.py powershell"; Invoke-Exp
 foreach($o in $out) {
     $var_name,$var_value = $o.split('=')
     if("env:$var_name" -eq "") {
-        Write-Host "Setting: $o" -ForegroundColor Magenta
+        Write-Host "Setting: $var_name=<REDACTED>" -ForegroundColor Magenta
         Set-Item -Path Env:$var_name -Value $var_value
     }
 }

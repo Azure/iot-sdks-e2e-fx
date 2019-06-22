@@ -53,6 +53,11 @@ class InjectIntoJunit:
             print(e)
             return
 
+        print("***Junit LOGFILE:(" + str(len(read_file)) + ")")
+        print("***XML:(" + str(len(xml)) + ")")
+        if(read_file.count("Entering function")):
+            print("##########  HAS TAG")
+
         for suite in xml:
             if(suite):
                 suite_name = suite.name
@@ -91,8 +96,10 @@ class InjectIntoJunit:
 
     def get_suite_lines_from_log(self, log_lines, suite_name):
         lines_for_junit = []
-        log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
-        log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
+        #log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
+        #log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
+        log_start_tag = "Entering function " + suite_name
+        log_end_tag = "Exiting function " + suite_name
 
         got_start = False
         for log_line in log_lines:
