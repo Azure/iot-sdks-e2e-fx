@@ -165,7 +165,7 @@ class DockerLogProcessor:
         all_fields_two = self.split(date_two, delimiters)
         if not all_fields_two:
             return date_one
-            
+
         for field1 in all_fields_one:
             if field1 == all_fields_two[field_count]:
                 for _ in field1:
@@ -295,12 +295,14 @@ class DockerLogProcessor:
         line_count = 0
 
         # display the results to stdout
+        line_count = 0
         for log_line in loglines:
             logline_timestamp = log_line.timestamp
             if (
                 "HORTON: Entering function" in log_line.log_data
                 or "HORTON: Exiting function" in log_line.log_data
             ):
+                print("+++++++++++DEBUG: found HORTON tag")
                 date_delta = str(logline_timestamp)
             else:
                 date_delta = self.get_timestamp_delta(
@@ -321,6 +323,9 @@ class DockerLogProcessor:
                 print(out_line)
             except Exception:
                 print("".join([i if ord(i) < 128 else "#" for i in out_line]))
+            finally:
+                line_count += 1
+        print("Output ({}) lines".format(line_count))
 
     def process_queue(self):
         """
