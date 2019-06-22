@@ -55,8 +55,6 @@ class InjectIntoJunit:
 
         print("***Junit LOGFILE:(" + str(len(read_file)) + ")")
         print("***XML:(" + str(len(xml)) + ")")
-        if(read_file.count("Entering function")):
-            print("##########  HAS TAG")
 
         for suite in xml:
             if(suite):
@@ -74,11 +72,11 @@ class InjectIntoJunit:
             return
 
         #remove offending characters
-        with open(junit_save_path,'rt+') as f:
-            file_content = f.read()
-            filtered = self.filter_esc_to_ascii7(file_content)
-            f.seek(0,0)
-            f.write(filtered)
+        #with open(junit_save_path,'rt+') as f:
+        #    file_content = f.read()
+        #    filtered = self.filter_esc_to_ascii7(file_content)
+        #    f.seek(0,0)
+        #    f.write(filtered)
 
         try:
             shutil.copyfile(junit_save_path, junit_path)
@@ -98,11 +96,12 @@ class InjectIntoJunit:
         lines_for_junit = []
         #log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
         #log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
-        log_start_tag = "Entering function " + suite_name
-        log_end_tag = "Exiting function " + suite_name
+        log_start_tag = "" + suite_name
+        log_end_tag = "" + suite_name
 
         got_start = False
         for log_line in log_lines:
+            log_line = self.filter_esc_to_ascii7(log_line.strip())
             if(got_start == False and log_start_tag in log_line):
                 got_start = True
             if(got_start):

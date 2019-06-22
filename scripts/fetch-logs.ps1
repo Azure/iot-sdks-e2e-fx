@@ -71,6 +71,7 @@ Write-Host "docker_log_processor $arglist"
 $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 #$py_cmd = "& `"$py`" 2>&1"
 #invoke-expression $py | Out-File $resultsdir/merged.log
+#invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
 invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
 #invoke-expression $py > $resultsdir/merged.log
 #invoke-expression $py_cmd
@@ -83,7 +84,7 @@ invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdi
 #$out_log > $resultsdir/merged.log
 #| Out-File $modFile
 #$out_log | Out-File $resultsdir/merged.log -Append
-#Get-Content -Path $resultsdir/merged.log
+Get-Content -Path $resultsdir/merged.log
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 $py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression $py
