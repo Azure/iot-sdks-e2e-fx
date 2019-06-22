@@ -31,50 +31,23 @@ else {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
     New-Item -ItemType directory -Path $resultsdir
-    #mkdir $resultsdir >$null
 }
 
-Write-Host "#######################################"
-docker container ls
-Write-Host "#######################################"
-
-set-location $resultsdir
 $languageMod = $langmod + "Mod"
 $modulefiles = @()
-$dkr_log = @()
-$dlen = 0
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
-    if("$mod" -ne "") {
+    if("$mod.strip()" -ne "") {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
-        #if(Test-Path $modFile) {
-        #    Remove-Item $modFile
-        #}
         Write-Host "Getting log for $mod" -ForegroundColor Green
-        #$dkr_log = Invoke-Cmd "sudo docker logs -t $mod"
-        #Invoke-Cmd "docker logs -t $mod"
-        #$dkr_log = Invoke-Expression "sudo docker logs -t $mod" 4>&1 >> $modFile
         if($isWin32)  {
             $dkr_cmd = "docker logs -t $mod"
         }
         else {
-            $dkr_cmd = "sudo docker logs -t $mod 4>&1"
+            $dkr_cmd = "sudo docker logs -t $mod"
         }
-        #$dkr_cmd = "docker image ls"
-        #$dkr_log = Invoke-Expression $dkr_cmd 
         Invoke-Expression $dkr_cmd | Out-File $modFile
-        #Get-Content -Path $modFile | Measure-Object -Line
-        #Write-Host "#######################################"
-        #Get-Content -Path $modFile
-        #$dkr_log = ( Invoke-Expression $dkr_cmd ) | Out-File $modFile
-        #$dlen = $dkr_log.length
-        #Write-Host "($modFile)($dlen)"
-        #$dkr_log | Out-File $modFile
-        #foreach( $o in $dkr_log) {
-            #$o >> $modFile
-        #    Write-Host "__$o"
-        #}
     }
 }
 
@@ -94,7 +67,7 @@ foreach($modFile in $modulefiles) {
 Write-Host "#######################################"
 Write-Host "docker_log_processor $arglist"
 $py_cmd = "${root_dir}/pyscripts/docker_log_processor.py $arglist"
-$py = Run-PyCmd "$py_cmd"; Invoke-Expression $py
+$py = Run-PyCmd "$py_cmd"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
 #$out_log > $resultsdir/merged.log
 #| Out-File $modFile
 #$out_log | Out-File $resultsdir/merged.log -Append
@@ -102,7 +75,6 @@ $py = Run-PyCmd "$py_cmd"; Invoke-Expression $py
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 $py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression $py
-#$py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged2.log"; Invoke-Expression $py
 
 $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
