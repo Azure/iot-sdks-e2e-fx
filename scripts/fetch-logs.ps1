@@ -54,7 +54,10 @@ foreach($mod in $modulelist) {
         #$dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
         #Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
         #Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
-        Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Set-Content -Path $modFile
+        
+        #Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Set-Content -Path $modFile
+        $dkr_out_array = Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue
+        Set-Content -Path $modFile -Value $dkr_out_array -Force
 
         #$dkr_out_string = [string]::join("`r`n",$dkr_out_array)
         #$dkr_out_string | Out-String | Out-File $modFile
@@ -70,7 +73,7 @@ foreach($mod in $modulelist) {
         #    }
         #}
         Write-Host "**************************************************"
-        Write-Host "**************************************************"
+        Write-Host "*** ZXZX - GETTING Content $modFile ***********************************************"
         Get-Content -Path $modFile
         Write-Host "**************************************************"
         #Invoke-Expression $dkr_cmd | Out-File $modFile
