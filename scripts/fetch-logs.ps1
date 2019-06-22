@@ -30,9 +30,13 @@ if( -Not (Test-Path -Path $resultsdir ) )
 else {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
-    #New-Item -ItemType directory -Path $resultsdir
-    mkdir $resultsdir >$null
+    New-Item -ItemType directory -Path $resultsdir
+    #mkdir $resultsdir >$null
 }
+
+Write-Host "#######################################"
+docker container ls
+Write-Host "#######################################"
 
 set-location $resultsdir
 $languageMod = $langmod + "Mod"
@@ -54,7 +58,7 @@ foreach($mod in $modulelist) {
         $dkr_cmd = "sudo docker logs -t $mod"
         #$dkr_cmd = "docker image ls"
         #$dkr_log = Invoke-Expression $dkr_cmd 
-        $dkr_log = Invoke-Expression $dkr_cmd | Out-File $modFile
+        Invoke-Expression $dkr_cmd | Out-File $modFile
         #Get-Content -Path $modFile | Measure-Object -Line
         #Get-Content -Path $modFile
         #$dkr_log = ( Invoke-Expression $dkr_cmd ) | Out-File $modFile
