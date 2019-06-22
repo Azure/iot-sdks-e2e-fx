@@ -66,8 +66,17 @@ foreach($modFile in $modulefiles) {
 #$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = (Invoke-Expression $py)
 Write-Host "#######################################"
 Write-Host "docker_log_processor $arglist"
-$py_cmd = "${root_dir}/pyscripts/docker_log_processor.py $arglist"
-$py = Run-PyCmd "$py_cmd"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
+#$py_cmd = "${root_dir}/pyscripts/docker_log_processor.py $arglist"
+$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
+#$py_cmd = "& `"$py`" 2>&1"
+invoke-expression $py | Out-File $modFile
+#invoke-expression $py_cmd
+#$py_out_array = invoke-expression $py_cmd
+#$py_out_string = [string]::join("`r`n",$py_out_array)
+#$py_out_string | Out-File $modFile
+
+#$py = Run-PyCmd "$py_cmd"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
+#$command = "& `"C:\Users\myprofile\Documents\visual studio 2010\Projects\TestOutput\TestOutput\bin\Debug\testoutput.exe`" someparameter -xyz someotherparameter -abc someotherthing -rfz -a somethinghere 2>&1"
 #$out_log > $resultsdir/merged.log
 #| Out-File $modFile
 #$out_log | Out-File $resultsdir/merged.log -Append
