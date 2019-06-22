@@ -268,7 +268,8 @@ class DockerLogProcessor:
                         if ok_to_log:
                             for filter in filter_list:
                                 if filter in log_line:
-                                    ok_to_log = False
+                                    ok_to_log = True
+                                    #ok_to_log = False
 
                         if ok_to_log:
                             # Made it past filters and PyTest, so Log the line
@@ -302,10 +303,10 @@ class DockerLogProcessor:
         # Sort the merged static file lines by timestamp
         loglines.sort(key=lambda x: x.timestamp)
         last_timestamp = datetime.now() + timedelta(days=-364)
-        line_count = 0
+        #line_count = 0
 
         # display the results to stdout
-        line_count = 0
+        #line_count = 0
         for log_line in loglines:
             logline_timestamp = log_line.timestamp
             if (
@@ -318,7 +319,7 @@ class DockerLogProcessor:
                 date_delta = self.get_timestamp_delta(
                     str(logline_timestamp), str(last_timestamp), line_count
                 )
-            line_count += 1
+            #line_count += 1
             out_line = (
                 log_line.module_name
                 + " : "
@@ -329,13 +330,14 @@ class DockerLogProcessor:
                 + log_line.log_data
             )
             last_timestamp = logline_timestamp
-            try:
-                print(out_line)
-            except Exception:
-                print("".join([i if ord(i) < 128 else "#" for i in out_line]))
-            finally:
-                line_count += 1
-        print("Output ({}) lines".format(line_count))
+            print("".join([i if ord(i) < 128 else "#" for i in out_line]))
+            #try:
+            #    print(out_line)
+            #except Exception:
+            #    print("".join([i if ord(i) < 128 else "#" for i in out_line]))
+            #finally:
+            #    line_count += 1
+        #print("Output ({}) lines".format(line_count))
 
     def process_queue(self):
         """
