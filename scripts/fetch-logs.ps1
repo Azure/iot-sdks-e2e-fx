@@ -20,9 +20,9 @@ $log_folder_name = $log_folder_name.trim("/")
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $resultsdir="$build_dir/results/logs/$log_folder_name"
 $junit_file = "$build_dir/TEST-$log_folder_name.xml"
-
+$ErrorActionPreference = 'Continue'
 Write-Host "Fetching Logs for $log_folder_name" -ForegroundColor Green
-$ErrorActionPreference = "SilentlyContinue"
+
 if( -Not (Test-Path -Path $resultsdir ) )
 {
     New-Item -ItemType directory -Path $resultsdir
@@ -50,9 +50,11 @@ foreach($mod in $modulelist) {
         }
         #invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
 
-        $dkr_out_array = Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue
+        $dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
         $dkr_out_string = [string]::join("`r`n",$dkr_out_array)
-        $dkr_out_string | Out-File $modFile
+        $dkr_out_string | Out-String | Out-File $modFile
+        Write-Host "**************************************************"
+        Write-Host "**************************************************"
         Write-Host "**************************************************"
         Get-Content -Path $modFile
         #Invoke-Expression $dkr_cmd | Out-File $modFile
