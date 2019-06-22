@@ -51,21 +51,23 @@ foreach($mod in $modulelist) {
         }
         #invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
 
-        $dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
+        #$dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
+        #Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
+        Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
 
         #$dkr_out_string = [string]::join("`r`n",$dkr_out_array)
         #$dkr_out_string | Out-String | Out-File $modFile
         #$dkr_cmd > $modFile
-        $dkr_cmd | Out-File -Encoding UTF8NoBOM $modFile
-        foreach($line in $dkr_out_array) {
-            try {
-                #$line | Out-File -FilePath $modFile -Encoding -Append
-                $line | Out-File -Encoding UTF8NoBOM $modFile -Append
-            }
-            catch {
-                $sep 
-            }
-        }
+        #$dkr_cmd | Out-File -Encoding UTF8NoBOM $modFile
+        #foreach($line in $dkr_out_array) {
+        #    try {
+        #        #$line | Out-File -FilePath $modFile -Encoding -Append
+        #        $line | Out-File -Encoding UTF8NoBOM $modFile -Append
+        #    }
+        #    catch {
+        #        $sep 
+        #    }
+        #}
         Write-Host "**************************************************"
         Write-Host "**************************************************"
         Write-Host "**************************************************"
