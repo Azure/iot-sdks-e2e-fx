@@ -35,6 +35,7 @@ else {
 
 $languageMod = $langmod + "Mod"
 $modulefiles = @()
+$dkr_cmd = ""
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod.strip()" -ne "") {
@@ -47,7 +48,13 @@ foreach($mod in $modulelist) {
         else {
             $dkr_cmd = "sudo docker logs -t $mod"
         }
-        invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
+        #invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
+
+        $dkr_out_array = Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue
+        $dkr_out_string = [string]::join("`r`n",$dkr_out_array)
+        $dkr_out_string | Out-File $modFile
+        Write-Host "**************************************************"
+        Get-Content -Path $modFile
         #Invoke-Expression $dkr_cmd | Out-File $modFile
     }
 }
@@ -75,7 +82,7 @@ $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction Continue > $resultsdir/merged.log
 
-$py_out_array = invoke-expression "$py 2>&1" -erroraction Continue
+$py_out_array = Invoke-Expression "$py 2>&1" -ErrorAction Continue
 $py_out_string = [string]::join("`r`n",$py_out_array)
 $py_out_string | Out-File $resultsdir/merged.log
 
