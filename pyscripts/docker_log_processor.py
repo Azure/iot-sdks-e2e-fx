@@ -306,7 +306,7 @@ class DockerLogProcessor:
         #line_count = 0
 
         # display the results to stdout
-        #line_count = 0
+        line_count = 0
         for log_line in loglines:
             logline_timestamp = log_line.timestamp
             if (
@@ -319,7 +319,7 @@ class DockerLogProcessor:
                 date_delta = self.get_timestamp_delta(
                     str(logline_timestamp), str(last_timestamp), line_count
                 )
-            #line_count += 1
+            line_count += 1
             out_line = (
                 log_line.module_name
                 + " : "
