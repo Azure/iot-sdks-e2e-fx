@@ -163,6 +163,9 @@ class DockerLogProcessor:
 
         all_fields_one = self.split(date_one, delimiters)
         all_fields_two = self.split(date_two, delimiters)
+        if not all_fields_two:
+            return date_one
+            
         for field1 in all_fields_one:
             if field1 == all_fields_two[field_count]:
                 for _ in field1:
