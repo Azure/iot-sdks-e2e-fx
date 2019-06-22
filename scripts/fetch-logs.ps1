@@ -36,6 +36,7 @@ else {
 $languageMod = $langmod + "Mod"
 $modulefiles = @()
 $dkr_cmd = ""
+$sep = "***********"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod.strip()" -ne "") {
@@ -51,8 +52,18 @@ foreach($mod in $modulelist) {
         #invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
 
         $dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
-        $dkr_out_string = [string]::join("`r`n",$dkr_out_array)
-        $dkr_out_string | Out-String | Out-File $modFile
+
+        #$dkr_out_string = [string]::join("`r`n",$dkr_out_array)
+        #$dkr_out_string | Out-String | Out-File $modFile
+        $dkr_cmd > $modFile
+        foreach($line in $dkr_out_array) {
+            try {
+                $line >> $modFile
+            }
+            catch {
+                $sep 
+            }
+        }
         Write-Host "**************************************************"
         Write-Host "**************************************************"
         Write-Host "**************************************************"
