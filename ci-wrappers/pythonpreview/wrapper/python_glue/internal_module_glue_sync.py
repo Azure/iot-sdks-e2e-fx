@@ -55,7 +55,7 @@ class InternalModuleGlueSync:
 
     def send_event(self, event_body):
         print("sending event")
-        self.client.send_event(normalize_event_body(event_body))
+        self.client.send_d2c_message(normalize_event_body(event_body))
         print("send confirmation received")
 
     def wait_for_input_message(self, input_name):

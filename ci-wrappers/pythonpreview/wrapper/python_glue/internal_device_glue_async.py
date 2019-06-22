@@ -57,7 +57,7 @@ class InternalDeviceGlueAsync:
     def send_event(self, event_body):
         print("sending event")
         async_helper.run_coroutine_sync(
-            self.client.send_event(normalize_event_body(event_body))
+            self.client.send_d2c_message(normalize_event_body(event_body))
         )
         print("send confirmation received")
 
