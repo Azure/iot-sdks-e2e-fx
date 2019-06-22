@@ -93,7 +93,8 @@ foreach($modFile in $modulefiles) {
 #$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = (Invoke-Expression $py)
 Write-Host "#######################################"
 Write-Host "docker_log_processor $arglist"
-$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; Invoke-Expression $py | Out-File $resultsdir/merged.log
+$py_cmd = "${root_dir}/pyscripts/docker_log_processor.py $arglist"
+$py = Run-PyCmd "$py_cmd"; Invoke-Expression $py
 #$out_log > $resultsdir/merged.log
 #| Out-File $modFile
 #$out_log | Out-File $resultsdir/merged.log -Append
