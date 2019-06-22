@@ -72,7 +72,8 @@ $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 #$py_cmd = "& `"$py`" 2>&1"
 #invoke-expression $py | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
+#invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
+invoke-expression "$py 2>&1" -erroraction Continue > $resultsdir/merged.log
 #invoke-expression $py > $resultsdir/merged.log
 #invoke-expression $py_cmd
 #$py_out_array = invoke-expression $py_cmd
