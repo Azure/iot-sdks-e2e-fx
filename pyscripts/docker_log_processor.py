@@ -263,7 +263,8 @@ class DockerLogProcessor:
                                 pytest_owner = module_name
                             else:
                                 if pytest_owner != module_name:
-                                    ok_to_log = False
+                                    ok_to_log = True
+                                    #ok_to_log = False
                         if ok_to_log:
                             for filter in filter_list:
                                 if filter in log_line:
