@@ -274,7 +274,7 @@ class DockerLogProcessor:
                             log_line_parts = log_line.split("Z ")
                             num_parts = len(log_line_parts)
 
-                            if num_parts < 2
+                            if num_parts < 2:
                                 log_line_parts = log_line.split(" +00:00")
                                 num_parts = len(log_line_parts)
 
