@@ -56,6 +56,9 @@ foreach($mod in $modulelist) {
         #Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
         
         #Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Set-Content -Path $modFile
+        sudo docker logs -t $mod
+        #& sudo docker logs -t $mod
+
         $dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
 
         Set-Content -Path $modFile -Value $dkr_out_array -Force
@@ -74,7 +77,7 @@ foreach($mod in $modulelist) {
         #    }
         #}
         #$dkr_out_array = @("bmw","gmc")
-        Write-Host "**************************************************"\
+        Write-Host "**************************************************"
         Write-Host $dkr_out_array.Length
         Write-Host "*** ZXZX - GETTING Content $modFile ***********************************************"
         Get-Content -Path $modFile
