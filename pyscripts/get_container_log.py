@@ -65,7 +65,10 @@ class HortonGetContainerLog:
             if delimeter_match:
                 bin_buffer = ""
                 for b in range(log_blob_last_pos, log_blob_pos):
-                    bin_buffer += chr(log_blob[b])
+                    if log_blob[b] > 127:
+                        bin_buffer += "#"
+                    else:
+                        bin_buffer += chr(log_blob[b])
                 log_blob_last_pos = log_blob_pos + log_delimiter_len
                 log_blob_pos = log_blob_last_pos
                 log_lines.append(bin_buffer)
