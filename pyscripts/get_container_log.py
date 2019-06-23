@@ -44,7 +44,7 @@ class HortonGetContainerLog:
 
         #for line in log:
         #    print(line)
-        print(line)
+        print(log)
 
 
     def get_container_by_name(self, containers, container_name):
