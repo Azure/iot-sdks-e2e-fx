@@ -255,7 +255,6 @@ class DockerLogProcessor:
                 # Get and filter each line
                 for log_line in read_file:
                     ok_to_log = True
-                    valid_line = True
                     log_line = log_line.strip()
                     if log_line:
                         if "PYTEST" in log_line:
@@ -273,9 +272,9 @@ class DockerLogProcessor:
                             # Made it past filters and PyTest, so Log the line
                             log_data = ""
                             log_line_parts = log_line.split("Z ")
-                            if not log_line_parts:
-                                num_parts = len(log_line_parts)
-                            else:
+                            num_parts = len(log_line_parts)
+
+                            if num_parts < 2
                                 log_line_parts = log_line.split(" +00:00")
                                 num_parts = len(log_line_parts)
 
@@ -298,7 +297,6 @@ class DockerLogProcessor:
         # Sort the merged static file lines by timestamp
         loglines.sort(key=lambda x: x.timestamp)
         last_timestamp = datetime.now() + timedelta(days=-364)
-        #line_count = 0
 
         # display the results to stdout
         line_count = 0
@@ -325,14 +323,11 @@ class DockerLogProcessor:
                 + log_line.log_data
             )
             last_timestamp = logline_timestamp
-            print("".join([i if ord(i) < 128 else "#" for i in out_line]))
-            #try:
-            #    print(out_line)
-            #except Exception:
-            #    print("".join([i if ord(i) < 128 else "#" for i in out_line]))
-            #finally:
-            #    line_count += 1
-        #print("Output ({}) lines".format(line_count))
+
+            try:
+                print(out_line)
+            except Exception:
+                print("".join([i if ord(i) < 128 else "#" for i in out_line]))
 
     def process_queue(self):
         """

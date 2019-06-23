@@ -3,19 +3,11 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 #
-# filename: horton_create_containers.py
-# author:   v-greach@microsoft.com
 
 import sys
 import os
-#import json
-#import traceback
 import docker
-#import time
-#import requests
 import argparse
-#from pprint import pprint
-#from colorama import init, Fore, Back, Style
 
 class HortonGetContainerLog:
     def __init__(self, args):
@@ -40,10 +32,6 @@ class HortonGetContainerLog:
 
         log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
         
-        #log_blob = [123, 49, 58, 32, 39, 97, 39, 44, 32, 50, 58, 32, 39, 98, 39, 44, 32, 51, 58, 32, 39, 99, 39, 125]  
-        #log_blob = bytearray(b'aabbqwerty\n20trythistestdatafor\nnow20and\n20')
-        #log_blob = b'aabbqwerty\n20trythistestdatafor\n20now20and\n20x333'
-
         log_blob_len = len(log_blob)
         log_blob_pos = -1
         log_blob_last_pos = 0
@@ -74,7 +62,10 @@ class HortonGetContainerLog:
         if log_blob_last_pos < log_blob_len:
             bin_buffer = ""
             for b in range(log_blob_last_pos, log_blob_len):
-                bin_buffer += chr(log_blob[b])
+                if log_blob[b] > 127:
+                    bin_buffer += "#"
+                else:
+                    bin_buffer += chr(log_blob[b])
             log_lines.append(bin_buffer)
 
         for line in log_lines:
