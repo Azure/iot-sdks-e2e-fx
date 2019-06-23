@@ -59,13 +59,16 @@ foreach($mod in $modulelist) {
         Write-Host "ZZZZ**************************************************"
         #sudo docker logs -t $mod > $modFile
         #$cmd_out = docker logs -t $mod | Set-Content -Path $modFile
-        $cmd_out = docker logs -t $mod
+        $cmd_out = & "docker logs -t $mod"
+        &docker logs -t $mod | Tee-Object -Variable cmd_out2
         #& sudo docker logs -t $mod
         Write-Host "YYYY**************************************************"
         Get-Content -Path $modFile
         Write-Host "XXXX**************************************************"
         Write-Host $cmd_out
         Write-Host "QQQ**************************************************"
+        Write-Host $cmd_out2
+        Write-Host "VVVV**************************************************"
         $dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
 
         Set-Content -Path $modFile -Value $dkr_out_array -Force
