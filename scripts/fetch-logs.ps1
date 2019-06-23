@@ -66,8 +66,10 @@ foreach($mod in $modulelist) {
         }
         else {
             #$py = PyCmd-Run "-m pip install docker"; Invoke-Expression  $py
-            sudo -H -E pip install docker
-            $py_out = sudo -H -E python3 $pyscripts/get_container_log.py --container $mod
+            #sudo -H -E pip install docker
+            #$py_out = sudo -H -E python3 $pyscripts/get_container_log.py --container $mod
+            python3 -m pip install docker
+            $py_out = python3 $pyscripts/get_container_log.py --container $mod
         }
 
         Set-Content -Path $modFile -Value $py_out
