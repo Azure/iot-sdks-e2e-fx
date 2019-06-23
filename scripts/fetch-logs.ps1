@@ -36,8 +36,6 @@ else {
 
 $languageMod = $langmod + "Mod"
 $modulefiles = @()
-$dkr_cmd = ""
-$sep = "***********"
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
 foreach($mod in $modulelist) {
     if("$mod.strip()" -ne "") {
@@ -45,21 +43,25 @@ foreach($mod in $modulelist) {
         $modulefiles += $modFile
         Write-Host "Getting log for $mod" -ForegroundColor Green
 
-        if($isWin32)  {
-            $py_out = python $pyscripts/get_container_log.py --container $mod
-        }
-        else {
-            #$py = PyCmd-Run "-m pip install docker"; Invoke-Expression  $py
-            #sudo -H -E pip install docker
-            #$py_out = sudo -H -E python3 $pyscripts/get_container_log.py --container $mod
+        if($isWin32 -eq $false)  {
             python3 -m pip install docker
-            $py_out = python3 $pyscripts/get_container_log.py --container $mod
+            python3 $pyscripts/get_container_log.py --container $mod | Set-Content -Path $modFile
         }
 
-        Set-Content -Path $modFile -Value $py_out
+        #$py = Invoke-PyCmd "${root_dir}/get_container_log.py --container $mod"
+        #$py  | Out-File modFile
+
+
+        #$py_cmd = "& `"$py`" 2>&1"
+        #invoke-expression $py | Out-File $resultsdir/merged.log
+        #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
+        #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
+        #invoke-expression "$py" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
+
+        #Set-Content -Path $modFile -Value $py
 
         Write-Host "WWWWW**************************************************"
-        #Get-Content -Path $modFile
+        Get-Content -Path $modFile
     }
 }
 
