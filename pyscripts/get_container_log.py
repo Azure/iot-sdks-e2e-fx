@@ -42,8 +42,9 @@ class HortonGetContainerLog:
 
         log = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
 
-        for line in log:
-            print(line)
+        #for line in log:
+        #    print(line)
+        print(line)
 
 
     def get_container_by_name(self, containers, container_name):

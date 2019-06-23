@@ -44,22 +44,6 @@ foreach($mod in $modulelist) {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
         Write-Host "Getting log for $mod" -ForegroundColor Green
-        #if($isWin32)  {
-        #    $dkr_cmd = "docker logs -t $mod"
-        #}
-        #else {
-        #    $dkr_cmd = "sudo docker logs -t $mod"
-        #}
-        #invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
-
-        #$dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
-        #Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
-        #Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
-        
-        #Invoke-Expression "$dkr_cmd" -ErrorAction SilentlyContinue | Set-Content -Path $modFile
-        Write-Host "ZZZZ**************************************************"
-        #sudo docker logs -t $mod > $modFile
-        #$cmd_out = docker logs -t $mod | Set-Content -Path $modFile
 
         if($isWin32)  {
             $py_out = python $pyscripts/get_container_log.py --container $mod
@@ -74,41 +58,8 @@ foreach($mod in $modulelist) {
 
         Set-Content -Path $modFile -Value $py_out
 
-        #$cmd_out = & "docker logs -t $mod"
-        #&docker logs -t $mod | Tee-Object -Variable cmd_out2
-
-        #& sudo docker logs -t $mod
-        #Write-Host "YYYY**************************************************"
-        #Get-Content -Path $modFile
-        #Write-Host "XXXX**************************************************"
-        #Write-Host $cmd_out
-        #Write-Host "QQQ**************************************************"
-        #Write-Host $cmd_out2
-        #Write-Host "VVVV**************************************************"
-        #$dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
-
-        #Set-Content -Path $modFile -Value $dkr_out_array -Force
-
-        #$dkr_out_string = [string]::join("`r`n",$dkr_out_array)
-        #$dkr_out_string | Out-String | Out-File $modFile
-        #$dkr_cmd > $modFile
-        #$dkr_cmd | Out-File -Encoding UTF8NoBOM $modFile
-        #foreach($line in $dkr_out_array) {
-        #    try {
-        #        #$line | Out-File -FilePath $modFile -Encoding -Append
-        #        $line | Out-File -Encoding UTF8NoBOM $modFile -Append
-        #    }
-        #    catch {
-        #        $sep 
-        #    }
-        #}
-        #$dkr_out_array = @("bmw","gmc")
         Write-Host "WWWWW**************************************************"
-        #Write-Host $dkr_out_array.Length
-        #Write-Host "*** ZXZX - GETTING Content $modFile ***********************************************"
         Get-Content -Path $modFile
-        #Write-Host "**************************************************"
-        #Invoke-Expression $dkr_cmd | Out-File $modFile
     }
 }
 
@@ -123,11 +74,6 @@ foreach($modFile in $modulefiles) {
         $arglist += "-staticfile $modFile "
     }   
 }
-#$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
-#$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"; $out_log = (Invoke-Expression $py)
-Write-Host "#######################################"
-Write-Host "docker_log_processor $arglist"
-#$py_cmd = "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 $py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 #$py_cmd = "& `"$py`" 2>&1"
 #invoke-expression $py | Out-File $resultsdir/merged.log
