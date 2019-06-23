@@ -62,12 +62,13 @@ foreach($mod in $modulelist) {
         #$cmd_out = docker logs -t $mod | Set-Content -Path $modFile
 
         if($isWin32)  {
-            $py = Run-PyCmd "$pyscripts/get_container_log.py --container $mod"; Invoke-Expression $py
+            $py_out = python $pyscripts/get_container_log.py --container $mod
         }
         else {
-            $py = Run-PyCmd "sudo $pyscripts/get_container_log.py --container $mod"; Invoke-Expression $py            
+            $py_out = sudo python3 $pyscripts/get_container_log.py --container $mod
         }
 
+        Set-Content -Path $modFile -Value $py_out
 
         #$cmd_out = & "docker logs -t $mod"
         #&docker logs -t $mod | Tee-Object -Variable cmd_out2
@@ -101,7 +102,7 @@ foreach($mod in $modulelist) {
         Write-Host "WWWWW**************************************************"
         #Write-Host $dkr_out_array.Length
         #Write-Host "*** ZXZX - GETTING Content $modFile ***********************************************"
-        #Get-Content -Path $modFile
+        Get-Content -Path $modFile
         #Write-Host "**************************************************"
         #Invoke-Expression $dkr_cmd | Out-File $modFile
     }
