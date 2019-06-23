@@ -263,19 +263,16 @@ class DockerLogProcessor:
                                 pytest_owner = module_name
                             else:
                                 if pytest_owner != module_name:
-                                    ok_to_log = True
-                                    #ok_to_log = False
+                                    ok_to_log = False
                         if ok_to_log:
                             for filter in filter_list:
                                 if filter in log_line:
-                                    #ok_to_log = True
                                     ok_to_log = False
 
                         if ok_to_log:
                             # Made it past filters and PyTest, so Log the line
                             log_line_parts = log_line.split("Z ")
                             if log_line_parts:
-                                valid_line = True
                                 log_data = ""
                                 num_parts = len(log_line_parts)
 
@@ -288,16 +285,11 @@ class DockerLogProcessor:
                                         log_data = log_line_parts[1]
 
                                 #Handle case of invalid Timestamp
-                                if num_parts >= 3:
-                                    try:
-                                        log_time = DockerLogProcessor.format_date_and_time(log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f")
-                                    except:
-                                        valid_line = False
-
-                                if valid_line:
+                                try:
+                                    log_time = DockerLogProcessor.format_date_and_time(log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f")
                                     log_line_object = LogLineObject(log_time, module_name, log_data)
                                     loglines.append(log_line_object)
-                                else:
+                                except:
                                     print("INVALID_LINE({})x({})x:{}".format(module_name, num_parts, log_line))
 
         # Sort the merged static file lines by timestamp

@@ -33,9 +33,9 @@ else {
     Remove-Item -Path $resultsdir -Force -Recurse
     New-Item -ItemType directory -Path $resultsdir
 }
+
 if($isWin32 -eq $false)  {
     python3 -m pip install docker
-    #python3 $pyscripts/get_container_log.py --container $mod | Set-Content -Path $modFile
 }
 
 $languageMod = $langmod + "Mod"
@@ -48,21 +48,7 @@ foreach($mod in $modulelist) {
         Write-Host "Getting log for $mod" -ForegroundColor Green
 
         $py = Invoke-PyCmd "$pyscripts/get_container_log.py --container $mod"
-        #$py  | Out-File modFile
-
         Invoke-Expression "$py" -erroraction SilentlyContinue | Set-Content -Path $modFile
-        #Invoke-Expression "$py 2>&1" -erroraction SilentlyContinue | Set-Content -Path $modFile
-        #$py_cmd = "& `"$py`" 2>&1"
-        #invoke-expression $py | Out-File $resultsdir/merged.log
-        #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-        #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-        #invoke-expression "$py" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-
-        #Set-Content -Path $modFile -Value $py
-
-        Write-Host "ZZZZ**************************************************"
-        Get-Content -Path $modFile
-        Write-Host "YYYY**************************************************"
     }
 }
 
