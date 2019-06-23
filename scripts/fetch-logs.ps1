@@ -18,6 +18,7 @@ if ( $path) {$path = split-path $path -Parent}
 $isWin32 = IsWin32
 $log_folder_name = $log_folder_name.trim("/")
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
+$pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
 $resultsdir="$build_dir/results/logs/$log_folder_name"
 $junit_file = "$build_dir/TEST-$log_folder_name.xml"
 $ErrorActionPreference = 'SilentlyContinue'
@@ -43,12 +44,12 @@ foreach($mod in $modulelist) {
         $modFile ="$resultsdir/$mod.log"
         $modulefiles += $modFile
         Write-Host "Getting log for $mod" -ForegroundColor Green
-        if($isWin32)  {
-            $dkr_cmd = "docker logs -t $mod"
-        }
-        else {
-            $dkr_cmd = "sudo docker logs -t $mod"
-        }
+        #if($isWin32)  {
+        #    $dkr_cmd = "docker logs -t $mod"
+        #}
+        #else {
+        #    $dkr_cmd = "sudo docker logs -t $mod"
+        #}
         #invoke-expression "$dkr_cmd 2>&1" -erroraction SilentlyContinue | Out-File $modFile
 
         #$dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue | Out-File -Encoding UTF8NoBOM $modFile
@@ -59,19 +60,29 @@ foreach($mod in $modulelist) {
         Write-Host "ZZZZ**************************************************"
         #sudo docker logs -t $mod > $modFile
         #$cmd_out = docker logs -t $mod | Set-Content -Path $modFile
-        $cmd_out = & "docker logs -t $mod"
-        &docker logs -t $mod | Tee-Object -Variable cmd_out2
-        #& sudo docker logs -t $mod
-        Write-Host "YYYY**************************************************"
-        Get-Content -Path $modFile
-        Write-Host "XXXX**************************************************"
-        Write-Host $cmd_out
-        Write-Host "QQQ**************************************************"
-        Write-Host $cmd_out2
-        Write-Host "VVVV**************************************************"
-        $dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
 
-        Set-Content -Path $modFile -Value $dkr_out_array -Force
+        if($isWin32)  {
+            $py = Run-PyCmd "$pyscripts/get_container_log.py --container $mod"; Invoke-Expression $py
+        }
+        else {
+            $py = Run-PyCmd "sudo $pyscripts/get_container_log.py --container $mod"; Invoke-Expression $py            
+        }
+
+
+        #$cmd_out = & "docker logs -t $mod"
+        #&docker logs -t $mod | Tee-Object -Variable cmd_out2
+
+        #& sudo docker logs -t $mod
+        #Write-Host "YYYY**************************************************"
+        #Get-Content -Path $modFile
+        #Write-Host "XXXX**************************************************"
+        #Write-Host $cmd_out
+        #Write-Host "QQQ**************************************************"
+        #Write-Host $cmd_out2
+        #Write-Host "VVVV**************************************************"
+        #$dkr_out_array = Invoke-Expression "$dkr_cmd 2>&1" -ErrorAction SilentlyContinue
+
+        #Set-Content -Path $modFile -Value $dkr_out_array -Force
 
         #$dkr_out_string = [string]::join("`r`n",$dkr_out_array)
         #$dkr_out_string | Out-String | Out-File $modFile
@@ -88,10 +99,10 @@ foreach($mod in $modulelist) {
         #}
         #$dkr_out_array = @("bmw","gmc")
         Write-Host "WWWWW**************************************************"
-        Write-Host $dkr_out_array.Length
-        Write-Host "*** ZXZX - GETTING Content $modFile ***********************************************"
-        Get-Content -Path $modFile
-        Write-Host "**************************************************"
+        #Write-Host $dkr_out_array.Length
+        #Write-Host "*** ZXZX - GETTING Content $modFile ***********************************************"
+        #Get-Content -Path $modFile
+        #Write-Host "**************************************************"
         #Invoke-Expression $dkr_cmd | Out-File $modFile
     }
 }
