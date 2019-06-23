@@ -94,10 +94,10 @@ class InjectIntoJunit:
 
     def get_suite_lines_from_log(self, log_lines, suite_name):
         lines_for_junit = []
-        #log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
-        #log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
-        log_start_tag = "" + suite_name
-        log_end_tag = "" + suite_name
+        log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
+        log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
+        #log_start_tag = "" + suite_name
+        #log_end_tag = "" + suite_name
 
         got_start = False
         for log_line in log_lines:

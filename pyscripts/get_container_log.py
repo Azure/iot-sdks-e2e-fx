@@ -52,10 +52,9 @@ class HortonGetContainerLog:
         log_blob_last_pos = 0
         log_delimiter = b"\n20"
         log_delimiter_len = len(log_delimiter)
-        bin_buffer = ""
-        delimeter_match = False
         log_lines = []
         for _ in range(0, log_blob_len):
+            delimeter_match = False
             log_blob_pos += 1
             if log_blob_pos + log_delimiter_len < log_blob_len:
                 for i in range(0, log_delimiter_len):

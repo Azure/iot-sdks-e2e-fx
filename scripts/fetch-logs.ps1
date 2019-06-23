@@ -59,7 +59,7 @@ foreach($mod in $modulelist) {
         Set-Content -Path $modFile -Value $py_out
 
         Write-Host "WWWWW**************************************************"
-        Get-Content -Path $modFile
+        #Get-Content -Path $modFile
     }
 }
 
@@ -78,12 +78,12 @@ $py = Invoke-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 #$py_cmd = "& `"$py`" 2>&1"
 #invoke-expression $py | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-#invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
+invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction Continue > $resultsdir/merged.log
 
-$py_out_array = Invoke-Expression "$py 2>&1" -ErrorAction SilentlyContinue
-$py_out_string = [string]::join("`r`n",$py_out_array)
-$py_out_string | Out-File $resultsdir/merged.log
+#$py_out_array = Invoke-Expression "$py 2>&1" -ErrorAction SilentlyContinue
+#$py_out_string = [string]::join("`r`n",$py_out_array)
+#$py_out_string | Out-File $resultsdir/merged.log
 
 #invoke-expression $py > $resultsdir/merged.log
 #invoke-expression $py_cmd
