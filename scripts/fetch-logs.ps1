@@ -74,7 +74,7 @@ foreach($modFile in $modulefiles) {
         $arglist += "-staticfile $modFile "
     }   
 }
-$py = Run-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
+$py = Invoke-PyCmd "${root_dir}/pyscripts/docker_log_processor.py $arglist"
 #$py_cmd = "& `"$py`" 2>&1"
 #invoke-expression $py | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
@@ -91,7 +91,7 @@ $py_out_string | Out-File $resultsdir/merged.log
 #$py_out_string = [string]::join("`r`n",$py_out_array)
 #$py_out_string | Out-File $modFile
 
-#$py = Run-PyCmd "$py_cmd"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
+#$py = Invoke-PyCmd "$py_cmd"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
 #$command = "& `"C:\Users\myprofile\Documents\visual studio 2010\Projects\TestOutput\TestOutput\bin\Debug\testoutput.exe`" someparameter -xyz someotherparameter -abc someotherthing -rfz -a somethinghere 2>&1"
 #$out_log > $resultsdir/merged.log
 #| Out-File $modFile
@@ -99,7 +99,7 @@ $py_out_string | Out-File $resultsdir/merged.log
 Get-Content -Path $resultsdir/merged.log
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
-$py = Run-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression $py
+$py = Invoke-PyCmd "${root_dir}/pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression $py
 
 $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {

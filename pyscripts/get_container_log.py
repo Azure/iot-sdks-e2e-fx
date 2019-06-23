@@ -40,11 +40,24 @@ class HortonGetContainerLog:
         #if container['State'] != 'running':
         #    print(Fore.YELLOW + "Container {} is not Running".format(container_name))
 
+
         log = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
 
-        #for line in log:
-        #    print(line)
-        print(log)
+        log_lines = []
+        for c in log:
+            if c != b'':
+                log_lines.append(c.decode('utf-8'))
+            else:
+                break
+        log_lines = ''.join(log_lines)
+
+        #$bytes = [System.Text.Encoding]::Unicode.GetBytes($log) 
+        #[System.Text.Encoding]::ASCII.GetString($bytes)
+
+        for line in log_lines:
+            print(line)
+            
+        #print(log)
 
 
     def get_container_by_name(self, containers, container_name):

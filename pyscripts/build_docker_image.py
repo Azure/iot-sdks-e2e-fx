@@ -45,6 +45,12 @@ class BuildDockerImage:
 
         print_separator = "".join("/\\" for _ in range(80))
 
+        if sys.platform == 'win32':
+            base_url = "tcp://127.0.0.1:2375"
+        else:
+            base_url = "unix://var/run/docker.sock"
+ 
+
         auth_config = {
             "username": os.environ["IOTHUB_E2E_REPO_USER"],
             "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
@@ -100,11 +106,6 @@ class BuildDockerImage:
             print(print_separator)
 
             force_flag = 0
-
-            if sys.platform == 'win32':
-                base_url = "tcp://127.0.0.1:2375"
-            else:
-                base_url = "unix://var/run/docker.sock"
             api_client = docker.APIClient(base_url=base_url)
 
             build_args = {
@@ -147,10 +148,6 @@ class BuildDockerImage:
             print("TAGGING IMAGE")
             print(print_separator)
 
-            if sys.platform == 'win32':
-                base_url = "tcp://127.0.0.1:2375"
-            else:
-                base_url = "unix://var/run/docker.sock"
             api_client = docker.APIClient(base_url=base_url)
 
             print("Adding tags")
@@ -164,10 +161,6 @@ class BuildDockerImage:
             print("PUSHING IMAGE")
             print(print_separator)
 
-            if sys.platform == 'win32':
-                base_url = "tcp://127.0.0.1:2375"
-            else:
-                base_url = "unix://var/run/docker.sock"
             api_client = docker.APIClient(base_url=base_url)
 
             for image_tag in tags.image_tags:
@@ -192,10 +185,6 @@ class BuildDockerImage:
                 print(print_separator)
                 tags.image_tag_to_use_for_cache = None
 
-                if sys.platform == 'win32':
-                    base_url = "tcp://127.0.0.1:2375"
-                else:
-                    base_url = "unix://var/run/docker.sock"
                 api_client = docker.APIClient(base_url=base_url)
         
                 for image_tag in tags.image_tags:
