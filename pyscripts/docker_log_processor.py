@@ -271,11 +271,15 @@ class DockerLogProcessor:
 
                         if ok_to_log:
                             # Made it past filters and PyTest, so Log the line
+                            log_data = ""
                             log_line_parts = log_line.split("Z ")
-                            if log_line_parts:
-                                log_data = ""
+                            if not log_line_parts:
+                                num_parts = len(log_line_parts)
+                            else:
+                                log_line_parts = log_line.split(" +00:00")
                                 num_parts = len(log_line_parts)
 
+                            if num_parts != 0:
                                 # Handle case where more than one timestamp
                                 if num_parts > 2:
                                     for part in range(1, num_parts):    

@@ -22,10 +22,7 @@ class HortonGetContainerLog:
         self.get_container_log(args)
 
     def get_container_log(self, container_name):
-        #auth_config = {
-        #    "username": os.environ["IOTHUB_E2E_REPO_USER"],
-        #    "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"]
-        #}
+
         if sys.platform == 'win32':
             base_url = "tcp://127.0.0.1:2375"
         else:
@@ -34,12 +31,12 @@ class HortonGetContainerLog:
         api_client = docker.APIClient(base_url=base_url)
         containers = api_client.containers(all=True)
         container = self.get_container_by_name(containers, container_name)
-        #if not container:
-        #    print(Fore.YELLOW + "Container {} is not deployed".format(container_name))
-        #    return
-        #if container['State'] != 'running':
-        #    print(Fore.YELLOW + "Container {} is not Running".format(container_name))
-
+        if not container:
+            print("Container {} is not deployed".format(container_name))
+            return
+        if container['State'] != 'running':
+            print("Container {} is not Running".format(container_name))
+            return
 
         log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
         

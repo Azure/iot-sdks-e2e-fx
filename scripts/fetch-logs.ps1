@@ -34,10 +34,6 @@ else {
     New-Item -ItemType directory -Path $resultsdir
 }
 
-if($isWin32 -eq $false)  {
-    python3 -m pip install docker
-}
-
 $languageMod = $langmod + "Mod"
 $modulefiles = @()
 $modulelist = @( $languageMod, "friendMod", "edgeHub", "edgeAgent")
