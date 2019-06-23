@@ -41,23 +41,45 @@ class HortonGetContainerLog:
         #    print(Fore.YELLOW + "Container {} is not Running".format(container_name))
 
 
-        log = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
+        log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
+        
+        #log_blob = [123, 49, 58, 32, 39, 97, 39, 44, 32, 50, 58, 32, 39, 98, 39, 44, 32, 51, 58, 32, 39, 99, 39, 125]  
+        #log_blob = bytearray(b'aabbqwerty\n20trythistestdatafor\nnow20and\n20')
+        #log_blob = b'aabbqwerty\n20trythistestdatafor\n20now20and\n20x333'
 
+        log_blob_len = len(log_blob)
+        log_blob_pos = -1
+        log_blob_last_pos = 0
+        log_delimiter = b"\n20"
+        log_delimiter_len = len(log_delimiter)
+        bin_buffer = ""
+        delimeter_match = False
         log_lines = []
-        for c in log:
-            if c != b'':
-                log_lines.append(c.decode('utf-8'))
-            else:
-                break
-        log_lines = ''.join(log_lines)
+        for _ in range(0, log_blob_len):
+            log_blob_pos += 1
+            if log_blob_pos + log_delimiter_len < log_blob_len:
+                for i in range(0, log_delimiter_len):
+                    if log_blob[i + log_blob_pos] != log_delimiter[i]:
+                        break
+                    if i == log_delimiter_len - 1:
+                        delimeter_match = True
+            if delimeter_match:
+                bin_buffer = ""
+                for b in range(log_blob_last_pos, log_blob_pos):
+                    bin_buffer += chr(log_blob[b])
+                log_blob_last_pos = log_blob_pos + log_delimiter_len
+                log_blob_pos = log_blob_last_pos
+                log_lines.append(bin_buffer)
+                delimeter_match = False
 
-        #$bytes = [System.Text.Encoding]::Unicode.GetBytes($log) 
-        #[System.Text.Encoding]::ASCII.GetString($bytes)
+        if log_blob_last_pos < log_blob_len:
+            bin_buffer = ""
+            for b in range(log_blob_last_pos, log_blob_len):
+                bin_buffer += chr(log_blob[b])
+            log_lines.append(bin_buffer)
 
         for line in log_lines:
             print(line)
-            
-        #print(log)
 
 
     def get_container_by_name(self, containers, container_name):
