@@ -277,13 +277,23 @@ class DockerLogProcessor:
                             print("PARTS:{}".format(num_parts))
                             for p in log_line_parts:
                                 print("P: (" + p + ")")
+                            if num_parts > 0:
+                                print("PX=(" + log_line_parts[0][0:2] + ")")
+
+                            if num_parts >= 3 and log_line_parts[0][0:2] == "19-":
+                                log_line_parts.remove(log_line_parts[0])
+                                num_parts -= 1
+
+                            print("PARTS2:{}".format(num_parts))
+                            for p in log_line_parts:
+                                print("P2: (" + p + ")")
 
                             if num_parts < 2:
                                 log_line_parts = log_line.split(" +00:00")
                                 num_parts = len(log_line_parts)
-                                print("PARTS2:{}".format(num_parts))
+                                print("PARTS3:{}".format(num_parts))
                                 for p in log_line_parts:
-                                    print("P2: (" + p + ")")
+                                    print("P3: (" + p + ")")
 
                             #Handle case of invalid Timestamp
                             try:

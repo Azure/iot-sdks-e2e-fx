@@ -30,8 +30,8 @@ class HortonGetContainerLog:
             print("Container {} is not Running".format(container_name))
             return
 
-        #log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
-        log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=False,)
+        log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
+        #log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=False,)
         
         log_blob_len = len(log_blob)
         log_blob_pos = -1
