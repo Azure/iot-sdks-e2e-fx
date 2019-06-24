@@ -275,20 +275,24 @@ class DockerLogProcessor:
                                 log_data = ""
                                 num_parts = len(log_line_parts)
 
+                            if log_line_parts:
+                                log_data = ""
+ 
                                 # Handle case where more than one timestamp
                                 if num_parts > 2:
-                                    for part in range(1, num_parts):
-                                        log_data += log_line_parts[part] + " "
+                                    for part in range(1, num_parts):    
+                                        log_data += log_line_parts[part] + ' '
                                 else:
-                                    log_data = log_line_parts[1]
+                                    if num_parts == 2:
+                                        log_data = log_line_parts[1]
 
-                                log_time = DockerLogProcessor.format_date_and_time(
-                                    log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f"
-                                )
-                                log_line_object = LogLineObject(
-                                    log_time, module_name, log_data
-                                )
-                                loglines.append(log_line_object)
+                                if num_parts >= 2:
+                                    try:
+                                        log_time = DockerLogProcessor.format_date_and_time(log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f")
+                                        log_line_object = LogLineObject(log_time, module_name, log_data)
+                                        loglines.append(log_line_object)
+                                    except:
+                                        print("INVALID_LINE({}):{}".format(module_name, log_line))
 
         # Sort the merged static file lines by timestamp
         loglines.sort(key=lambda x: x.timestamp)
@@ -302,7 +306,6 @@ class DockerLogProcessor:
                 "HORTON: Entering function" in log_line.log_data
                 or "HORTON: Exiting function" in log_line.log_data
             ):
-                print("+++++++++++DEBUG: found HORTON tag")
                 date_delta = str(logline_timestamp)
             else:
                 date_delta = self.get_timestamp_delta(
