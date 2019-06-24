@@ -61,7 +61,7 @@ def print_filtered_docker_line(line):
     try:
         obj = json.loads(line.decode("utf-8"))
     except:
-        print("".join([i if ord(i) < 128 else "#" for i in line]))
+        print("".join([i if ord(i) < 128 else "#" for i in line.decode("utf-8")]))
     else:
         if "status" in obj:
             if "id" in obj:
@@ -86,7 +86,7 @@ def print_filtered_docker_line(line):
         elif obj == "\n":
             pass
         else:
-            print("".join([i if ord(i) < 128 else "#" for i in line]))
+            print("".join([i if ord(i) < 128 else "#" for i in line.decode("utf-8")]))
 
 
 def build_image(tags):
