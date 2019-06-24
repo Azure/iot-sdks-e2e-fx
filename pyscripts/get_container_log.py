@@ -93,7 +93,7 @@ class HortonGetContainerLog:
             if delimeter_match:
                 bin_buffer = ""
                 for b in range(byte_last_pos, byte_pos):
-                    if byte_array[b] > 127:
+                    if byte_array[b] >= 128:
                         bin_buffer += "#"
                     else:
                         bin_buffer += chr(byte_array[b])
@@ -105,7 +105,7 @@ class HortonGetContainerLog:
         if byte_last_pos < byte_array_len:
             bin_buffer = ""
             for b in range(byte_last_pos, byte_array_len):
-                if byte_array[b] > 127:
+                if byte_array[b] >= 128:
                     bin_buffer += "#"
                 else:
                     bin_buffer += chr(byte_array[b])
