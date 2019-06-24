@@ -31,9 +31,8 @@ class HortonGetContainerLog:
         #    print("Container {} is not Running".format(container_name))
         #    return
 
-        #log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
-
-        log_blob = b'19-06-23T21:47:39.008222909Z 2019-06-23T21:47:39.008Z azure-iot-e2e:node PYTEST: setup:      passed\n2019-06-23T21:47:39.088863899Z 2019-06-23T21:47:39.088Z azure-iot-http-base.RestApiClient GET call to /trust-bundle?api-version=2018-06-28 returned success'        
+        log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
+        #log_blob = b'19-06-23T21:47:39.008222909Z 2019-06-23T21:47:39.008Z azure-iot-e2e:node PYTEST: setup:      passed\n2019-06-23T21:47:39.088863899Z 2019-06-23T21:47:39.088Z azure-iot-http-base.RestApiClient GET call to /trust-bundle?api-version=2018-06-28 returned success'        
 
         log_blob_len = len(log_blob)
         log_blob_pos = -1
