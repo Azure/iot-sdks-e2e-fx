@@ -278,9 +278,9 @@ class DockerLogProcessor:
                             for p in log_line_parts:
                                 print("P: (" + p + ")")
                             if num_parts > 0:
-                                print("PX=(" + log_line_parts[0][0:2] + ")")
+                                print("PX=(" + log_line_parts[0][0:3] + ")")
 
-                            if num_parts >= 3 and log_line_parts[0][0:2] == "19-":
+                            if num_parts >= 3 and log_line_parts[0][0:3] == "19-":
                                 log_line_parts.remove(log_line_parts[0])
                                 num_parts -= 1
 

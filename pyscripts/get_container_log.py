@@ -8,6 +8,7 @@ import sys
 import os
 import docker
 import argparse
+from datetime import datetime
 
 class HortonGetContainerLog:
     def __init__(self, args):
@@ -23,16 +24,17 @@ class HortonGetContainerLog:
         api_client = docker.APIClient(base_url=base_url)
         containers = api_client.containers(all=True)
         container = self.get_container_by_name(containers, container_name)
-        if not container:
-            print("Container {} is not deployed".format(container_name))
-            return
-        if container['State'] != 'running':
-            print("Container {} is not Running".format(container_name))
-            return
+        #if not container:
+        #    print("Container {} is not deployed".format(container_name))
+        #    return
+        #if container['State'] != 'running':
+        #    print("Container {} is not Running".format(container_name))
+        #    return
 
-        log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
-        #log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=False,)
-        
+        #log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
+
+        log_blob = b'19-06-23T21:47:39.008222909Z 2019-06-23T21:47:39.008Z azure-iot-e2e:node PYTEST: setup:      passed\n2019-06-23T21:47:39.088863899Z 2019-06-23T21:47:39.088Z azure-iot-http-base.RestApiClient GET call to /trust-bundle?api-version=2018-06-28 returned success'        
+
         log_blob_len = len(log_blob)
         log_blob_pos = -1
         log_blob_last_pos = 0
@@ -70,8 +72,50 @@ class HortonGetContainerLog:
             log_lines.append(bin_buffer)
 
         for line in log_lines:
+            #19-06-23T21:47:11.454702558
+            #"%y-%m-%dT%H:%M:%S.%f"
+            #"%Y-%m-%d"
+            #"%Y-%m-%d %H:%M:%S.%f"
+
+            log_line_parts = line.split("Z ")
+            num_parts = len(log_line_parts)
+
+            if num_parts > 1:
+                date_parts = log_line_parts[0].split('T')
+                if date_parts:
+                    time_vals = date_parts[1].split(".")
+                    if time_vals:
+                        date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
+                        time_str = " ".join(date_parts)
+                        if self.is_valid_datetime(time_str, "%y-%m-%d %H:%M:%S.%f"):
+                            log_line_parts.remove(log_line_parts[0])                            
+                            line = "Z ".join(log_line_parts)
+            
             print(line)
 
+    def is_valid_datetime(self, date_str, date_format):
+        #print("ds: (" + date_str + ")")
+        #print("DF: (" + date_format + ")")
+       
+        try:
+
+            #str_date = '2016-10-06 15:14:54.322989'
+            #date_fmt = '%Y-%m-%d %H:%M:%S.%f'
+            #date_str =  '19-06-23 21:47:39.008222909'
+            #date_str = '16-10-06 15:14:54.322989'
+            #date_fmt = '%y-%m-%d %H:%M:%S.%f'
+            #d_date = datetime.datetime.strptime(str_date , '%Y-%m-%d %H:%M:%S.%f')
+            #if len(date_str) > 26:
+
+            #date_str = date_str[:-3]
+
+            ts_fmt = datetime.strptime(date_str , date_format)
+            cvt_ds = ts_fmt.strftime(date_format)
+            if date_str != cvt_ds:
+                raise ValueError
+            return True
+        except ValueError:
+            return False
 
     def get_container_by_name(self, containers, container_name):
         container = None
