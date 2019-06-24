@@ -24,12 +24,12 @@ class HortonGetContainerLog:
         api_client = docker.APIClient(base_url=base_url)
         containers = api_client.containers(all=True)
         container = self.get_container_by_name(containers, container_name)
-        if not container:
-            print("Container {} is not deployed".format(container_name))
-            return
-        if container['State'] != 'running':
-            print("Container {} is not Running".format(container_name))
-            return
+        #if not container:
+        #    print("Container {} is not deployed".format(container_name))
+        #    return
+        #if container['State'] != 'running':
+        #    print("Container {} is not Running".format(container_name))
+        #    return
 
         log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
         #log_blob = b'19-06-23T21:47:39.008222909Z 2019-06-23T21:47:39.008Z azure-iot-e2e:node PYTEST: setup:      passed\n2019-06-23T21:47:39.088863899Z 2019-06-23T21:47:39.088Z azure-iot-http-base.RestApiClient GET call to /trust-bundle?api-version=2018-06-28 returned success'        
@@ -84,8 +84,6 @@ class HortonGetContainerLog:
                         time_str = self.convert_datetime(time_str, "%y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S.%f")
                         log_line_parts[0] = time_str                           
                         line = "Z ".join(log_line_parts)
-
-            if num_parts > 1:
                 date_parts = log_line_parts[1].split('T')
                 if len(date_parts) >= 2:
                     time_vals = date_parts[1].split(".")
@@ -98,7 +96,7 @@ class HortonGetContainerLog:
 
             log_line_parts = line.split("Z ")
             num_parts = len(log_line_parts)
-            if num_parts > 1:
+            if num_parts > 1 and len(log_line_parts[0]) > 2:
                 print(line)
 
     def is_valid_datetime(self, date_str, date_format):
