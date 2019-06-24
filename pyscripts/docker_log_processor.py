@@ -16,7 +16,6 @@ import time
 import argparse
 import sys
 
-
 class DockerLogProcessor:
 
     def __init__(self, args):
@@ -40,7 +39,7 @@ class DockerLogProcessor:
             self.process_static_log(arguments.staticfile, arguments.filterfile)
         else:
             self.queue = Queue()
-            self.logger_thread = Thread(target=self.process_queue)
+            self.logger_thread = Thread(target = self.process_queue)
             self.logger_thread.start()
             self.watcher_processes = []
 

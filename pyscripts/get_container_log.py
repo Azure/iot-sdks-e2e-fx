@@ -71,11 +71,6 @@ class HortonGetContainerLog:
             log_lines.append(bin_buffer)
 
         for line in log_lines:
-            #19-06-23T21:47:11.454702558
-            #"%y-%m-%dT%H:%M:%S.%f"
-            #"%Y-%m-%d"
-            #"%Y-%m-%d %H:%M:%S.%f"
-
             log_line_parts = line.split("Z ")
             num_parts = len(log_line_parts)
 
@@ -95,39 +90,22 @@ class HortonGetContainerLog:
 
             if num_parts > 1:
                 date_parts = log_line_parts[0].split('T')
-                if date_parts:
+                if len(date_parts) >= 2:
                     time_vals = date_parts[1].split(".")
-                    if time_vals:
+                    if len(time_vals) >= 2:
                         uS_len = len(time_vals[1])
                         if uS_len < 6:
                             for i in range(uS_len, 6):
                                 time_vals[1] += '0'
                         date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
                         time_str = " ".join(date_parts)
-                        #2019-06-21 22:21:11.454102
                         if self.is_valid_datetime(time_str, "%Y-%m-%d %H:%M:%S.%f"):
                             log_line_parts[0] = "T".join(date_parts)
                             line = "Z ".join(log_line_parts)
-            
-            
             print(line)
 
     def is_valid_datetime(self, date_str, date_format):
-        #print("ds: (" + date_str + ")")
-        #print("DF: (" + date_format + ")")
-       
         try:
-
-            #str_date = '2016-10-06 15:14:54.322989'
-            #date_fmt = '%Y-%m-%d %H:%M:%S.%f'
-            #date_str =  '19-06-23 21:47:39.008222909'
-            #date_str = '16-10-06 15:14:54.322989'
-            #date_fmt = '%y-%m-%d %H:%M:%S.%f'
-            #d_date = datetime.datetime.strptime(str_date , '%Y-%m-%d %H:%M:%S.%f')
-            #if len(date_str) > 26:
-
-            #date_str = date_str[:-3]
-
             ts_fmt = datetime.strptime(date_str , date_format)
             cvt_ds = ts_fmt.strftime(date_format)
             if date_str != cvt_ds:
