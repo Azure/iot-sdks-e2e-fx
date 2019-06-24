@@ -88,7 +88,7 @@ class HortonGetContainerLog:
             log_line_parts = line.split("Z ")
             num_parts = len(log_line_parts)
 
-            if num_parts > 1:
+            if num_parts > 0:
                 date_parts = log_line_parts[0].split('T')
                 if len(date_parts) >= 2:
                     time_vals = date_parts[1].split(".")

@@ -77,8 +77,8 @@ class DockerLogProcessor:
             date_out = datetime.strftime(datetime.now(), time_format)
             return date_out
         date_in = date_in.replace("T", " ")
-        if len(date_in) > 26:
-            date_in = date_in[:26]
+        #if len(date_in) > 26:
+        #    date_in = date_in[:26]
         date_out = datetime.strptime(date_in, time_format)
         return date_out
 
@@ -166,8 +166,7 @@ class DockerLogProcessor:
             return date_one
 
         for field1 in all_fields_one:
-            #try:
-            if field1 == all_fields_two[field_count]:
+            if field1 == all_fields_two[field_count] and field_count != 6:
                 for _ in field1:
                     time_delta_str += " "
             else:
@@ -181,8 +180,6 @@ class DockerLogProcessor:
             elif field_count == 5:
                 time_delta_str += "."
             field_count += 1
-            #except:
-                #time_delta_str = date_one
         return time_delta_str
 
     def process_static_log(self, static_filenames, filter_filenames):
