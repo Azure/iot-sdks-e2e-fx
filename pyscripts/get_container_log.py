@@ -24,80 +24,94 @@ class HortonGetContainerLog:
         api_client = docker.APIClient(base_url=base_url)
         containers = api_client.containers(all=True)
         container = self.get_container_by_name(containers, container_name)
-        #if not container:
-        #    print("Container {} is not deployed".format(container_name))
-        #    return
-        #if container['State'] != 'running':
-        #    print("Container {} is not Running".format(container_name))
-        #    return
+        if not container:
+            print("Container {} is not deployed".format(container_name))
+            return
+        if container['State'] != 'running':
+            print("Container {} is not Running".format(container_name))
+            return
 
-        log_blob = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
-        #log_blob = b'19-06-23T21:47:39.008222909Z 2019-06-23T21:47:39.008Z azure-iot-e2e:node PYTEST: setup:      passed\n2019-06-23T21:47:39.088863899Z 2019-06-23T21:47:39.088Z azure-iot-http-base.RestApiClient GET call to /trust-bundle?api-version=2018-06-28 returned success'        
+        log_byte_array = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
+        
+        log_lines = self.split_byte_array_by_delimiter(log_byte_array, b"\n20")
 
-        log_blob_len = len(log_blob)
-        log_blob_pos = -1
-        log_blob_last_pos = 0
-        log_delimiter = b"\n20"
+        for line in log_lines:
+            line = self.normalize_timestamp(line)
+            line = self.remove_duplicate_timestamp(line)
+
+            log_line_parts = line.split("Z ")
+            if len(log_line_parts) > 1 and len(log_line_parts[0]) > 2:
+                print(line)
+
+    def remove_duplicate_timestamp(self, log_line):
+        log_line_parts = log_line.split("Z ")
+        num_parts = len(log_line_parts)
+
+        if num_parts > 1:
+            date_parts = log_line_parts[1].split('T')
+            if len(date_parts) >= 2:
+                time_vals = date_parts[1].split(".")
+                if len(time_vals) >= 2:
+                    date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
+                    time_str = " ".join(date_parts)
+                    if self.is_valid_datetime(time_str, "%Y-%m-%d %H:%M:%S.%f"):
+                        log_line_parts.remove(log_line_parts[1]) 
+                        log_line = "Z ".join(log_line_parts)
+        return log_line
+
+    def normalize_timestamp(self, log_line):
+        log_line_parts = log_line.split("Z ")
+        num_parts = len(log_line_parts)
+
+        if num_parts > 1:
+            date_parts = log_line_parts[0].split('T')
+            if date_parts:
+                time_vals = date_parts[1].split(".")
+                if time_vals:
+                    date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
+                    time_str = " ".join(date_parts)
+                    time_str = self.convert_datetime(time_str, "%y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S.%f")
+                    log_line_parts[0] = time_str                           
+                    log_line = "Z ".join(log_line_parts)
+        return log_line
+
+    def split_byte_array_by_delimiter(self, byte_array, log_delimiter):
+        byte_array_len = len(byte_array)
+        byte_pos = -1
+        byte_last_pos = 0
         log_delimiter_len = len(log_delimiter)
         log_lines = []
-        for _ in range(0, log_blob_len):
+        for _ in range(0, byte_array_len):
             delimeter_match = False
-            log_blob_pos += 1
-            if log_blob_pos + log_delimiter_len < log_blob_len:
+            byte_pos += 1
+            if byte_pos + log_delimiter_len < byte_array_len:
                 for i in range(0, log_delimiter_len):
-                    if log_blob[i + log_blob_pos] != log_delimiter[i]:
+                    if byte_array[i + byte_pos] != log_delimiter[i]:
                         break
                     if i == log_delimiter_len - 1:
                         delimeter_match = True
             if delimeter_match:
                 bin_buffer = ""
-                for b in range(log_blob_last_pos, log_blob_pos):
-                    if log_blob[b] > 127:
+                for b in range(byte_last_pos, byte_pos):
+                    if byte_array[b] > 127:
                         bin_buffer += "#"
                     else:
-                        bin_buffer += chr(log_blob[b])
-                log_blob_last_pos = log_blob_pos + log_delimiter_len
-                log_blob_pos = log_blob_last_pos
+                        bin_buffer += chr(byte_array[b])
+                byte_last_pos = byte_pos + log_delimiter_len
+                byte_pos = byte_last_pos
                 log_lines.append(bin_buffer)
                 delimeter_match = False
 
-        if log_blob_last_pos < log_blob_len:
+        if byte_last_pos < byte_array_len:
             bin_buffer = ""
-            for b in range(log_blob_last_pos, log_blob_len):
-                if log_blob[b] > 127:
+            for b in range(byte_last_pos, byte_array_len):
+                if byte_array[b] > 127:
                     bin_buffer += "#"
                 else:
-                    bin_buffer += chr(log_blob[b])
+                    bin_buffer += chr(byte_array[b])
             log_lines.append(bin_buffer)
 
-        for line in log_lines:
-            log_line_parts = line.split("Z ")
-            num_parts = len(log_line_parts)
-
-            if num_parts > 1:
-                date_parts = log_line_parts[0].split('T')
-                if date_parts:
-                    time_vals = date_parts[1].split(".")
-                    if time_vals:
-                        date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
-                        time_str = " ".join(date_parts)
-                        time_str = self.convert_datetime(time_str, "%y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S.%f")
-                        log_line_parts[0] = time_str                           
-                        line = "Z ".join(log_line_parts)
-                date_parts = log_line_parts[1].split('T')
-                if len(date_parts) >= 2:
-                    time_vals = date_parts[1].split(".")
-                    if len(time_vals) >= 2:
-                        date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
-                        time_str = " ".join(date_parts)
-                        if self.is_valid_datetime(time_str, "%Y-%m-%d %H:%M:%S.%f"):
-                            log_line_parts.remove(log_line_parts[1]) 
-                            line = "Z ".join(log_line_parts)
-
-            log_line_parts = line.split("Z ")
-            num_parts = len(log_line_parts)
-            if num_parts > 1 and len(log_line_parts[0]) > 2:
-                print(line)
+        return log_lines
 
     def is_valid_datetime(self, date_str, date_format):
         try:
@@ -105,8 +119,7 @@ class HortonGetContainerLog:
             cvt_ds = ts_fmt.strftime(date_format)
             time_vals = cvt_ds.split(".")
             if len(time_vals) >= 2:
-                uS_len = len(time_vals[1])
-                if uS_len > 3:
+                if len(time_vals[1]) > 3:
                     time_vals[1] = time_vals[1][:3]
                 cvt_ds = time_vals[0] + "." + time_vals[1]
 

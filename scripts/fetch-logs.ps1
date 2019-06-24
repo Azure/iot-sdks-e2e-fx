@@ -44,7 +44,6 @@ foreach($mod in $modulelist) {
         Write-Host "Getting log for $mod" -ForegroundColor Green
 
         Invoke-PyCmd "$pyscripts/get_container_log.py --container $mod" | Set-Content -Path $modFile
-        #Invoke-Expression "$py" -erroraction SilentlyContinue | Set-Content -Path $modFile
     }
 }
 
@@ -60,32 +59,6 @@ foreach($modFile in $modulefiles) {
     }   
 }
 Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist" | Set-Content -Path $resultsdir/merged.log
-#$py = Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist"
-#$py_cmd = "& `"$py`" 2>&1"
-#invoke-expression $py | Out-File $resultsdir/merged.log
-#invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-#invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-#Invoke-Expression "$py" -erroraction SilentlyContinue | Set-Content -Path $resultsdir/merged.log
-#invoke-expression "$py 2>&1" -erroraction Continue > $resultsdir/merged.log
-
-#$py_out_array = Invoke-Expression "$py 2>&1" -ErrorAction SilentlyContinue
-#$py_out_string = [string]::join("`r`n",$py_out_array)
-#$py_out_string | Out-File $resultsdir/merged.log
-
-#invoke-expression $py > $resultsdir/merged.log
-#invoke-expression $py_cmd
-#$py_out_array = invoke-expression $py_cmd
-#$py_out_string = [string]::join("`r`n",$py_out_array)
-#$py_out_string | Out-File $modFile
-
-#$py = Invoke-PyCmd "$py_cmd"; Invoke-Expression "& '$py' > $resultsdir/merged.log"
-#$command = "& `"C:\Users\myprofile\Documents\visual studio 2010\Projects\TestOutput\TestOutput\bin\Debug\testoutput.exe`" someparameter -xyz someotherparameter -abc someotherthing -rfz -a somethinghere 2>&1"
-#$out_log > $resultsdir/merged.log
-#| Out-File $modFile
-#$out_log | Out-File $resultsdir/merged.log -Append
-Write-Host "XXXX**************************************************"
-Get-Content -Path $resultsdir/merged.log
-Write-Host "WWWW**************************************************"
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
 Invoke-PyCmd "$pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"
