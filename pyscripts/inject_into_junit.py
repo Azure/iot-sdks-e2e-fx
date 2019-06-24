@@ -107,3 +107,4 @@ class InjectIntoJunit:
 
 if __name__ == "__main__":
     junit_processor = InjectIntoJunit(sys.argv[1:])
+    

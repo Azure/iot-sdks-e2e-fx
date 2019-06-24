@@ -162,12 +162,13 @@ class DockerLogProcessor:
 
         all_fields_one = self.split(date_one, delimiters)
         all_fields_two = self.split(date_two, delimiters)
-        fields_two_len = len(all_fields_two)
-        if fields_two_len < 1:
-            return date_one
+        #fields_two_len = len(all_fields_two)
+        #if fields_two_len < 1:
+        #    return date_one
 
         for field1 in all_fields_one:
-            if field1 == all_fields_two[field_count] and field_count != 6 and field_count < fields_two_len:
+            #if field1 == all_fields_two[field_count] and field_count != 6 and field_count < fields_two_len:
+            if field1 == all_fields_two[field_count]:
                 for _ in field1:
                     time_delta_str += " "
             else:
