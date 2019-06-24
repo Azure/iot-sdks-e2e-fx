@@ -19,5 +19,5 @@ $hh = Join-Path -Path $root_dir -ChildPath '/horton_helpers' -Resolve
 $Env:Path += "$hh"
 
 Write-Host "deploy_test_container.py --friend --$lang $container_name" -ForegroundColor Yellow
-$py = Invoke-PyCmd "$pyscripts/deploy_test_containers.py --friend --$lang $container_name"; Invoke-Expression $py
+Invoke-PyCmd "$pyscripts/deploy_test_containers.py --friend --$lang $container_name"
 

@@ -34,16 +34,6 @@ $isWin32 = IsWin32
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $testpath = Join-Path -Path $root_dir -ChildPath '/test-runner' -Resolve
 
-#try {
-#    $cert_val = $env:IOTHUB_E2E_EDGEHUB_CA_CERT
-#    if("$cert_val" -ne "") {
-#        Write-Host "found IOTHUB_E2E_EDGEHUB_CA_CERT"
-#    }
-#}
-#catch {
-#    Write-Host "NOT found IOTHUB_E2E_EDGEHUB_CA_CERT"
-#}
-#set-location $root_dir/scripts
 ./get-environment.ps1
 
 if($isWin32 -eq $false) {
@@ -55,5 +45,4 @@ if($isWin32 -eq $false) {
 
 set-location $testpath
 write-host "pytest -v --scenario $test_scenario --transport=$test_transport --$test_lang-wrapper --junitxml=$test_junitxml -o $test_o $test_extra_args"
-#python3 -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --${{ parameters.language }}-wrapper --junitxml=$(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
-$py = Invoke-PyCmd "-u -m pytest -v --scenario $test_scenario --transport=$test_transport --$test_lang-wrapper --junitxml=$test_junitxml -o junit_suite_name=$test_o $test_extra_args"; Invoke-Expression  $py
+Invoke-PyCmd "-u -m pytest -v --scenario $test_scenario --transport=$test_transport --$test_lang-wrapper --junitxml=$test_junitxml -o junit_suite_name=$test_o $test_extra_args"

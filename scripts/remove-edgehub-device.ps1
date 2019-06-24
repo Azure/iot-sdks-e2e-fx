@@ -7,4 +7,4 @@ if ( $path) {$path = split-path $path -Parent}
 . $path/pwsh-helpers.ps1
 $pyscripts = Join-Path -Path $path -ChildPath '../pyscripts' -Resolve
 
-$py = Invoke-PyCmd "$pyscripts/remove_edgehub_device.py"; Invoke-Expression  $py
+Invoke-PyCmd "$pyscripts/remove_edgehub_device.py"

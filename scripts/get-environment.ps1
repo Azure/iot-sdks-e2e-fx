@@ -14,8 +14,7 @@ $edge_cert = "$env:IOTHUB_E2E_EDGEHUB_CA_CERT"
 if($isWin32 -eq $false) {
     $EncodedText = sudo -H -E  cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0
     if( "$EncodedText" -ne "") {
-        Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_CA_CERT -Value $EncodedText
-    
+        Set-Item -Path Env:IOTHUB_E2E_EDGEHUB_CA_CERT -Value $EncodedText    
     }
 }
 
@@ -28,7 +27,7 @@ else {
     Remove-Item Env:IOTHUB_E2E_EDGEHUB_CA_CERT
 }
 
-$py = Invoke-PyCmd "$pyscripts/get_environment_variables.py powershell"; Invoke-Expression $py
+Invoke-PyCmd "$pyscripts/get_environment_variables.py powershell"
 
 foreach($o in $out) {
     $var_name,$var_value = $o.split('=')

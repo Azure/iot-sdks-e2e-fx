@@ -10,10 +10,10 @@ $pyscripts = Join-Path -Path $path -ChildPath '../pyscripts' -Resolve
 $hh = Join-Path -Path $path -ChildPath '../horton_helpers' -Resolve
 
 if($isWin32 -eq $false) {
-    $py = Invoke-PyCmd "-m pip install -e $hh"; Invoke-Expression $py
+    Invoke-PyCmd "-m pip install -e $hh"
 }
 
-$py = Invoke-PyCmd "$pyscripts/create_new_edgehub_device.py"; Invoke-Expression $py
+Invoke-PyCmd "$pyscripts/create_new_edgehub_device.py"
 
 if($isWin32 -eq $false) {
     sudo systemctl restart iotedge

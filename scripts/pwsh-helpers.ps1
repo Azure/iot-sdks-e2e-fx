@@ -11,10 +11,12 @@ function IsWin32 {
 }
 
 function Invoke-PyCmd($py_cmd) {
+    $py = ""
     if(IsWin32) {
-        return "python $py_cmd"
+        $py = "python $py_cmd"
     }
     else { 
-        return "python3 $py_cmd"
+        $py = "python3 $py_cmd"
     }
+    Invoke-Expression $py
 }

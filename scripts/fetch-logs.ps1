@@ -43,8 +43,8 @@ foreach($mod in $modulelist) {
         $modulefiles += $modFile
         Write-Host "Getting log for $mod" -ForegroundColor Green
 
-        $py = Invoke-PyCmd "$pyscripts/get_container_log.py --container $mod"
-        Invoke-Expression "$py" -erroraction SilentlyContinue | Set-Content -Path $modFile
+        Invoke-PyCmd "$pyscripts/get_container_log.py --container $mod" | Set-Content -Path $modFile
+        #Invoke-Expression "$py" -erroraction SilentlyContinue | Set-Content -Path $modFile
     }
 }
 
@@ -59,12 +59,13 @@ foreach($modFile in $modulefiles) {
         $arglist += "-staticfile $modFile "
     }   
 }
-$py = Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist"
+Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist" | Set-Content -Path $resultsdir/merged.log
+#$py = Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist"
 #$py_cmd = "& `"$py`" 2>&1"
 #invoke-expression $py | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction SilentlyContinue | Out-File $resultsdir/merged.log
-Invoke-Expression "$py" -erroraction SilentlyContinue | Set-Content -Path $resultsdir/merged.log
+#Invoke-Expression "$py" -erroraction SilentlyContinue | Set-Content -Path $resultsdir/merged.log
 #invoke-expression "$py 2>&1" -erroraction Continue > $resultsdir/merged.log
 
 #$py_out_array = Invoke-Expression "$py 2>&1" -ErrorAction SilentlyContinue
@@ -87,7 +88,7 @@ Get-Content -Path $resultsdir/merged.log
 Write-Host "WWWW**************************************************"
 
 Write-Host "injecting merged.log into junit" -ForegroundColor Green
-$py = Invoke-PyCmd "$pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"; Invoke-Expression $py
+Invoke-PyCmd "$pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"
 
 $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
