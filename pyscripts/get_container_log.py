@@ -89,6 +89,26 @@ class HortonGetContainerLog:
                         if self.is_valid_datetime(time_str, "%y-%m-%d %H:%M:%S.%f"):
                             log_line_parts.remove(log_line_parts[0])                            
                             line = "Z ".join(log_line_parts)
+
+            log_line_parts = line.split("Z ")
+            num_parts = len(log_line_parts)
+
+            if num_parts > 1:
+                date_parts = log_line_parts[0].split('T')
+                if date_parts:
+                    time_vals = date_parts[1].split(".")
+                    if time_vals:
+                        uS_len = len(time_vals[1])
+                        if uS_len < 6:
+                            for i in range(uS_len, 6):
+                                time_vals[1] += '0'
+                        date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
+                        time_str = " ".join(date_parts)
+                        #2019-06-21 22:21:11.454102
+                        if self.is_valid_datetime(time_str, "%Y-%m-%d %H:%M:%S.%f"):
+                            log_line_parts[0] = "T".join(date_parts)
+                            line = "Z ".join(log_line_parts)
+            
             
             print(line)
 

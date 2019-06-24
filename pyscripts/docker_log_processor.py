@@ -18,6 +18,7 @@ import sys
 
 
 class DockerLogProcessor:
+
     def __init__(self, args):
 
         # Parse args
@@ -166,23 +167,23 @@ class DockerLogProcessor:
             return date_one
 
         for field1 in all_fields_one:
-            try:
-                if field1 == all_fields_two[field_count]:
-                    for _ in field1:
-                        time_delta_str += " "
-                else:
-                    time_delta_str += all_fields_one[field_count]
-                if field_count < 2:
-                    time_delta_str += "-"
-                elif field_count == 2:
+            #try:
+            if field1 == all_fields_two[field_count]:
+                for _ in field1:
                     time_delta_str += " "
-                elif field_count > 2 and field_count < 5:
-                    time_delta_str += ":"
-                elif field_count == 5:
-                    time_delta_str += "."
-                field_count += 1
-            except:
-                time_delta_str = date_one
+            else:
+                time_delta_str += all_fields_one[field_count]
+            if field_count < 2:
+                time_delta_str += "-"
+            elif field_count == 2:
+                time_delta_str += " "
+            elif field_count > 2 and field_count < 5:
+                time_delta_str += ":"
+            elif field_count == 5:
+                time_delta_str += "."
+            field_count += 1
+            #except:
+                #time_delta_str = date_one
         return time_delta_str
 
     def process_static_log(self, static_filenames, filter_filenames):
@@ -226,7 +227,6 @@ class DockerLogProcessor:
                     filter_list = json_data["filters"]
             except Exception:
                 self.write_err("Exception processing JSON file: " + filter_filename)
-                traceback.print_exc()
 
         # find the max_name_len of every staticfile filename basename
         for static_filename in static_filenames:
