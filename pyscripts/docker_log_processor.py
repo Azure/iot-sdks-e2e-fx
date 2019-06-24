@@ -77,8 +77,8 @@ class DockerLogProcessor:
             date_out = datetime.strftime(datetime.now(), time_format)
             return date_out
         date_in = date_in.replace("T", " ")
-        #if len(date_in) > 26:
-        #    date_in = date_in[:26]
+        if len(date_in) > 26:
+            date_in = date_in[:26]
         date_out = datetime.strptime(date_in, time_format)
         return date_out
 
@@ -162,11 +162,12 @@ class DockerLogProcessor:
 
         all_fields_one = self.split(date_one, delimiters)
         all_fields_two = self.split(date_two, delimiters)
-        if len(all_fields_two) < 1:
+        fields_two_len = len(all_fields_two)
+        if fields_two_len < 1:
             return date_one
 
         for field1 in all_fields_one:
-            if field1 == all_fields_two[field_count] and field_count != 6:
+            if field1 == all_fields_two[field_count] and field_count != 6 and field_count < fields_two_len:
                 for _ in field1:
                     time_delta_str += " "
             else:

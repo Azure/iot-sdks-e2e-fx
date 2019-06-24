@@ -81,38 +81,65 @@ class HortonGetContainerLog:
                     if time_vals:
                         date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
                         time_str = " ".join(date_parts)
-                        if self.is_valid_datetime(time_str, "%y-%m-%d %H:%M:%S.%f"):
-                            log_line_parts.remove(log_line_parts[0])                            
-                            line = "Z ".join(log_line_parts)
+                        #if self.is_valid_datetime(time_str, "%y-%m-%d %H:%M:%S.%f"):
+                        time_str = self.convert_datetime(time_str, "%y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S.%f")
+                        #log_line_parts.remove(log_line_parts[0])
+                        #log_line_parts[0] = "T".join(date_parts)                            
+                        log_line_parts[0] = time_str                           
+                        line = "Z ".join(log_line_parts)
 
-            log_line_parts = line.split("Z ")
-            num_parts = len(log_line_parts)
-
-            if num_parts > 0:
-                date_parts = log_line_parts[0].split('T')
+            if num_parts > 1:
+                date_parts = log_line_parts[1].split('T')
                 if len(date_parts) >= 2:
                     time_vals = date_parts[1].split(".")
                     if len(time_vals) >= 2:
-                        uS_len = len(time_vals[1])
-                        if uS_len < 6:
-                            for i in range(uS_len, 6):
-                                time_vals[1] += '0'
+                        #uS_len = len(time_vals[1])
+                        #if uS_len < 6:
+                        #    for i in range(uS_len, 6):
+                        #        time_vals[1] += '0'
                         date_parts[1] = time_vals[0] + "." + time_vals[1][:6]
                         time_str = " ".join(date_parts)
+                        #if self.is_valid_datetime(time_str, "%Y-%m-%d %H:%M:%S.%f"):
+                        #time_str = self.convert_datetime(time_str, "%y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S.%f"):
                         if self.is_valid_datetime(time_str, "%Y-%m-%d %H:%M:%S.%f"):
-                            log_line_parts[0] = "T".join(date_parts)
-                            line = "Z ".join(log_line_parts)
+                            log_line_parts.remove(log_line_parts[1]) 
+                        #log_line_parts[0] = "T".join(date_parts)
+                        line = "Z ".join(log_line_parts)
+
+            #log_line_parts = line.split("Z ")
+            #num_parts = len(log_line_parts)
+ 
             print(line)
 
     def is_valid_datetime(self, date_str, date_format):
         try:
             ts_fmt = datetime.strptime(date_str , date_format)
             cvt_ds = ts_fmt.strftime(date_format)
+            time_vals = cvt_ds.split(".")
+            if len(time_vals) >= 2:
+                uS_len = len(time_vals[1])
+                if uS_len > 3:
+                    time_vals[1] = time_vals[1][:3]
+                #    for i in range(uS_len, 6):
+                #        time_vals[1] += '0'
+                cvt_ds = time_vals[0] + "." + time_vals[1]
+                #time_str = " ".join(date_parts)
+
             if date_str != cvt_ds:
                 raise ValueError
             return True
         except ValueError:
             return False
+
+    def convert_datetime(self, date_str, date_format, date_format_out):
+        try:
+            ts_fmt = datetime.strptime(date_str , date_format)
+            cvt_ds = ts_fmt.strftime(date_format_out)
+            #if date_str != cvt_ds:
+            #    raise ValueError
+            return cvt_ds
+        except ValueError:
+            return ""
 
     def get_container_by_name(self, containers, container_name):
         container = None
