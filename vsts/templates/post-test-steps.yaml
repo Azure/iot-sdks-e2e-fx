@@ -28,7 +28,7 @@ steps:
 - task: CopyFiles@2
   displayName: 'Copy result files to artifact staging'
   inputs:
-    SourceFolder: '$(Build.SourcesDirectory)/results/logs'
+    SourceFolder: '$(Build.SourcesDirectory)/results'
     targetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
@@ -38,4 +38,3 @@ steps:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
-  
