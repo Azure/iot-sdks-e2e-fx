@@ -29,9 +29,13 @@ if(Test-Path -Path $resultsdir)
 {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
+    New-Item -ItemType directory -Path $build_dir/results
+    New-Item -ItemType directory -Path $build_dir/results/logs
     New-Item -ItemType directory -Path $resultsdir
 }
 else {
+    New-Item -ItemType directory -Path $build_dir/results
+    New-Item -ItemType directory -Path $build_dir/results/logs
     New-Item -ItemType directory -Path $resultsdir
 }
 
