@@ -23,19 +23,19 @@ $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
 $resultsdir="$build_dir/results/logs/$log_folder_name"
 
-Write-Host "Fetching Logs for $log_folder_name" -ForegroundColor Green
+Write-Host "Fetching Logs for $log_folder_name in: $build_dir" -ForegroundColor Green
 
 if(Test-Path -Path $resultsdir)
 {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
-    #New-Item -ItemType directory -Path $build_dir/results
-    #New-Item -ItemType directory -Path $build_dir/results/logs
+    New-Item -ItemType directory -Path $build_dir/results
+    New-Item -ItemType directory -Path $build_dir/results/logs
     New-Item -ItemType directory -Path $resultsdir
 }
 else {
-    #New-Item -ItemType directory -Path $build_dir/results
-    #New-Item -ItemType directory -Path $build_dir/results/logs
+    New-Item -ItemType directory -Path $build_dir/results
+    New-Item -ItemType directory -Path $build_dir/results/logs
     New-Item -ItemType directory -Path $resultsdir
 }
 
@@ -62,10 +62,11 @@ foreach($modFile in $modulefiles) {
         $arglist += "-staticfile $modFile "
     }   
 }
-Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist" | Set-Content -Path $resultsdir/merged.log
+Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist" | Set-Content -Path "$resultsdir/merged.log"
 
+#/home/vsts/work/1/s/TEST-test_edgehub_module_amqp_ws.xml
 $junit_file = "$build_dir/results/TEST-$log_folder_name.xml"
-Write-Host "injecting merged.log into junit" -ForegroundColor Green
+Write-Host "injecting merged.log into junit: $junit_file" -ForegroundColor Green
 Invoke-PyCmd "$pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"
 
 $files = Get-ChildItem "$build_dir/TEST_*"
