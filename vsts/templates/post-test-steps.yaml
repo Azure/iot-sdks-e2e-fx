@@ -1,23 +1,20 @@
 parameters:
-  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
-  repo_user: $(IOTHUB-E2E-REPO-USER)
-  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
   log_folder_name: ''
   language: ''
 
 steps:
-- powershell: $(Horton.FrameworkRoot)/scripts/remove-edgehub-device.ps1
-  workingDirectory: $(Horton.FrameworkRoot)
+- script: |
+   python3 $(Horton.FrameworkRoot)/pyscripts/remove_edgehub_device.py
   displayName: 'remove devices'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
-    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
-    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
-    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/fetch-logs.ps1 ${{ parameters.language }} $(Build.SourcesDirectory) ${{ parameters.log_folder_name }}
+- script: |
+    $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml
+    mkdir -p $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}
+    mv $(Horton.FrameworkRoot)/results/logs/* $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}/
+    mv $(Build.SourcesDirectory)/TEST-* $(Build.SourcesDirectory)/results
   displayName: 'Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
@@ -28,8 +25,8 @@ steps:
 - task: CopyFiles@2
   displayName: 'Copy result files to artifact staging'
   inputs:
-    SourceFolder: '$(Build.SourcesDirectory)/results/logs'
-    targetFolder: '$(Build.ArtifactStagingDirectory)'
+    SourceFolder: '$(Build.SourcesDirectory)/results'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - task: PublishBuildArtifacts@1
@@ -38,3 +35,4 @@ steps:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
+
