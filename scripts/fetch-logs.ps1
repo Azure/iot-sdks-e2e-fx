@@ -64,8 +64,9 @@ foreach($modFile in $modulefiles) {
 }
 Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist" | Set-Content -Path "$resultsdir/merged.log"
 
-#/home/vsts/work/1/s/TEST-test_edgehub_module_amqp_ws.xml
-$junit_file = "$build_dir/results/TEST-$log_folder_name.xml"
+#/home/vsts/work/1/s/TEST-test_edgehub_module_amqp_ws.xml <-pytest
+#/home/vsts/work/1/s/results/TEST-test_edgehub_module_mqtt_ws.xml <-junit_file
+$junit_file = "$build_dir/TEST-$log_folder_name.xml"
 Write-Host "injecting merged.log into junit: $junit_file" -ForegroundColor Green
 Invoke-PyCmd "$pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"
 
