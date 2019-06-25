@@ -5,20 +5,30 @@ parameters:
   job_name: ''
   extra_args: ''
   log_folder_name: ''
+  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
+  repo_user: $(IOTHUB-E2E-REPO-USER)
+  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
+  repo_connect: $(IOTHUB-E2E-CONNECTION-STRING)
 
 steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
+    architecture: 'x64'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
-    export IOTHUB_E2E_EDGEHUB_CA_CERT=$(sudo cat /var/lib/iotedge/hsm/certs/edge_owner_ca*.pem | base64 -w 0)
-    mkdir $(Horton.FrameworkRoot)/results
-    cd $(Horton.FrameworkRoot)/test-runner
-    python3 -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --${{ parameters.language }}-wrapper --junitxml=$(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
+- powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'Install python libs'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-  displayName: 'run tests ${{ parameters.scenario }} ${{ parameters.language }} ${{ parameters.transport }}'
+- powershell: $(Horton.FrameworkRoot)/scripts/run-pytest-module.ps1 ${{ parameters.scenario }} ${{ parameters.transport }} ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml ${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
+  workingDirectory: $(Horton.FrameworkRoot)
+  displayName: 'PYTEST: ${{ parameters.scenario }} ${{ parameters.transport }} ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml ${{ parameters.log_folder_name }} ${{ parameters.extra_args }}'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-
+    IOTHUB_E2E_EDGEHUB_CA_CERT: $(IOTHUB-E2E-EDGEHUB-CA-CERT)
