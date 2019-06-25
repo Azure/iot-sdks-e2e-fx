@@ -130,7 +130,10 @@ def build_image(tags):
         cache_from=cache_from,
         dockerfile=dockerfile,
     ):
-        print_filtered_docker_line(line)
+        try:
+            sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
+        except KeyError:
+            print_filtered_docker_line(line)
 
 def tag_images(tags):
     print(print_separator)
@@ -142,7 +145,7 @@ def tag_images(tags):
     print("Adding tags")
     for image_tag in tags.image_tags:
         print("Adding " + image_tag)
-        api_client.tag(tags.docker_image_name, tags.docker_full_image_name, image_tag.lower())
+        api_client.tag(tags.docker_image_name, tags.docker_full_image_name, image_tag)
 
 
 def push_images(tags):
@@ -155,7 +158,7 @@ def push_images(tags):
     for image_tag in tags.image_tags:
         print("Pushing {}:{}".format(tags.docker_full_image_name, image_tag))
         for line in api_client.push(
-            tags.docker_full_image_name, image_tag.lower(), stream=True, auth_config=auth_config
+            tags.docker_full_image_name, image_tag, stream=True, auth_config=auth_config
         ):
             try:
                 sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
