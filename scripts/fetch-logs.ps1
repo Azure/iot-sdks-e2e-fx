@@ -91,3 +91,7 @@ $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
     Move-Item $files "$build_dir/results"
 }
+if(Test-Path -Path $junit_file )
+{
+    Copy-Item $junit_file -Destination "$build_dir/results"
+}
