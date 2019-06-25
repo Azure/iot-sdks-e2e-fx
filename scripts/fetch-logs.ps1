@@ -93,5 +93,5 @@ if($files) {
 }
 if(Test-Path -Path $junit_file )
 {
-    Copy-Item $junit_file -Destination "$build_dir/results"
+    Move-Item $junit_file -Destination "$build_dir/results"
 }
