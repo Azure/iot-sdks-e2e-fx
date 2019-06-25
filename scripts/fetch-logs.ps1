@@ -21,7 +21,7 @@ $isWin32 = IsWin32
 $log_folder_name = $log_folder_name.trim("/")
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
-$resultsdir="$build_dir/results/logs/$log_folder_name"
+$resultsdir="$build_dir/results/$log_folder_name"
 
 Write-Host "Fetching Logs for $log_folder_name in: $build_dir" -ForegroundColor Green
 
@@ -29,13 +29,13 @@ if(Test-Path -Path $resultsdir)
 {
     Get-ChildItem -Path "$resultsdir/*" -Recurse | Remove-Item -Force -Recurse
     Remove-Item -Path $resultsdir -Force -Recurse
-    New-Item -ItemType directory -Path $build_dir/results
-    New-Item -ItemType directory -Path $build_dir/results/logs
+    #New-Item -ItemType directory -Path $build_dir/results
+    #New-Item -ItemType directory -Path $build_dir/results/logs
     New-Item -ItemType directory -Path $resultsdir
 }
 else {
-    New-Item -ItemType directory -Path $build_dir/results
-    New-Item -ItemType directory -Path $build_dir/results/logs
+    #New-Item -ItemType directory -Path $build_dir/results
+    #New-Item -ItemType directory -Path $build_dir/results/logs
     New-Item -ItemType directory -Path $resultsdir
 }
 
@@ -72,9 +72,9 @@ Invoke-PyCmd "$pyscripts/inject_into_junit.py -junit_file $junit_file -log_file 
 
 $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
-    Move-Item $files "$build_dir/results/logs"
+    Move-Item $files "$build_dir/results"
 }
 if(Test-Path -Path $junit_file )
 {
-    Copy-Item $junit_file -Destination "$build_dir/results/logs"
+    Copy-Item $junit_file -Destination "$build_dir/results"
 }
