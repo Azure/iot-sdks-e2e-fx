@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore;
+using System.Diagnostics.Tracing;
 
 namespace IO.Swagger
 {
@@ -20,6 +21,7 @@ namespace IO.Swagger
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
+            ConsoleEventListener _listener = new ConsoleEventListener("Microsoft-Azure-");
             BuildWebHost(args).Run();
         }
 

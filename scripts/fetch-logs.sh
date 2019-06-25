@@ -25,7 +25,7 @@ if [ $? -ne 0 ]; then
   echo "error fetching iotedged journal"
 fi
 
-args=
+args="-filterfile ${root_dir}/pyscripts/docker_log_processor_filters.json"
 for mod in ${languageMod} friendMod edgeHub edgeAgent; do
     args="${args} -staticfile ${mod}.log"
 done
