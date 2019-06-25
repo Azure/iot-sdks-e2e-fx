@@ -21,9 +21,14 @@ $isWin32 = IsWin32
 $log_folder_name = $log_folder_name.trim("/")
 $root_dir = Join-Path -Path $path -ChildPath '..' -Resolve
 $pyscripts = Join-Path -Path $root_dir -ChildPath 'pyscripts' -Resolve
-$resultsdir="$build_dir/results/$log_folder_name"
+
 
 Write-Host "Fetching Logs for $log_folder_name in: $build_dir" -ForegroundColor Green
+
+#resultsdir=$root_dir/results/logs
+#mkdir -p $resultsdir
+#$resultsdir="$build_dir/results/$log_folder_name"
+$resultsdir="$build_dir/results/logs"
 
 if(Test-Path -Path $resultsdir)
 {
@@ -64,17 +69,25 @@ foreach($modFile in $modulefiles) {
 }
 Invoke-PyCmd "$pyscripts/docker_log_processor.py $arglist" | Set-Content -Path "$resultsdir/merged.log"
 
-#/home/vsts/work/1/s/TEST-test_edgehub_module_amqp_ws.xml <-pytest
-#/home/vsts/work/1/s/results/TEST-test_edgehub_module_mqtt_ws.xml <-junit_file
 $junit_file = "$build_dir/TEST-$log_folder_name.xml"
 Write-Host "injecting merged.log into junit: $junit_file" -ForegroundColor Green
 Invoke-PyCmd "$pyscripts/inject_into_junit.py -junit_file $junit_file -log_file $resultsdir/merged.log"
 
+#mkdir -p $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}
+#mv $(Horton.FrameworkRoot)/results/logs/* $(Build.SourcesDirectory)/results/${{ parameters.log_folder_name }}/
+#mv $(Build.SourcesDirectory)/TEST-* $(Build.SourcesDirectory)/results
+
+New-Item -ItemType directory -Path $build_dir/results/$log_folder_name
+Move-Item "$resultsdir/*" $build_dir/results/$log_folder_name
+
+#mv "$build_dir/TEST-*" "$build_dir/results"
+#if(Test-Path -Path $junit_file )
+#{
+#    Copy-Item $junit_file -Destination "$build_dir/results"
+#}
+
+
 $files = Get-ChildItem "$build_dir/TEST_*"
 if($files) {
     Move-Item $files "$build_dir/results"
-}
-if(Test-Path -Path $junit_file )
-{
-    Copy-Item $junit_file -Destination "$build_dir/results"
 }
