@@ -4,7 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from azure.iot.device.aio import IoTHubDeviceClient
-from azure.iot.device import auth, MethodResponse
+from azure.iot.device import MethodResponse
 import json
 import async_helper
 
@@ -31,12 +31,10 @@ class InternalDeviceGlueAsync:
 
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
-        auth_provider = auth.from_connection_string(connection_string)
         if "GatewayHostName" in connection_string:
-            auth_provider.ca_cert = cert
-        self.client = IoTHubDeviceClient.from_authentication_provider(
-            auth_provider, transport_type
-        )
+            self.client = IoTHubDeviceClient.create_from_connection_string(connection_string, trusted_certificate_chain=cert)
+        else:
+            self.client = IoTHubDeviceClient.create_from_connection_string(connection_string)
         async_helper.run_coroutine_sync(self.client.connect())
 
     def disconnect(self):
@@ -59,7 +57,7 @@ class InternalDeviceGlueAsync:
     def send_event(self, event_body):
         print("sending event")
         async_helper.run_coroutine_sync(
-            self.client.send_event(normalize_event_body(event_body))
+            self.client.send_d2c_message(normalize_event_body(event_body))
         )
         print("send confirmation received")
 

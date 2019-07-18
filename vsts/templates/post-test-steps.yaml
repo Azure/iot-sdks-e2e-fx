@@ -38,3 +38,4 @@ steps:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
+
