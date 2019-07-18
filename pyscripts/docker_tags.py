@@ -212,3 +212,4 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
     else:
         tags.image_tags.insert(0, "latest")
     return tags
+    

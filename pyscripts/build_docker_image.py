@@ -41,6 +41,11 @@ if args.repo == default_repo:
 
 print_separator = "".join("/\\" for _ in range(80))
 
+if sys.platform == 'win32':
+    base_url = "tcp://127.0.0.1:2375"
+else:
+    base_url = "unix://var/run/docker.sock"
+
 auth_config = {
     "username": os.environ["IOTHUB_E2E_REPO_USER"],
     "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
@@ -56,7 +61,7 @@ def print_filtered_docker_line(line):
     try:
         obj = json.loads(line.decode("utf-8"))
     except:
-        print(line)
+        print("".join([i if ord(i) < 128 else "#" for i in line.decode("utf-8")]))
     else:
         if "status" in obj:
             if "id" in obj:
@@ -76,8 +81,12 @@ def print_filtered_docker_line(line):
         elif "error" in obj:
             print ("docker error: {}".format(line))
             raise Exception(obj["error"])
+        elif "Step" in obj or "---" in obj:
+            print("step: {}".format(obj).strip())
+        elif obj == "\n":
+            pass
         else:
-            print(line)
+            print("".join([i if ord(i) < 128 else "#" for i in line.decode("utf-8")]))
 
 
 def build_image(tags):
@@ -86,8 +95,8 @@ def build_image(tags):
     print(print_separator)
 
     force_flag = 0
+    api_client = docker.APIClient(base_url=base_url)
 
-    api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
     build_args = {
         "HORTON_REPO": tags.repo,
         "HORTON_COMMIT_NAME": tags.commit_name,
@@ -126,12 +135,13 @@ def build_image(tags):
         except KeyError:
             print_filtered_docker_line(line)
 
-
 def tag_images(tags):
     print(print_separator)
     print("TAGGING IMAGE")
     print(print_separator)
-    api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+
+    api_client = docker.APIClient(base_url=base_url)
+
     print("Adding tags")
     for image_tag in tags.image_tags:
         print("Adding " + image_tag)
@@ -142,13 +152,18 @@ def push_images(tags):
     print(print_separator)
     print("PUSHING IMAGE")
     print(print_separator)
-    api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+
+    api_client = docker.APIClient(base_url=base_url)
+
     for image_tag in tags.image_tags:
         print("Pushing {}:{}".format(tags.docker_full_image_name, image_tag))
         for line in api_client.push(
             tags.docker_full_image_name, image_tag, stream=True, auth_config=auth_config
         ):
-            print_filtered_docker_line(line)
+            try:
+                sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
+            except:
+                print_filtered_docker_line(line)
 
 
 def prefetch_cached_images(tags):
@@ -157,7 +172,9 @@ def prefetch_cached_images(tags):
         print(Fore.YELLOW + "PREFETCHING IMAGE")
         print(print_separator)
         tags.image_tag_to_use_for_cache = None
-        api_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+
+        api_client = docker.APIClient(base_url=base_url)
+
         for image_tag in tags.image_tags:
             print(
                 Fore.YELLOW
@@ -199,4 +216,4 @@ if not docker_tags.running_on_azure_pipelines():
         + "./deploy-test-containers.sh --{} {}:{}".format(
             tags.language, tags.docker_full_image_name, tags.image_tags[0]
         )
-    )
+    )    

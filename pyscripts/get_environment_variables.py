@@ -14,7 +14,7 @@ format = ""
 
 def usage():
     print("Usage get_environment_variables.py [format]")
-    print('format can be one of "windows", "linux", or "pycharm"')
+    print('format can be one of "windows", "linux", "powershell", or "pycharm"')
     print("if not specified, format will be autodetected based on OS")
     sys.exit(1)
 
@@ -26,6 +26,8 @@ def print_env(env):
             print('export {}="{}"'.format(env, os.environ[env]))
         elif format == "windows":
             print("set {}={}".format(env, os.environ[env]))
+        elif format == "powershell":
+            print("{}={}".format(env, os.environ[env]))
         elif format == "pycharm":
             print('        <env name="{}" value="{}" />'.format(env, os.environ[env]))
         else:
@@ -40,7 +42,7 @@ if __name__ == "__main__":
         else:
             format = "linux"
     elif len(sys.argv) == 2:
-        if sys.argv[1] in ["windows", "linux", "pycharm"]:
+        if sys.argv[1] in ["windows", "linux", "powershell", "pycharm"]:
             format = sys.argv[1]
         else:
             usage()
@@ -59,3 +61,4 @@ if __name__ == "__main__":
     # print_env('IOTHUB_E2E_EDGE_PRIVATE_REGISTRY')
     # print_env('IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE')
     # print_env('IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE')
+    

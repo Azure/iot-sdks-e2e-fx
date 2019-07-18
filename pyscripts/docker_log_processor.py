@@ -276,15 +276,17 @@ class DockerLogProcessor:
                                     for part in range(1, num_parts):
                                         log_data += log_line_parts[part] + " "
                                 else:
-                                    log_data = log_line_parts[1]
-
-                                log_time = DockerLogProcessor.format_date_and_time(
-                                    log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f"
-                                )
-                                log_line_object = LogLineObject(
-                                    log_time, module_name, log_data
-                                )
-                                loglines.append(log_line_object)
+                                    if num_parts == 2:
+                                        log_data = log_line_parts[1]
+                                if num_parts >= 2:
+                                    try:
+                                        log_time = DockerLogProcessor.format_date_and_time(log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f")
+                                        log_line_object = LogLineObject(log_time, module_name, log_data)
+                                        loglines.append(log_line_object)
+                                    except:
+                                        print("INVALID_TIMESTAMP({}):{}".format(module_name, log_line))
+                                else:
+                                    print("INVALID_LINE({}):{}".format(module_name, log_line))
 
         # Sort the merged static file lines by timestamp
         loglines.sort(key=lambda x: x.timestamp)
