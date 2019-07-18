@@ -25,5 +25,5 @@ jobs:
     parameters:
       language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
+      repo: $(Horton.Repo)
       suite: $(suite)
-
