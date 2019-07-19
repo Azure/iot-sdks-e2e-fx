@@ -35,7 +35,7 @@ $script_dir/setup-registry.sh
 [ $? -eq 0 ] || failure "setup-registry failed"
 
 header $_cyan "installing iotedge"
-$script_dir/setup-iotedge.ps1
+$script_dir/setup-iotedge.sh
 [ $? -eq 0 ] || failure "setup-iotedge failed"
 
 header $_green "\n\

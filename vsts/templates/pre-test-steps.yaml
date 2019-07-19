@@ -20,7 +20,7 @@ steps:
   displayName: 'Install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.ps1
+- script: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
   workingDirectory: $(Horton.FrameworkRoot)
   displayName: 'Install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
