@@ -29,41 +29,8 @@ if [ "$need_moby" ]; then
 fi
 
 if [ "$need_moby" ]; then 
-  if [ $(lsb_release -is) != "Ubuntu" ]; then
-    colorecho $_red "ERROR: This script only works on Ubunto distros"
-    exit 1
-  fi
-
-  which curl > /dev/null
-  if [ $? -ne 0 ]; then
-    colorecho $_yellow "installing curl"
-    sudo apt-get install -y curl
-  fi
-
-  # add pointers to the Microsoft APT repository
-
-  colorecho $_yellow "configuring Microsoft APT repository"
-  # Install repository configuration (from https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-linux)
-  curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list > ./microsoft-prod.list
-  [ $? -eq 0 ] || { colorecho $_red "curl failed"; exit 1; }
-  sudo cp ./microsoft-prod.list /etc/apt/sources.list.d/
-  [ $? -eq 0 ] || { colorecho $_red "sudo cp failed"; exit 1; }
-
-  rm ./microsoft-prod.list
-
-  # Install Microsoft GPG public key (from https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-linux)
-  curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
-  [ $? -eq 0 ] || { colorecho $_red "curl failed"; exit 1; }
-  sudo cp ./microsoft.gpg /etc/apt/trusted.gpg.d/
-  [ $? -eq 0 ] || { colorecho $_red "sudo cp failed"; exit 1; }
-
-  rm ./microsoft.gpg
-
-  # install docker engine
-
-  colorecho $_yellow "updating APT cache"
-  sudo apt-get update
-  [ $? -eq 0 ] || { colorecho $_red "apt-get update failed"; exit 1; }
+  $script_dir/setup-microsoft-apt-repo.sh
+  [ $? -eq 0 ] || { echo "setup-microsoft-apt-repo failed"; exit 1; }
 
   colorecho $_yellow "installing moby"
   sudo apt-get install -y moby-engine
