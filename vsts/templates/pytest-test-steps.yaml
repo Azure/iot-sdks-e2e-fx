@@ -5,10 +5,6 @@ parameters:
   job_name: ''
   extra_args: ''
   log_folder_name: ''
-  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
-  repo_user: $(IOTHUB-E2E-REPO-USER)
-  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
-  repo_connect: $(IOTHUB-E2E-CONNECTION-STRING)
 
 steps:
 - task: UsePythonVersion@0
@@ -31,4 +27,3 @@ steps:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-    IOTHUB_E2E_EDGEHUB_CA_CERT: $(IOTHUB-E2E-EDGEHUB-CA-CERT)

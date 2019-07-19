@@ -14,9 +14,13 @@ function header {
 }
 
 function failure {
-  header $_green $@
+  header $_red $@
   exit 1
 }
+
+header $_cyan "installing powershell"
+$script_dir/setup-powershell.sh
+[ $? -eq 0 ] ||  failure "setup-powershell failed"
 
 header $_cyan "installing python 3.6"
 $script_dir/setup-python36.sh
@@ -31,7 +35,7 @@ $script_dir/setup-registry.sh
 [ $? -eq 0 ] || failure "setup-registry failed"
 
 header $_cyan "installing iotedge"
-$script_dir/setup-iotedge.sh
+$script_dir/setup-iotedge.ps1
 [ $? -eq 0 ] || failure "setup-iotedge failed"
 
 header $_green "\n\

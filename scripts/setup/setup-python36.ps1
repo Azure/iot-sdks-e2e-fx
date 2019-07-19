@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 #!/usr/bin/env powershell
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
@@ -120,7 +121,7 @@ if($foundPy -ne $true)
 
 $gotPip3 = $false
 $Pip3Path = Which("pip3")
-if($null -ne $Pip3Path -and $Pip3Path.Length -lt 1)
+if($null -eq $Pip3Path)
 {
     Write-Host "Pip3 not found" -ForegroundColor Red
     if($isWin32) {
