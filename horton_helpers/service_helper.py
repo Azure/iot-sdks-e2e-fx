@@ -33,9 +33,7 @@ def run_with_retry(fun, args, kwargs):
         try:
             return fun(*args, **kwargs)
         except HttpOperationError as e:
-            print("Exception: HttpOperationError detail:")
             resp = e.response.json()
-            print(str(resp))
             retry = False
             if "Message" in resp:
                 if resp["Message"].startswith("ErrorCode:ThrottlingBacklogTimeout"):
