@@ -1,7 +1,4 @@
 parameters:
-  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
-  repo_user: $(IOTHUB-E2E-REPO-USER)
-  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
   log_folder_name: ''
   language: ''
 
@@ -11,10 +8,6 @@ steps:
   displayName: 'remove devices'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
-    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
-    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
-    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/fetch-logs.ps1 ${{ parameters.language }} $(Build.SourcesDirectory) ${{ parameters.log_folder_name }}
@@ -29,7 +22,7 @@ steps:
   displayName: 'Copy result files to artifact staging'
   inputs:
     SourceFolder: '$(Build.SourcesDirectory)/results'
-    targetFolder: '$(Build.ArtifactStagingDirectory)'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - task: PublishBuildArtifacts@1

@@ -41,9 +41,6 @@ jobs:
         $IsPr = "yes"
       }
 
-      $Lang = $env:language
-      $Veryant = $env:variant
-
       Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
       Write-Host "##vso[task.setvariable variable=NormalizedRepo]${NormalizedRepo}"
       Write-Host "##vso[task.setvariable variable=IsPr]${IsPr}"
@@ -57,8 +54,6 @@ jobs:
       Commit: ${{ parameters.commit }}
       ForcedImage: ${{ parameters.forced_image }}
       Repo: ${{ parameters.repo }}
-      Lang: ${{ parameters.language }}
-      Veryant: ${{ parameters.variant }}
     ignoreLASTEXITCODE: false
     errorActionPreference: Stop
     failOnStderr: true
@@ -93,18 +88,11 @@ jobs:
   - powershell: $(Horton.FrameworkRoot)/scripts/build-docker-image.ps1 ${{ parameters.language }} $(NormalizedRepo) "master" ${{ parameters.variant }}
     displayName: "build docker image ${{ parameters.language }} $(NormalizedRepo) ${CommitToPass} ${{ parameters.variant }}"
     env: 
-      IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
       IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
       IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
       IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-      IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
       NormalizedRepo: $(NormalizedRepo)
       CommitToPass: $(CommitToPass)
-      Commit: ${{ parameters.commit }}
-      ForcedImage: ${{ parameters.forced_image }}
-      Repo: ${{ parameters.repo }}
-      Lang: $(Lang)
-      Veryant: ${{ parameters.variant }}
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
   - task: PublishBuildArtifacts@1
