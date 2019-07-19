@@ -5,14 +5,10 @@
 
 # Explicitly declare text files you want to always be normalized and converted
 # to native line endings on checkout. E.g.,
-#*.c text
-*.md text
-Dockerfile text
-*.json text
-*.ps1 text
-
-# Declare files that will always have CRLF line endings on checkout. E.g.,
-#*.sln text eol=crlf
+*.md text=auto
+Dockerfile text=auto
+*.json text=auto
+*.ps1 text=auto
 
 # Declare files that will always have LF line endings on checkout. E.g.,
 *.sh text eol=lf
