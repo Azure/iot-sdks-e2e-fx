@@ -4,7 +4,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from azure.iot.device import IoTHubDeviceClient
-from azure.iot.device import auth, MethodResponse
+from azure.iot.device import MethodResponse
 import json
 
 
