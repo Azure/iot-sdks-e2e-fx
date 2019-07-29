@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+s not#!/usr/bin/env python
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -26,9 +26,6 @@ class HortonGetContainerLog:
         container = self.get_container_by_name(containers, container_name)
         if not container:
             print("Container {} is not deployed".format(container_name))
-            return
-        if container['State'] != 'running':
-            print("Container {} is not Running".format(container_name))
             return
 
         log_byte_array = api_client.logs(container, stdout=True, stderr=True, stream=False, timestamps=True,)
