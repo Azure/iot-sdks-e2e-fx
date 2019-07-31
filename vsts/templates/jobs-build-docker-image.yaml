@@ -85,14 +85,12 @@ jobs:
     displayName: "pip install requirements.txt"
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-  - powershell: $(Horton.FrameworkRoot)/scripts/build-docker-image.ps1 ${{ parameters.language }} $(NormalizedRepo) "master" ${{ parameters.variant }}
-    displayName: "build docker image ${{ parameters.language }} $(NormalizedRepo) ${CommitToPass} ${{ parameters.variant }}"
+  - powershell: $(Horton.FrameworkRoot)/scripts/build-docker-image.ps1 ${{ parameters.language }} $(NormalizedRepo) $(CommitToPass) ${{ parameters.variant }}
+    displayName: "build docker image ${{ parameters.language }} ${{ parameters.repo }} ${{ parameters.commit }} ${{ parameters.variant }}"
     env: 
       IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
       IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
       IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-      NormalizedRepo: $(NormalizedRepo)
-      CommitToPass: $(CommitToPass)
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
   - task: PublishBuildArtifacts@1
