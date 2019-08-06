@@ -31,7 +31,7 @@ class InternalModuleGlueSync:
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
         if "GatewayHostName" in connection_string:
-            self.client = IoTHubModuleClient.create_from_connection_string(connection_string, trusted_certificate_chain=cert)
+            self.client = IoTHubModuleClient.create_from_connection_string(connection_string, ca_cert=cert)
         else:
             self.client = IoTHubModuleClient.create_from_connection_string(connection_string)
         self.client.connect()

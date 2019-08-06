@@ -32,6 +32,5 @@ def get_capabilities():
             "invokesDeviceMethodCalls",
             "supportsTwin",
             "handlesLoopbackMessages",
-            "module_under_test_has_device_wrapper",
         ],
     }
