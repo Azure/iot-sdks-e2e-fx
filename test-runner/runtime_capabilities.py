@@ -20,7 +20,6 @@ hardcoded_skip_list = {
         "invokesDeviceMethodCalls",
         "supportsTwin",
         "handlesLoopbackMessages",
-        "module_under_test_has_device_wrapper",
     ],
     "c": ["module_under_test_has_device_wrapper"],
     "java": ["module_under_test_has_device_wrapper", "supportsTwin"],
