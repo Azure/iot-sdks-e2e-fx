@@ -67,7 +67,7 @@ class InternalModuleGlueAsync:
     def wait_for_input_message(self, input_name):
         print("Waiting for input message")
         message = async_helper.run_coroutine_sync(
-            self.client.receive_input_message(input_name)
+            self.client.receive_message_on_input(input_name)
         )
         print("Message received")
         return message_to_object(message)
@@ -117,7 +117,7 @@ class InternalModuleGlueAsync:
     def send_output_event(self, output_name, event_body):
         print("sending output event")
         async_helper.run_coroutine_sync(
-            self.client.send_to_output(normalize_event_body(event_body), output_name)
+            self.client.send_message_to_output(normalize_event_body(event_body), output_name)
         )
         print("send confirmation received")
 
