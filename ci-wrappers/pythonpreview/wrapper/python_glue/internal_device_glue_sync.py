@@ -53,12 +53,12 @@ class InternalDeviceGlueSync:
 
     def send_event(self, event_body):
         print("sending event")
-        self.client.send_d2c_message(normalize_event_body(event_body))
+        self.client.send_message(normalize_event_body(event_body))
         print("send confirmation received")
 
     def wait_for_c2d_message(self):
         print("Waiting for c2d message")
-        message = self.client.receive_c2d_message()
+        message = self.client.receive_message()
         print("Message received")
         return message_to_object(message)
 

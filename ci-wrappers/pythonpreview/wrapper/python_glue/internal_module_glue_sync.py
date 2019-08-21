@@ -55,12 +55,12 @@ class InternalModuleGlueSync:
 
     def send_event(self, event_body):
         print("sending event")
-        self.client.send_d2c_message(normalize_event_body(event_body))
+        self.client.send_message(normalize_event_body(event_body))
         print("send confirmation received")
 
     def wait_for_input_message(self, input_name):
         print("Waiting for input message")
-        message = self.client.receive_input_message(input_name)
+        message = self.client.receive_message_on_input(input_name)
         print("Message received")
         return message_to_object(message)
 
@@ -106,7 +106,7 @@ class InternalModuleGlueSync:
 
     def send_output_event(self, output_name, event_body):
         print("sending output event")
-        self.client.send_to_output(normalize_event_body(event_body), output_name)
+        self.client.send_message_to_output(normalize_event_body(event_body), output_name)
         print("send confirmation received")
 
     def wait_for_desired_property_patch(self):
