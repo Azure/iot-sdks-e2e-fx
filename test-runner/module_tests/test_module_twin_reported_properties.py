@@ -7,6 +7,7 @@
 import pytest
 import random
 import connections
+import time
 from runtime_config import get_current_config
 from adapters import print_message as log_message
 
@@ -24,6 +25,8 @@ def test_module_can_set_reported_properties_and_service_can_retrieve_them():
     module_client.enable_twin()
     log_message("patching twin")
     module_client.patch_twin(reported_properties_sent)
+    log_message("sleeping for an arbitrary 4 seconds to give edgehub a chnace to push the properties up to iothub")
+    time.sleep(4)
     log_message("disconnecting module client")
     module_client.disconnect()
     log_message("module client disconnected")
