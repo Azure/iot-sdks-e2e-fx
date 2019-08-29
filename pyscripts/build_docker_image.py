@@ -34,7 +34,7 @@ args = parser.parse_args()
 
 if args.repo == default_repo:
     if args.language == "pythonpreview":
-        args.repo = "Azure/azure-iot-sdk-python-preview"
+        args.repo = "Azure/azure-iot-sdk-python"
     else:
         args.repo = "Azure/azure-iot-sdk-" + args.language
     print(Fore.YELLOW + "Repo not specified.  Defaulting to " + args.repo)

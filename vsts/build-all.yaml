@@ -67,7 +67,7 @@ jobs:
   parameters:
     language: pythonpreview
     variant: py27
-    repo: Azure/azure-iot-sdk-python-preview  
+    repo: Azure/azure-iot-sdk-python
     commit: master
     job_tag: py27
     forced_image: $(Horton.ForcedImage)
@@ -76,7 +76,7 @@ jobs:
   parameters:
     language: pythonpreview
     variant: py35
-    repo: Azure/azure-iot-sdk-python-preview  
+    repo: Azure/azure-iot-sdk-python
     commit: master
     job_tag: py35
     forced_image: $(Horton.ForcedImage)
@@ -85,7 +85,7 @@ jobs:
   parameters:
     language: pythonpreview
     variant: py36
-    repo: Azure/azure-iot-sdk-python-preview  
+    repo: Azure/azure-iot-sdk-python
     commit: master
     job_tag: py36
     forced_image: $(Horton.ForcedImage)
@@ -94,7 +94,7 @@ jobs:
   parameters:
     language: pythonpreview
     variant: py37
-    repo: Azure/azure-iot-sdk-python-preview  
+    repo: Azure/azure-iot-sdk-python
     commit: master
     job_tag: py37
     forced_image: $(Horton.ForcedImage)
