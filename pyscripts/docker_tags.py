@@ -111,9 +111,9 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
 
     Every image we make has (at least) 4 tags.  For example, an image might have:
         pythonpreview-e2e-v3:vsts-12345
-        pythonpreview-e2e-v3:linux-amd64-dockerV18-AzureAzureIotSdkPythonPreview
-        pythonpreview-e2e-v3:linux-amd64-dockerV18-AzureAzureIotSdkPythonPreview-Pr59
-        pythonpreview-e2e-v3:linux-amd64-dockerV18-AzureAzureIotSdkPythonPreview-Pr59-510b1f9
+        pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview
+        pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59
+        pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59-510b1f9
 
     When we're build a docker image, we first look in our container registry to find an image to
     cache from.  This image should be as specific as possible, so we pull starting with the most
@@ -148,22 +148,22 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
             tags.image_tags.insert(0, "vsts-{}".format(os.environ["BUILD_BUILDID"]))
 
         if not tags.variant:
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18
+            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18
             tags.image_tags.insert(0, "{}".format(image_tag_prefix()))
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-AzureAzureIotSdkPythonPreview
+            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview
             tags.image_tags.insert(
-                0, "{}-{}".format(image_tag_prefix(), sanitize_string(tags.repo))
+                0, "{}-{}".format(image_tag_prefix(), sanitize_string(tags.repo)).lower()
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-AzureAzureIotSdkPythonPreview-Pr59
+            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}".format(
                     image_tag_prefix(),
                     sanitize_string(tags.repo),
                     sanitize_string(tags.commit_name),
-                ),
+                ).lower(),
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-AzureAzureIotSdkPythonPreview-Pr59-510b1f9
+            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59-510b1f9
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}-{}".format(
@@ -171,24 +171,24 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                     sanitize_string(tags.repo),
                     sanitize_string(tags.commit_name),
                     shorten_sha(tags.commit_sha),
-                ),
+                ).lower(),
             )
 
         if tags.variant:
             # eg: pythonpreview-e2e-v3:vsts-12345-3.7.2-slim
             tags.image_tags.insert(0, "vsts-{}-{}".format(os.environ["BUILD_BUILDID"],tags.variant))
-            # eg: pythonpreview-e2e-v3:linux-amd64-$dockerV18-3.7.2-slim
+            # eg: pythonpreview-e2e-v3:linux-amd64-$dockerv18-3.7.2-slim
             tags.image_tags.insert(
-                0, "{}-{}".format(image_tag_prefix(), tags.variant)
+                0, "{}-{}".format(image_tag_prefix(), tags.variant).lower()
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-3.7.2-slim-AzureAzureIotSdkPythonPreview
+            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonpreview
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}".format(
                     image_tag_prefix(), tags.variant, sanitize_string(tags.repo)
-                ),
+                ).lower(),
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-3.7.2-slim-AzureAzureIotSdkPythonPreview-Pr59
+            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonpreview-pr59
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}-{}".format(
@@ -196,9 +196,9 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                     tags.variant,
                     sanitize_string(tags.repo),
                     sanitize_string(tags.commit_name),
-                ),
+                ).lower(),
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerV18-3.7.2-slim-AzureAzureIotSdkPythonPreview-Pr59-510b1f9
+            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonpreview-pr59-510b1f9
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}-{}-{}".format(
@@ -207,7 +207,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                     sanitize_string(tags.repo),
                     sanitize_string(tags.commit_name),
                     shorten_sha(tags.commit_sha),
-                ),
+                ).lower(),
             )
     else:
         tags.image_tags.insert(0, "latest")
