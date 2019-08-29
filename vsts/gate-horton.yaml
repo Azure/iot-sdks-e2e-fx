@@ -37,16 +37,8 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: python
-    repo: Azure/azure-iot-sdk-python
-    commit: master
-    job_tag: python
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
     language: pythonpreview
-    repo: Azure/azure-iot-sdk-python-preview  
+    repo: Azure/azure-iot-sdk-python  
     commit: master
     job_tag: pythonpreview
     forced_image: $(Horton.ForcedImage)
@@ -57,7 +49,6 @@ jobs:
     - "build_c_container"
     - "build_java_container"
     - "build_csharp_container"
-    - "build_python_container"
     - "build_pythonpreview_container"
 
   strategy:
