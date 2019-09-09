@@ -25,13 +25,13 @@ steps:
   displayName: 'Install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/precache-images.ps1 ${{ parameters.language }} ${{ parameters.test_image }} ${{ parameters.image_edgeAgent }} ${{ parameters.image_edgeHub }} ${{ parameters.image_friendmod }}
-  workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'Pre-cache docker images'
-  env:
-    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
-    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
-    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+- script: |
+    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} &&
+    docker pull ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }} &&
+    docker pull ${{ parameters.image_edgeAgent }} &&
+    docker pull ${{ parameters.image_edgeHub }} &&
+    docker pull ${{ parameters.image_friendmod }} 
+  displayName: 'pre-cache docker images'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/create-new-edgehub-device.ps1
