@@ -298,7 +298,7 @@ class DeviceOperations(object):
         :param connection_id: Id for the connection
         :type connection_id: str
         :param event_body:
-        :type event_body: str
+        :type event_body: object
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -326,7 +326,7 @@ class DeviceOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(event_body, 'str')
+        body_content = self._serialize.body(event_body, 'object')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)
