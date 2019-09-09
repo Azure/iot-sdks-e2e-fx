@@ -75,7 +75,7 @@ def service_send_c2d(connectionId, eventBody):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
     :param eventBody: 
-    :type eventBody: str
+    :type eventBody: 
 
     :rtype: None
     """
