@@ -2,6 +2,8 @@ import connexion
 import six
 
 from swagger_server import util
+# added 1 line in merge
+import wrapper_glue
 
 
 def wrapper_cleanup():  # noqa: E501
@@ -12,7 +14,8 @@ def wrapper_cleanup():  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    wrapper_glue.cleanup_resources()
 
 
 def wrapper_get_capabilities():  # noqa: E501
@@ -23,7 +26,8 @@ def wrapper_get_capabilities():  # noqa: E501
 
     :rtype: object
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return wrapper_glue.get_capabilities()
 
 
 def wrapper_log_message(msg):  # noqa: E501
@@ -36,7 +40,8 @@ def wrapper_log_message(msg):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    wrapper_glue.log_message(msg)
 
 
 def wrapper_set_flags(flags):  # noqa: E501
@@ -49,4 +54,6 @@ def wrapper_set_flags(flags):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    wrapper_glue.set_flags(flags)
+
