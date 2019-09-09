@@ -11,7 +11,6 @@ import adapters
 import logging
 from adapters import print_message as log_message
 from adapters import adapter_config
-from docker_log_watcher import DockerLogWatcher
 from identity_helpers import ensure_edge_environment_variables
 import runtime_config_templates
 import runtime_config
@@ -164,8 +163,6 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="function", autouse=True)
 def function_log_fixture(request):
-    global log_watcher
-    log_watcher.enable()
     print("")
     log_message("HORTON: Entering function {}".format(request.function.__name__))
 
@@ -182,7 +179,6 @@ def function_log_fixture(request):
         )
         adapters.cleanup_test_objects()
         log_message("HORTON: Exiting function {}".format(request.function.__name__))
-        log_watcher.flush_and_disable()
 
     request.addfinalizer(fin)
 
@@ -211,8 +207,6 @@ def session_log_fixture(request):
         log_message("Preforming post-session cleanup")
         adapters.cleanup_test_objects()
         log_message("HORTON: post-session cleanup complete")
-        if log_watcher:
-            log_watcher.terminate()
 
     request.addfinalizer(fin)
 
@@ -300,7 +294,6 @@ def pytest_collection_modifyitems(config, items):
             raise Exception("--async specified, but test module does not support async")
 
     adapters.print_message("HORTON: starting run: {}".format(config._origargs))
-    set_up_log_watcher()
 
     if config.getoption("--debug-container"):
         print("Debugging the container.  Removing all timeouts")
@@ -308,12 +301,3 @@ def pytest_collection_modifyitems(config, items):
         config._env_timeout = 0
 
 
-def set_up_log_watcher():
-    global log_watcher
-    filters = ["PYTEST: ", "Getting next batch", "Obtained next batch"]
-    container_names = [
-        "edgeHub",
-        "friendMod",
-        runtime_config.get_current_config().test_module.module_id,
-    ]
-    log_watcher = DockerLogWatcher(container_names, filters)
