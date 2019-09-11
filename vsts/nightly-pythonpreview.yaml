@@ -45,6 +45,8 @@ jobs:
     variant: py37
 
 - job: "test"
+  pool:
+      vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_py27_container"
     - "build_py34_container"

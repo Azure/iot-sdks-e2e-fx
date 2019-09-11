@@ -44,6 +44,8 @@ jobs:
     forced_image: $(Horton.ForcedImage)
 
 - job: "test"
+  pool:
+      vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_node_container"
     - "build_c_container"
