@@ -22,6 +22,10 @@ logging.basicConfig(level=logging.INFO)
 # AMQP is chatty at INFO level.  Dial this down to WARNING.
 logging.getLogger("uamqp").setLevel(level=logging.WARNING)
 logging.getLogger("paho").setLevel(level=logging.DEBUG)
+logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
+    level=logging.WARNING
+)  # info level can leak credentials into the log
+
 
 ensure_edge_environment_variables()
 
@@ -280,6 +284,10 @@ def pytest_collection_modifyitems(config, items):
 
     runtime_config.set_runtime_configuration(scenario, language, transport, local)
     skip_list = runtime_capabilities.get_skip_list(language)
+    for cap in runtime_capabilities.get_all_capabilities_flags():
+        if not runtime_capabilities.get_test_module_capabilities_flag(cap):
+            skip_list.append("uses_" + cap)
+
     skip_tests_by_marker(
         items, skip_list, "it isn't implemented in the {} wrapper".format(language)
     )
@@ -299,5 +307,3 @@ def pytest_collection_modifyitems(config, items):
         print("Debugging the container.  Removing all timeouts")
         adapter_config.default_api_timeout = 3600
         config._env_timeout = 0
-
-

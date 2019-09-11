@@ -5,10 +5,14 @@
 import connexion
 # changed from from swagger_server import encoder
 from . import encoder
-# added 3 line in merge
+# added logging config in merge
 import logging
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
 logging.getLogger("paho").setLevel(level=logging.DEBUG)
+logging.getLogger("werkzeug").setLevel(level=logging.WARNING) # info level can leak credentials into the log
+
+
 def main():
     app = connexion.App(__name__, specification_dir='./swagger/')
     app.app.json_encoder = encoder.JSONEncoder

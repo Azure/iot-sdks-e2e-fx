@@ -7,20 +7,7 @@ from azure.iot.device.aio import IoTHubDeviceClient
 from azure.iot.device import MethodResponse
 import json
 import async_helper
-
-
-def normalize_event_body(body):
-    if isinstance(body, bytes):
-        return body.decode("utf-8")
-    else:
-        return json.dumps(body)
-
-
-def message_to_object(message):
-    if isinstance(message.data, bytes):
-        return message.data.decode("utf-8")
-    else:
-        return message.data
+import convert
 
 
 class InternalDeviceGlueAsync:
@@ -32,9 +19,13 @@ class InternalDeviceGlueAsync:
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
         if "GatewayHostName" in connection_string:
-            self.client = IoTHubDeviceClient.create_from_connection_string(connection_string, ca_cert=cert)
+            self.client = IoTHubDeviceClient.create_from_connection_string(
+                connection_string, ca_cert=cert
+            )
         else:
-            self.client = IoTHubDeviceClient.create_from_connection_string(connection_string)
+            self.client = IoTHubDeviceClient.create_from_connection_string(
+                connection_string
+            )
         async_helper.run_coroutine_sync(self.client.connect())
 
     def disconnect(self):
@@ -57,7 +48,9 @@ class InternalDeviceGlueAsync:
     def send_event(self, event_body):
         print("sending event")
         async_helper.run_coroutine_sync(
-            self.client.send_message(normalize_event_body(event_body))
+            self.client.send_message(
+                convert.test_script_object_to_outgoing_message(event_body)
+            )
         )
         print("send confirmation received")
 
@@ -65,7 +58,7 @@ class InternalDeviceGlueAsync:
         print("Waiting for c2d message")
         message = async_helper.run_coroutine_sync(self.client.receive_message())
         print("Message received")
-        return message_to_object(message)
+        return convert.incoming_message_to_test_script_object(message)
 
     def roundtrip_method_call(self, methodName, requestAndResponse):
         # receive method request
