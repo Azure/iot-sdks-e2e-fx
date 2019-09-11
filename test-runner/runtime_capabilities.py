@@ -30,7 +30,7 @@ got_caps = False
 
 
 def get_skip_list(language):
-    if language is "ppdirect":
+    if language == "ppdirect":
         language = "pythonpreview"
     caps = get_test_module_capabilities()
     if caps and "skip_list" in caps:
@@ -39,7 +39,11 @@ def get_skip_list(language):
         return hardcoded_skip_list[language]
 
 
-default_flags = {"supports_async": False}
+default_flags = {
+    "supports_async": False,
+    "new_message_format": False,
+    "security_messages": False,
+}
 
 
 def get_test_module_capabilities_flag(flag_name):
@@ -48,6 +52,10 @@ def get_test_module_capabilities_flag(flag_name):
         return caps["flags"][flag_name]
     else:
         return default_flags[flag_name]
+
+
+def get_all_capabilities_flags():
+    return default_flags.keys()
 
 
 def get_test_module_capabilities():

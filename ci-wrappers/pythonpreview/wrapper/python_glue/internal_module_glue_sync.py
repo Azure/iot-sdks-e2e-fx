@@ -6,17 +6,7 @@
 from azure.iot.device import IoTHubModuleClient
 from azure.iot.device import MethodResponse
 import json
-
-
-def normalize_event_body(body):
-    if isinstance(body, bytes):
-        return body.decode("utf-8")
-    else:
-        return json.dumps(body)
-
-
-def message_to_object(message):
-    return json.loads(message.data.decode("utf-8"))
+import convert
 
 
 class InternalModuleGlueSync:
@@ -31,9 +21,13 @@ class InternalModuleGlueSync:
     def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
         if "GatewayHostName" in connection_string:
-            self.client = IoTHubModuleClient.create_from_connection_string(connection_string, ca_cert=cert)
+            self.client = IoTHubModuleClient.create_from_connection_string(
+                connection_string, ca_cert=cert
+            )
         else:
-            self.client = IoTHubModuleClient.create_from_connection_string(connection_string)
+            self.client = IoTHubModuleClient.create_from_connection_string(
+                connection_string
+            )
         self.client.connect()
 
     def disconnect(self):
@@ -55,14 +49,16 @@ class InternalModuleGlueSync:
 
     def send_event(self, event_body):
         print("sending event")
-        self.client.send_message(normalize_event_body(event_body))
+        self.client.send_message(
+            convert.test_script_object_to_outgoing_message(event_body)
+        )
         print("send confirmation received")
 
     def wait_for_input_message(self, input_name):
         print("Waiting for input message")
         message = self.client.receive_message_on_input(input_name)
         print("Message received")
-        return message_to_object(message)
+        return convert.incoming_message_to_test_script_object(message)
 
     def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
         raise NotImplementedError()
@@ -106,7 +102,9 @@ class InternalModuleGlueSync:
 
     def send_output_event(self, output_name, event_body):
         print("sending output event")
-        self.client.send_message_to_output(normalize_event_body(event_body), output_name)
+        self.client.send_message_to_output(
+            convert.test_script_object_to_outgoing_message(event_body), output_name
+        )
         print("send confirmation received")
 
     def wait_for_desired_property_patch(self):

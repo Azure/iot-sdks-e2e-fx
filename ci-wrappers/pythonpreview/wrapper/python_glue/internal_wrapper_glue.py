@@ -26,7 +26,11 @@ def set_flags(flags):
 
 def get_capabilities():
     return {
-        "flags": {"supports_async": True},
+        "flags": {
+            "supports_async": True,
+            "security_messages": True,
+            "new_message_format": True,
+        },
         "skip_list": [
             "invokesModuleMethodCalls",
             "invokesDeviceMethodCalls",

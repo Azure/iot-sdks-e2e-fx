@@ -21,10 +21,17 @@ object_list = []
 def json_is_same(a, b):
     # If either parameter is a string, convert it to an object.
     # use ast.literal_eval because they might be single-quote delimited which fails with json.loads.
+    # if ast.literal_eval raises a ValueError, leave it as a string -- it must not be json after all.
     if isinstance(a, str):
-        a = ast.literal_eval(a)
+        try:
+            a = ast.literal_eval(a)
+        except (ValueError, SyntaxError):
+            pass
     if isinstance(b, str):
-        b = ast.literal_eval(b)
+        try:
+            b = ast.literal_eval(b)
+        except (ValueError, SyntaxError):
+            pass
     return a == b
 
 
@@ -39,15 +46,22 @@ class EventHubApi:
         started = False
         while not started:
             print_message("EventHubApi: connecting EventHubClient")
-            self.client = EventHubClient.from_iothub_connection_string(connection_string)
+            self.client = EventHubClient.from_iothub_connection_string(
+                connection_string
+            )
             print("EventHubApi: enabling EventHub telemetry")
             # partition_ids = self.client.get_eventhub_info()["partition_ids"]
             partition_ids = [0, 1, 2, 3]
             self.receivers = []
             for id in partition_ids:
-                print_message("EventHubApi: adding receiver for partition {}".format(id))
+                print_message(
+                    "EventHubApi: adding receiver for partition {}".format(id)
+                )
                 receiver = self.client.add_receiver(
-                    "$default", id, operation="/messages/events", offset=Offset("@latest")
+                    "$default",
+                    id,
+                    operation="/messages/events",
+                    offset=Offset("@latest"),
                 )
                 self.receivers.append(receiver)
 
@@ -64,7 +78,7 @@ class EventHubApi:
                     time.sleep(20)
                 else:
                     raise e
-                
+
             print_message("EventHubApi: ready")
 
     def disconnect(self):
