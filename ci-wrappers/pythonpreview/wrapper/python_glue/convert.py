@@ -32,29 +32,22 @@ def test_script_object_to_outgoing_message(body):
     # glue over REST.  If, however, we're calling into the glue directly, then
     # we skip this code.
     if isinstance(body, bytes):
-        print("body is bytes.  decoding")
         body = body.decode("utf-8")
         try:
             body = json.loads(body)
-            print("successfully deserialized")
         except json.decoder.JSONDecodeError:
-            print("failed deserialization")
             pass
 
     # at this point, we should have a dict or a string.
-    print("body is {}".format(body.__class__))
     if isinstance(body, dict):
         if "bodyType" in body:
-            print("new object")
             # If we have a dict with a bodyType member, then it's a HubEvent object.
             return new_test_script_message_object_to_outgoing_message(body)
         else:
-            print("stringify dictionary")
             # dict without bodyType member, just stringify it.
             return json.dumps(body)
 
     elif isinstance(body, str):
-        print("stringify string before passing on")
         # just a string.  stringify it to make sure it's valid JSON and pass it on.
         return json.dumps(body)
 
