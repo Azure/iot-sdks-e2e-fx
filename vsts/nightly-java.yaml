@@ -10,6 +10,8 @@ jobs:
     commit: $(Horton.Commit)
 
 - job: "test"
+  pool:
+      vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_linux_container"
   strategy:

@@ -26,6 +26,8 @@ jobs:
     variant: node10
 
 - job: "test_node6"
+  pool:
+      vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_node6_container"
   strategy:
@@ -48,6 +50,8 @@ jobs:
       variant: node6
 
 - job: "test_node8"
+  pool:
+      vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_node8_container"
   strategy:
@@ -71,6 +75,8 @@ jobs:
 
 
 - job: "test_node10"
+  pool:
+      vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_node10_container"
   strategy:

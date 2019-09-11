@@ -11,6 +11,9 @@ parameters:
 
 jobs:
 - job: 'build_${{ parameters.job_tag }}_container'
+  pool:
+      vmImage: 'Ubuntu 16.04'
+
   steps:
 
   - template: steps-ensure-e2e-fx-repo.yaml
