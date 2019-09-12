@@ -1,6 +1,8 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
+  variant: ''
+
 jobs:
 
 - template: templates/jobs-build-docker-image.yaml
@@ -37,7 +39,7 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: pythonv2
+    language: pythonpreview
     repo: Azure/azure-iot-sdk-python  
     commit: master
     job_tag: pythonv2_27
@@ -46,7 +48,7 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: pythonv2
+    language: pythonpreview
     repo: Azure/azure-iot-sdk-python  
     commit: master
     job_tag: pythonv2_34
@@ -55,7 +57,7 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: pythonv2
+    language: pythonpreview
     repo: Azure/azure-iot-sdk-python  
     commit: master
     job_tag: pythonv2_36
