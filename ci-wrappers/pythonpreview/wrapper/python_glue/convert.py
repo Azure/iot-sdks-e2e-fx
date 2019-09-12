@@ -2,6 +2,10 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import json
+import logging
+import six
+
+logger = logging.getLogger(__name__)
 
 
 def new_test_script_message_object_to_outgoing_message(obj):
@@ -9,14 +13,6 @@ def new_test_script_message_object_to_outgoing_message(obj):
         return obj["body"]
     else:
         assert False
-
-
-"""
-    if isinstance(body, bytes):
-        return body.decode("utf-8")
-    else:
-        return json.dumps(body)
-"""
 
 
 def test_script_object_to_outgoing_message(body):
@@ -33,7 +29,7 @@ def test_script_object_to_outgoing_message(body):
         body = body.decode("utf-8")
         try:
             body = json.loads(body)
-        except json.decoder.JSONDecodeError:
+        except ValueError:
             pass
 
     # at this point, we should have a dict or a string.
@@ -45,11 +41,14 @@ def test_script_object_to_outgoing_message(body):
             # dict without bodyType member, just stringify it.
             return json.dumps(body)
 
-    elif isinstance(body, str):
+    elif isinstance(body, six.string_types):
         # just a string.  stringify it to make sure it's valid JSON and pass it on.
         return json.dumps(body)
 
     else:
+        logger.error(
+            "Unable to convert body of type {} : {}".format(body.__class__, body)
+        )
         assert False
 
 
@@ -62,7 +61,7 @@ def incoming_message_to_test_script_object(message):
         data = message.data.decode("utf-8")
         try:
             data = json.loads(data)
-        except json.decoder.JSONDecodeError:
+        except ValueError:
             pass
         return data
     else:
