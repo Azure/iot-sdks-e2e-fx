@@ -1,6 +1,8 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
+  variant: ''
+
 jobs:
 
 - template: templates/jobs-build-docker-image.yaml
@@ -40,8 +42,27 @@ jobs:
     language: pythonpreview
     repo: Azure/azure-iot-sdk-python  
     commit: master
-    job_tag: pythonpreview
+    job_tag: pythonv2_27
     forced_image: $(Horton.ForcedImage)
+    variant: py27
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: pythonpreview
+    repo: Azure/azure-iot-sdk-python  
+    commit: master
+    job_tag: pythonv2_34
+    forced_image: $(Horton.ForcedImage)
+    variant: py34
+
+- template: templates/jobs-build-docker-image.yaml
+  parameters:
+    language: pythonpreview
+    repo: Azure/azure-iot-sdk-python  
+    commit: master
+    job_tag: pythonv2_36
+    forced_image: $(Horton.ForcedImage)
+    variant: py36
 
 - job: "test"
   pool:
@@ -51,10 +72,11 @@ jobs:
     - "build_c_container"
     - "build_java_container"
     - "build_csharp_container"
-    - "build_pythonpreview_container"
+    - "build_pythonv2_27_container"
+    - "build_pythonv2_34_container"
+    - "build_pythonv2_36_container"
 
   strategy:
-    maxParallel: 10
     matrix:
       node_iothub_module_amqp:              { language: node, suite: iothub_module_amqp }
       node_edgehub_module_amqpws:           { language: node, suite: edgehub_module_amqp_ws }
@@ -63,9 +85,13 @@ jobs:
       java_iothub_module_mqtt:              { language: java, suite: iothub_module_mqtt }
       csharp_iothub_module_mqtt:            { language: csharp, suite: iothub_module_mqtt }
       csharp_edgehub_module_mqttws:         { language: csharp, suite: edgehub_module_mqtt_ws }
-      pythonpreview_edgehub_module_mqtt:    { language: pythonpreview, suite: edgehub_module_mqtt }
-      pythonpreview_iothub_module_and_device_mqtt:     { language: pythonpreview, suite: iothub_module_and_device_mqtt }
-      pythonpreview_iothub_module_and_device_mqtt_async:     { language: pythonpreview, suite: iothub_module_and_device_mqtt, async: yes }
+      pythonv2_27_edgehub_module_mqtt:                     { language: pythonpreview, variant: py27, suite: edgehub_module_mqtt }
+      pythonv2_27_iothub_module_and_device_mqtt:           { language: pythonpreview, variant: py27, suite: iothub_module_and_device_mqtt }
+      pythonv2_34_edgehub_module_mqtt:                     { language: pythonpreview, variant: py34, suite: edgehub_module_mqtt }
+      pythonv2_34_iothub_module_and_device_mqtt:           { language: pythonpreview, variant: py34, suite: iothub_module_and_device_mqtt }
+      pythonv2_36_edgehub_module_mqtt:                     { language: pythonpreview, variant: py36, suite: edgehub_module_mqtt }
+      pythonv2_36_iothub_module_and_device_mqtt:           { language: pythonpreview, variant: py36, suite: iothub_module_and_device_mqtt }
+      pythonv2_36_iothub_module_and_device_mqtt_async:     { language: pythonpreview, variant: py36, suite: iothub_module_and_device_mqtt, async: yes }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
@@ -73,4 +99,6 @@ jobs:
       language: $(language)
       suite: $(suite)
       forced_image: $(Horton.ForcedImage)
+      async: $(async)
+      variant: $(variant)
 
