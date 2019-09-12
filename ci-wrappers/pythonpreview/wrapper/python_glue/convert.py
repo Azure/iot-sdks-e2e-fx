@@ -17,14 +17,6 @@ def new_test_script_message_object_to_outgoing_message(obj):
         assert False
 
 
-"""
-    if isinstance(body, bytes):
-        return body.decode("utf-8")
-    else:
-        return json.dumps(body)
-"""
-
-
 def test_script_object_to_outgoing_message(body):
     """
     Convert an object that we received from a test script into something that we
@@ -39,7 +31,7 @@ def test_script_object_to_outgoing_message(body):
         body = body.decode("utf-8")
         try:
             body = json.loads(body)
-        except json.decoder.JSONDecodeError:
+        except ValueError:
             pass
 
     # at this point, we should have a dict or a string.
@@ -71,7 +63,7 @@ def incoming_message_to_test_script_object(message):
         data = message.data.decode("utf-8")
         try:
             data = json.loads(data)
-        except json.decoder.JSONDecodeError:
+        except ValueError:
             pass
         return data
     else:
