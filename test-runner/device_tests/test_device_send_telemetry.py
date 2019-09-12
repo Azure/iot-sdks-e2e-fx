@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -16,39 +14,39 @@ from models import HubEvent
 # extra timeout in case eventhub needs to retry due to resource error
 @pytest.mark.testgroup_iothub_device_client
 @pytest.mark.timeout(timeout=180)
-def test_device_send_event_to_iothub():
+def test_device_send_event_to_iothub(test_object_stringified):
 
-    device_client = connections.connect_test_device_client()
-    eventhub_client = connections.connect_eventhub_client()
+    try:
+        device_client = connections.connect_test_device_client()
+        eventhub_client = connections.connect_eventhub_client()
 
-    sent_message = test_utilities.random_string_in_json()
-    log_message("sending event: " + str(sent_message))
-    device_client.send_event(sent_message)
+        device_client.send_event(test_object_stringified)
 
-    received_message = eventhub_client.wait_for_next_event(
-        get_current_config().test_device.device_id,
-        test_utilities.default_eventhub_timeout,
-        expected=sent_message,
-    )
-    if not received_message:
-        log_message("Message not received")
-        assert False
+        received_message = eventhub_client.wait_for_next_event(
+            get_current_config().test_device.device_id,
+            test_utilities.default_eventhub_timeout,
+            expected=test_object_stringified,
+        )
+        if not received_message:
+            log_message("Message not received")
+            assert False
 
-    device_client.disconnect()
-    eventhub_client.disconnect()
+    finally:
+        device_client.disconnect()
+        eventhub_client.disconnect()
 
 
 # extra timeout in case eventhub needs to retry due to resource error
 @pytest.mark.uses_new_message_format
 @pytest.mark.testgroup_iothub_device_client
 @pytest.mark.timeout(timeout=180)
-def test_device_send_string_using_new_message_format():
+def test_device_send_string_using_new_message_format(test_string):
     try:
         device_client = connections.connect_test_device_client()
         eventhub_client = connections.connect_eventhub_client()
 
         sent_message = HubEvent()
-        sent_message.body = json.dumps(test_utilities.max_random_string())
+        sent_message.body = json.dumps(test_string)
 
         device_client.send_event(sent_message.convert_to_json())
 

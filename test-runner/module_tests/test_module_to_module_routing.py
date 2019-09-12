@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -31,7 +29,7 @@ receive_timeout = 60
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.callsSendOutputEvent
-def test_module_to_friend_routing():
+def test_module_to_friend_routing(test_string):
 
     test_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
@@ -39,11 +37,10 @@ def test_module_to_friend_routing():
 
     friend_input_thread = friend_client.wait_for_input_event_async(test_to_friend_input)
 
-    sent_message = test_utilities.max_random_string()
-    test_client.send_output_event(test_to_friend_output, sent_message)
+    test_client.send_output_event(test_to_friend_output, test_string)
 
     received_message = friend_input_thread.get(receive_timeout)
-    assert received_message == sent_message
+    assert received_message == test_string
 
     friend_client.disconnect()
     test_client.disconnect()
@@ -51,7 +48,7 @@ def test_module_to_friend_routing():
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.receivesInputMessages
-def test_friend_to_module_routing():
+def test_friend_to_module_routing(test_string):
 
     test_client = connections.connect_test_module_client()
     test_client.enable_input_messages()
@@ -59,11 +56,10 @@ def test_friend_to_module_routing():
 
     test_input_thread = test_client.wait_for_input_event_async(friend_to_test_input)
 
-    sent_message = test_utilities.max_random_string()
-    friend_client.send_output_event(friend_to_test_output, sent_message)
+    friend_client.send_output_event(friend_to_test_output, test_string)
 
     received_message = test_input_thread.get(receive_timeout)
-    assert received_message == sent_message
+    assert received_message == test_string
 
     friend_client.disconnect()
     test_client.disconnect()
@@ -72,7 +68,7 @@ def test_friend_to_module_routing():
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.callsSendOutputEvent
 @pytest.mark.receivesInputMessages
-def test_module_test_to_friend_and_back():
+def test_module_test_to_friend_and_back(test_string, test_string_2):
 
     test_client = connections.connect_test_module_client()
     test_client.enable_input_messages()
@@ -82,17 +78,15 @@ def test_module_test_to_friend_and_back():
     test_input_thread = test_client.wait_for_input_event_async(friend_to_test_input)
     friend_input_thread = friend_client.wait_for_input_event_async(test_to_friend_input)
 
-    sent_message = test_utilities.max_random_string()
-    test_client.send_output_event(test_to_friend_output, sent_message)
+    test_client.send_output_event(test_to_friend_output, test_string)
 
     midpoint_message = friend_input_thread.get(receive_timeout)
-    assert midpoint_message == sent_message
+    assert midpoint_message == test_string
 
-    second_sent_message = test_utilities.max_random_string()
-    friend_client.send_output_event(friend_to_test_output, second_sent_message)
+    friend_client.send_output_event(friend_to_test_output, test_string_2)
 
     received_message = test_input_thread.get(receive_timeout)
-    assert received_message == second_sent_message
+    assert received_message == test_string_2
 
     friend_client.disconnect()
     test_client.disconnect()

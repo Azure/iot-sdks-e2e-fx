@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -110,6 +108,7 @@ def test_module_method_call_invoked_from_service():
 
     module_client.disconnect()
     service_client.disconnect()
+
 
 @pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_fault_injection
