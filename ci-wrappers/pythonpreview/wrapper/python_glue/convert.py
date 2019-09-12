@@ -4,6 +4,10 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import json
+import logging
+import six
+
+logger = logging.getLogger(__name__)
 
 
 def new_test_script_message_object_to_outgoing_message(obj):
@@ -47,11 +51,14 @@ def test_script_object_to_outgoing_message(body):
             # dict without bodyType member, just stringify it.
             return json.dumps(body)
 
-    elif isinstance(body, str):
+    elif isinstance(body, six.string_types):
         # just a string.  stringify it to make sure it's valid JSON and pass it on.
         return json.dumps(body)
 
     else:
+        logger.error(
+            "Unable to convert body of type {} : {}".format(body.__class__, body)
+        )
         assert False
 
 
