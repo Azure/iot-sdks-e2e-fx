@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -75,9 +73,7 @@ def test_device_method_call_invoked_from_service():
     device_client = connections.connect_test_device_client()
 
     do_device_method_call(
-        service_client,
-        device_client,
-        get_current_config().test_device.device_id
+        service_client, device_client, get_current_config().test_device.device_id
     )
 
     device_client.disconnect()

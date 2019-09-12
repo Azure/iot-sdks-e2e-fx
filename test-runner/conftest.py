@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -16,6 +14,12 @@ import runtime_config_templates
 import runtime_config
 import runtime_capabilities
 import scenarios
+from fixtures import (
+    test_string,
+    test_string_2,
+    test_object_stringified,
+    test_object_stringified_2,
+)
 
 # default to logging.INFO
 logging.basicConfig(level=logging.INFO)

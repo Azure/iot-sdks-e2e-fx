@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -78,6 +76,7 @@ def test_service_can_set_desired_properties_and_module_can_retrieve_them_fi():
         twin_sent["properties"]["desired"]["foo"]
         == twin_received["properties"]["desired"]["foo"]
     )
+
 
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.supportsTwin

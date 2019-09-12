@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
@@ -25,7 +23,9 @@ def test_module_can_set_reported_properties_and_service_can_retrieve_them():
     module_client.enable_twin()
     log_message("patching twin")
     module_client.patch_twin(reported_properties_sent)
-    log_message("sleeping for an arbitrary 4 seconds to give edgehub a chnace to push the properties up to iothub")
+    log_message(
+        "sleeping for an arbitrary 4 seconds to give edgehub a chnace to push the properties up to iothub"
+    )
     time.sleep(4)
     log_message("disconnecting module client")
     module_client.disconnect()
