@@ -57,14 +57,6 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: python
-    repo: Azure/azure-iot-sdk-python
-    commit: master
-    job_tag: python
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
     language: pythonpreview
     variant: py27
     repo: Azure/azure-iot-sdk-python
@@ -109,23 +101,21 @@ jobs:
     - "build_c_container"
     - "build_java_container"
     - "build_csharp_container"
-    - "build_python_container"
     - "build_py27_container"
     - "build_py35_container"
     - "build_py36_container"
     - "build_py37_container"
 
   strategy:
-    maxParallel: 10
     matrix:
       c_iothub_module_mqtt:                 { language: c, suite: iothub_module_mqtt }
       c_edgehub_module_mqtt:                { language: c, suite: edgehub_module_mqtt }
       c_iothub_module_mqtt_ws:              { language: c, suite: iothub_module_mqtt_ws }
       c_edgehub_module_mqtt_ws:             { language: c, suite: edgehub_module_mqtt_ws }
       c_iothub_module_amqp:                 { language: c, suite: iothub_module_amqp }
-      # c_edgehub_module_amqp:                { language: c, suite: edgehub_module_amqp }
+      c_edgehub_module_amqp:                { language: c, suite: edgehub_module_amqp }
       c_iothub_module_amqp_ws:              { language: c, suite: iothub_module_amqp_ws }
-      # c_edgehub_module_amqp_ws:             { language: c, suite: edgehub_module_amqp_ws }
+      c_edgehub_module_amqp_ws:             { language: c, suite: edgehub_module_amqp_ws }
 
       node10_iothub_module_mqtt:              { language: node, variant: node10, suite: iothub_module_mqtt }
       node10_edgehub_module_mqtt:             { language: node, variant: node10, suite: edgehub_module_mqtt }
@@ -171,15 +161,6 @@ jobs:
       csharp_edgehub_module_amqp:           { language: csharp, suite: edgehub_module_amqp }
       csharp_iothub_module_amqp_ws:         { language: csharp, suite: iothub_module_amqp_ws }
       csharp_edgehub_module_amqp_ws:        { language: csharp, suite: edgehub_module_amqp_ws }
-
-      python_iothub_module_mqtt:            { language: python, suite: iothub_module_mqtt }
-      python_edgehub_module_mqtt:           { language: python, suite: edgehub_module_mqtt }
-      python_iothub_module_mqtt_ws:         { language: python, suite: iothub_module_mqtt_ws }
-      python_edgehub_module_mqtt_ws:        { language: python, suite: edgehub_module_mqtt_ws }
-      python_iothub_module_amqp:            { language: python, suite: iothub_module_amqp }
-      # python_edgehub_module_amqp:         { language: python, suite: edgehub_module_amqp }
-      python_iothub_module_amqp_ws:         { language: python, suite: iothub_module_amqp_ws }
-      # python_edgehub_module_amqp_ws:        { language: python, suite: edgehub_module_amqp_ws }
 
       py27_iothub_module_and_device_mqtt:   { language: pythonpreview, variant: py27, suite: iothub_module_and_device_mqtt }
       py27_edgehub_module_mqtt:             { language: pythonpreview, variant: py27, suite: edgehub_module_mqtt }
