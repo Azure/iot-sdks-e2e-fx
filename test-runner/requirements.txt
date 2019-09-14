@@ -5,6 +5,7 @@ python_dateutil==2.7.3
 urllib3==1.23
 pytest==3.8.2
 pytest-timeout==1.3.2
+pytest-testdox>=1.1.1
 msrest==0.6.0
 ruamel.yaml==0.15.71
 docker==3.5.0

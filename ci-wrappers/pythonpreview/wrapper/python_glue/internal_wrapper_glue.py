@@ -29,10 +29,5 @@ def get_capabilities():
             "security_messages": True,
             "new_message_format": True,
         },
-        "skip_list": [
-            "invokesModuleMethodCalls",
-            "invokesDeviceMethodCalls",
-            "supportsTwin",
-            "handlesLoopbackMessages",
-        ],
+        "skip_list": ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"],
     }

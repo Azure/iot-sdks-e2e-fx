@@ -16,6 +16,3 @@ def json_is_same(a, b):
 
 def assert_json_equality(a, b):
     assert json_is_same(a, b)
-
-
-default_eventhub_timeout = 30
