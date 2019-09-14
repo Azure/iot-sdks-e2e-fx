@@ -4,9 +4,6 @@
 
 import pytest
 import connections
-import random
-import time
-import test_utilities
 from runtime_config import get_current_config
 from edgehub_control import connect_edgehub, disconnect_edgehub, restart_edgehub
 

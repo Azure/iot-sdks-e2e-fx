@@ -4,7 +4,6 @@
 
 import pytest
 import connections
-import test_utilities
 from runtime_config import get_current_config
 from adapters import print_message as log_message
 from edgehub_control import (
@@ -34,9 +33,7 @@ def test_module_send_event_iothub_fi(
     eventhub_client = connections.connect_eventhub_client()
     module_client.send_event_async(test_object_stringified)
     received_message = eventhub_client.wait_for_next_event(
-        get_current_config().test_module.device_id,
-        test_utilities.default_eventhub_timeout,
-        expected=test_object_stringified,
+        get_current_config().test_module.device_id, expected=test_object_stringified
     )
     if not received_message:
         log_message("Intial message not received")
@@ -45,9 +42,7 @@ def test_module_send_event_iothub_fi(
     module_client.send_event_async(test_object_stringified_2)
     connect_edgehub()  # RECONNECT EDGEHUB
     received_message = eventhub_client.wait_for_next_event(
-        get_current_config().test_module.device_id,
-        test_utilities.default_eventhub_timeout,
-        expected=test_object_stringified_2,
+        get_current_config().test_module.device_id, expected=test_object_stringified_2
     )
     if not received_message:
         log_message("Second message not received")

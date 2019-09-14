@@ -4,7 +4,6 @@
 
 import pytest
 import connections
-import test_utilities
 from runtime_config import get_current_config
 from edgehub_control import (
     disconnect_edgehub,
@@ -37,9 +36,7 @@ def test_module_output_routed_upstream_fi(test_object_stringified):
         module_client.send_output_event(output_name, test_object_stringified)
 
         received_message = eventhub_client.wait_for_next_event(
-            get_current_config().test_module.device_id,
-            test_utilities.default_eventhub_timeout,
-            expected=test_object_stringified,
+            get_current_config().test_module.device_id, expected=test_object_stringified
         )
         if not received_message:
             log_message("Message not received")

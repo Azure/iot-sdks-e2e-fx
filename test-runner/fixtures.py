@@ -4,6 +4,9 @@
 import pytest
 import string
 import random
+import connections
+from adapters import print_message
+from runtime_config import get_current_config
 
 
 def random_string(prefix=None):
@@ -34,3 +37,63 @@ def test_object_stringified(test_string):
 @pytest.fixture
 def test_object_stringified_2(test_string_2):
     return '{ "message": "' + test_string_2 + '" }'
+
+
+@pytest.fixture
+def logger():
+    return print_message
+
+
+@pytest.fixture
+def eventhub():
+    eventhub = connections.connect_eventhub_client()
+    yield eventhub
+    eventhub.disconnect()
+
+
+@pytest.fixture
+def registry():
+    registry = connections.connect_registry_client()
+    yield registry
+    registry.disconnect()
+
+
+@pytest.fixture
+def friend():
+    friend = connections.connect_friend_module_client()
+    friend.device_id = get_current_config().friend_module.device_id
+    friend.module_id = get_current_config().friend_module.module_id
+    yield friend
+    friend.disconnect()
+
+
+@pytest.fixture
+def test_module():
+    test_module = connections.connect_test_module_client()
+    test_module.device_id = get_current_config().test_module.device_id
+    test_module.module_id = get_current_config().test_module.module_id
+    yield test_module
+    test_module.disconnect()
+
+
+@pytest.fixture
+def leaf_device():
+    leaf_device = connections.connect_leaf_device_client()
+    leaf_device.device_id = get_current_config().leaf_device.device_id
+    yield leaf_device
+    leaf_device.disconnect()
+
+
+@pytest.fixture
+def test_device():
+    test_device = connections.connect_test_device_client()
+    test_device.device_id = get_current_config().test_device.device_id
+    yield test_device
+    test_device.disconnect()
+
+
+@pytest.fixture
+def service():
+    service = connections.connect_service_client()
+    yield service
+    service.disconnect()

@@ -19,6 +19,14 @@ from fixtures import (
     test_string_2,
     test_object_stringified,
     test_object_stringified_2,
+    logger,
+    eventhub,
+    registry,
+    friend,
+    leaf_device,
+    service,
+    test_device,
+    test_module,
 )
 
 # default to logging.INFO
@@ -171,7 +179,6 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="function", autouse=True)
 def function_log_fixture(request):
-    print("")
     log_message("HORTON: Entering function {}".format(request.function.__name__))
 
     def fin():
@@ -193,11 +200,9 @@ def function_log_fixture(request):
 
 @pytest.fixture(scope="module", autouse=True)
 def module_log_fixture(request):
-    print("")
     log_message("HORTON: Entering module {}".format(request.module.__name__))
 
     def fin():
-        print("")
         log_message("HORTON: Exiting module {}".format(request.module.__name__))
 
     request.addfinalizer(fin)
@@ -205,13 +210,11 @@ def module_log_fixture(request):
 
 @pytest.fixture(scope="session", autouse=True)
 def session_log_fixture(request):
-    print("")
     log_message("HORTON: Preforming pre-session cleanup")
     adapters.cleanup_test_objects()
     log_message("HORTON: pre-session cleanup complete")
 
     def fin():
-        print("")
         log_message("Preforming post-session cleanup")
         adapters.cleanup_test_objects()
         log_message("HORTON: post-session cleanup complete")
