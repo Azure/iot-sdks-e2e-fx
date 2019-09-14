@@ -2,6 +2,21 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import ast
+import random
+import string
+
+
+def random_string(prefix=None, length=64):
+    if prefix:
+        s = prefix + ":"
+    else:
+        s = ""
+    return (
+        s
+        + "".join(
+            random.choice(string.ascii_uppercase + string.digits) for _ in range(length)
+        )[:length]
+    )
 
 
 def json_is_same(a, b):

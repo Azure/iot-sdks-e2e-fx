@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 def new_test_script_message_object_to_outgoing_message(obj):
     if obj["bodyType"] == "string":
-        return obj["body"]
+        return json.dumps(obj["body"])
+    elif obj["bodyType"] == "json":
+        return bytearray(json.dumps(obj["body"]), "utf-8")
     else:
         assert False
 

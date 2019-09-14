@@ -85,6 +85,7 @@ class TwinTests(object):
 
             logger("start waiting for patch #" + str(i))
             patch_thread = client.wait_for_desired_property_patch_async()
+            time.sleep(1)  # wait for async call to take effect
 
             logger("Tringgering patch #" + str(i) + " through registry client")
             twin_sent = {"properties": {"desired": {"foo": base + i}}}
@@ -132,6 +133,7 @@ class TwinTests(object):
                         )
                         logger("start waiting for patch #{} again".format(i))
                         patch_thread = client.wait_for_desired_property_patch_async()
+                        time.sleep(1)  # wait for async call to take effect
                     else:
                         logger("too many mistakes.  Failing")
                         assert False

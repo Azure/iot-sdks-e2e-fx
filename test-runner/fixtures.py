@@ -2,21 +2,10 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import pytest
-import string
-import random
 import connections
 from adapters import print_message
 from runtime_config import get_current_config
-
-
-def random_string(prefix=None):
-    if prefix:
-        s = prefix + ":"
-    else:
-        s = ""
-    return s + "".join(
-        random.choice(string.ascii_uppercase + string.digits) for _ in range(64)
-    )
+from utilities import random_string
 
 
 @pytest.fixture
