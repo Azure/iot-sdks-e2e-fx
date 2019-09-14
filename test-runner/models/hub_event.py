@@ -18,6 +18,9 @@ class HubEvent:
         if isinstance(self.body, str):
             obj["body"] = self.body
             obj["bodyType"] = "string"
+        elif isinstance(self.body, dict):
+            obj["body"] = self.body
+            obj["bodyType"] = "json"
         else:
             obj["body"] = base64.b64encode(self.body).decode("utf-8")
             obj["bodyType"] = "bas64"
