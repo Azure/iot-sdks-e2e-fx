@@ -3,8 +3,6 @@
 # full license information.
 
 import pytest
-
-# BKTODO: use fixtures, get rid of random
 import random
 import json
 import time
