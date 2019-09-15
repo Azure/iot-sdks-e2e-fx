@@ -7,8 +7,8 @@ import base64
 
 
 class HubEvent:
-    def __init__(self):
-        self.body = None
+    def __init__(self, body=None):
+        self.body = body
         self.properties = []
         self.is_security_message = False
 
