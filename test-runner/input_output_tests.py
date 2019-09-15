@@ -197,4 +197,4 @@ class InputOutputTests(object):
         logger("input message arrived")
         logger("expected message: " + str(body))
         logger("received message: " + str(received_message))
-        assert received_message == sent_message.body
+        assert utilities.json_is_same(sent_message.body, received_message)
