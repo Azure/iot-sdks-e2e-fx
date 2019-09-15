@@ -20,13 +20,16 @@ def random_string(prefix=None, length=64):
 
 
 def json_is_same(a, b):
-    # If either parameter is a string, convert it to an object.
-    # use ast.literal_eval because they might be single-quote delimited which fails with json.loads.
-    if isinstance(a, str):
-        a = ast.literal_eval(a)
-    if isinstance(b, str):
-        b = ast.literal_eval(b)
-    return a == b
+    if a == b:
+        return True
+    else:
+        # If either parameter is a string, convert it to an object.
+        # use ast.literal_eval because they might be single-quote delimited which fails with json.loads.
+        if isinstance(a, str):
+            a = ast.literal_eval(a)
+        if isinstance(b, str):
+            b = ast.literal_eval(b)
+        return a == b
 
 
 def assert_json_equality(a, b):

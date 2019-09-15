@@ -4,6 +4,9 @@
 
 import pytest
 import time
+from models import HubEvent
+import sample_content
+import utilities
 
 
 input_name_from_friend = "fromFriend"
@@ -48,6 +51,27 @@ class InputOutputTests(object):
 
         received_message = friend_input_thread.get(receive_timeout)
         assert received_message == test_string
+
+    @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
+    @pytest.mark.uses_new_message_format
+    @pytest.mark.callsSendOutputEvent
+    @pytest.mark.it(
+        "Can send an output message which gets routed to another module using new Horton HubEvent"
+    )
+    def test_module_to_friend_routing_hubevent(
+        self, client, friend, input_name_from_test_client, body
+    ):
+        friend.enable_input_messages()
+
+        friend_input_thread = friend.wait_for_input_event_async(
+            input_name_from_test_client
+        )
+
+        sent_message = HubEvent(body)
+        client.send_output_event(output_name_to_friend, sent_message.convert_to_json())
+
+        received_message = friend_input_thread.get(receive_timeout)
+        assert utilities.json_is_same(received_message, sent_message.body)
 
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can receive an input message which is routed from another module")
@@ -103,7 +127,7 @@ class InputOutputTests(object):
     )  # extra timeout in case eventhub needs to retry due to resource error
     @pytest.mark.it("Can send a message that gets routed to eventhub")
     def test_module_output_routed_upstream(
-        self, client, eventhub, test_object_stringified, logger
+        self, client, eventhub, test_object_stringified
     ):
 
         client.send_output_event(telemetry_output_name, test_object_stringified)
@@ -111,9 +135,26 @@ class InputOutputTests(object):
         received_message = eventhub.wait_for_next_event(
             client.device_id, expected=test_object_stringified
         )
-        if not received_message:
-            logger("Message not received")
-            assert False
+        assert received_message is not None, "Message not received"
+
+    @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
+    @pytest.mark.uses_new_message_format
+    @pytest.mark.callsSendOutputEvent
+    @pytest.mark.timeout(
+        timeout=180
+    )  # extra timeout in case eventhub needs to retry due to resource error
+    @pytest.mark.it(
+        "Can send a message that gets routed to eventhub using the new Horton HubEvent"
+    )
+    def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
+
+        sent_message = HubEvent(body)
+        client.send_output_event(telemetry_output_name, sent_message.convert_to_json())
+
+        received_message = eventhub.wait_for_next_event(
+            client.device_id, expected=sent_message.body
+        )
+        assert received_message is not None, "Message not received"
 
     @pytest.mark.callsendOutputMessage
     @pytest.mark.receivesInputMessages
@@ -134,3 +175,26 @@ class InputOutputTests(object):
         logger("expected message: " + str(test_string))
         logger("received message: " + str(received_message))
         assert received_message == test_string
+
+    @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
+    @pytest.mark.uses_new_message_format
+    @pytest.mark.callsendOutputMessage
+    @pytest.mark.receivesInputMessages
+    @pytest.mark.handlesLoopbackMessages
+    @pytest.mark.it("Can send a message to itself using the new Horton HubEvent")
+    def test_module_input_output_loopback_hubevent(self, client, body, logger):
+        client.enable_input_messages()
+
+        input_thread = client.wait_for_input_event_async(loopback_input_name)
+
+        # give the registration a chance to take place
+        time.sleep(2)
+
+        sent_message = HubEvent(body)
+        client.send_output_event(loopback_output_name, sent_message.convert_to_json())
+
+        received_message = input_thread.get(receive_timeout)
+        logger("input message arrived")
+        logger("expected message: " + str(body))
+        logger("received message: " + str(received_message))
+        assert received_message == sent_message.body
