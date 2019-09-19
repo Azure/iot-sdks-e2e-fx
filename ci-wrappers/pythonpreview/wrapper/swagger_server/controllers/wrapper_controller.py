@@ -53,7 +53,8 @@ def wrapper_network_disconnect(disconnectionType):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    wrapper_glue.network_disconnect(disconnectionType)
 
 
 def wrapper_network_reconnect():  # noqa: E501
@@ -64,7 +65,8 @@ def wrapper_network_reconnect():  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    wrapper_glue.network_reconnect()
 
 
 def wrapper_set_flags(flags):  # noqa: E501

@@ -111,7 +111,8 @@ def module_get_connection_status(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return module_glue.get_connection_status(connectionId)
 
 
 def module_get_twin(connectionId):  # noqa: E501
@@ -252,7 +253,8 @@ def module_wait_for_connection_status_change(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return module_glue.wait_for_connection_status_change(connectionId)
 
 
 def module_wait_for_desired_properties_patch(connectionId):  # noqa: E501

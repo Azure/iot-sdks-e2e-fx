@@ -96,7 +96,8 @@ def device_get_connection_status(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.get_connection_status(connectionId)
 
 
 def device_get_twin(connectionId):  # noqa: E501
@@ -191,7 +192,8 @@ def device_wait_for_connection_status_change(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.wait_for_connection_status_change(connectionId)
 
 
 def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
