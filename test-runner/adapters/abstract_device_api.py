@@ -59,5 +59,5 @@ class AbstractDeviceApi:
         pass
 
     @abc.abstractmethod
-    def wait_for_connecction_status_change_async(self):
+    def wait_for_connection_status_change_async(self):
         pass
