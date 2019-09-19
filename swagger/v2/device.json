@@ -275,5 +275,55 @@
         }
       }
     }
+  },
+  "connectionStatus": {
+    "get": {
+      "tags": [
+        "device"
+      ],
+      "summary": "get the current connection status",
+      "operationId": "Device_GetConnectionStatus",
+      "produces": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "connectionStatusChange": {
+    "get": {
+      "tags": [
+        "device"
+      ],
+      "summary": "wait for the current connection status to change and return the changed status",
+      "operationId": "Device_WaitForConnectionStatusChange",
+      "produces": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
   }
 }

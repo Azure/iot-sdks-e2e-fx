@@ -46,6 +46,12 @@
     "/wrapper/flags": {
       "$ref": "wrapper.json#/flags"
     },
+    "/wrapper/networkDisconnect": {
+      "$ref": "wrapper.json#/networkDisconnect"
+    },
+    "/wrapper/networkReconnect": {
+      "$ref": "wrapper.json#/networkReconnect"
+    },
     "/registry/connect": {
       "$ref": "registry.json#/connect"
     },
@@ -100,6 +106,12 @@
     "/module/{connectionId}/deviceMethod/{deviceId}": {
       "$ref": "module.json#/deviceMethod"
     },
+    "/module/{connectionId}/connectionStatus": {
+      "$ref": "module.json#/connectionStatus"
+    },
+    "/module/{connectionId}/connectionStatusChange": {
+      "$ref": "module.json#/connectionStatusChange"
+    },
     "/service/connect": {
       "$ref": "service.json#/connect"
     },
@@ -144,6 +156,12 @@
     },
     "/device/{connectionId}/twinDesiredPropPatch": {
       "$ref": "device.json#/twinDesiredPropPatch"
+    },
+    "/device/{connectionId}/connectionStatus": {
+      "$ref": "device.json#/connectionStatus"
+    },
+    "/device/{connectionId}/connectionStatusChange": {
+      "$ref": "device.json#/connectionStatusChange"
     }
   }
 }
