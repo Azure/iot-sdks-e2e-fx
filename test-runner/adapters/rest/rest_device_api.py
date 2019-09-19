@@ -41,8 +41,12 @@ class DeviceApi(BaseModuleOrDeviceApi, AbstractDeviceApi):
 
     @log_entry_and_exit
     def get_connection_status(self):
-        pass
+        self.rest_endpoint.get_connection_status(self.connection_id)
 
     @log_entry_and_exit
     def wait_for_connecction_status_change_async(self):
-        pass
+        thread = self.pool.apply_async(
+            log_entry_and_exit(self.rest_endpoint.wait_for_connection_status_change),
+            (self.connection_id,),
+        )
+        return thread
