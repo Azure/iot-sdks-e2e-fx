@@ -85,6 +85,32 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
+  /wrapper/networkDisconnect:
+    put:
+      tags:
+      - "wrapper"
+      summary: "simulate a network disconnection"
+      operationId: "wrapper_network_disconnect"
+      parameters:
+      - name: "disconnectionType"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
+  /wrapper/networkReconnect:
+    put:
+      tags:
+      - "wrapper"
+      summary: "Reconnect the network after a simulated network disconnection"
+      operationId: "wrapper_network_reconnect"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
   /registry/connect:
     put:
       tags:
@@ -596,6 +622,47 @@ paths:
           schema:
             type: "object"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/{connectionId}/connectionStatus:
+    get:
+      tags:
+      - "module"
+      summary: "get the current connection status"
+      operationId: "module_get_connection_status"
+      produces:
+      - "text/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/{connectionId}/connectionStatusChange:
+    get:
+      tags:
+      - "module"
+      summary: "wait for the current connection status to change and return the changed\
+        \ status"
+      operationId: "module_wait_for_connection_status_change"
+      produces:
+      - "text/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
   /service/connect:
     put:
       tags:
@@ -955,6 +1022,47 @@ paths:
       operationId: "device_wait_for_desired_properties_patch"
       produces:
       - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/connectionStatus:
+    get:
+      tags:
+      - "device"
+      summary: "get the current connection status"
+      operationId: "device_get_connection_status"
+      produces:
+      - "text/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/connectionStatusChange:
+    get:
+      tags:
+      - "device"
+      summary: "wait for the current connection status to change and return the changed\
+        \ status"
+      operationId: "device_wait_for_connection_status_change"
+      produces:
+      - "text/json"
       parameters:
       - name: "connectionId"
         in: "path"
