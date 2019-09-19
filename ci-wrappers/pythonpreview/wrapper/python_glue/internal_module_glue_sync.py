@@ -121,3 +121,11 @@ class InternalModuleGlueSync:
         print("setting reported property patch")
         self.client.patch_twin_reported_properties(props)
         print("done setting reported properties")
+
+    def get_connection_status(self):
+        pass
+        # BKTODO
+
+    def wait_for_connection_status_change(self):
+        pass
+        # BKTODO
