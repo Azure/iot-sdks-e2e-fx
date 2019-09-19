@@ -59,10 +59,10 @@ class DeviceGlue:
         self.object_map[connection_id].send_twin_patch(props)
 
     def get_connection_status(self, connection_id):
-        self.object_map[connection_id].get_connection_status()
+        return self.object_map[connection_id].get_connection_status()
 
     def wait_for_connection_status_change(self, connection_id):
-        self.object_map[connection_id].wait_for_connection_status_change()
+        return self.object_map[connection_id].wait_for_connection_status_change()
 
     def cleanup_resources(self):
         listcopy = list(self.object_map.keys())

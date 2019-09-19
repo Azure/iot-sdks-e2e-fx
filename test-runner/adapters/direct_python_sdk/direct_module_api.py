@@ -59,4 +59,4 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
         return self.glue.get_connection_status()
 
     def wait_for_connection_status_change_async(self):
-        return self.pool.apply_async(self.glue.wait_for_connection_status_change, ())
+        return self.pool.apply_async(self.glue.wait_for_connection_status_change)
