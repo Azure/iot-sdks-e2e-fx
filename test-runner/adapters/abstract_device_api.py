@@ -53,3 +53,11 @@ class AbstractDeviceApi:
     @abc.abstractmethod
     def wait_for_desired_property_patch_async(self):
         pass
+
+    @abc.abstractmethod
+    def get_connection_status(self):
+        pass
+
+    @abc.abstractmethod
+    def wait_for_connecction_status_change_async(self):
+        pass

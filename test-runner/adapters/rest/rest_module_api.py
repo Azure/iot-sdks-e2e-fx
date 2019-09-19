@@ -78,3 +78,11 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
         )
         time.sleep(wait_time_for_async_start)
         return thread
+
+    @log_entry_and_exit
+    def get_connection_status(self):
+        pass
+
+    @log_entry_and_exit
+    def wait_for_connecction_status_change_async(self):
+        pass

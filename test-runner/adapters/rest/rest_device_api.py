@@ -38,3 +38,11 @@ class DeviceApi(BaseModuleOrDeviceApi, AbstractDeviceApi):
             (self.connection_id,),
         )
         return thread
+
+    @log_entry_and_exit
+    def get_connection_status(self):
+        pass
+
+    @log_entry_and_exit
+    def wait_for_connecction_status_change_async(self):
+        pass

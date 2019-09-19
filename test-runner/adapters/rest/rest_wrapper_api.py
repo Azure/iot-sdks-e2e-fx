@@ -82,3 +82,9 @@ class WrapperApi(AbstractWrapperApi):
         return self.rest_endpoint.set_flags(
             flags, timeout=adapter_config.default_api_timeout
         )
+
+    def network_disconnect(self, disconnection_type):
+        pass
+
+    def network_reconnect(self, disconnection_type):
+        pass

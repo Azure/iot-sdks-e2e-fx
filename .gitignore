@@ -10,6 +10,6 @@
 .idea/
 
 */swagger_generated/
-pyscripts/create_deploy_horton.py
 pytestdebug.log
+*.swp
 

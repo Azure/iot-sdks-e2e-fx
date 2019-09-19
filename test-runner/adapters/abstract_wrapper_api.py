@@ -22,3 +22,11 @@ class AbstractWrapperApi:
     @abc.abstractmethod
     def set_flags(self, flags):
         pass
+
+    @abc.abstractmethod
+    def network_disconnect(self, disconnection_type):
+        pass
+
+    @abc.abstractmethod
+    def network_reconnect(self, disconnection_type):
+        pass

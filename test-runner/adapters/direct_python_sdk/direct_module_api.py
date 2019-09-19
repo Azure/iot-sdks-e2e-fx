@@ -54,3 +54,9 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
         return self.pool.apply_async(
             self.glue.invoke_device_method, (device_id, method_invoke_parameters)
         )
+
+    def get_connection_status(self):
+        pass
+
+    def wait_for_connecction_status_change_async(self):
+        pass

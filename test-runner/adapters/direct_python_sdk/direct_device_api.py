@@ -36,3 +36,9 @@ class DeviceApi(BaseModuleOrDeviceApi, AbstractDeviceApi):
 
     def wait_for_c2d_message_async(self):
         return self.pool.apply_async(self.glue.wait_for_c2d_message)
+
+    def get_connection_status(self):
+        pass
+
+    def wait_for_connecction_status_change_async(self):
+        pass
