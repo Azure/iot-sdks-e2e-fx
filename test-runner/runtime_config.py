@@ -71,7 +71,7 @@ def set_runtime_configuration(scenario, language, transport, local):
 
     # set up the device and module adapters that we're going to use
     if language == "ppdirect":
-        container_under_test = all_containers["pythonpreview"]
+        container_under_test = all_containers["pythonv2"]
     else:
         container_under_test = all_containers[language]
 

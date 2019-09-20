@@ -30,7 +30,7 @@ cd ${root_dir}
 rm -r docker_images/pythonv2/wrapper/swagger_server
 [ $? -eq 0 ] || { echo "rm swagger_swerver failed"; exit 1; }
 
-cp -r swagger/swagger_generated/pythonv2/swagger_server/ docker_images/pythonpreview/wrapper/swagger_server/
+cp -r swagger/swagger_generated/pythonv2/swagger_server/ docker_images/pythonv2/wrapper/swagger_server/
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
 
 rm -r docker_images/pythonv2/wrapper/swagger_server/test/

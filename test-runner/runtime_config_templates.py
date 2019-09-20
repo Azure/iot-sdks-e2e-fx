@@ -39,10 +39,10 @@ NODE = "node"
 C = "c"
 CSHARP = "csharp"
 JAVA = "java"
-PYTHON = "python"
-PYTHONPREVIEW = "pythonpreview"
+PYTHONV1 = "pythonv1"
+PYTHONV2 = "pythonv2"
 
-valid_languages = [NODE, C, CSHARP, JAVA, PYTHON, PYTHONPREVIEW]
+valid_languages = [NODE, C, CSHARP, JAVA, PYTHONV1, PYTHONV2]
 
 # --------------------------------------------------------------------------
 # adapter types

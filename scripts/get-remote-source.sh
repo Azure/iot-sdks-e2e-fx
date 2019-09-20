@@ -3,11 +3,11 @@
 
 language=$1
 case "$language" in
-  node | python | c | csharp | java | pythonpreview)
+  node | pythonv1 | c | csharp | java | pythonv2)
     echo "running tests for for $language"
     ;;
   *)
-    echo "Usage: $0 [node | python | c | csharp | java | pythonpreview]"
+    echo "Usage: $0 [node | pythonv1 | c | csharp | java | pythonv2]"
     exit 1
     ;;
 esac

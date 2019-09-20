@@ -110,10 +110,10 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
     as a starting point.
 
     Every image we make has (at least) 4 tags.  For example, an image might have:
-        pythonpreview-e2e-v3:vsts-12345
-        pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview
-        pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59
-        pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59-510b1f9
+        pythonv2-e2e-v3:vsts-12345
+        pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2
+        pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2-pr59
+        pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2-pr59-510b1f9
 
     When we're build a docker image, we first look in our container registry to find an image to
     cache from.  This image should be as specific as possible, so we pull starting with the most
@@ -144,17 +144,17 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
     if running_on_azure_pipelines():
 
         if tags.using_default_variant:
-            # eg: pythonpreview-e2e-v3:vsts-12345
+            # eg: pythonv2-e2e-v3:vsts-12345
             tags.image_tags.insert(0, "vsts-{}".format(os.environ["BUILD_BUILDID"]))
 
         if not tags.variant:
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18
+            # eg: pythonv2-e2e-v3:linux-amd64-dockerv18
             tags.image_tags.insert(0, "{}".format(image_tag_prefix()))
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview
+            # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2
             tags.image_tags.insert(
                 0, "{}-{}".format(image_tag_prefix(), sanitize_string(tags.repo)).lower()
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59
+            # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2-pr59
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}".format(
@@ -163,7 +163,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                     sanitize_string(tags.commit_name),
                 ).lower(),
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonpreview-pr59-510b1f9
+            # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2-pr59-510b1f9
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}-{}".format(
@@ -175,20 +175,20 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
             )
 
         if tags.variant:
-            # eg: pythonpreview-e2e-v3:vsts-12345-3.7.2-slim
+            # eg: pythonv2-e2e-v3:vsts-12345-3.7.2-slim
             tags.image_tags.insert(0, "vsts-{}-{}".format(os.environ["BUILD_BUILDID"],tags.variant))
-            # eg: pythonpreview-e2e-v3:linux-amd64-$dockerv18-3.7.2-slim
+            # eg: pythonv2-e2e-v3:linux-amd64-$dockerv18-3.7.2-slim
             tags.image_tags.insert(
                 0, "{}-{}".format(image_tag_prefix(), tags.variant).lower()
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonpreview
+            # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonv2
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}".format(
                     image_tag_prefix(), tags.variant, sanitize_string(tags.repo)
                 ).lower(),
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonpreview-pr59
+            # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonv2-pr59
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}-{}".format(
@@ -198,7 +198,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
                     sanitize_string(tags.commit_name),
                 ).lower(),
             )
-            # eg: pythonpreview-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonpreview-pr59-510b1f9
+            # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-3.7.2-slim-azureazureiotsdkpythonv2-pr59-510b1f9
             tags.image_tags.insert(
                 0,
                 "{}-{}-{}-{}-{}".format(

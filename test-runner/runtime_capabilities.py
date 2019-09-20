@@ -12,7 +12,7 @@ hardcoded_skip_list = {
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",
     ],
-    "pythonpreview": [
+    "pythonv2": [
         "receivesMethodCalls",
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",
@@ -29,7 +29,7 @@ got_caps = False
 
 def get_skip_list(language):
     if language == "ppdirect":
-        language = "pythonpreview"
+        language = "pythonv2"
     caps = get_test_module_capabilities()
     if caps and "skip_list" in caps:
         return caps["skip_list"]
