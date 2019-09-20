@@ -34,7 +34,7 @@ def module_connect_from_environment_v1(transportType):  # noqa: E501
     :rtype: ConnectResponse
     """
     # changed from return 'do some magic!'
-    return module_glue.connect_from_environment(transportType)
+    return module_glue.connect_from_environment_v1(transportType)
 
 
 def module_connect_v1(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -54,7 +54,7 @@ def module_connect_v1(transportType, connectionString, caCertificate=None):  # n
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return module_glue.connect(transportType, connectionString, caCertificate)
+    return module_glue.connect_v1(transportType, connectionString, caCertificate)
 
 
 def module_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501

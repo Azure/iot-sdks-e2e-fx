@@ -8,11 +8,11 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class AbstractModuleApi:
     @abc.abstractmethod
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_v1(self, transport, connection_string, ca_certificate):
         pass
 
     @abc.abstractmethod
-    def connect_from_environment(self, transport):
+    def connect_from_environment_v1(self, transport):
         pass
 
     @abc.abstractmethod

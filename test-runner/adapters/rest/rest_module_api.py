@@ -28,7 +28,7 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
         # self.pool.join()
 
     @log_entry_and_exit
-    def connect_from_environment(self, transport):
+    def connect_from_environment_v1(self, transport):
         result = self.rest_endpoint.connect_from_environment_v1(
             transport, timeout=adapter_config.default_api_timeout
         )

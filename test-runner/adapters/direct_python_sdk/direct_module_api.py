@@ -16,17 +16,17 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
         self.glue = InternalModuleGlue()
         self.pool = ThreadPool()
 
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_v1(self, transport, connection_string, ca_certificate):
         module_object_list.append(self)
         if "cert" in ca_certificate:
             cert = ca_certificate["cert"]
         else:
             cert = None
-        self.glue.connect(transport, connection_string, cert)
+        self.glue.connect_v1(transport, connection_string, cert)
 
-    def connect_from_environment(self, transport):
+    def connect_from_environment_v1(self, transport):
         module_object_list.append(self)
-        self.glue.connect_from_environment(transport)
+        self.glue.connect_from_environment_v1(transport)
 
     def disconnect(self):
         if self in module_object_list:
