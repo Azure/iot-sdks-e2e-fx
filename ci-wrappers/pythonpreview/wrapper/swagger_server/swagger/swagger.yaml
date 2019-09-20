@@ -262,7 +262,7 @@ paths:
       tags:
       - "module"
       summary: "Connect to the azure IoT Hub as a module"
-      operationId: "module_connect"
+      operationId: "module_connect_v1"
       consumes:
       - "application/json"
       parameters:
@@ -298,7 +298,7 @@ paths:
       tags:
       - "module"
       summary: "Connect to the azure IoT Hub as a module using the environment variables"
-      operationId: "module_connect_from_environment"
+      operationId: "module_connect_from_environment_v1"
       parameters:
       - name: "transportType"
         in: "path"
@@ -316,6 +316,132 @@ paths:
           description: "OK"
           schema:
             $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/createFromConnectionstring/{transportType}:
+    put:
+      tags:
+      - "module"
+      summary: "Create a module client from a connection string"
+      operationId: "module_create_from_connection_string"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - name: "connectionString"
+        in: "query"
+        description: "connection string"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "caCertificate"
+        required: false
+        schema:
+          $ref: "#/definitions/certificate"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/createFromEnvironment/{transportType}:
+    put:
+      tags:
+      - "module"
+      summary: "Create a module client using the EdgeHub environment"
+      operationId: "module_create_from_environment"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/createFromX509/{transportType}:
+    put:
+      tags:
+      - "module"
+      summary: "Create a module client from X509 credentials"
+      operationId: "module_create_from_x509"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - in: "body"
+        name: "X509"
+        required: true
+        schema:
+          type: "object"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/{connectionId}/connect:
+    put:
+      tags:
+      - "module"
+      summary: "Connect the module"
+      operationId: "module_connect"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/{connectionId}/reconnect:
+    put:
+      tags:
+      - "module"
+      summary: "Reconnect the module"
+      operationId: "module_reconnect"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "forceRenewPassword"
+        in: "query"
+        description: "True to force SAS renewal"
+        required: false
+        type: "boolean"
+      responses:
+        200:
+          description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
   /module/{connectionId}/disconnect:
     put:
@@ -795,7 +921,7 @@ paths:
       tags:
       - "device"
       summary: "Connect to the azure IoT Hub as a device"
-      operationId: "device_connect"
+      operationId: "device_connect_v1"
       consumes:
       - "application/json"
       parameters:
@@ -825,6 +951,110 @@ paths:
           description: "OK"
           schema:
             $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/createFromConnectionString/{transportType}:
+    put:
+      tags:
+      - "device"
+      summary: "Create a device client from a connection string"
+      operationId: "device_create_from_connection_string"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - name: "connectionString"
+        in: "query"
+        description: "connection string"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "caCertificate"
+        required: false
+        schema:
+          $ref: "#/definitions/certificate"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/createFromX509/{transportType}:
+    put:
+      tags:
+      - "device"
+      summary: "Create a device client from X509 credentials"
+      operationId: "device_create_from_x509"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - in: "body"
+        name: "X509"
+        required: true
+        schema:
+          type: "object"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/connect:
+    put:
+      tags:
+      - "device"
+      summary: "Connect the device"
+      operationId: "device_connect"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/reconnect:
+    put:
+      tags:
+      - "device"
+      summary: "Reconnect the device"
+      operationId: "device_reconnect"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "forceRenewPassword"
+        in: "query"
+        description: "True to force SAS renewal"
+        required: false
+        type: "boolean"
+      responses:
+        200:
+          description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
   /device/{connectionId}/disconnect:
     put:
