@@ -117,7 +117,7 @@ class DeployHorton:
         #        traceback.print_exc()
         #        print(Fore.RESET, file=sys.stderr)
 
-        #image_path = '{}/edge-e2e-node6'.format(docker_repo)
+        #image_path = '{}/node-e2e-v3:lkg'.format(docker_repo)
 
         #try:
         #    for line in api_client.pull(image_path, 'latest', stream=True, auth_config=auth_config):

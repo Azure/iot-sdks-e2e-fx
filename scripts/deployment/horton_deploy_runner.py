@@ -43,7 +43,7 @@ class DeployHortonIdsAndContainers:
                 save_manifest_file, 
                 'iotEdge',
                 'testModule',
-                'iotsdke2e.azurecr.io/edge-e2e-node6',
+                '{}/node-e2e-v3:lkg'.format(os.environ["IOTHUB_E2E_REPO_ADDRESS"]),
                 'latest',
                 123,
                 789,
