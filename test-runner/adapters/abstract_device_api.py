@@ -9,7 +9,7 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class AbstractDeviceApi:
     @abc.abstractmethod
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_v1(self, transport, connection_string, ca_certificate):
         pass
 
     @abc.abstractmethod
