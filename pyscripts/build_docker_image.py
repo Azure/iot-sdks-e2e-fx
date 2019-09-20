@@ -13,7 +13,7 @@ from colorama import Fore
 colorama.init(autoreset=True)
 
 default_repo = "(Azure/azure-iot-sdk-BLAH)"
-all_languages = ["c", "csharp", "python", "pythonpreview", "node", "java"]
+all_languages = ["c", "csharp", "pythonv1", "pythonv2", "node", "java"]
 
 parser = argparse.ArgumentParser(description="build docker image for testing")
 parser.add_argument(
@@ -33,7 +33,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.repo == default_repo:
-    if args.language == "pythonpreview":
+    if args.language in ["pythonv1", "pythonv2"]:
         args.repo = "Azure/azure-iot-sdk-python"
     else:
         args.repo = "Azure/azure-iot-sdk-" + args.language
@@ -54,7 +54,7 @@ auth_config = {
 
 def get_dockerfile_directory(tags):
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    return os.path.normpath(os.path.join(script_dir, "../ci-wrappers/" + tags.language))
+    return os.path.normpath(os.path.join(script_dir, "../docker_images/" + tags.language))
 
 
 def print_filtered_docker_line(line):

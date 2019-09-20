@@ -11,7 +11,7 @@ pool:
 
 steps:
 - powershell: |
-    cd ci-wrappers/csharp/wrapper/src
+    cd docker_images/csharp/wrapper/src
     dotnet remove edge-e2e.csproj reference ../../sdk/iothub/device/src/Microsoft.Azure.Devices.Client.csproj
     dotnet remove edge-e2e.csproj reference ../../sdk/iothub/service/src/Microsoft.Azure.Devices.csproj
     dotnet remove edge-e2e.csproj reference ../../sdk/shared/src/Microsoft.Azure.Devices.Shared.csproj
