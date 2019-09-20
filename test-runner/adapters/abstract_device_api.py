@@ -9,7 +9,7 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class AbstractDeviceApi:
     @abc.abstractmethod
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_v1(self, transport, connection_string, ca_certificate):
         pass
 
     @abc.abstractmethod
@@ -52,4 +52,12 @@ class AbstractDeviceApi:
 
     @abc.abstractmethod
     def wait_for_desired_property_patch_async(self):
+        pass
+
+    @abc.abstractmethod
+    def get_connection_status(self):
+        pass
+
+    @abc.abstractmethod
+    def wait_for_connection_status_change_async(self):
         pass

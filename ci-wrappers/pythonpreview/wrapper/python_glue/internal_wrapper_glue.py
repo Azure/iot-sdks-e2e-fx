@@ -31,3 +31,13 @@ def get_capabilities():
         },
         "skip_list": ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"],
     }
+
+
+def network_disconnect(disconnect_type):
+    pass
+    # BKTODO
+
+
+def network_reconnect():
+    pass
+    # BKTODO

@@ -16,13 +16,13 @@ class DeviceApi(BaseModuleOrDeviceApi, AbstractDeviceApi):
         self.glue = InternalDeviceGlue()
         self.pool = ThreadPool()
 
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_v1(self, transport, connection_string, ca_certificate):
         device_object_list.append(self)
         if "cert" in ca_certificate:
             cert = ca_certificate["cert"]
         else:
             cert = None
-        self.glue.connect(transport, connection_string, cert)
+        self.glue.connect_v1(transport, connection_string, cert)
 
     def disconnect(self):
         if self in device_object_list:
@@ -36,3 +36,9 @@ class DeviceApi(BaseModuleOrDeviceApi, AbstractDeviceApi):
 
     def wait_for_c2d_message_async(self):
         return self.pool.apply_async(self.glue.wait_for_c2d_message)
+
+    def get_connection_status(self):
+        return self.glue.get_connection_status()
+
+    def wait_for_connecction_status_change_async(self):
+        return self.pool.apply_async(self.wait_for_connection_status_change)

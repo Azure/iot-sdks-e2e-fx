@@ -21,3 +21,11 @@ def set_flags(flags):
 
 def get_capabilities():
     return internal_wrapper_glue.get_capabilities()
+
+
+def network_disconnect(disconnect_type):
+    return internal_wrapper_glue.network_disconnect(disconnect_type)
+
+
+def network_reconnect():
+    return internal_wrapper_glue.network_reconnect()

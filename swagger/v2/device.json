@@ -1,11 +1,11 @@
 {
-  "connect": {
+  "connectV1": {
     "put": {
       "tags": [
         "device"
       ],
       "summary": "Connect to the azure IoT Hub as a device",
-      "operationId": "Device_Connect",
+      "operationId": "Device_ConnectV1",
       "consumes": [
         "application/json"
       ],
@@ -30,6 +30,110 @@
           "schema": {
             "$ref": "definitions.json#/connectResponse"
           }
+        }
+      }
+    }
+  },
+  "createFromConnectionString": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Create a device client from a connection string",
+      "operationId": "Device_CreateFromConnectionString",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/transportType"
+        },
+        {
+          "$ref": "parameters.json#/connectionString"
+        },
+        {
+          "name": "caCertificate",
+          "in": "body",
+          "schema": {
+            "$ref": "definitions.json#/certificate"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "createFromX509": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Create a device client from X509 credentials",
+      "operationId": "Device_CreateFromX509",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/transportType"
+        },
+        {
+          "$ref": "parameters.json#/X509"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "connect": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Connect the device",
+      "operationId": "Device_Connect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "reconnect": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Reconnect the device",
+      "operationId": "Device_Reconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/forceRenewPassword"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
         }
       }
     }
@@ -260,6 +364,56 @@
       "operationId": "Device_WaitForDesiredPropertiesPatch",
       "produces": [
         "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "connectionStatus": {
+    "get": {
+      "tags": [
+        "device"
+      ],
+      "summary": "get the current connection status",
+      "operationId": "Device_GetConnectionStatus",
+      "produces": [
+        "text/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "connectionStatusChange": {
+    "get": {
+      "tags": [
+        "device"
+      ],
+      "summary": "wait for the current connection status to change and return the changed status",
+      "operationId": "Device_WaitForConnectionStatusChange",
+      "produces": [
+        "text/json"
       ],
       "parameters": [
         {

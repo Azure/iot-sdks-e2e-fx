@@ -11,12 +11,12 @@ class InternalModuleGlueSync:
     def __init__(self):
         self.client = None
 
-    def connect_from_environment(self, transport_type):
+    def connect_from_environment_v1(self, transport_type):
         print("connecting from environment")
         self.client = IoTHubModuleClient.create_from_edge_environment()
         self.client.connect()
 
-    def connect(self, transport_type, connection_string, cert):
+    def connect_v1(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
         if "GatewayHostName" in connection_string:
             self.client = IoTHubModuleClient.create_from_connection_string(
@@ -121,3 +121,11 @@ class InternalModuleGlueSync:
         print("setting reported property patch")
         self.client.patch_twin_reported_properties(props)
         print("done setting reported properties")
+
+    def get_connection_status(self):
+        pass
+        # BKTODO
+
+    def wait_for_connection_status_change(self):
+        pass
+        # BKTODO

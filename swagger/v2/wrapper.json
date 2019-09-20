@@ -86,5 +86,41 @@
         }
       }
     }
+  },
+  "networkDisconnect": {
+    "put": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "simulate a network disconnection",
+      "operationId": "Wrapper_NetworkDisconnect",
+      "parameters": [
+        {
+          "name": "disconnectionType",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "networkReconnect": {
+    "put": {
+      "tags": [
+        "wrapper"
+      ],
+      "summary": "Reconnect the network after a simulated network disconnection",
+      "operationId": "Wrapper_NetworkReconnect",
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
   }
 }

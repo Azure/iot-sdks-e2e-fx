@@ -10,8 +10,34 @@ from swagger_server import util
 from module_glue import ModuleGlue
 module_glue = ModuleGlue()
 
+def module_connect(connectionId):  # noqa: E501
+    """Connect the module
 
-def module_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
+def module_connect_from_environment_v1(transportType):  # noqa: E501
+    """Connect to the azure IoT Hub as a module using the environment variables
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+
+    :rtype: ConnectResponse
+    """
+    # changed from return 'do some magic!'
+    return module_glue.connect_from_environment_v1(transportType)
+
+
+def module_connect_v1(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a module
 
      # noqa: E501
@@ -28,11 +54,30 @@ def module_connect(transportType, connectionString, caCertificate=None):  # noqa
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return module_glue.connect(transportType, connectionString, caCertificate)
+    return module_glue.connect_v1(transportType, connectionString, caCertificate)
 
 
-def module_connect_from_environment(transportType):  # noqa: E501
-    """Connect to the azure IoT Hub as a module using the environment variables
+def module_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
+    """Create a module client from a connection string
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+    :param connectionString: connection string
+    :type connectionString: str
+    :param caCertificate: 
+    :type caCertificate: dict | bytes
+
+    :rtype: ConnectResponse
+    """
+    if connexion.request.is_json:
+        caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
+
+
+def module_create_from_environment(transportType):  # noqa: E501
+    """Create a module client using the EdgeHub environment
 
      # noqa: E501
 
@@ -41,8 +86,22 @@ def module_connect_from_environment(transportType):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    # changed from return 'do some magic!'
-    return module_glue.connect_from_environment(transportType)
+    return 'do some magic!'
+
+
+def module_create_from_x509(transportType, X509):  # noqa: E501
+    """Create a module client from X509 credentials
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+    :param X509: 
+    :type X509: 
+
+    :rtype: ConnectResponse
+    """
+    return 'do some magic!'
 
 
 def module_disconnect(connectionId):  # noqa: E501
@@ -99,6 +158,20 @@ def module_enable_twin(connectionId):  # noqa: E501
     """
     # changed from return 'do some magic!'
     module_glue.enable_twin(connectionId)
+
+
+def module_get_connection_status(connectionId):  # noqa: E501
+    """get the current connection status
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: object
+    """
+    # changed from return 'do some magic!'
+    return module_glue.get_connection_status(connectionId)
 
 
 def module_get_twin(connectionId):  # noqa: E501
@@ -174,6 +247,21 @@ def module_patch_twin(connectionId, props):  # noqa: E501
     return module_glue.send_twin_patch(connectionId, props)
 
 
+def module_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
+    """Reconnect the module
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param forceRenewPassword: True to force SAS renewal
+    :type forceRenewPassword: bool
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
 def module_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
     """Wait for a method call, verify the request, and return the response.
 
@@ -228,6 +316,19 @@ def module_send_output_event(connectionId, outputName, eventBody):  # noqa: E501
     """
     # changed from return 'do some magic!'
     module_glue.send_output_event(connectionId, outputName, eventBody)
+
+def module_wait_for_connection_status_change(connectionId):  # noqa: E501
+    """wait for the current connection status to change and return the changed status
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: object
+    """
+    # changed from return 'do some magic!'
+    return module_glue.wait_for_connection_status_change(connectionId)
 
 
 def module_wait_for_desired_properties_patch(connectionId):  # noqa: E501

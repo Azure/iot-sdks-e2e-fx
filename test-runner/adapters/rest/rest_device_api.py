@@ -38,3 +38,17 @@ class DeviceApi(BaseModuleOrDeviceApi, AbstractDeviceApi):
             (self.connection_id,),
         )
         return thread
+
+    @log_entry_and_exit
+    def get_connection_status(self):
+        return self.rest_endpoint.get_connection_status(self.connection_id)
+
+    @log_entry_and_exit
+    def wait_for_connection_status_change_async(self):
+        thread = self.pool.apply_async(
+            log_entry_and_exit(self.rest_endpoint.wait_for_connection_status_change),
+            (self.connection_id,),
+            dict(timeout=adapter_config.default_api_timeout),
+        )
+        time.sleep(wait_time_for_async_start)
+        return thread

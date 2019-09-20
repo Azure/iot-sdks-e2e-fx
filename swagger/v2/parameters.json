@@ -27,11 +27,27 @@
     "required": true,
     "type": "string"
   },
+  "forceRenewPassword": {
+    "name": "forceRenewPassword",
+    "in": "query",
+    "description": "True to force SAS renewal",
+    "required": false,
+    "type": "boolean",
+    "defalt": false
+  },
   "caCertificate": {
     "name": "caCertificate",
     "in": "body",
     "schema": {
       "$ref": "definitions.json#/certificate"
+    }
+  },
+  "X509": {
+    "name": "X509",
+    "in": "body",
+    "required": true,
+    "schema": {
+      "type": "object"
     }
   },
   "deviceId": {

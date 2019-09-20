@@ -28,8 +28,8 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
         # self.pool.join()
 
     @log_entry_and_exit
-    def connect_from_environment(self, transport):
-        result = self.rest_endpoint.connect_from_environment(
+    def connect_from_environment_v1(self, transport):
+        result = self.rest_endpoint.connect_from_environment_v1(
             transport, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id
@@ -74,6 +74,20 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
         thread = self.pool.apply_async(
             log_entry_and_exit(self.rest_endpoint.invoke_device_method),
             (self.connection_id, device_id, method_invoke_parameters),
+            dict(timeout=adapter_config.default_api_timeout),
+        )
+        time.sleep(wait_time_for_async_start)
+        return thread
+
+    @log_entry_and_exit
+    def get_connection_status(self):
+        return self.rest_endpoint.get_connection_status(self.connection_id)
+
+    @log_entry_and_exit
+    def wait_for_connection_status_change_async(self):
+        thread = self.pool.apply_async(
+            log_entry_and_exit(self.rest_endpoint.wait_for_connection_status_change),
+            (self.connection_id,),
             dict(timeout=adapter_config.default_api_timeout),
         )
         time.sleep(wait_time_for_async_start)

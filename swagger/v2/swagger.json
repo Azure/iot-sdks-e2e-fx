@@ -46,6 +46,12 @@
     "/wrapper/flags": {
       "$ref": "wrapper.json#/flags"
     },
+    "/wrapper/networkDisconnect": {
+      "$ref": "wrapper.json#/networkDisconnect"
+    },
+    "/wrapper/networkReconnect": {
+      "$ref": "wrapper.json#/networkReconnect"
+    },
     "/registry/connect": {
       "$ref": "registry.json#/connect"
     },
@@ -59,10 +65,25 @@
       "$ref": "registry.json#/deviceTwin"
     },
     "/module/connect/{transportType}": {
-      "$ref": "module.json#/connect"
+      "$ref": "module.json#/connectV1"
     },
     "/module/connectFromEnvironment/{transportType}": {
-      "$ref": "module.json#/connectFromEnvironment"
+      "$ref": "module.json#/connectFromEnvironmentV1"
+    },
+    "/module/createFromConnectionstring/{transportType}": {
+      "$ref": "module.json#/createFromConnectionString"
+    },
+    "/module/createFromEnvironment/{transportType}": {
+      "$ref": "module.json#/createFromEnvironment"
+    },
+    "/module/createFromX509/{transportType}": {
+      "$ref": "module.json#/createFromX509"
+    },
+    "/module/{connectionId}/connect": {
+      "$ref": "module.json#/connect"
+    },
+    "/module/{connectionId}/reconnect": {
+      "$ref": "module.json#/reconnect"
     },
     "/module/{connectionId}/disconnect": {
       "$ref": "module.json#/disconnect"
@@ -100,6 +121,12 @@
     "/module/{connectionId}/deviceMethod/{deviceId}": {
       "$ref": "module.json#/deviceMethod"
     },
+    "/module/{connectionId}/connectionStatus": {
+      "$ref": "module.json#/connectionStatus"
+    },
+    "/module/{connectionId}/connectionStatusChange": {
+      "$ref": "module.json#/connectionStatusChange"
+    },
     "/service/connect": {
       "$ref": "service.json#/connect"
     },
@@ -116,7 +143,19 @@
       "$ref": "service.json#/sendC2d"
     },
     "/device/connect/{transportType}": {
+      "$ref": "device.json#/connectV1"
+    },
+    "/device/createFromConnectionString/{transportType}": {
+      "$ref": "device.json#/createFromConnectionString"
+    },
+    "/device/createFromX509/{transportType}": {
+      "$ref": "device.json#/createFromX509"
+    },
+    "/device/{connectionId}/connect": {
       "$ref": "device.json#/connect"
+    },
+    "/device/{connectionId}/reconnect": {
+      "$ref": "device.json#/reconnect"
     },
     "/device/{connectionId}/disconnect": {
       "$ref": "device.json#/disconnect"
@@ -144,6 +183,12 @@
     },
     "/device/{connectionId}/twinDesiredPropPatch": {
       "$ref": "device.json#/twinDesiredPropPatch"
+    },
+    "/device/{connectionId}/connectionStatus": {
+      "$ref": "device.json#/connectionStatus"
+    },
+    "/device/{connectionId}/connectionStatusChange": {
+      "$ref": "device.json#/connectionStatusChange"
     }
   }
 }

@@ -10,7 +10,21 @@ from swagger_server import util
 from device_glue import DeviceGlue
 device_glue = DeviceGlue()
 
-def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
+
+def device_connect(connectionId):  # noqa: E501
+    """Connect the device
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
+def device_connect_v1(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a device
 
      # noqa: E501
@@ -28,6 +42,40 @@ def device_connect(transportType, connectionString, caCertificate=None):  # noqa
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
     return device_glue.connect(transportType, connectionString, caCertificate)
+
+
+def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
+    """Create a device client from a connection string
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+    :param connectionString: connection string
+    :type connectionString: str
+    :param caCertificate: 
+    :type caCertificate: dict | bytes
+
+    :rtype: ConnectResponse
+    """
+    if connexion.request.is_json:
+        caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
+
+
+def device_create_from_x509(transportType, X509):  # noqa: E501
+    """Create a device client from X509 credentials
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+    :param X509: 
+    :type X509: 
+
+    :rtype: ConnectResponse
+    """
+    return 'do some magic!'
 
 
 def device_disconnect(connectionId):  # noqa: E501
@@ -84,7 +132,21 @@ def device_enable_twin(connectionId):  # noqa: E501
     """
     # changed from return 'do some magic!'
     device_glue.enable_twin(connectionId)
-    
+
+
+def device_get_connection_status(connectionId):  # noqa: E501
+    """get the current connection status
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: object
+    """
+    # changed from return 'do some magic!'
+    return device_glue.get_connection_status(connectionId)
+
 
 def device_get_twin(connectionId):  # noqa: E501
     """Get the device twin
@@ -114,6 +176,21 @@ def device_patch_twin(connectionId, props):  # noqa: E501
     """
     # changed from return 'do some magic!'
     device_glue.send_twin_patch(connectionId, props)
+
+
+def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
+    """Reconnect the device
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param forceRenewPassword: True to force SAS renewal
+    :type forceRenewPassword: bool
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 
 def device_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
@@ -166,6 +243,20 @@ def device_wait_for_c2d_message(connectionId):  # noqa: E501
     """
     # changed from return 'do some magic!'
     return device_glue.wait_for_c2d_message(connectionId)
+
+
+def device_wait_for_connection_status_change(connectionId):  # noqa: E501
+    """wait for the current connection status to change and return the changed status
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: object
+    """
+    # changed from return 'do some magic!'
+    return device_glue.wait_for_connection_status_change(connectionId)
 
 
 def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
