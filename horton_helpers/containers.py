@@ -53,17 +53,17 @@ friend.add_routes = False
 friend.required = True
 all_containers["friend"] = friend
 
-python = Container()
-python.name = "python"
-python.module_id = "pythonMod"
-python.lkg_image = os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/edge-e2e-python36:latest"
-python.container_port = 8080
-python.host_port = 8081
-python.local_port = 8080
-python.serviceImpl = False
-python.registryImpl = False
-python.deviceImpl = False
-all_containers["python"] = python
+pythonv1 = Container()
+pythonv1.name = "pythonv1"
+pythonv1.module_id = "pythonv1Mod"
+pythonv1.lkg_image = os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/edge-e2e-python36:latest"
+pythonv1.container_port = 8080
+pythonv1.host_port = 8081
+pythonv1.local_port = 8080
+pythonv1.serviceImpl = False
+pythonv1.registryImpl = False
+pythonv1.deviceImpl = False
+all_containers["pythonv1"] = pythonv1
 
 c = Container()
 c.name = "c"
@@ -95,16 +95,16 @@ java.local_port = 8080
 java.deviceImpl = False
 all_containers["java"] = java
 
-pythonpreview = Container()
-pythonpreview.name = "pythonpreview"
-pythonpreview.module_id = "pythonpreviewMod"
-pythonpreview.lkg_image = (
-    os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/edge-e2e-pythonpreview:latest"
+pythonv2 = Container()
+pythonv2.name = "pythonv2"
+pythonv2.module_id = "pythonv2Mod"
+pythonv2.lkg_image = (
+    os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/edge-e2e-pythonv2:latest"
 )
-pythonpreview.container_port = 8080
-pythonpreview.host_port = 8085
-pythonpreview.local_port = 8080
-pythonpreview.serviceImpl = False
-pythonpreview.registryImpl = False
-pythonpreview.deviceImpl = False
-all_containers["pythonpreview"] = pythonpreview
+pythonv2.container_port = 8080
+pythonv2.host_port = 8085
+pythonv2.local_port = 8080
+pythonv2.serviceImpl = False
+pythonv2.registryImpl = False
+pythonv2.deviceImpl = False
+all_containers["pythonv2"] = pythonv2

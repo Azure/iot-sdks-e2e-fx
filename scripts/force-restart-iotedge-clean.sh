@@ -7,8 +7,7 @@ echo "stopping iotedge service"
 sudo systemctl stop iotedge
 [ $? -eq 0 ] || { echo "systemctl stop iotedge failed"; }
 
-modulesToRemove="edgeAgent edgeHub friendMod nodeMod cMod csharpMod javaMod pythonMod pythonpreviewMod"
-# modulesToRemove="edgeAgent edgeHub"
+modulesToRemove="edgeAgent edgeHub friendMod nodeMod cMod csharpMod javaMod pythonv1Mod pythonv2Mod"
 for module in $modulesToRemove; do
   sudo docker inspect $module --format="{{.State.Status}}"
   if [ $? -eq 0 ]; then

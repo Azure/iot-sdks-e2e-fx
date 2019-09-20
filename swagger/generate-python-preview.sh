@@ -16,10 +16,10 @@ done
 cd ${root_dir}/swagger
 [ $? -eq 0 ] || { echo "cd swagger failed"; exit 1; }
 
-rm -r swagger_generated/pythonpreview
+rm -r swagger_generated/pythonv2
 # OK to fail
 
-./generate.sh pythonpreview
+./generate.sh pythonv2
 [ $? -eq 0 ] || { echo "generate.sh failed"; exit 1; }
 
 colorecho $_yellow "copying generated files"
@@ -27,13 +27,13 @@ colorecho $_yellow "copying generated files"
 cd ${root_dir}
 [ $? -eq 0 ] || { echo "cd ${root_dir} failed"; exit 1; }
 
-rm -r ci-wrappers/pythonpreview/wrapper/swagger_server
+rm -r docker_images/pythonv2/wrapper/swagger_server
 [ $? -eq 0 ] || { echo "rm swagger_swerver failed"; exit 1; }
 
-cp -r swagger/swagger_generated/pythonpreview/swagger_server/ ci-wrappers/pythonpreview/wrapper/swagger_server/
+cp -r swagger/swagger_generated/pythonv2/swagger_server/ docker_images/pythonv2/wrapper/swagger_server/
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
 
-rm -r ci-wrappers/pythonpreview/wrapper/swagger_server/test/
+rm -r docker_images/pythonv2/wrapper/swagger_server/test/
 [ $? -eq 0 ] || { echo "rm test failed"; exit 1; }
 
 colorecho $_green "SUCCESS!"

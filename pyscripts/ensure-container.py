@@ -11,11 +11,11 @@ from pprint import pprint
 
 containerMap = {
     "nodeMod": 8080,
-    "pythonMod": 8081,
+    "pythonv1Mod": 8081,
     "cMod": 8082,
     "csharpMod": 8083,
     "javaMod": 8084,
-    "pythonpreviewMod": 8085,
+    "pythonv2Mod": 8085,
     "friendMod": 8099,
 }
 

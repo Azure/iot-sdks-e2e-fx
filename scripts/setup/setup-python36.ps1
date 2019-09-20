@@ -156,7 +156,7 @@ if($gotPip3) {
 }
 
 Write-Host "Installing python libraries" -ForegroundColor Yellow
-set-location "$root_dir/ci-wrappers/pythonpreview/wrapper"
+set-location "$root_dir/docker_images/pythonv2/wrapper"
 Invoke-PyCmd "-m pip install setuptools"
 Invoke-PyCmd "-m pip install --user -e python_glue"
 if($LASTEXITCODE -ne 0)

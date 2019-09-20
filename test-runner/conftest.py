@@ -63,10 +63,10 @@ def pytest_addoption(parser):
         help="run tests for csharp wrapper",
     )
     parser.addoption(
-        "--python-wrapper",
+        "--pythonv1-wrapper",
         action="store_true",
         default=False,
-        help="run tests for python wrapper",
+        help="run tests for pythonv1 wrapper",
     )
     parser.addoption(
         "--c-wrapper",
@@ -94,16 +94,16 @@ def pytest_addoption(parser):
         choices=runtime_config_templates.valid_transports,
     )
     parser.addoption(
-        "--pythonpreview-wrapper",
+        "--pythonv2-wrapper",
         action="store_true",
         default=False,
-        help="run tests for the python preview wrapper",
+        help="run tests for the pythonv2 wrapper",
     )
     parser.addoption(
         "--ppdirect-wrapper",
         action="store_true",
         default=False,
-        help="run tests for the python preview wrapper in-proc",
+        help="run tests for the pythonv2 wrapper in-proc",
     )
     parser.addoption(
         "--debug-container",
@@ -115,7 +115,7 @@ def pytest_addoption(parser):
         "--async",
         action="store_true",
         default=False,
-        help="run async tests (currently pythonpreview only)",
+        help="run async tests (currently pythonv2 only)",
     )
 
 
@@ -252,9 +252,9 @@ def pytest_collection_modifyitems(config, items):
     elif config.getoption("--csharp-wrapper"):
         print("Using csharp wrapper")
         language = "csharp"
-    elif config.getoption("--python-wrapper"):
-        print("Using python wrapper")
-        language = "python"
+    elif config.getoption("--pythonv1-wrapper"):
+        print("Using pythonv1 wrapper")
+        language = "pythonv1"
     elif config.getoption("--c-wrapper"):
         print("Using C wrapper")
         language = "c"
@@ -279,11 +279,11 @@ def pytest_collection_modifyitems(config, items):
     elif config.getoption("--java-wrapper"):
         print("Using Java wrapper")
         language = "java"
-    elif config.getoption("--pythonpreview-wrapper"):
-        print("Using python-preview wrapper")
-        language = "pythonpreview"
+    elif config.getoption("--pythonv2-wrapper"):
+        print("Using pythonv2 wrapper")
+        language = "pythonv2"
     elif config.getoption("--ppdirect-wrapper"):
-        print("Using python-preview wrapper in-proc")
+        print("Using pythonv2 wrapper in-proc")
         language = "ppdirect"
     else:
         print("you must specify a wrapper")

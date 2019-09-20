@@ -31,11 +31,11 @@ if [ $? -ne 0 ]; then
 fi
 
 colorecho $_yellow "Installing python libraries"
-cd ${root_dir}/ci-wrappers/pythonpreview/wrapper  &&  \
+cd ${root_dir}/docker_images/pythonv2/wrapper  &&  \
     python3 -m pip install --user -e python_glue
 if [ $? -ne 0 ]; then 
     colorecho $_yellow "user path not accepted.  Installing globally"
-    cd ${root_dir}/ci-wrappers/pythonpreview/wrapper  &&  \
+    cd ${root_dir}/docker_images/pythonv2/wrapper  &&  \
         python3 -m pip install -e python_glue
     [ $? -eq 0 ] || { colorecho $_red "install python_glue failed"; exit 1; }
 fi

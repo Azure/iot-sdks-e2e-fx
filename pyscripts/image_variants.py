@@ -6,7 +6,7 @@ import os
 def get_default_variant(language):
     script_dir = os.path.dirname(os.path.realpath(__file__))
     language_directory = os.path.normpath(
-        os.path.join(script_dir, "../ci-wrappers/" + language)
+        os.path.join(script_dir, "../docker_images/" + language)
     )
     if not os.path.isdir(language_directory):
         raise Exception("path " + language_directory + " does note exist.")
