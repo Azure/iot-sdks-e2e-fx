@@ -30,7 +30,7 @@ class DeviceOperations(object):
 
         self.config = config
 
-    def connect(
+    def connect_v1(
             self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):
         """Connect to the azure IoT Hub as a device.
 
@@ -53,7 +53,7 @@ class DeviceOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.connect.metadata['url']
+        url = self.connect_v1.metadata['url']
         path_format_arguments = {
             'transportType': self._serialize.url("transport_type", transport_type, 'str')
         }
@@ -93,7 +93,223 @@ class DeviceOperations(object):
             return client_raw_response
 
         return deserialized
-    connect.metadata = {'url': '/device/connect/{transportType}'}
+    connect_v1.metadata = {'url': '/device/connect/{transportType}'}
+
+    def create_from_connection_string(
+            self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):
+        """Create a device client from a connection string.
+
+        :param transport_type: Transport to use. Possible values include:
+         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
+        :type transport_type: str
+        :param connection_string: connection string
+        :type connection_string: str
+        :param ca_certificate:
+        :type ca_certificate: ~e2erestapi.models.Certificate
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: ConnectResponse or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.ConnectResponse or
+         ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.create_from_connection_string.metadata['url']
+        path_format_arguments = {
+            'transportType': self._serialize.url("transport_type", transport_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+        query_parameters['connectionString'] = self._serialize.query("connection_string", connection_string, 'str')
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        if ca_certificate is not None:
+            body_content = self._serialize.body(ca_certificate, 'Certificate')
+        else:
+            body_content = None
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(
+            request, header_parameters, body_content, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+
+        if response.status_code == 200:
+            deserialized = self._deserialize('ConnectResponse', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    create_from_connection_string.metadata = {'url': '/device/createFromConnectionString/{transportType}'}
+
+    def create_from_x509(
+            self, transport_type, x509, custom_headers=None, raw=False, **operation_config):
+        """Create a device client from X509 credentials.
+
+        :param transport_type: Transport to use. Possible values include:
+         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
+        :type transport_type: str
+        :param x509:
+        :type x509: object
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: ConnectResponse or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.ConnectResponse or
+         ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.create_from_x509.metadata['url']
+        path_format_arguments = {
+            'transportType': self._serialize.url("transport_type", transport_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        body_content = self._serialize.body(x509, 'object')
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(
+            request, header_parameters, body_content, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+
+        if response.status_code == 200:
+            deserialized = self._deserialize('ConnectResponse', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    create_from_x509.metadata = {'url': '/device/createFromX509/{transportType}'}
+
+    def connect(
+            self, connection_id, custom_headers=None, raw=False, **operation_config):
+        """Connect the device.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.connect.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    connect.metadata = {'url': '/device/{connectionId}/connect'}
+
+    def reconnect(
+            self, connection_id, force_renew_password=None, custom_headers=None, raw=False, **operation_config):
+        """Reconnect the device.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param force_renew_password: True to force SAS renewal
+        :type force_renew_password: bool
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.reconnect.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+        if force_renew_password is not None:
+            query_parameters['forceRenewPassword'] = self._serialize.query("force_renew_password", force_renew_password, 'bool')
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    reconnect.metadata = {'url': '/device/{connectionId}/reconnect'}
 
     def disconnect(
             self, connection_id, custom_headers=None, raw=False, **operation_config):

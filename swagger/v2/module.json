@@ -1,11 +1,11 @@
 {
-  "connect": {
+  "connectV1": {
     "put": {
       "tags": [
         "module"
       ],
       "summary": "Connect to the azure IoT Hub as a module",
-      "operationId": "Module_Connect",
+      "operationId": "Module_ConnectV1",
       "consumes": [
         "application/json"
       ],
@@ -30,13 +30,13 @@
       }
     }
   },
-  "connectFromEnvironment": {
+  "connectFromEnvironmentV1": {
     "put": {
       "tags": [
         "module"
       ],
       "summary": "Connect to the azure IoT Hub as a module using the environment variables",
-      "operationId": "Module_ConnectFromEnvironment",
+      "operationId": "Module_ConnectFromEnvironmentV1",
       "parameters": [
         {
           "$ref": "parameters.json#/transportType"
@@ -48,6 +48,125 @@
           "schema": {
             "$ref": "definitions.json#/connectResponse"
           }
+        }
+      }
+    }
+  },
+  "createFromConnectionString": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Create a module client from a connection string",
+      "operationId": "Module_CreateFromConnectionString",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/transportType"
+        },
+        {
+          "$ref": "parameters.json#/connectionString"
+        },
+        {
+          "$ref": "parameters.json#/caCertificate"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "createFromEnvironment": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Create a module client using the EdgeHub environment",
+      "operationId": "Module_CreateFromEnvironment",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/transportType"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "createFromX509": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Create a module client from X509 credentials",
+      "operationId": "Module_CreateFromX509",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/transportType"
+        },
+        {
+          "$ref": "parameters.json#/X509"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "$ref": "definitions.json#/connectResponse"
+          }
+        }
+      }
+    }
+  },
+  "connect": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Connect the module",
+      "operationId": "Module_Connect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "reconnect": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Reconnect the module",
+      "operationId": "Module_Reconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/forceRenewPassword"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
         }
       }
     }
