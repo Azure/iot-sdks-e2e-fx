@@ -150,8 +150,9 @@ class TwinTests(object):
 
         client.enable_twin()
         client.patch_twin(reported_properties_sent)
-        logger("sleeping for an arbitrary 10 seconds so properties can propagate")
-        time.sleep(10)
+        # BKTODO: this could poll the service instead of just sleeping.
+        logger("sleeping for an arbitrary 20 seconds so properties can propagate")
+        time.sleep(20)
 
         if getattr(client, "module_id", None):
             twin_received = registry.get_module_twin(client.device_id, client.module_id)
