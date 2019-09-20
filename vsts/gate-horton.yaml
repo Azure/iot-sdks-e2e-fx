@@ -39,7 +39,7 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: pythonpreview
+    language: pythonv2
     repo: Azure/azure-iot-sdk-python  
     commit: master
     job_tag: pythonv2_27
@@ -48,7 +48,7 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: pythonpreview
+    language: pythonv2
     repo: Azure/azure-iot-sdk-python  
     commit: master
     job_tag: pythonv2_34
@@ -57,7 +57,7 @@ jobs:
 
 - template: templates/jobs-build-docker-image.yaml
   parameters:
-    language: pythonpreview
+    language: pythonv2
     repo: Azure/azure-iot-sdk-python  
     commit: master
     job_tag: pythonv2_36
@@ -85,13 +85,13 @@ jobs:
       java_iothub_module_mqtt:              { language: java, suite: iothub_module_mqtt }
       csharp_iothub_module_mqtt:            { language: csharp, suite: iothub_module_mqtt }
       csharp_edgehub_module_mqttws:         { language: csharp, suite: edgehub_module_mqtt_ws }
-      pythonv2_27_edgehub_module_mqtt:                     { language: pythonpreview, variant: py27, suite: edgehub_module_mqtt }
-      pythonv2_27_iothub_module_and_device_mqtt:           { language: pythonpreview, variant: py27, suite: iothub_module_and_device_mqtt }
-      pythonv2_34_edgehub_module_mqtt:                     { language: pythonpreview, variant: py34, suite: edgehub_module_mqtt }
-      pythonv2_34_iothub_module_and_device_mqtt:           { language: pythonpreview, variant: py34, suite: iothub_module_and_device_mqtt }
-      pythonv2_36_edgehub_module_mqtt:                     { language: pythonpreview, variant: py36, suite: edgehub_module_mqtt }
-      pythonv2_36_iothub_module_and_device_mqtt:           { language: pythonpreview, variant: py36, suite: iothub_module_and_device_mqtt }
-      pythonv2_36_iothub_module_and_device_mqtt_async:     { language: pythonpreview, variant: py36, suite: iothub_module_and_device_mqtt, async: yes }
+      pythonv2_27_edgehub_module_mqtt:                     { language: pythonv2, variant: py27, suite: edgehub_module_mqtt }
+      pythonv2_27_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py27, suite: iothub_module_and_device_mqtt }
+      pythonv2_34_edgehub_module_mqtt:                     { language: pythonv2, variant: py34, suite: edgehub_module_mqtt }
+      pythonv2_34_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py34, suite: iothub_module_and_device_mqtt }
+      pythonv2_36_edgehub_module_mqtt:                     { language: pythonv2, variant: py36, suite: edgehub_module_mqtt }
+      pythonv2_36_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py36, suite: iothub_module_and_device_mqtt }
+      pythonv2_36_iothub_module_and_device_mqtt_async:     { language: pythonv2, variant: py36, suite: iothub_module_and_device_mqtt, async: yes }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml

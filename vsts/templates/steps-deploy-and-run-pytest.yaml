@@ -75,13 +75,13 @@ steps:
 
 
     # Skip tests based on SDK transport support
-    if (($env:Language -eq "c") -or ($env:Language -eq "python")) {
+    if (($env:Language -eq "c") -or ($env:Language -eq "pythonv1")) {
       if (($Scenario -eq "edgehub_module") -or ($Scenario -eq "edgehub_module_fi")) {
         if (($Transport -eq "amqp") -or ($Transport -eq "amqpws")) {
           $SkipTest="yes"
         }
       }
-    } elseif ($env:Language -eq "pythonpreview") {
+    } elseif ($env:Language -eq "pythonv2") {
       if ($Transport -ne "mqtt") {
         $SkipTest="yes"
       }

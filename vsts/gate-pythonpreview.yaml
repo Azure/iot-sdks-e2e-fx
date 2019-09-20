@@ -2,4 +2,4 @@ name: $(BuildID)_$(Horton.Language)_$(Horton.Commit)_$(BuildDefinitionName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 jobs:
-- template: templates/jobs-gate-pythonpreview.yaml
+- template: templates/jobs-gate-pythonv2.yaml
