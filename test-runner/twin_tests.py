@@ -46,20 +46,24 @@ class TwinTests(object):
         else:
             registry.patch_device_twin(client.device_id, twin_sent)
 
-        logger("sleeping for an arbitrary 10 seconds so properties can propagate")
-        time.sleep(10)
-
         # BKTODO: this test fails when the enable is at the top of the file.
         # new test case?
         client.enable_twin()
-        twin_received = client.get_twin()
 
-        logger("twin sent:    " + str(twin_sent))
-        logger("twin received:" + str(twin_received))
-        assert (
-            twin_sent["properties"]["desired"]["foo"]
-            == twin_received["properties"]["desired"]["foo"]
-        )
+        while True:
+            twin_received = client.get_twin()
+
+            logger("twin sent:    " + str(twin_sent))
+            logger("twin received:" + str(twin_received))
+            if (
+                twin_sent["properties"]["desired"]["foo"]
+                == twin_received["properties"]["desired"]["foo"]
+            ):
+                # test passed
+                return
+            else:
+                logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
+                time.sleep(5)
 
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can receive desired property patches as events")
@@ -150,20 +154,26 @@ class TwinTests(object):
 
         client.enable_twin()
         client.patch_twin(reported_properties_sent)
-        logger("sleeping for an arbitrary 10 seconds so properties can propagate")
-        time.sleep(10)
 
-        if getattr(client, "module_id", None):
-            twin_received = registry.get_module_twin(client.device_id, client.module_id)
-        else:
-            twin_received = registry.get_device_twin(client.device_id)
+        while True:
+            if getattr(client, "module_id", None):
+                twin_received = registry.get_module_twin(
+                    client.device_id, client.module_id
+                )
+            else:
+                twin_received = registry.get_device_twin(client.device_id)
 
-        reported_properties_received = twin_received["properties"]["reported"]
-        if "$version" in reported_properties_received:
-            del reported_properties_received["$version"]
-        if "$metadata" in reported_properties_received:
-            del reported_properties_received["$metadata"]
-        logger("expected:" + str(reported_properties_sent))
-        logger("received:" + str(reported_properties_received))
+            reported_properties_received = twin_received["properties"]["reported"]
+            if "$version" in reported_properties_received:
+                del reported_properties_received["$version"]
+            if "$metadata" in reported_properties_received:
+                del reported_properties_received["$metadata"]
+            logger("expected:" + str(reported_properties_sent))
+            logger("received:" + str(reported_properties_received))
 
-        assert reported_properties_sent == reported_properties_received
+            if reported_properties_sent == reported_properties_received:
+                # test passed
+                return
+            else:
+                logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
+                time.sleep(5)

@@ -86,7 +86,8 @@ class EventHubApi:
             self.client.stop()
             self.client = None
 
-    def wait_for_next_event(self, device_id, timeout=30, expected=None):
+    #  30 second timeout was too small.  Bumping to 90.
+    def wait_for_next_event(self, device_id, timeout=90, expected=None):
         print_message("EventHubApi: waiting for next event for {}".format(device_id))
         start_time = time.time()
         while (time.time() - start_time) < timeout:
