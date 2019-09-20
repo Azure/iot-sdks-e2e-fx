@@ -29,7 +29,7 @@ class ModuleApi(BaseModuleOrDeviceApi, AbstractModuleApi):
 
     @log_entry_and_exit
     def connect_from_environment(self, transport):
-        result = self.rest_endpoint.connect_from_environment(
+        result = self.rest_endpoint.connect_from_environment_v1(
             transport, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id

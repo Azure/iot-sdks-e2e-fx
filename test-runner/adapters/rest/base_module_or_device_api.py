@@ -12,7 +12,7 @@ wait_time_for_async_start = 5
 class BaseModuleOrDeviceApi:
     @log_entry_and_exit(print_args=False)
     def connect(self, transport, connection_string, ca_certificate):
-        result = self.rest_endpoint.connect(
+        result = self.rest_endpoint.connect_v1(
             transport,
             connection_string,
             ca_certificate=ca_certificate,
