@@ -65,8 +65,7 @@ jobs:
     variant: py36
 
 - job: "test"
-  pool:
-      vmImage: 'Ubuntu 16.04'
+  pool: Hosted Ubuntu 1604
   dependsOn:
     - "build_node_container"
     - "build_c_container"

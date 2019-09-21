@@ -41,8 +41,7 @@ jobs:
     variant: py27
 
 - job: "test_py37"
-  pool:
-      vmImage: 'Ubuntu 16.04'
+  pool: Hosted Ubuntu 1604
   dependsOn:
     - "build_py37_container"
   strategy:
@@ -67,8 +66,7 @@ jobs:
       variant: py37
 
 - job: "test_py36"
-  pool:
-      vmImage: 'Ubuntu 16.04'
+  pool: Hosted Ubuntu 1604
   dependsOn:
     - "build_py36_container"
   strategy:
@@ -89,8 +87,7 @@ jobs:
       variant: py36
 
 - job: "test_py35"
-  pool:
-      vmImage: 'Ubuntu 16.04'
+  pool: Hosted Ubuntu 1604
   dependsOn:
     - "build_py35_container"
   strategy:
@@ -111,8 +108,7 @@ jobs:
       variant: py35
 
 - job: "test_py34"
-  pool:
-      vmImage: 'Ubuntu 16.04'
+  pool: Hosted Ubuntu 1604
   dependsOn:
     - "build_py34_container"
   strategy:
@@ -131,8 +127,7 @@ jobs:
       variant: py34
 
 - job: "test_py27"
-  pool:
-      vmImage: 'Ubuntu 16.04'
+  pool: Hosted Ubuntu 1604
   dependsOn:
     - "build_py27_container"
   strategy:

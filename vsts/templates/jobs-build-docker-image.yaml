@@ -11,8 +11,7 @@ parameters:
 
 jobs:
 - job: 'build_${{ parameters.job_tag }}_container'
-  pool:
-      vmImage: 'Ubuntu 16.04'
+  pool: Hosted Ubuntu 1604
 
   steps:
 
