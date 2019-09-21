@@ -38,7 +38,6 @@ class TwinTests(object):
     def test_service_can_set_desired_properties_and_client_can_retrieve_them(
         self, client, logger, registry
     ):
-
         twin_sent = {"properties": {"desired": {"foo": random.randint(1, 9999)}}}
 
         if getattr(client, "module_id", None):
@@ -46,8 +45,8 @@ class TwinTests(object):
         else:
             registry.patch_device_twin(client.device_id, twin_sent)
 
-        # BKTODO: this test fails when the enable is at the top of the file.
-        # new test case?
+        # BKTODO: Node needs this sleep to pass MQTT against edgeHub
+        time.sleep(5)
         client.enable_twin()
 
         while True:
