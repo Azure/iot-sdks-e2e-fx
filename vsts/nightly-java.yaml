@@ -15,7 +15,6 @@ jobs:
   dependsOn:
     - "build_linux_container"
   strategy:
-    maxParallel: 4
     matrix:
       iothub_module_mqtt: { suite: iothub_module_mqtt }
       edgehub_module_mqtt: { suite: edgehub_module_mqtt }

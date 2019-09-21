@@ -31,7 +31,6 @@ jobs:
   dependsOn:
     - "build_node6_container"
   strategy:
-    maxParallel: 3
     matrix:
       iothub_module_mqtt_node6: { suite: iothub_module_mqtt }
       edgehub_module_mqtt_node6: { suite: edgehub_module_mqtt }
@@ -55,7 +54,6 @@ jobs:
   dependsOn:
     - "build_node8_container"
   strategy:
-    maxParallel: 3
     matrix:
       iothub_module_mqtt_node8: { suite: iothub_module_mqtt }
       edgehub_module_mqtt_node8: { suite: edgehub_module_mqtt }
@@ -80,7 +78,6 @@ jobs:
   dependsOn:
     - "build_node10_container"
   strategy:
-    maxParallel: 3
     matrix:
       iothub_module_mqtt_node10: { suite: iothub_module_mqtt }
       edgehub_module_mqtt_node10: { suite: edgehub_module_mqtt }
