@@ -41,7 +41,7 @@ def device_connect_v1(transportType, connectionString, caCertificate=None):  # n
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return device_glue.connect(transportType, connectionString, caCertificate)
+    return device_glue.connect_v1(transportType, connectionString, caCertificate)
 
 
 def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501

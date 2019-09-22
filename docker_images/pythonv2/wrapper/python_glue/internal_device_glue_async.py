@@ -14,7 +14,7 @@ class InternalDeviceGlueAsync:
         # make sure we have an event loop
         async_helper.get_event_loop()
 
-    def connect(self, transport_type, connection_string, cert):
+    def connect_v1(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
         if "GatewayHostName" in connection_string:
             self.client = IoTHubDeviceClient.create_from_connection_string(
