@@ -10,7 +10,7 @@ class InternalDeviceGlueSync:
     def __init__(self):
         self.client = None
 
-    def connect(self, transport_type, connection_string, cert):
+    def connect_v1(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
         if "GatewayHostName" in connection_string:
             self.client = IoTHubDeviceClient.create_from_connection_string(

@@ -16,9 +16,9 @@ class DeviceGlue:
         self.object_map[connection_id] = internal
         return ConnectResponse(connection_id)
 
-    def connect(self, transport_type, connection_string, ca_certificate):
+    def connect_v1(self, transport_type, connection_string, ca_certificate):
         internal = InternalDeviceGlue()
-        internal.connect(transport_type, connection_string, ca_certificate.cert)
+        internal.connect_v1(transport_type, connection_string, ca_certificate.cert)
         return self._finish_connection(internal)
 
     def disconnect(self, connection_id):

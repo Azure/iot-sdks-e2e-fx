@@ -2,8 +2,12 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from .direct_module_api import ModuleApi, module_object_list
-from .direct_device_api import DeviceApi, device_object_list
+from .direct_iothub_apis import (
+    ModuleApi,
+    module_object_list,
+    DeviceApi,
+    device_object_list,
+)
 from .direct_wrapper_api import WrapperApi
 
 
