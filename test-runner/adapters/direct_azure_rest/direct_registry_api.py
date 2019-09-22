@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from ..abstract_registry_api import AbstractRegistryApi
+from ..abstract_iothub_apis import AbstractRegistryApi
 from autorest_service_apis.service20180630modified import (
     IotHubGatewayServiceAPIs20180630 as IotHubGatewayServiceAPIs,
     models,

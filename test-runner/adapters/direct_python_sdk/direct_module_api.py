@@ -5,7 +5,7 @@
 
 from multiprocessing.pool import ThreadPool
 from internal_module_glue import InternalModuleGlue
-from ..abstract_module_api import AbstractModuleApi
+from ..abstract_iothub_apis import AbstractModuleApi
 from .base_module_or_device_api import BaseModuleOrDeviceApi
 
 module_object_list = []

@@ -7,6 +7,7 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 import msrest
 from .. import adapter_config
 from ..abstract_wrapper_api import AbstractWrapperApi
+from ..decorators import log_entry_and_exit
 
 rest_endpoints = None
 

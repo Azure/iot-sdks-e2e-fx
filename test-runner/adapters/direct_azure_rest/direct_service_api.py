@@ -5,7 +5,7 @@ from multiprocessing.pool import ThreadPool
 from autorest_service_apis.service20180630modified import (
     IotHubGatewayServiceAPIs20180630 as IotHubGatewayServiceAPIs,
 )
-from ..abstract_service_api import AbstractServiceApi
+from ..abstract_iothub_apis import AbstractServiceApi
 import connection_string
 import uuid
 from .amqp_service_client import AmqpServiceClient
