@@ -159,7 +159,9 @@ class ConnectionStatus(object):
         # BKTODO
 
 
-class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, ConnectionStatus):
+class InternalDeviceGlueAsync(
+    Connect, HandleMethods, C2d, Telemetry, Twin, ConnectionStatus
+):
     def __init__(self):
         self.client = None
         self.client_class = IoTHubDeviceClient
