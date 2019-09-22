@@ -56,7 +56,7 @@ all_containers["friend"] = friend
 pythonv1 = Container()
 pythonv1.name = "pythonv1"
 pythonv1.module_id = "pythonv1Mod"
-pythonv1.lkg_image = os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "pythonv1-e2e-v3:lkg"
+pythonv1.lkg_image = os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/pythonv1-e2e-v3:lkg"
 pythonv1.container_port = 8080
 pythonv1.host_port = 8081
 pythonv1.local_port = 8080
@@ -98,9 +98,7 @@ all_containers["java"] = java
 pythonv2 = Container()
 pythonv2.name = "pythonv2"
 pythonv2.module_id = "pythonv2Mod"
-pythonv2.lkg_image = (
-    os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/pythonv2-e2e-v3:lkg"
-)
+pythonv2.lkg_image = os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/pythonv2-e2e-v3:lkg"
 pythonv2.container_port = 8080
 pythonv2.host_port = 8085
 pythonv2.local_port = 8080

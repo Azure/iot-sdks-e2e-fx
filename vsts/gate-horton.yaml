@@ -80,6 +80,7 @@ jobs:
     matrix:
       node_iothub_module_amqp:              { language: node, suite: iothub_module_amqp }
       node_edgehub_module_amqpws:           { language: node, suite: edgehub_module_amqp_ws }
+      node_edgehub_module_mqttws:           { language: node, suite: edgehub_module_mqtt_ws }
       c_iothub_module_mqtt:                 { language: c, suite: iothub_module_mqtt }
       c_edgehub_module_mqttws:              { language: c, suite: edgehub_module_mqtt_ws }
       java_iothub_module_mqtt:              { language: java, suite: iothub_module_mqtt }

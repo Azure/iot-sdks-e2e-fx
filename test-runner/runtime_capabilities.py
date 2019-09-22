@@ -7,7 +7,7 @@ from msrest.exceptions import HttpOperationError
 hardcoded_skip_list = {
     "node": [],
     "csharp": ["module_under_test_has_device_wrapper", "handlesLoopbackMessages"],
-    "python": [
+    "pythonv1": [
         "module_under_test_has_device_wrapper",
         "invokesModuleMethodCalls",
         "invokesDeviceMethodCalls",
