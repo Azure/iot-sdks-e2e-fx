@@ -2,7 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from swagger_server.models.connect_response import ConnectResponse
-from internal_device_glue import InternalDeviceGlue
+from internal_iothub_glue import InternalDeviceGlue
 import json
 
 
