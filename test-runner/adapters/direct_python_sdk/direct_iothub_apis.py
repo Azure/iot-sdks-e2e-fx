@@ -6,13 +6,12 @@ from multiprocessing.pool import ThreadPool
 from internal_iothub_glue import InternalDeviceGlue, InternalModuleGlue
 from ..abstract_iothub_apis import AbstractDeviceApi, AbstractModuleApi
 
-device_object_list = []
-module_object_list = []
+client_object_list = []
 
 
 class Connect(object):
     def connect(self, transport, connection_string, ca_certificate):
-        device_object_list.append(self)
+        client_object_list.append(self)
         if "cert" in ca_certificate:
             cert = ca_certificate["cert"]
         else:
@@ -20,20 +19,50 @@ class Connect(object):
         self.glue.connect(transport, connection_string, cert)
 
     def disconnect(self):
-        if self in device_object_list:
-            device_object_list.remove(self)
-
-        if self in module_object_list:
-            module_object_list.remove(self)
+        if self in client_object_list:
+            client_object_list.remove(self)
 
         self.glue.disconnect()
         self.glue = None
 
+    def create_from_connection_string(
+        self, transport, connection_string, ca_certificate
+    ):
+        client_object_list.append(self)
+        if "cert" in ca_certificate:
+            cert = ca_certificate["cert"]
+        else:
+            cert = None
+        self.glue.create_from_connection_string(transport, connection_string, cert)
+
+    def create_from_x509(self, transport, x509):
+        client_object_list.append(self)
+        self.glue.create_from_x509(transport, x509)
+
+    def connect2(self):
+        self.glue.connect2()
+
+    def reconnect(self, force_password_renewal=False):
+        self.glue.reconnect(force_password_renewal)
+
+    def disconnect2(self):
+        self.glue.disconnect2()
+
+    def destroy(self):
+        if self in client_object_list:
+            client_object_list.remove(self)
+
+        self.glue.destroy()
+
 
 class ConnectFromEnvironment(object):
     def connect_from_environment(self, transport):
-        module_object_list.append(self)
+        client_object_list.append(self)
         self.glue.connect_from_environment(transport)
+
+    def create_from_environment(self, transport):
+        client_object_list.append(self)
+        self.glue.create_from_environment(transport)
 
 
 class Twin(object):

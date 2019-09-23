@@ -57,11 +57,72 @@ class Connect(object):
             # give edgeHub a chance to disconnect MessagingServiceClient from IoTHub.  It does this lazily after the module disconnects from edgeHub
             time.sleep(2)
 
+    @log_entry_and_exit
+    def create_from_connection_string(
+        self, transport, connection_string, ca_certificate
+    ):
+        result = self.rest_endpoint.create_from_connection_string(
+            transport,
+            connection_string,
+            ca_certificate=ca_certificate,
+            timeout=adapter_config.default_api_timeout,
+        )
+        self.connection_id = result.connection_id
+
+    @log_entry_and_exit
+    def create_from_x509(self, transport, x509):
+        result = self.rest_endpoint.create_from_x509(
+            transport, x509, timeout=adapter_config.default_api_timeout
+        )
+        self.connection_id = result.connection_id
+
+    @log_entry_and_exit
+    def connect2(self):
+        if self.connection_id:
+            self.rest_endpoint.connect2(
+                self.connection_id, timeout=adapter_config.default_api_timeout
+            )
+
+    @log_entry_and_exit
+    def reconnect(self, force_password_renewal=False):
+        if self.connection_id:
+            self.rest_endpoint.reconnect(
+                self.connection_id,
+                force_password_renewal,
+                timeout=adapter_config.default_api_timeout,
+            )
+
+    @log_entry_and_exit
+    def disconnect2(self):
+        if self.connection_id:
+            self.rest_endpoint.disconnect2(
+                self.connection_id, timeout=adapter_config.default_api_timeout
+            )
+            # give edgeHub a chance to disconnect MessagingServiceClient from IoTHub.  It does this lazily after the module disconnects from edgeHub
+            time.sleep(2)
+
+    @log_entry_and_exit
+    def destroy(self):
+        if self.connection_id:
+            self.rest_endpoint.destroy(
+                self.connection_id, timeout=adapter_config.default_api_timeout
+            )
+            self.connection_id = ""
+            # give edgeHub a chance to disconnect MessagingServiceClient from IoTHub.  It does this lazily after the module disconnects from edgeHub
+            time.sleep(2)
+
 
 class ConnectFromEnvironment(object):
     @log_entry_and_exit
     def connect_from_environment(self, transport):
         result = self.rest_endpoint.connect_from_environment(
+            transport, timeout=adapter_config.default_api_timeout
+        )
+        self.connection_id = result.connection_id
+
+    @log_entry_and_exit
+    def create_from_environment(self, transport):
+        result = self.rest_endpoint.create_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id
