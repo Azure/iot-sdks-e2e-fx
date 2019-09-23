@@ -5,7 +5,7 @@
         "module"
       ],
       "summary": "Connect to the azure IoT Hub as a module",
-      "operationId": "Module_ConnectV1",
+      "operationId": "Module_Connect",
       "consumes": [
         "application/json"
       ],
@@ -36,7 +36,7 @@
         "module"
       ],
       "summary": "Connect to the azure IoT Hub as a module using the environment variables",
-      "operationId": "Module_ConnectFromEnvironmentV1",
+      "operationId": "Module_ConnectFromEnvironment",
       "parameters": [
         {
           "$ref": "parameters.json#/transportType"

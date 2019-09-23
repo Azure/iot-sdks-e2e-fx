@@ -30,7 +30,7 @@ class ModuleOperations(object):
 
         self.config = config
 
-    def connect_v1(
+    def connect(
             self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):
         """Connect to the azure IoT Hub as a module.
 
@@ -53,7 +53,7 @@ class ModuleOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.connect_v1.metadata['url']
+        url = self.connect.metadata['url']
         path_format_arguments = {
             'transportType': self._serialize.url("transport_type", transport_type, 'str')
         }
@@ -93,7 +93,7 @@ class ModuleOperations(object):
             return client_raw_response
 
         return deserialized
-    connect_v1.metadata = {'url': '/module/connect/{transportType}'}
+    connect.metadata = {'url': '/module/connect/{transportType}'}
 
     def disconnect(
             self, connection_id, custom_headers=None, raw=False, **operation_config):
@@ -139,7 +139,7 @@ class ModuleOperations(object):
             return client_raw_response
     disconnect.metadata = {'url': '/module/{connectionId}/disconnect'}
 
-    def connect_from_environment_v1(
+    def connect_from_environment(
             self, transport_type, custom_headers=None, raw=False, **operation_config):
         """Connect to the azure IoT Hub as a module using the environment
         variables.
@@ -159,7 +159,7 @@ class ModuleOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.connect_from_environment_v1.metadata['url']
+        url = self.connect_from_environment.metadata['url']
         path_format_arguments = {
             'transportType': self._serialize.url("transport_type", transport_type, 'str')
         }
@@ -191,7 +191,7 @@ class ModuleOperations(object):
             return client_raw_response
 
         return deserialized
-    connect_from_environment_v1.metadata = {'url': '/module/connectFromEnvironment/{transportType}'}
+    connect_from_environment.metadata = {'url': '/module/connectFromEnvironment/{transportType}'}
 
     def create_from_connection_string(
             self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):

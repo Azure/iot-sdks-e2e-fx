@@ -262,7 +262,7 @@ paths:
       tags:
       - "module"
       summary: "Connect to the azure IoT Hub as a module"
-      operationId: "module_connect_v1"
+      operationId: "module_connect"
       consumes:
       - "application/json"
       parameters:
@@ -314,7 +314,7 @@ paths:
       tags:
       - "module"
       summary: "Connect to the azure IoT Hub as a module using the environment variables"
-      operationId: "module_connect_from_environment_v1"
+      operationId: "module_connect_from_environment"
       parameters:
       - name: "transportType"
         in: "path"

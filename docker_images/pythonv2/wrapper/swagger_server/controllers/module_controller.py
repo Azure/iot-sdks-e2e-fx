@@ -7,33 +7,7 @@ from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCall
 from swagger_server import util
 
 
-def module_connect2(connectionId):  # noqa: E501
-    """Connect the module
-
-     # noqa: E501
-
-    :param connectionId: Id for the connection
-    :type connectionId: str
-
-    :rtype: None
-    """
-    return 'do some magic!'
-
-
-def module_connect_from_environment_v1(transportType):  # noqa: E501
-    """Connect to the azure IoT Hub as a module using the environment variables
-
-     # noqa: E501
-
-    :param transportType: Transport to use
-    :type transportType: str
-
-    :rtype: ConnectResponse
-    """
-    return 'do some magic!'
-
-
-def module_connect_v1(transportType, connectionString, caCertificate=None):  # noqa: E501
+def module_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a module
 
      # noqa: E501
@@ -49,6 +23,32 @@ def module_connect_v1(transportType, connectionString, caCertificate=None):  # n
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
+
+
+def module_connect2(connectionId):  # noqa: E501
+    """Connect the module
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
+def module_connect_from_environment(transportType):  # noqa: E501
+    """Connect to the azure IoT Hub as a module using the environment variables
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+
+    :rtype: ConnectResponse
+    """
     return 'do some magic!'
 
 
