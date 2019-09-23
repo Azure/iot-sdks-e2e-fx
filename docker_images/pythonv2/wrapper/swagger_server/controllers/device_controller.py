@@ -40,7 +40,8 @@ def device_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.connect2(connectionId)
 
 
 def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -59,7 +60,8 @@ def device_create_from_connection_string(transportType, connectionString, caCert
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.create_from_connection_string(connectionString, caCertificate)
 
 
 def device_create_from_x509(transportType, X509):  # noqa: E501
@@ -74,7 +76,21 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.create_from_x509(transportType, X509)
+
+def device_destroy(connectionId):  # noqa: E501
+    """Disconnect and destroy the device client
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    # changed from return 'do some magic!'
+    device_glue.destroy(connectionId)
 
 
 def device_disconnect(connectionId):  # noqa: E501
@@ -101,7 +117,8 @@ def device_disconnect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.disconnect2(connectionId)
 
 
 def device_enable_c2d_messages(connectionId):  # noqa: E501
@@ -202,7 +219,8 @@ def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.reconnect(connectionId, forceRenewPassword)
 
 
 def device_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501

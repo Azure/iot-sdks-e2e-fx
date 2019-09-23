@@ -209,6 +209,25 @@
       }
     }
   },
+  "destroy": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Disonnect and destroy the module client",
+      "operationId": "Module_Destroy",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
   "enableTwin": {
     "put": {
       "tags": [

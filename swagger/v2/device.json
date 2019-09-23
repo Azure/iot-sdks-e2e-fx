@@ -176,6 +176,25 @@
       }
     }
   },
+  "destroy": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Disconnect and destroy the device client",
+      "operationId": "Device_Destroy",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
   "enableMethods": {
     "put": {
       "tags": [

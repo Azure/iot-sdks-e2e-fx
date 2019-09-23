@@ -40,7 +40,8 @@ def module_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    module_glue.connect2(connectionId)
 
 
 def module_connect_from_environment(transportType):  # noqa: E501
@@ -73,7 +74,8 @@ def module_create_from_connection_string(transportType, connectionString, caCert
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return module_glue.create_from_connection_string(transportType, connectionString, caCertificate)
 
 
 def module_create_from_environment(transportType):  # noqa: E501
@@ -86,7 +88,8 @@ def module_create_from_environment(transportType):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return module_glue.create_from_environment(transportType)
 
 
 def module_create_from_x509(transportType, X509):  # noqa: E501
@@ -101,7 +104,21 @@ def module_create_from_x509(transportType, X509):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return module_glue.crate_from_x509(transportType, X509)
+
+def module_destroy(connectionId):  # noqa: E501
+    """Disonnect and destroy the module client
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    #changed from return 'do some magic!'
+    module_glue.destroy(connectionId)
 
 
 def module_disconnect(connectionId):  # noqa: E501
@@ -128,7 +145,8 @@ def module_disconnect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    #changed from return 'do some magic!'
+    module_glue.disconnect2(connectionId)
 
 
 def module_enable_input_messages(connectionId):  # noqa: E501
@@ -272,7 +290,8 @@ def module_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    module_glue.reconnect(forceRenewPassword)
 
 
 def module_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501

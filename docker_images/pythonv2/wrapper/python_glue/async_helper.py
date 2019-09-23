@@ -5,6 +5,8 @@ import asyncio
 import threading
 import logging
 
+logger = logging.getLogger(__name__)
+
 logging.getLogger("asyncio").setLevel(logging.DEBUG)
 loop = None
 loop_thread = None
@@ -37,7 +39,7 @@ def run_coroutine_sync(coroutine):
     done = threading.Event()
 
     async def wrapped_coroutine():
-        print("inside wrapped_corountine")
+        logger.info("inside wrapped_corountine")
         nonlocal result
         result = await coroutine
         done.set()
