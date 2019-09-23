@@ -4,31 +4,6 @@
 import six
 import abc
 
-# BKTODO these APIs go in next
-"""
-    @abc.abstractmethod
-    def create_from_environment(self, transport):
-        pass
-
-    @abc.abstractmethod
-    def create_from_connection_string(
-        self, transport, connection_string, ca_certificate
-    ):
-        pass
-
-    @abc.abstractmethod
-    def create_from_x509(self, transport, x509):
-        pass
-
-    @abc.abstractmethod
-    def connect(self):
-        pass
-
-    @abc.abstractmethod
-    def reconnect(self, force_password_renewal=False):
-        pass
-"""
-
 
 @six.add_metaclass(abc.ABCMeta)
 class ServiceConnectDisconnect(object):
@@ -51,11 +26,41 @@ class Connect(object):
     def disconnect(self):
         pass
 
+    @abc.abstractmethod
+    def create_from_connection_string(
+        self, transport, connection_string, ca_certificate
+    ):
+        pass
+
+    @abc.abstractmethod
+    def create_from_x509(self, transport, x509):
+        pass
+
+    @abc.abstractmethod
+    def connect2(self):
+        pass
+
+    @abc.abstractmethod
+    def reconnect(self, force_password_renewal=False):
+        pass
+
+    @abc.abstractmethod
+    def disconnect2(self):
+        pass
+
+    @abc.abstractmethod
+    def destroy(self):
+        pass
+
 
 @six.add_metaclass(abc.ABCMeta)
 class ConnectFromEnvironment(object):
     @abc.abstractmethod
     def connect_from_environment(self, transport):
+        pass
+
+    @abc.abstractmethod
+    def create_from_environment(self, transport):
         pass
 
 
