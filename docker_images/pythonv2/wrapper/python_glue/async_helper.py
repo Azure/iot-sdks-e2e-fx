@@ -39,7 +39,7 @@ def run_coroutine_sync(coroutine):
     done = threading.Event()
 
     async def wrapped_coroutine():
-        logger("inside wrapped_corountine")
+        logger.info("inside wrapped_corountine")
         nonlocal result
         result = await coroutine
         done.set()
