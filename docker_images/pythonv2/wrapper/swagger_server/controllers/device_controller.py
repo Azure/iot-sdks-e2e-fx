@@ -10,21 +10,7 @@ from swagger_server import util
 from device_glue import DeviceGlue
 device_glue = DeviceGlue()
 
-
-def device_connect(connectionId):  # noqa: E501
-    """Connect the device
-
-     # noqa: E501
-
-    :param connectionId: Id for the connection
-    :type connectionId: str
-
-    :rtype: None
-    """
-    return 'do some magic!'
-
-
-def device_connect_v1(transportType, connectionString, caCertificate=None):  # noqa: E501
+def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a device
 
      # noqa: E501
@@ -41,7 +27,20 @@ def device_connect_v1(transportType, connectionString, caCertificate=None):  # n
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return device_glue.connect_v1(transportType, connectionString, caCertificate)
+    return device_glue.connect(transportType, connectionString, caCertificate)
+
+
+def device_connect2(connectionId):  # noqa: E501
+    """Connect the device
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 
 def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -81,7 +80,7 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
 def device_disconnect(connectionId):  # noqa: E501
     """Disconnect the device
 
-    Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection # noqa: E501
+     # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
@@ -90,6 +89,19 @@ def device_disconnect(connectionId):  # noqa: E501
     """
     # changed from return 'do some magic!'
     device_glue.disconnect(connectionId)
+
+
+def device_disconnect2(connectionId):  # noqa: E501
+    """Disconnect the device
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 
 def device_enable_c2d_messages(connectionId):  # noqa: E501

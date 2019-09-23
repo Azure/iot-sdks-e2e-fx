@@ -11,13 +11,13 @@ module_object_list = []
 
 
 class Connect(object):
-    def connect_v1(self, transport, connection_string, ca_certificate):
+    def connect(self, transport, connection_string, ca_certificate):
         device_object_list.append(self)
         if "cert" in ca_certificate:
             cert = ca_certificate["cert"]
         else:
             cert = None
-        self.glue.connect_v1(transport, connection_string, cert)
+        self.glue.connect(transport, connection_string, cert)
 
     def disconnect(self):
         if self in device_object_list:
@@ -31,9 +31,9 @@ class Connect(object):
 
 
 class ConnectFromEnvironment(object):
-    def connect_from_environment_v1(self, transport):
+    def connect_from_environment(self, transport):
         module_object_list.append(self)
-        self.glue.connect_from_environment_v1(transport)
+        self.glue.connect_from_environment(transport)
 
 
 class Twin(object):

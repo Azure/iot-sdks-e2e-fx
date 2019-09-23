@@ -10,34 +10,7 @@ from swagger_server import util
 from module_glue import ModuleGlue
 module_glue = ModuleGlue()
 
-def module_connect(connectionId):  # noqa: E501
-    """Connect the module
-
-     # noqa: E501
-
-    :param connectionId: Id for the connection
-    :type connectionId: str
-
-    :rtype: None
-    """
-    return 'do some magic!'
-
-
-def module_connect_from_environment_v1(transportType):  # noqa: E501
-    """Connect to the azure IoT Hub as a module using the environment variables
-
-     # noqa: E501
-
-    :param transportType: Transport to use
-    :type transportType: str
-
-    :rtype: ConnectResponse
-    """
-    # changed from return 'do some magic!'
-    return module_glue.connect_from_environment_v1(transportType)
-
-
-def module_connect_v1(transportType, connectionString, caCertificate=None):  # noqa: E501
+def module_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a module
 
      # noqa: E501
@@ -54,7 +27,34 @@ def module_connect_v1(transportType, connectionString, caCertificate=None):  # n
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return module_glue.connect_v1(transportType, connectionString, caCertificate)
+    return module_glue.connect(transportType, connectionString, caCertificate)
+
+
+def module_connect2(connectionId):  # noqa: E501
+    """Connect the module
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
+
+def module_connect_from_environment(transportType):  # noqa: E501
+    """Connect to the azure IoT Hub as a module using the environment variables
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+
+    :rtype: ConnectResponse
+    """
+    # changed from return 'do some magic!'
+    return module_glue.connect_from_environment(transportType)
 
 
 def module_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -107,7 +107,7 @@ def module_create_from_x509(transportType, X509):  # noqa: E501
 def module_disconnect(connectionId):  # noqa: E501
     """Disconnect the module
 
-    Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection # noqa: E501
+     # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
@@ -116,6 +116,19 @@ def module_disconnect(connectionId):  # noqa: E501
     """
     # changed from return 'do some magic!'
     module_glue.disconnect(connectionId)
+
+
+def module_disconnect2(connectionId):  # noqa: E501
+    """Disonnect the module
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 
 def module_enable_input_messages(connectionId):  # noqa: E501

@@ -9,7 +9,7 @@ import convert
 
 
 class Connect(object):
-    def connect_v1(self, transport_type, connection_string, cert):
+    def connect(self, transport_type, connection_string, cert):
         print("connecting using " + transport_type)
         if "GatewayHostName" in connection_string:
             self.client = self.client_class.create_from_connection_string(
@@ -29,7 +29,7 @@ class Connect(object):
 
 
 class ConnectFromEnvironment(object):
-    def connect_from_environment_v1(self, transport_type):
+    def connect_from_environment(self, transport_type):
         print("connecting from environment")
         self.client = IoTHubModuleClient.create_from_edge_environment()
         async_helper.run_coroutine_sync(self.client.connect())

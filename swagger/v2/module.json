@@ -1,11 +1,11 @@
 {
-  "connectV1": {
+  "connect": {
     "put": {
       "tags": [
         "module"
       ],
       "summary": "Connect to the azure IoT Hub as a module",
-      "operationId": "Module_ConnectV1",
+      "operationId": "Module_Connect",
       "consumes": [
         "application/json"
       ],
@@ -30,13 +30,13 @@
       }
     }
   },
-  "connectFromEnvironmentV1": {
+  "connectFromEnvironment": {
     "put": {
       "tags": [
         "module"
       ],
       "summary": "Connect to the azure IoT Hub as a module using the environment variables",
-      "operationId": "Module_ConnectFromEnvironmentV1",
+      "operationId": "Module_ConnectFromEnvironment",
       "parameters": [
         {
           "$ref": "parameters.json#/transportType"
@@ -48,6 +48,25 @@
           "schema": {
             "$ref": "definitions.json#/connectResponse"
           }
+        }
+      }
+    }
+  },
+  "disconnect": {
+    "put": {
+      "tags": [
+        "module"
+      ],
+      "summary": "Disconnect the module",
+      "operationId": "Module_Disconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
         }
       }
     }
@@ -130,13 +149,13 @@
       }
     }
   },
-  "connect": {
+  "connect2": {
     "put": {
       "tags": [
         "module"
       ],
       "summary": "Connect the module",
-      "operationId": "Module_Connect",
+      "operationId": "Module_Connect2",
       "parameters": [
         {
           "$ref": "parameters.json#/connectionId"
@@ -171,14 +190,13 @@
       }
     }
   },
-  "disconnect": {
+  "disconnect2": {
     "put": {
       "tags": [
         "module"
       ],
-      "summary": "Disconnect the module",
-      "description": "Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection",
-      "operationId": "Module_Disconnect",
+      "summary": "Disonnect the module",
+      "operationId": "Module_Disconnect2",
       "parameters": [
         {
           "$ref": "parameters.json#/connectionId"

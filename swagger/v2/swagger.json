@@ -65,10 +65,13 @@
       "$ref": "registry.json#/deviceTwin"
     },
     "/module/connect/{transportType}": {
-      "$ref": "module.json#/connectV1"
+      "$ref": "module.json#/connect"
+    },
+    "/module/{connectionId}/disconnect": {
+      "$ref": "module.json#/disconnect"
     },
     "/module/connectFromEnvironment/{transportType}": {
-      "$ref": "module.json#/connectFromEnvironmentV1"
+      "$ref": "module.json#/connectFromEnvironment"
     },
     "/module/createFromConnectionstring/{transportType}": {
       "$ref": "module.json#/createFromConnectionString"
@@ -79,14 +82,14 @@
     "/module/createFromX509/{transportType}": {
       "$ref": "module.json#/createFromX509"
     },
-    "/module/{connectionId}/connect": {
-      "$ref": "module.json#/connect"
+    "/module/{connectionId}/connect2": {
+      "$ref": "module.json#/connect2"
     },
     "/module/{connectionId}/reconnect": {
       "$ref": "module.json#/reconnect"
     },
-    "/module/{connectionId}/disconnect": {
-      "$ref": "module.json#/disconnect"
+    "/module/{connectionId}/disconnect2": {
+      "$ref": "module.json#/disconnect2"
     },
     "/module/{connectionId}/enableTwin": {
       "$ref": "module.json#/enableTwin"
@@ -143,7 +146,10 @@
       "$ref": "service.json#/sendC2d"
     },
     "/device/connect/{transportType}": {
-      "$ref": "device.json#/connectV1"
+      "$ref": "device.json#/connect"
+    },
+    "/device/{connectionId}/disconnect": {
+      "$ref": "device.json#/disconnect"
     },
     "/device/createFromConnectionString/{transportType}": {
       "$ref": "device.json#/createFromConnectionString"
@@ -151,14 +157,14 @@
     "/device/createFromX509/{transportType}": {
       "$ref": "device.json#/createFromX509"
     },
-    "/device/{connectionId}/connect": {
-      "$ref": "device.json#/connect"
+    "/device/{connectionId}/connect2": {
+      "$ref": "device.json#/connect2"
     },
     "/device/{connectionId}/reconnect": {
       "$ref": "device.json#/reconnect"
     },
-    "/device/{connectionId}/disconnect": {
-      "$ref": "device.json#/disconnect"
+    "/device/{connectionId}/disconnect2": {
+      "$ref": "device.json#/disconnect2"
     },
     "/device/{connectionId}/enableMethods": {
       "$ref": "device.json#/enableMethods"

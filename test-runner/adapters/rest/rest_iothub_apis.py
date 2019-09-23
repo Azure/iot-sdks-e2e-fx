@@ -38,8 +38,8 @@ class ServiceConnectDisconnect(object):
 
 class Connect(object):
     @log_entry_and_exit(print_args=False)
-    def connect_v1(self, transport, connection_string, ca_certificate):
-        result = self.rest_endpoint.connect_v1(
+    def connect(self, transport, connection_string, ca_certificate):
+        result = self.rest_endpoint.connect(
             transport,
             connection_string,
             ca_certificate=ca_certificate,
@@ -60,8 +60,8 @@ class Connect(object):
 
 class ConnectFromEnvironment(object):
     @log_entry_and_exit
-    def connect_from_environment_v1(self, transport):
-        result = self.rest_endpoint.connect_from_environment_v1(
+    def connect_from_environment(self, transport):
+        result = self.rest_endpoint.connect_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id

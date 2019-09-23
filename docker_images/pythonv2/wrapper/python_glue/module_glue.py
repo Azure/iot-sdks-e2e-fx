@@ -16,14 +16,14 @@ class ModuleGlue:
         self.object_map[connection_id] = internal
         return ConnectResponse(connection_id)
 
-    def connect_from_environment_v1(self, transport_type):
+    def connect_from_environment(self, transport_type):
         internal = InternalModuleGlue()
-        internal.connect_from_environment_v1(transport_type)
+        internal.connect_from_environment(transport_type)
         return self._return_connect_response(internal)
 
-    def connect_v1(self, transport_type, connection_string, ca_certificate):
+    def connect(self, transport_type, connection_string, ca_certificate):
         internal = InternalModuleGlue()
-        internal.connect_v1(transport_type, connection_string, ca_certificate.cert)
+        internal.connect(transport_type, connection_string, ca_certificate.cert)
         return self._return_connect_response(internal)
 
     def disconnect(self, connection_id):
