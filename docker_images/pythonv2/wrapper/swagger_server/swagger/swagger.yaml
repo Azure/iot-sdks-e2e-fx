@@ -293,6 +293,22 @@ paths:
           schema:
             $ref: "#/definitions/connectResponse"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/{connectionId}/disconnect:
+    put:
+      tags:
+      - "module"
+      summary: "Disconnect the module"
+      operationId: "module_disconnect"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
   /module/connectFromEnvironment/{transportType}:
     put:
       tags:
@@ -406,12 +422,12 @@ paths:
           schema:
             $ref: "#/definitions/connectResponse"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
-  /module/{connectionId}/connect:
+  /module/{connectionId}/connect2:
     put:
       tags:
       - "module"
       summary: "Connect the module"
-      operationId: "module_connect"
+      operationId: "module_connect2"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -443,14 +459,12 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
-  /module/{connectionId}/disconnect:
+  /module/{connectionId}/disconnect2:
     put:
       tags:
       - "module"
-      summary: "Disconnect the module"
-      description: "Disconnects from Azure IoTHub service.  More specifically, closes\
-        \ all connections and cleans up all resources for the active connection"
-      operationId: "module_disconnect"
+      summary: "Disonnect the module"
+      operationId: "module_disconnect2"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -921,7 +935,7 @@ paths:
       tags:
       - "device"
       summary: "Connect to the azure IoT Hub as a device"
-      operationId: "device_connect_v1"
+      operationId: "device_connect"
       consumes:
       - "application/json"
       parameters:
@@ -951,6 +965,22 @@ paths:
           description: "OK"
           schema:
             $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/disconnect:
+    put:
+      tags:
+      - "device"
+      summary: "Disconnect the device"
+      operationId: "device_disconnect"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
   /device/createFromConnectionString/{transportType}:
     put:
@@ -1019,12 +1049,12 @@ paths:
           schema:
             $ref: "#/definitions/connectResponse"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
-  /device/{connectionId}/connect:
+  /device/{connectionId}/connect2:
     put:
       tags:
       - "device"
       summary: "Connect the device"
-      operationId: "device_connect"
+      operationId: "device_connect2"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -1056,14 +1086,12 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
-  /device/{connectionId}/disconnect:
+  /device/{connectionId}/disconnect2:
     put:
       tags:
       - "device"
       summary: "Disconnect the device"
-      description: "Disconnects from Azure IoTHub service.  More specifically, closes\
-        \ all connections and cleans up all resources for the active connection"
-      operationId: "device_disconnect"
+      operationId: "device_disconnect2"
       parameters:
       - name: "connectionId"
         in: "path"

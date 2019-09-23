@@ -1,11 +1,11 @@
 {
-  "connectV1": {
+  "connect": {
     "put": {
       "tags": [
         "device"
       ],
       "summary": "Connect to the azure IoT Hub as a device",
-      "operationId": "Device_ConnectV1",
+      "operationId": "Device_Connect",
       "consumes": [
         "application/json"
       ],
@@ -30,6 +30,25 @@
           "schema": {
             "$ref": "definitions.json#/connectResponse"
           }
+        }
+      }
+    }
+  },
+  "disconnect": {
+    "put": {
+      "tags": [
+        "device"
+      ],
+      "summary": "Disconnect the device",
+      "operationId": "Device_Disconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/connectionId"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
         }
       }
     }
@@ -97,13 +116,13 @@
       }
     }
   },
-  "connect": {
+  "connect2": {
     "put": {
       "tags": [
         "device"
       ],
       "summary": "Connect the device",
-      "operationId": "Device_Connect",
+      "operationId": "Device_Connect2",
       "parameters": [
         {
           "$ref": "parameters.json#/connectionId"
@@ -138,14 +157,13 @@
       }
     }
   },
-  "disconnect": {
+  "disconnect2": {
     "put": {
       "tags": [
         "device"
       ],
       "summary": "Disconnect the device",
-      "description": "Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection",
-      "operationId": "Device_Disconnect",
+      "operationId": "Device_Disconnect2",
       "parameters": [
         {
           "$ref": "parameters.json#/connectionId"

@@ -95,6 +95,50 @@ class ModuleOperations(object):
         return deserialized
     connect_v1.metadata = {'url': '/module/connect/{transportType}'}
 
+    def disconnect(
+            self, connection_id, custom_headers=None, raw=False, **operation_config):
+        """Disconnect the module.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.disconnect.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    disconnect.metadata = {'url': '/module/{connectionId}/disconnect'}
+
     def connect_from_environment_v1(
             self, transport_type, custom_headers=None, raw=False, **operation_config):
         """Connect to the azure IoT Hub as a module using the environment
@@ -326,7 +370,7 @@ class ModuleOperations(object):
         return deserialized
     create_from_x509.metadata = {'url': '/module/createFromX509/{transportType}'}
 
-    def connect(
+    def connect2(
             self, connection_id, custom_headers=None, raw=False, **operation_config):
         """Connect the module.
 
@@ -343,7 +387,7 @@ class ModuleOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.connect.metadata['url']
+        url = self.connect2.metadata['url']
         path_format_arguments = {
             'connectionId': self._serialize.url("connection_id", connection_id, 'str')
         }
@@ -368,7 +412,7 @@ class ModuleOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    connect.metadata = {'url': '/module/{connectionId}/connect'}
+    connect2.metadata = {'url': '/module/{connectionId}/connect2'}
 
     def reconnect(
             self, connection_id, force_renew_password=None, custom_headers=None, raw=False, **operation_config):
@@ -418,12 +462,9 @@ class ModuleOperations(object):
             return client_raw_response
     reconnect.metadata = {'url': '/module/{connectionId}/reconnect'}
 
-    def disconnect(
+    def disconnect2(
             self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Disconnect the module.
-
-        Disconnects from Azure IoTHub service.  More specifically, closes all
-        connections and cleans up all resources for the active connection.
+        """Disonnect the module.
 
         :param connection_id: Id for the connection
         :type connection_id: str
@@ -438,7 +479,7 @@ class ModuleOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.disconnect.metadata['url']
+        url = self.disconnect2.metadata['url']
         path_format_arguments = {
             'connectionId': self._serialize.url("connection_id", connection_id, 'str')
         }
@@ -463,7 +504,7 @@ class ModuleOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect.metadata = {'url': '/module/{connectionId}/disconnect'}
+    disconnect2.metadata = {'url': '/module/{connectionId}/disconnect2'}
 
     def enable_twin(
             self, connection_id, custom_headers=None, raw=False, **operation_config):
