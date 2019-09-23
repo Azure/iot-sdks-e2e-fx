@@ -54,7 +54,7 @@ def module_connect_from_environment(transportType):  # noqa: E501
     :rtype: ConnectResponse
     """
     # changed from return 'do some magic!'
-    return module_glue.connect_from_environment_v1(transportType)
+    return module_glue.connect_from_environment(transportType)
 
 
 def module_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501

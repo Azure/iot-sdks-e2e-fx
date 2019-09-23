@@ -44,7 +44,7 @@ class ServiceConnectDisconnect(object):
 @six.add_metaclass(abc.ABCMeta)
 class Connect(object):
     @abc.abstractmethod
-    def connect_v1(self, transport, connection_string, ca_certificate):
+    def connect(self, transport, connection_string, ca_certificate):
         pass
 
     @abc.abstractmethod
@@ -55,7 +55,7 @@ class Connect(object):
 @six.add_metaclass(abc.ABCMeta)
 class ConnectFromEnvironment(object):
     @abc.abstractmethod
-    def connect_from_environment_v1(self, transport):
+    def connect_from_environment(self, transport):
         pass
 
 
