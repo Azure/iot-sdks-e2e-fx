@@ -3,8 +3,7 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 from multiprocessing.pool import ThreadPool
-from internal_device_glue import InternalDeviceGlue
-from internal_module_glue import InternalModuleGlue
+from internal_iothub_glue import InternalDeviceGlue, InternalModuleGlue
 from ..abstract_iothub_apis import AbstractDeviceApi, AbstractModuleApi
 
 device_object_list = []
