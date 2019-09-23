@@ -89,7 +89,8 @@ def device_destroy(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.destroy(connectionId)
 
 
 def device_disconnect(connectionId):  # noqa: E501

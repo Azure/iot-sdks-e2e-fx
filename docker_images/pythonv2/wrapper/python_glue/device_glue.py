@@ -4,6 +4,9 @@
 from swagger_server.models.connect_response import ConnectResponse
 from internal_iothub_glue import InternalDeviceGlue
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DeviceGlue:
@@ -22,7 +25,7 @@ class DeviceGlue:
         return self._finish_connection(internal)
 
     def disconnect(self, connection_id):
-        print("disconnecting " + connection_id)
+        logger.info("disconnecting " + connection_id)
         if connection_id in self.object_map:
             internal = self.object_map[connection_id]
             internal.disconnect()
@@ -51,6 +54,13 @@ class DeviceGlue:
 
     def disconnect2(self, connection_id):
         self.object_map[connection_id].disconnect2()
+
+    def destroy(self, connection_id):
+        logger.info("destroying " + connection_id)
+        if connection_id in self.object_map:
+            internal = self.object_map[connection_id]
+            internal.destroy()
+            del self.object_map[connection_id]
 
     def enable_methods(self, connection_id):
         self.object_map[connection_id].enable_methods()
@@ -91,5 +101,5 @@ class DeviceGlue:
     def cleanup_resources(self):
         listcopy = list(self.object_map.keys())
         for key in listcopy:
-            print("object {} not cleaned up".format(key))
+            logger.info("object {} not cleaned up".format(key))
             self.disconnect(key)

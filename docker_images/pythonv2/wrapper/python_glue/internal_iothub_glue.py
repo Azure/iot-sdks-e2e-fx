@@ -21,7 +21,17 @@ except SyntaxError:
 
 class Connect(object):
     def connect(self, transport_type, connection_string, cert):
-        print("connecting using " + transport_type)
+        logger.info("connecting using " + transport_type)
+        self.create_from_connection_string(transport_type, connection_string, cert)
+        self.client.connect()
+
+    def disconnect(self):
+        logger.info("disconnecting")
+        if self.client:
+            self.client.disconnect()
+            self.client = None
+
+    def create_from_connection_string(self, transport_type, connection_string, cert):
         if "GatewayHostName" in connection_string:
             self.client = self.client_class.create_from_connection_string(
                 connection_string, ca_cert=cert
@@ -30,25 +40,13 @@ class Connect(object):
             self.client = self.client_class.create_from_connection_string(
                 connection_string
             )
-        self.client.connect()
-
-    def disconnect(self):
-        print("disconnecting")
-        if self.client:
-            self.client.disconnect()
-            self.client = None
-
-    def create_from_connection_string(self, transport_type, connection_string, cert):
-        # BKTODO
-        pass
 
     def create_from_x509(self, transport_type, x509):
         # BKTODO
         pass
 
     def connect2(self):
-        # BKTODO
-        pass
+        self.client.connect()
 
     def reconnect(self, force_renew_password):
         # BKTODO
@@ -58,16 +56,20 @@ class Connect(object):
         # BKTODO
         pass
 
+    def destroy(self):
+        if self.client:
+            self.client.disconnect()
+            self.client = None
+
 
 class ConnectFromEnvironment(object):
     def connect_from_environment(self, transport_type):
-        print("connecting from environment")
-        self.client = self.client_class.create_from_edge_environment()
+        logger.info("connecting from environment")
+        self.create_from_environment(transport_type)
         self.client.connect()
 
     def create_from_environment(self, transport_type):
-        # BKTODO
-        pass
+        self.client = self.client_class.create_from_edge_environment()
 
 
 class HandleMethods(object):
@@ -77,28 +79,28 @@ class HandleMethods(object):
 
     def roundtrip_method_call(self, methodName, requestAndResponse):
         # receive method request
-        print("Waiting for method request")
+        logger.info("Waiting for method request")
         request = self.client.receive_method_request(methodName)
-        print("Method request received")
+        logger.info("Method request received")
 
         # verify name and payload
         expected_name = methodName
         expected_payload = requestAndResponse.request_payload["payload"]
         if request.name == expected_name:
             if request.payload == expected_payload:
-                print("Method name and payload matched. Returning response")
+                logger.info("Method name and payload matched. Returning response")
                 resp_status = requestAndResponse.status_code
                 resp_payload = requestAndResponse.response_payload
             else:
-                print("Request payload doesn't match")
-                print("expected: " + expected_payload)
-                print("received: " + request.payload)
+                logger.info("Request payload doesn't match")
+                logger.info("expected: " + expected_payload)
+                logger.info("received: " + request.payload)
                 resp_status = 500
                 resp_payload = None
         else:
-            print("Method name doesn't match")
-            print("expected: '" + expected_name + "'")
-            print("received: '" + request.name + "'")
+            logger.info("Method name doesn't match")
+            logger.info("expected: '" + expected_name + "'")
+            logger.info("received: '" + request.name + "'")
             resp_status = 404
             resp_payload = None
 
@@ -107,7 +109,7 @@ class HandleMethods(object):
             request_id=request.request_id, status=resp_status, payload=resp_payload
         )
         self.client.send_method_response(response)
-        print("Method response sent")
+        logger.info("Method response sent")
 
 
 class Twin(object):
@@ -115,21 +117,21 @@ class Twin(object):
         pass
 
     def wait_for_desired_property_patch(self):
-        print("Waiting for desired property patch")
+        logger.info("Waiting for desired property patch")
         patch = self.client.receive_twin_desired_properties_patch()
-        print("patch received")
+        logger.info("patch received")
         return patch
 
     def get_twin(self):
-        print("getting twin")
+        logger.info("getting twin")
         twin = self.client.get_twin()
-        print("done getting twin")
+        logger.info("done getting twin")
         return {"properties": twin}
 
     def send_twin_patch(self, props):
-        print("setting reported property patch")
+        logger.info("setting reported property patch")
         self.client.patch_twin_reported_properties(props)
-        print("done setting reported properties")
+        logger.info("done setting reported properties")
 
 
 class C2d(object):
@@ -138,19 +140,19 @@ class C2d(object):
         pass
 
     def wait_for_c2d_message(self):
-        print("Waiting for c2d message")
+        logger.info("Waiting for c2d message")
         message = self.client.receive_message()
-        print("Message received")
+        logger.info("Message received")
         return convert.incoming_message_to_test_script_object(message)
 
 
 class Telemetry(object):
     def send_event(self, event_body):
-        print("sending event")
+        logger.info("sending event")
         self.client.send_message(
             convert.test_script_object_to_outgoing_message(event_body)
         )
-        print("send confirmation received")
+        logger.info("send confirmation received")
 
 
 class InputsAndOutputs(object):
@@ -159,17 +161,17 @@ class InputsAndOutputs(object):
         pass
 
     def wait_for_input_message(self, input_name):
-        print("Waiting for input message")
+        logger.info("Waiting for input message")
         message = self.client.receive_message_on_input(input_name)
-        print("Message received")
+        logger.info("Message received")
         return convert.incoming_message_to_test_script_object(message)
 
     def send_output_event(self, output_name, event_body):
-        print("sending output event")
+        logger.info("sending output event")
         self.client.send_message_to_output(
             convert.test_script_object_to_outgoing_message(event_body), output_name
         )
-        print("send confirmation received")
+        logger.info("send confirmation received")
 
 
 class ConnectionStatus(object):

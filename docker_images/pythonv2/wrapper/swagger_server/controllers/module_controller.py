@@ -117,7 +117,8 @@ def module_destroy(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    #changed from return 'do some magic!'
+    module_glue.destroy(connectionId)
 
 
 def module_disconnect(connectionId):  # noqa: E501
