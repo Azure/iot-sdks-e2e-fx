@@ -6,6 +6,9 @@ from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
 from swagger_server import util
 
+# added 2 lines in merge
+from module_glue import ModuleGlue
+module_glue = ModuleGlue()
 
 def module_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a module
