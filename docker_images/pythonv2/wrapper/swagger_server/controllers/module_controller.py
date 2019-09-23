@@ -6,9 +6,6 @@ from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
 from swagger_server import util
 
-# added 2 lines in merge
-from module_glue import ModuleGlue
-module_glue = ModuleGlue()
 
 def module_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a module
@@ -26,8 +23,7 @@ def module_connect(transportType, connectionString, caCertificate=None):  # noqa
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    return module_glue.connect(transportType, connectionString, caCertificate)
+    return 'do some magic!'
 
 
 def module_connect2(connectionId):  # noqa: E501
@@ -40,8 +36,7 @@ def module_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.connect2(connectionId)
+    return 'do some magic!'
 
 
 def module_connect_from_environment(transportType):  # noqa: E501
@@ -54,8 +49,7 @@ def module_connect_from_environment(transportType):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    # changed from return 'do some magic!'
-    return module_glue.connect_from_environment(transportType)
+    return 'do some magic!'
 
 
 def module_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -74,8 +68,7 @@ def module_create_from_connection_string(transportType, connectionString, caCert
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    return module_glue.create_from_connection_string(transportType, connectionString, caCertificate)
+    return 'do some magic!'
 
 
 def module_create_from_environment(transportType):  # noqa: E501
@@ -88,8 +81,7 @@ def module_create_from_environment(transportType):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    # changed from return 'do some magic!'
-    return module_glue.create_from_environment(transportType)
+    return 'do some magic!'
 
 
 def module_create_from_x509(transportType, X509):  # noqa: E501
@@ -104,8 +96,20 @@ def module_create_from_x509(transportType, X509):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    # changed from return 'do some magic!'
-    return module_glue.crate_from_x509(transportType, X509)
+    return 'do some magic!'
+
+
+def module_destroy(connectionId):  # noqa: E501
+    """Disonnect and destroy the module client
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 
 def module_disconnect(connectionId):  # noqa: E501
@@ -118,8 +122,7 @@ def module_disconnect(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.disconnect(connectionId)
+    return 'do some magic!'
 
 
 def module_disconnect2(connectionId):  # noqa: E501
@@ -132,8 +135,7 @@ def module_disconnect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    #changed from return 'do some magic!'
-    module_glue.disconnect2(connectionId)
+    return 'do some magic!'
 
 
 def module_enable_input_messages(connectionId):  # noqa: E501
@@ -146,8 +148,7 @@ def module_enable_input_messages(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.enable_input_messages(connectionId)
+    return 'do some magic!'
 
 
 def module_enable_methods(connectionId):  # noqa: E501
@@ -160,8 +161,7 @@ def module_enable_methods(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.enable_methods(connectionId)
+    return 'do some magic!'
 
 
 def module_enable_twin(connectionId):  # noqa: E501
@@ -174,8 +174,7 @@ def module_enable_twin(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.enable_twin(connectionId)
+    return 'do some magic!'
 
 
 def module_get_connection_status(connectionId):  # noqa: E501
@@ -188,8 +187,7 @@ def module_get_connection_status(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return module_glue.get_connection_status(connectionId)
+    return 'do some magic!'
 
 
 def module_get_twin(connectionId):  # noqa: E501
@@ -202,8 +200,7 @@ def module_get_twin(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return module_glue.get_twin(connectionId)
+    return 'do some magic!'
 
 
 def module_invoke_device_method(connectionId, deviceId, methodInvokeParameters):  # noqa: E501
@@ -220,11 +217,7 @@ def module_invoke_device_method(connectionId, deviceId, methodInvokeParameters):
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return module_glue.invoke_device_method(
-        connectionId, deviceId, methodInvokeParameters
-    )
-
+    return 'do some magic!'
 
 
 def module_invoke_module_method(connectionId, deviceId, moduleId, methodInvokeParameters):  # noqa: E501
@@ -243,10 +236,7 @@ def module_invoke_module_method(connectionId, deviceId, moduleId, methodInvokePa
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return module_glue.invoke_module_method(
-        connectionId, deviceId, moduleId, methodInvokeParameters
-    )
+    return 'do some magic!'
 
 
 def module_patch_twin(connectionId, props):  # noqa: E501
@@ -261,8 +251,7 @@ def module_patch_twin(connectionId, props):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    return module_glue.send_twin_patch(connectionId, props)
+    return 'do some magic!'
 
 
 def module_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
@@ -277,8 +266,7 @@ def module_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.reconnect(forceRenewPassword)
+    return 'do some magic!'
 
 
 def module_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
@@ -297,10 +285,7 @@ def module_roundtrip_method_call(connectionId, methodName, requestAndResponse): 
     """
     if connexion.request.is_json:
         requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    return module_glue.roundtrip_method_call(
-        connectionId, methodName, requestAndResponse
-    )
+    return 'do some magic!'
 
 
 def module_send_event(connectionId, eventBody):  # noqa: E501
@@ -315,8 +300,7 @@ def module_send_event(connectionId, eventBody):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.send_event(connectionId, eventBody)
+    return 'do some magic!'
 
 
 def module_send_output_event(connectionId, outputName, eventBody):  # noqa: E501
@@ -333,8 +317,8 @@ def module_send_output_event(connectionId, outputName, eventBody):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    module_glue.send_output_event(connectionId, outputName, eventBody)
+    return 'do some magic!'
+
 
 def module_wait_for_connection_status_change(connectionId):  # noqa: E501
     """wait for the current connection status to change and return the changed status
@@ -346,8 +330,7 @@ def module_wait_for_connection_status_change(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return module_glue.wait_for_connection_status_change(connectionId)
+    return 'do some magic!'
 
 
 def module_wait_for_desired_properties_patch(connectionId):  # noqa: E501
@@ -360,8 +343,7 @@ def module_wait_for_desired_properties_patch(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return module_glue.wait_for_desired_property_patch(connectionId)
+    return 'do some magic!'
 
 
 def module_wait_for_input_message(connectionId, inputName):  # noqa: E501
@@ -376,5 +358,4 @@ def module_wait_for_input_message(connectionId, inputName):  # noqa: E501
 
     :rtype: str
     """
-    # changed from return 'do some magic!'
-    return module_glue.wait_for_input_message(connectionId, inputName)
+    return 'do some magic!'

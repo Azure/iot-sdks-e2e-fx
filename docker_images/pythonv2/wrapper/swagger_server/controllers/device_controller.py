@@ -6,9 +6,6 @@ from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
 from swagger_server import util
 
-# Added 2 lines in merge
-from device_glue import DeviceGlue
-device_glue = DeviceGlue()
 
 def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a device
@@ -26,8 +23,7 @@ def device_connect(transportType, connectionString, caCertificate=None):  # noqa
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    return device_glue.connect(transportType, connectionString, caCertificate)
+    return 'do some magic!'
 
 
 def device_connect2(connectionId):  # noqa: E501
@@ -40,8 +36,7 @@ def device_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.connect2(connectionId)
+    return 'do some magic!'
 
 
 def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -60,7 +55,7 @@ def device_create_from_connection_string(transportType, connectionString, caCert
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    return device_glue.create_from_connection_string(connectionString, caCertificate)
+    return 'do some magic!'
 
 
 def device_create_from_x509(transportType, X509):  # noqa: E501
@@ -75,8 +70,20 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    # changed from return 'do some magic!'
-    return device_glue.create_from_x509(transportType, X509)
+    return 'do some magic!'
+
+
+def device_destroy(connectionId):  # noqa: E501
+    """Disconnect and destroy the device client
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 
 def device_disconnect(connectionId):  # noqa: E501
@@ -89,8 +96,7 @@ def device_disconnect(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.disconnect(connectionId)
+    return 'do some magic!'
 
 
 def device_disconnect2(connectionId):  # noqa: E501
@@ -103,8 +109,7 @@ def device_disconnect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.disconnect2(connectionId)
+    return 'do some magic!'
 
 
 def device_enable_c2d_messages(connectionId):  # noqa: E501
@@ -117,8 +122,7 @@ def device_enable_c2d_messages(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.enable_c2d(connectionId)
+    return 'do some magic!'
 
 
 def device_enable_methods(connectionId):  # noqa: E501
@@ -131,8 +135,7 @@ def device_enable_methods(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.enable_methods(connectionId)
+    return 'do some magic!'
 
 
 def device_enable_twin(connectionId):  # noqa: E501
@@ -145,8 +148,7 @@ def device_enable_twin(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.enable_twin(connectionId)
+    return 'do some magic!'
 
 
 def device_get_connection_status(connectionId):  # noqa: E501
@@ -159,8 +161,7 @@ def device_get_connection_status(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return device_glue.get_connection_status(connectionId)
+    return 'do some magic!'
 
 
 def device_get_twin(connectionId):  # noqa: E501
@@ -173,8 +174,7 @@ def device_get_twin(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return device_glue.get_twin(connectionId)
+    return 'do some magic!'
 
 
 def device_patch_twin(connectionId, props):  # noqa: E501
@@ -189,8 +189,7 @@ def device_patch_twin(connectionId, props):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.send_twin_patch(connectionId, props)
+    return 'do some magic!'
 
 
 def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
@@ -205,8 +204,7 @@ def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.reconnect(connectionId, forceRenewPassword)
+    return 'do some magic!'
 
 
 def device_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
@@ -225,10 +223,7 @@ def device_roundtrip_method_call(connectionId, methodName, requestAndResponse): 
     """
     if connexion.request.is_json:
         requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    return device_glue.roundtrip_method_call(
-        connectionId, methodName, requestAndResponse
-    )
+    return 'do some magic!'
 
 
 def device_send_event(connectionId, eventBody):  # noqa: E501
@@ -243,8 +238,7 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.send_event(connectionId, eventBody)
+    return 'do some magic!'
 
 
 def device_wait_for_c2d_message(connectionId):  # noqa: E501
@@ -257,8 +251,7 @@ def device_wait_for_c2d_message(connectionId):  # noqa: E501
 
     :rtype: str
     """
-    # changed from return 'do some magic!'
-    return device_glue.wait_for_c2d_message(connectionId)
+    return 'do some magic!'
 
 
 def device_wait_for_connection_status_change(connectionId):  # noqa: E501
@@ -271,8 +264,7 @@ def device_wait_for_connection_status_change(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return device_glue.wait_for_connection_status_change(connectionId)
+    return 'do some magic!'
 
 
 def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
@@ -285,5 +277,4 @@ def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return device_glue.wait_for_desired_property_patch(connectionId)
+    return 'do some magic!'

@@ -91,6 +91,9 @@
     "/module/{connectionId}/disconnect2": {
       "$ref": "module.json#/disconnect2"
     },
+    "/module/{connectionId}/destroy": {
+      "$ref": "module.json#/destroy"
+    },
     "/module/{connectionId}/enableTwin": {
       "$ref": "module.json#/enableTwin"
     },
@@ -165,6 +168,9 @@
     },
     "/device/{connectionId}/disconnect2": {
       "$ref": "device.json#/disconnect2"
+    },
+    "/device/{connectionId}/destroy": {
+      "$ref": "device.json#/destroy"
     },
     "/device/{connectionId}/enableMethods": {
       "$ref": "device.json#/enableMethods"

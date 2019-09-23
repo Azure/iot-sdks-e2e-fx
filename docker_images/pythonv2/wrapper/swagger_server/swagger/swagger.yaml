@@ -475,6 +475,22 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/{connectionId}/destroy:
+    put:
+      tags:
+      - "module"
+      summary: "Disonnect and destroy the module client"
+      operationId: "module_destroy"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
   /module/{connectionId}/enableTwin:
     put:
       tags:
@@ -1092,6 +1108,22 @@ paths:
       - "device"
       summary: "Disconnect the device"
       operationId: "device_disconnect2"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/destroy:
+    put:
+      tags:
+      - "device"
+      summary: "Disconnect and destroy the device client"
+      operationId: "device_destroy"
       parameters:
       - name: "connectionId"
         in: "path"
