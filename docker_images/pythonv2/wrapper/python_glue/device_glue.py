@@ -28,6 +28,30 @@ class DeviceGlue:
             internal.disconnect()
             del self.object_map[connection_id]
 
+    def create_from_connection_string(self, transport_type, connection_string, cert):
+        internal = InternalDeviceGlue()
+        internal.create_from_connection_string(transport_type, connection_string, cert)
+        return self._return_connect_response(internal)
+
+    def create_from_x509(self, transport_type, x509):
+        internal = InternalDeviceGlue()
+        internal.create_from_x509(transport_type, x509)
+        return self._return_connect_response(internal)
+
+    def create_from_environment(self, transport_type):
+        internal = InternalDeviceGlue()
+        internal.create_from_environment(transport_type)
+        return self._return_connect_response(internal)
+
+    def connect2(self, connection_id):
+        self.object_map[connection_id].connect2()
+
+    def reconnect(self, connection_id, force_renew_password):
+        self.object_map[connection_id].reconnect(force_renew_password)
+
+    def disconnect2(self, connection_id):
+        self.object_map[connection_id].disconnect2()
+
     def enable_methods(self, connection_id):
         self.object_map[connection_id].enable_methods()
 

@@ -27,12 +27,36 @@ class Connect(object):
             async_helper.run_coroutine_sync(self.client.disconnect())
             self.client = None
 
+    def create_from_connection_string(self, transport_type, connection_string, cert):
+        # BKTODO
+        pass
+
+    def create_from_x509(self, transport_type, x509):
+        # BKTODO
+        pass
+
+    def connect2(self):
+        # BKTODO
+        pass
+
+    def reconnect(self, force_renew_password):
+        # BKTODO
+        pass
+
+    def disconnect2(self):
+        # BKTODO
+        pass
+
 
 class ConnectFromEnvironment(object):
     def connect_from_environment(self, transport_type):
         print("connecting from environment")
         self.client = IoTHubModuleClient.create_from_edge_environment()
         async_helper.run_coroutine_sync(self.client.connect())
+
+    def create_from_environment(self, transport_type):
+        # BKTODO
+        pass
 
 
 class HandleMethods(object):
