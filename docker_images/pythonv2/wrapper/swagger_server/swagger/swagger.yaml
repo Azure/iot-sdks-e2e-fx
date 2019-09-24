@@ -93,7 +93,7 @@ paths:
       operationId: "wrapper_network_disconnect"
       parameters:
       - name: "disconnectionType"
-        in: "path"
+        in: "query"
         required: true
         type: "string"
       responses:

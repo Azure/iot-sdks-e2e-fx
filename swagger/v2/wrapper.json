@@ -97,7 +97,7 @@
       "parameters": [
         {
           "name": "disconnectionType",
-          "in": "path",
+          "in": "query",
           "required": true,
           "type": "string"
         }
