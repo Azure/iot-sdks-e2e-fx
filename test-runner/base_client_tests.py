@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class BaseClientTests(object):
     @pytest.mark.it("Can connect and immediately disconnect")
-    def test_client_connect_disconnect(self, client):
+    async def test_client_connect_disconnect(self, client):
         pass
 
 
