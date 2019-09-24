@@ -90,9 +90,8 @@ jobs:
       pythonv2_27_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py27, suite: iothub_module_and_device_mqtt }
       pythonv2_34_edgehub_module_mqtt:                     { language: pythonv2, variant: py34, suite: edgehub_module_mqtt }
       pythonv2_34_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py34, suite: iothub_module_and_device_mqtt }
-      pythonv2_36_edgehub_module_mqtt:                     { language: pythonv2, variant: py36, suite: edgehub_module_mqtt }
-      pythonv2_36_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py36, suite: iothub_module_and_device_mqtt }
       pythonv2_36_iothub_module_and_device_mqtt_async:     { language: pythonv2, variant: py36, suite: iothub_module_and_device_mqtt, async: yes }
+      pythonv2_36_edgehub_module_async:                    { language: pythonv2, variant: py36, suite: edgehub_module_mqtt, async: yes }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml

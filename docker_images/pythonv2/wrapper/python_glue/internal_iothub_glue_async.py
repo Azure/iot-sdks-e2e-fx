@@ -59,7 +59,7 @@ class Connect(ConnectEventWatcher):
 class ConnectFromEnvironment(object):
     def connect_from_environment(self, transport_type):
         logger.info("connecting from environment")
-        self.create_from_environment()
+        self.create_from_environment(transport_type)
         async_helper.run_coroutine_sync(self.client.connect())
 
     def create_from_environment(self, transport_type):
