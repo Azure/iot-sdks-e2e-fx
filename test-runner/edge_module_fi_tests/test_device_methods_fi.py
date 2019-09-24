@@ -15,7 +15,7 @@ from edgehub_control import (
     edgeHub,
     restart_edgehub,
 )
-from adapters import print_message as log_message
+from adapters import print_message
 from runtime_config import get_current_config
 
 client = docker.from_env()
@@ -44,11 +44,11 @@ def do_device_method_call(source_module, destination_module, destination_device_
     Helper function which invokes a method call on one module and responds to it from another module
     """
     try:
-        log_message("enabling methods on the destination")
+        print_message("enabling methods on the destination")
         destination_module.enable_methods()
 
         # start listening for method calls on the destination side
-        log_message("starting to listen from destination module")
+        print_message("starting to listen from destination module")
         receiver_thread = destination_module.roundtrip_method_async(
             method_name, status_code, method_invoke_parameters, method_response_body
         )
@@ -58,7 +58,7 @@ def do_device_method_call(source_module, destination_module, destination_device_
         # invoking the call from caller side
         time.sleep(5)
         connect_edgehub()
-        log_message("invoking method call")
+        print_message("invoking method call")
         request_thread = source_module.call_device_method_async(
             destination_device_id, method_invoke_parameters
         )
@@ -67,7 +67,7 @@ def do_device_method_call(source_module, destination_module, destination_device_
         print(str(response))
 
         # wait for that response to arrive back at the source and verify that it's all good.
-        log_message("response = " + str(response) + "\n")
+        print_message("response = " + str(response) + "\n")
         assert response["status"] == status_code
         # edge bug: the response that edge returns is stringified.  The same response that comes back from an iothub service call is not stringified
         if isinstance(response["payload"], str):

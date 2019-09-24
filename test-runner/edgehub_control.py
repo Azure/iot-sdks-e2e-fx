@@ -1,7 +1,7 @@
 import docker
 import sys
 import os
-from adapters import print_message as log_message
+from adapters import print_message
 from time import sleep
 
 # Create Global Variables
@@ -10,7 +10,7 @@ client = docker.from_env()
 try:
     edge_network = client.networks.get("azure-iot-edge")
     edgeHub = client.containers.get(EDGEHUB_NAME)
-except:
+except:  # noqa: E722 do not use bare 'except'
     print("Could not load docker engine.")
     edge_network = None
     edgeHub = None
@@ -22,7 +22,7 @@ def get_network_list():
 
 
 def disconnect_edgehub(network=True):
-    log_message("disconnecting edgehub from network")
+    print_message("disconnecting edgehub from network")
     try:
         edgeHub = client.containers.get(EDGEHUB_NAME)
         if network:
@@ -30,67 +30,71 @@ def disconnect_edgehub(network=True):
                 edge_network.disconnect(EDGEHUB_NAME)
                 sleep(10)
             else:  # Edge Network alreday contains EdgeHub
-                log_message("Note: {} not in IoT Edge Network".format(EDGEHUB_NAME))
+                print_message("Note: {} not in IoT Edge Network".format(EDGEHUB_NAME))
         else:
             if EDGEHUB_NAME in list(map(lambda x: x.name, client.containers.list())):
                 edgeHub.restart()
             else:  # Edge Network alreday contains EdgeHub
-                log_message("Note: {} not in IoT Edge Network".format(EDGEHUB_NAME))
+                print_message("Note: {} not in IoT Edge Network".format(EDGEHUB_NAME))
     except Exception as e:
-        log_message("Error: {}".format(sys.exc_info()[0]))
+        print_message("Error: {}".format(sys.exc_info()[0]))
         raise e
 
 
 def connect_edgehub(network=True):
-    log_message("connecting edgehub to network")
+    print_message("connecting edgehub to network")
     try:
-        log_message(" edgeHub = client.containers.get(EDGEHUB_NAME)")
+        print_message(" edgeHub = client.containers.get(EDGEHUB_NAME)")
         edgeHub = client.containers.get(EDGEHUB_NAME)
         if network:
             if EDGEHUB_NAME not in get_network_list():
-                log_message("edge_network.connect(EDGEHUB_NAME)")
+                print_message("edge_network.connect(EDGEHUB_NAME)")
                 edge_network.connect(EDGEHUB_NAME)
             else:  # Edge Network alreday contains EdgeHub
-                log_message("Note: {} already in IoT Edge Network".format(EDGEHUB_NAME))
+                print_message(
+                    "Note: {} already in IoT Edge Network".format(EDGEHUB_NAME)
+                )
         else:
-            log_message("network=False")
+            print_message("network=False")
             while edgeHub.status != "running":
-                log_message("edgehub not running")
+                print_message("edgehub not running")
                 edgeHub.start()
-                log_message("Waiting for edgeHub to come back online...")
+                print_message("Waiting for edgeHub to come back online...")
                 sleep(1)
                 edgeHub = client.containers.get(EDGEHUB_NAME)
-            log_message("EXITED WHILE LOOP")
+            print_message("EXITED WHILE LOOP")
             if edgeHub.status == "running":
-                log_message(
+                print_message(
                     "~~~~~~~~~~~~~~~~~~edgeHub started~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
                 )
-                log_message("sleeping...")
+                print_message("sleeping...")
                 sleep(5)
-                log_message("done sleeping!")
+                print_message("done sleeping!")
     except Exception as e:
-        log_message(
+        print_message(
             "THIS IS AN EXCEPTION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         )
-        log_message("Error: {}".format(sys.exc_info()[0]))
+        print_message("Error: {}".format(sys.exc_info()[0]))
         raise e
 
 
 def restart_edgehub(hard=False):
-    log_message("restarting edgehub")
+    print_message("restarting edgehub")
     sleep(5)
     client = docker.from_env()
     edgeHub = client.containers.get(EDGEHUB_NAME)
     try:
-        if hard:            
+        if hard:
             client = docker.from_env()
             containerList = list(map(lambda x: x.name, client.containers.list()))
-            
+
             for containerName in containerList:
                 if "Mod" or "edgeHub" in containerName:
                     currentContainer = client.containers.get(containerName)
                     currentContainer.restart()
-            while EDGEHUB_NAME not in list(map(lambda x: x.name, client.containers.list())):
+            while EDGEHUB_NAME not in list(
+                map(lambda x: x.name, client.containers.list())
+            ):
                 print("waiting for edge daemon to revive edgehub...")
                 sleep(1)
             print("updating pointer to edgehub container")
@@ -99,5 +103,5 @@ def restart_edgehub(hard=False):
             edgeHub.restart()
             sleep(5)
     except Exception as e:
-        log_message("Error: {}".format(sys.exc_info()[0]))
+        print_message("Error: {}".format(sys.exc_info()[0]))
         raise e

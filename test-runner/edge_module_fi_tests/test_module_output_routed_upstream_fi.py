@@ -11,7 +11,7 @@ from edgehub_control import (
     edgeHub,
     restart_edgehub,
 )
-from adapters import print_message as log_message
+from adapters import print_message
 
 output_name = "telemetry"
 
@@ -39,7 +39,7 @@ def test_module_output_routed_upstream_fi(test_object_stringified):
             get_current_config().test_module.device_id, expected=test_object_stringified
         )
         if not received_message:
-            log_message("Message not received")
+            print_message("Message not received")
             assert False
 
         module_client.disconnect()

@@ -61,7 +61,7 @@ class WrapperApi(AbstractWrapperApi):
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).wrapper
         self.rest_endpoint.config.retry_policy.retries = 0
 
-    def log_message(self, message):
+    def log_message_sync(self, message):
         try:
             self.rest_endpoint.log_message(
                 {"message": "PYTEST: " + message},
@@ -71,15 +71,15 @@ class WrapperApi(AbstractWrapperApi):
             print("PYTEST: error logging to " + str(self.lrest_endpoint))
             # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
 
-    def cleanup(self):
+    def cleanup_sync(self):
         self.rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
 
-    def get_capabilities(self):
+    def get_capabilities_sync(self):
         return self.rest_endpoint.get_capabilities(
             timeout=adapter_config.default_api_timeout
         )
 
-    def set_flags(self, flags):
+    def set_flags_sync(self, flags):
         return self.rest_endpoint.set_flags(
             flags, timeout=adapter_config.default_api_timeout
         )

@@ -5,7 +5,7 @@
 import pytest
 import connections
 from runtime_config import get_current_config
-from adapters import print_message as log_message
+from adapters import print_message
 from edgehub_control import (
     edgeHub,
     disconnect_edgehub,
@@ -36,7 +36,7 @@ def test_module_send_event_iothub_fi(
         get_current_config().test_module.device_id, expected=test_object_stringified
     )
     if not received_message:
-        log_message("Intial message not received")
+        print_message("Intial message not received")
         assert False
     disconnect_edgehub()  # DISCONNECT EDGEHUB
     module_client.send_event_async(test_object_stringified_2)
@@ -45,7 +45,7 @@ def test_module_send_event_iothub_fi(
         get_current_config().test_module.device_id, expected=test_object_stringified_2
     )
     if not received_message:
-        log_message("Second message not received")
+        print_message("Second message not received")
         assert False
     module_client.disconnect()
     eventhub_client.disconnect()
