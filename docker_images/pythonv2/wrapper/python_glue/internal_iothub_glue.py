@@ -4,6 +4,7 @@
 import logging
 import internal_wrapper_glue
 import convert
+from glue_utils import ConnectEventWatcher
 from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodResponse
 
 
@@ -19,7 +20,7 @@ except SyntaxError:
     pass
 
 
-class Connect(object):
+class Connect(ConnectEventWatcher):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
@@ -40,6 +41,7 @@ class Connect(object):
             self.client = self.client_class.create_from_connection_string(
                 connection_string
             )
+        self._attach_connect_event_watcher()
 
     def create_from_x509(self, transport_type, x509):
         # BKTODO
@@ -53,8 +55,7 @@ class Connect(object):
         pass
 
     def disconnect2(self):
-        # BKTODO
-        pass
+        self.client.disconnect()
 
     def destroy(self):
         if self.client:
@@ -70,6 +71,7 @@ class ConnectFromEnvironment(object):
 
     def create_from_environment(self, transport_type):
         self.client = self.client_class.create_from_edge_environment()
+        self._attach_connect_event_watcher()
 
 
 class HandleMethods(object):
@@ -176,8 +178,10 @@ class InputsAndOutputs(object):
 
 class ConnectionStatus(object):
     def get_connection_status(self):
-        pass
-        # BKTODO
+        if self.connected:
+            return "connected"
+        else:
+            return "disconnected"
 
     def wait_for_connection_status_change(self):
         pass
@@ -190,6 +194,7 @@ class InternalDeviceGlueSync(
     def __init__(self):
         self.client_class = IoTHubDeviceClient
         self.client = None
+        self.connected = False
 
 
 def InternalDeviceGlue():
@@ -197,7 +202,7 @@ def InternalDeviceGlue():
         logger.info("Creating InternalDeviceGlueAsync")
         return InternalDeviceGlueAsync()
     else:
-        logger.info("Creating InternalDeviceGluesync")
+        logger.info("Creating InternalDeviceGlueSync")
         return InternalDeviceGlueSync()
 
 
@@ -214,6 +219,7 @@ class InternalModuleGlueSync(
     def __init__(self):
         self.client_class = IoTHubModuleClient
         self.client = None
+        self.connected = False
 
 
 def InternalModuleGlue():
@@ -221,5 +227,5 @@ def InternalModuleGlue():
         logger.info("Creating InternalModuleGlueAsync")
         return InternalModuleGlueAsync()
     else:
-        logger.info("Creating InternalModuleGlueAsync")
+        logger.info("Creating InternalModuleGlueSync")
         return InternalModuleGlueSync()

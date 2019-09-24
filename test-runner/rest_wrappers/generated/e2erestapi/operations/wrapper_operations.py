@@ -219,13 +219,10 @@ class WrapperOperations(object):
         """
         # Construct URL
         url = self.network_disconnect.metadata['url']
-        path_format_arguments = {
-            'disconnectionType': self._serialize.url("disconnection_type", disconnection_type, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
 
         # Construct parameters
         query_parameters = {}
+        query_parameters['disconnectionType'] = self._serialize.query("disconnection_type", disconnection_type, 'str')
 
         # Construct headers
         header_parameters = {}

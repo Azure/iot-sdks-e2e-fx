@@ -3,7 +3,7 @@
 # full license information.
 
 import pytest
-from base_client_tests import BaseClientTests
+from base_client_tests import BaseClientTests, ConnectionStatusTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
 from method_tests import (
@@ -15,12 +15,13 @@ from c2d_tests import C2dTests
 
 @pytest.mark.describe("IoTHub Device")
 @pytest.mark.testgroup_iothub_device_client
-class TestIotHubModuleClient(
+class TestIotHubDeviceClient(
     BaseClientTests,
     TelemetryTests,
     TwinTests,
     ReceiveMethodCallFromServiceTests,
     C2dTests,
+    ConnectionStatusTests,
 ):
     @pytest.fixture
     def client(self, test_device):

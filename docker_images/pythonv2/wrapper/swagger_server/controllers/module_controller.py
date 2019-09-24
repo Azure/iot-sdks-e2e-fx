@@ -6,9 +6,12 @@ from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
 from swagger_server import util
 
-# added 2 lines in merge
+# added 3 lines in merge
+import json
 from module_glue import ModuleGlue
+
 module_glue = ModuleGlue()
+
 
 def module_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a module
@@ -75,7 +78,9 @@ def module_create_from_connection_string(transportType, connectionString, caCert
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return module_glue.create_from_connection_string(transportType, connectionString, caCertificate)
+    return module_glue.create_from_connection_string(
+        transportType, connectionString, caCertificate
+    )
 
 
 def module_create_from_environment(transportType):  # noqa: E501
@@ -107,6 +112,7 @@ def module_create_from_x509(transportType, X509):  # noqa: E501
     # changed from return 'do some magic!'
     return module_glue.crate_from_x509(transportType, X509)
 
+
 def module_destroy(connectionId):  # noqa: E501
     """Disonnect and destroy the module client
 
@@ -117,7 +123,7 @@ def module_destroy(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    #changed from return 'do some magic!'
+    # changed from return 'do some magic!'
     module_glue.destroy(connectionId)
 
 
@@ -145,7 +151,7 @@ def module_disconnect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    #changed from return 'do some magic!'
+    # changed from return 'do some magic!'
     module_glue.disconnect2(connectionId)
 
 
@@ -199,10 +205,10 @@ def module_get_connection_status(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: str
     """
     # changed from return 'do some magic!'
-    return module_glue.get_connection_status(connectionId)
+    return json.dumps(module_glue.get_connection_status(connectionId))
 
 
 def module_get_twin(connectionId):  # noqa: E501
@@ -234,10 +240,7 @@ def module_invoke_device_method(connectionId, deviceId, methodInvokeParameters):
     :rtype: object
     """
     # changed from return 'do some magic!'
-    return module_glue.invoke_device_method(
-        connectionId, deviceId, methodInvokeParameters
-    )
-
+    return module_glue.invoke_device_method(connectionId, deviceId, methodInvokeParameters)
 
 
 def module_invoke_module_method(connectionId, deviceId, moduleId, methodInvokeParameters):  # noqa: E501
@@ -311,9 +314,7 @@ def module_roundtrip_method_call(connectionId, methodName, requestAndResponse): 
     if connexion.request.is_json:
         requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return module_glue.roundtrip_method_call(
-        connectionId, methodName, requestAndResponse
-    )
+    return module_glue.roundtrip_method_call(connectionId, methodName, requestAndResponse)
 
 
 def module_send_event(connectionId, eventBody):  # noqa: E501
@@ -349,6 +350,7 @@ def module_send_output_event(connectionId, outputName, eventBody):  # noqa: E501
     # changed from return 'do some magic!'
     module_glue.send_output_event(connectionId, outputName, eventBody)
 
+
 def module_wait_for_connection_status_change(connectionId):  # noqa: E501
     """wait for the current connection status to change and return the changed status
 
@@ -357,10 +359,10 @@ def module_wait_for_connection_status_change(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: str
     """
     # changed from return 'do some magic!'
-    return module_glue.wait_for_connection_status_change(connectionId)
+    return json.dumps(module_glue.wait_for_connection_status_change(connectionId))
 
 
 def module_wait_for_desired_properties_patch(connectionId):  # noqa: E501

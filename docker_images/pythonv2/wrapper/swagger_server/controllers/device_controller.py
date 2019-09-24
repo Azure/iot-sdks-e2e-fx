@@ -6,9 +6,12 @@ from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
 from swagger_server import util
 
-# Added 2 lines in merge
+# Added 3 lines in merge
+import json
 from device_glue import DeviceGlue
+
 device_glue = DeviceGlue()
+
 
 def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a device
@@ -78,6 +81,7 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
     """
     # changed from return 'do some magic!'
     return device_glue.create_from_x509(transportType, X509)
+
 
 def device_destroy(connectionId):  # noqa: E501
     """Disconnect and destroy the device client
@@ -171,10 +175,10 @@ def device_get_connection_status(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: str
     """
     # changed from return 'do some magic!'
-    return device_glue.get_connection_status(connectionId)
+    return json.dumps(device_glue.get_connection_status(connectionId))
 
 
 def device_get_twin(connectionId):  # noqa: E501
@@ -283,10 +287,10 @@ def device_wait_for_connection_status_change(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: str
     """
     # changed from return 'do some magic!'
-    return device_glue.wait_for_connection_status_change(connectionId)
+    return json.dumps(device_glue.wait_for_connection_status_change(connectionId))
 
 
 def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501

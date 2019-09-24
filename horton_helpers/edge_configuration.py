@@ -102,14 +102,16 @@ class EdgeConfiguration:
                 "HostConfig": {
                     "PortBindings": {
                         str(containerPort) + "/tcp": [{"HostPort": str(hostPort)}],
-                        "22/tcp": [{"HostPort": hostPort + 100}]
+                        "22/tcp": [{"HostPort": hostPort + 100}],
                     }
                 }
             }
         else:
             createOptions = {"HostConfig": {}}
 
-        createOptions["HostConfig"]["CapAdd"] = ["SYS_PTRACE"]
+        # BKTODO: We don't need NET_ADMIN and NET_RAW for all modules.  Only for ones
+        # that require network disconneciton with iptables.  Not sure abou SYS_PTRACE.
+        createOptions["HostConfig"]["CapAdd"] = ["SYS_PTRACE", "NET_ADMIN", "NET_RAW"]
 
         self.config["moduleContent"]["$edgeAgent"]["properties.desired"]["modules"][
             name

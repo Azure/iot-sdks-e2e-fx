@@ -2,9 +2,9 @@ from python:3.6.8-slim-stretch
 
 RUN apt update \
  && apt install -y \
-    rsync \
     git \
-    vim
+    vim \
+    iptables
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \

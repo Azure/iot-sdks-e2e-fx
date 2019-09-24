@@ -27,6 +27,7 @@ from fixtures import (
     service,
     test_device,
     test_module,
+    test_module_wrapper_api,
 )
 
 # default to logging.INFO
