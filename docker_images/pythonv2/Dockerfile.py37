@@ -1,9 +1,9 @@
 from python:3.7.2-alpine3.9
 
 RUN apk add \
-    rsync \
     git \
-    vim
+    vim \
+    iptables
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
