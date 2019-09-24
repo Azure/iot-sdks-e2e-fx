@@ -34,9 +34,7 @@ def get_capabilities():
             "supports_async": True,
             "security_messages": True,
             "new_message_format": True,
-            "connect_v2": True,
-            "network_disconnect": True,
-            "connection_status": True,
+            "v2_connect_group": True,
         },
         "skip_list": ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"],
     }

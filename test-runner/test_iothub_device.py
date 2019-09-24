@@ -11,6 +11,7 @@ from method_tests import (
     ReceiveMethodCallFromModuleTests,
 )
 from c2d_tests import C2dTests
+from retry_tests import RetryTests
 
 
 @pytest.mark.describe("IoTHub Device")
@@ -22,6 +23,7 @@ class TestIotHubDeviceClient(
     ReceiveMethodCallFromServiceTests,
     C2dTests,
     ConnectionStatusTests,
+    RetryTests,
 ):
     @pytest.fixture
     def client(self, test_device):

@@ -142,8 +142,8 @@ class ConnectionStatus(object):
     def get_connection_status(self):
         return self.glue.get_connection_status()
 
-    def wait_for_connection_status_change_async(self):
-        return self.pool.apply_async(self.wait_for_connection_status_change)
+    def wait_for_connection_status_change(self):
+        return self.glue.wait_for_connection_status_change()
 
 
 class DeviceApi(

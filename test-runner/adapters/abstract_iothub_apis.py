@@ -140,7 +140,7 @@ class ConnectionStatus(object):
         pass
 
     @abc.abstractmethod
-    def wait_for_connection_status_change_async(self):
+    def wait_for_connection_status_change(self):
         pass
 
 

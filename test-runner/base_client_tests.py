@@ -3,7 +3,6 @@
 # full license information.
 
 import pytest
-import connections
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,8 +19,7 @@ class BaseClientTests(object):
 # we try to run these tests on the friend device when it might not be able to
 # support this functionality.
 class ConnectionStatusTests(object):
-    @pytest.mark.uses_connection_status
-    @pytest.mark.uses_connect_v2
+    @pytest.mark.uses_v2_connect_group
     @pytest.mark.it("Shows if the client is connected or disconnected")
     def test_connection_status(self, client):
 
