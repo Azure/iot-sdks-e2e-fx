@@ -25,9 +25,11 @@ class TestNetworkDisconnectMechanism(object):
     def test_invalid_disconnect_type(self, test_module_wrapper_api):
         with pytest.raises(Exception) as e_info:
             test_module_wrapper_api.network_disconnect("blah")
-        assert isinstance(e_info.value, ValueError) or isinstance(
-            e_info.value, msrest.exceptions.HttpOperationError
-        )
+        assert e_info.value.__class__ in [
+            ValueError,
+            msrest.exceptions.HttpOperationError,
+            msrest.exceptions.ClientRequestError,
+        ]
 
     @pytest.mark.it("Does not fail if reconnecting without disconnecting")
     def test_reconnect_only(self, test_module_wrapper_api):
