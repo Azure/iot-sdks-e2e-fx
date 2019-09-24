@@ -10,6 +10,8 @@ do_async = False
 
 all_disconnect_types = ["DROP", "REJECT"]
 mqtt_port = 8883
+uninitialized = "uninitialized"
+sudo_prefix = uninitialized
 
 
 def log_message(msg):
@@ -51,12 +53,26 @@ def run_shell_command(args):
         raise
 
 
+def get_sudo_prefix():
+    global sudo_prefix
+
+    # use "uninitialized" to mean uninitialized, because None and [] are both falsy and we want to set it to [], so we can't use None
+    if sudo_prefix == uninitialized:
+        try:
+            run_shell_command(["which", "sudo"])
+        except subprocess.CalledProcessError:
+            sudo_prefix = []
+        else:
+            sudo_prefix = ["sudo", "-n"]
+
+    return sudo_prefix
+
+
 def disconnect_port(disconnect_type, port):
     # sudo -n iptables -A OUTPUT -p tcp --dport 8883 -j DROP
     run_shell_command(
-        [
-            "sudo",
-            "-n",
+        get_sudo_prefix()
+        + [
             "iptables",
             "-A",
             "OUTPUT",
@@ -74,7 +90,8 @@ def reconnect_port(port):
     for disconnect_type in all_disconnect_types:
         # sudo -n iptables -L OUTPUT -n -v --line-numbers
         lines = run_shell_command(
-            ["sudo", "-n", "iptables", "-L", "OUTPUT", "-n", "-v", "--line-numbers"]
+            get_sudo_prefix()
+            + ["iptables", "-L", "OUTPUT", "-n", "-v", "--line-numbers"]
         )
         # do the lines in reverse because deleting an entry changes the line numbers of all entries after that.
         lines.reverse()
@@ -84,7 +101,7 @@ def reconnect_port(port):
                 logger.info("Removing {} from [{}]".format(line_number, line))
                 # sudo -n iptables -D OUTPUT 1
                 run_shell_command(
-                    ["sudo", "-n", "iptables", "-D", "OUTPUT", str(line_number)]
+                    get_sudo_prefix() + ["iptables", "-D", "OUTPUT", str(line_number)]
                 )
 
 
