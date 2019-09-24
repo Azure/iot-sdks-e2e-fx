@@ -67,7 +67,7 @@ def get_test_module_capabilities():
         test_wrapper = runtime_config.get_test_module_wrapper_api()
         if test_wrapper:
             try:
-                capabilities = test_wrapper.get_capabilities()
+                capabilities = test_wrapper.get_capabilities_sync()
             except HttpOperationError:
                 capabilities = None
         got_caps = True
@@ -76,4 +76,4 @@ def get_test_module_capabilities():
 
 def set_test_module_flag(flag_name, flag_value):
     test_wrapper = runtime_config.get_test_module_wrapper_api()
-    test_wrapper.set_flags({flag_name: flag_value})
+    test_wrapper.set_flags_sync({flag_name: flag_value})
