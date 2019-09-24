@@ -3,7 +3,7 @@
 # full license information.
 
 import pytest
-from base_client_tests import BaseClientTests
+from base_client_tests import BaseClientTests, ConnectionStatusTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
 from input_output_tests import InputOutputTests
@@ -26,6 +26,7 @@ class TestIotHubModuleClient(
     ReceiveMethodCallFromModuleTests,
     InvokeMethodCallOnModuleTests,
     InvokeMethodCallOnLeafDeviceTests,
+    ConnectionStatusTests,
 ):
     @pytest.fixture
     def client(self, test_module):

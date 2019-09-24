@@ -14,6 +14,12 @@ class BaseClientTests(object):
     def test_client_connect_disconnect(self, client):
         pass
 
+
+# BKTODO: This should be folded into BaseClientTests, but we can't do that
+# until we can get tags based on the client that's actually being tested.  Otherwise,
+# we try to run these tests on the friend device when it might not be able to
+# support this functionality.
+class ConnectionStatusTests(object):
     @pytest.mark.uses_connection_status
     @pytest.mark.uses_connect_v2
     @pytest.mark.it("Shows if the client is connected or disconnected")

@@ -3,14 +3,16 @@
 # full license information.
 
 import pytest
-from base_client_tests import BaseClientTests
+from base_client_tests import BaseClientTests, ConnectionStatusTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
 
 
 @pytest.mark.describe("IoTHubModuleClient")
 @pytest.mark.testgroup_iothub_module_client
-class TestIotHubModuleClient(BaseClientTests, TelemetryTests, TwinTests):
+class TestIotHubModuleClient(
+    BaseClientTests, TelemetryTests, TwinTests, ConnectionStatusTests
+):
     @pytest.fixture
     def client(self, test_module):
         return test_module
