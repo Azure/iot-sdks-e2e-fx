@@ -4,6 +4,7 @@
 import pytest
 import connections
 from adapters import print_message
+import runtime_config
 from runtime_config import get_current_config
 from utilities import random_string
 
@@ -86,3 +87,8 @@ def service():
     service = connections.connect_service_client()
     yield service
     service.disconnect()
+
+
+@pytest.fixture
+def test_module_wrapper_api():
+    return runtime_config.get_test_module_wrapper_api()

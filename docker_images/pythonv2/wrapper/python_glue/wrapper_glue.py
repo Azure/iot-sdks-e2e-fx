@@ -24,6 +24,7 @@ def get_capabilities():
 
 
 def network_disconnect(disconnect_type):
+    print("wrapper disconnect")
     return internal_wrapper_glue.network_disconnect(disconnect_type)
 
 

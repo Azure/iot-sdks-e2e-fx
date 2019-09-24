@@ -21,7 +21,7 @@ class WrapperApi(AbstractWrapperApi):
         internal_wrapper_glue.set_flags(flags)
 
     def network_disconnect(self, disconnection_type):
-        pass
+        internal_wrapper_glue.network_disconnect(disconnection_type)
 
-    def network_reconnect(self, disconnection_type):
-        pass
+    def network_reconnect(self):
+        internal_wrapper_glue.network_reconnect()

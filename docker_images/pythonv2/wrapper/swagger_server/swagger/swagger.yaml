@@ -796,7 +796,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            type: "string"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
   /module/{connectionId}/connectionStatusChange:
     get:
@@ -817,7 +817,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            type: "string"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
   /service/connect:
     put:
@@ -1342,7 +1342,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            type: "string"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
   /device/{connectionId}/connectionStatusChange:
     get:
@@ -1363,7 +1363,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            type: "string"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
 definitions:
   connectResponse:

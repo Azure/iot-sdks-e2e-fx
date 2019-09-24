@@ -3,6 +3,7 @@
 # full license information.
 from azure.iot.device.aio import IoTHubDeviceClient, IoTHubModuleClient
 from azure.iot.device import MethodResponse
+from glue_utils import ConnectEventWatcher
 import json
 import async_helper
 import convert
@@ -11,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Connect(object):
+class Connect(ConnectEventWatcher):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
@@ -32,6 +33,7 @@ class Connect(object):
             self.client = self.client_class.create_from_connection_string(
                 connection_string
             )
+        self._attach_connect_event_watcher()
 
     def create_from_x509(self, transport_type, x509):
         # BKTODO
@@ -45,8 +47,7 @@ class Connect(object):
         pass
 
     def disconnect2(self):
-        # BKTODO
-        pass
+        async_helper.run_coroutine_sync(self.client.disconnect())
 
     def destroy(self):
         logger.info("disconnecting")
@@ -58,12 +59,12 @@ class Connect(object):
 class ConnectFromEnvironment(object):
     def connect_from_environment(self, transport_type):
         logger.info("connecting from environment")
-        self.client = IoTHubModuleClient.create_from_edge_environment()
+        self.create_from_environment()
         async_helper.run_coroutine_sync(self.client.connect())
 
     def create_from_environment(self, transport_type):
-        # BKTODO
-        pass
+        self.client = IoTHubModuleClient.create_from_edge_environment()
+        self._attach_connect_event_watcher()
 
 
 class HandleMethods(object):
@@ -182,8 +183,10 @@ class InputsAndOutputs(object):
 
 class ConnectionStatus(object):
     def get_connection_status(self):
-        pass
-        # BKTODO
+        if self.connected:
+            return "connected"
+        else:
+            return "disconnected"
 
     def wait_for_connection_status_change(self):
         pass
@@ -196,6 +199,7 @@ class InternalDeviceGlueAsync(
     def __init__(self):
         self.client = None
         self.client_class = IoTHubDeviceClient
+        self.connected = False
         # make sure we have an event loop
         async_helper.get_event_loop()
 
@@ -213,5 +217,6 @@ class InternalModuleGlueAsync(
     def __init__(self):
         self.client = None
         self.client_class = IoTHubModuleClient
+        self.connected = False
         # make sure we have an event loop
         async_helper.get_event_loop()

@@ -571,7 +571,7 @@
         "200": {
           "description": "OK",
           "schema": {
-            "type": "object"
+            "type": "string"
           }
         }
       }
@@ -596,7 +596,7 @@
         "200": {
           "description": "OK",
           "schema": {
-            "type": "object"
+            "type": "string"
           }
         }
       }
