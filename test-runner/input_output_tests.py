@@ -30,14 +30,14 @@ class InputOutputTests(object):
 
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can connect, enable input messages, and disconnect")
-    def test_module_client_connect_enable_input_messages_disconnect(self, client):
+    async def test_module_client_connect_enable_input_messages_disconnect(self, client):
         client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
         time.sleep(2)
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
-    def test_module_to_friend_routing(
+    async def test_module_to_friend_routing(
         self, client, friend, test_string, input_name_from_test_client
     ):
 
@@ -58,7 +58,7 @@ class InputOutputTests(object):
     @pytest.mark.it(
         "Can send an output message which gets routed to another module using new Horton HubEvent"
     )
-    def test_module_to_friend_routing_hubevent(
+    async def test_module_to_friend_routing_hubevent(
         self, client, friend, input_name_from_test_client, body
     ):
         friend.enable_input_messages()
@@ -75,7 +75,7 @@ class InputOutputTests(object):
 
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can receive an input message which is routed from another module")
-    def test_friend_to_module_routing(
+    async def test_friend_to_module_routing(
         self, client, friend, test_string, output_name_to_test_client
     ):
 
@@ -93,7 +93,7 @@ class InputOutputTests(object):
     @pytest.mark.it(
         "Can send a message that gets routed to a friend and then receive a message in reply"
     )
-    def test_module_test_to_friend_and_back(
+    async def test_module_test_to_friend_and_back(
         self,
         client,
         friend,
@@ -126,7 +126,7 @@ class InputOutputTests(object):
         timeout=180
     )  # extra timeout in case eventhub needs to retry due to resource error
     @pytest.mark.it("Can send a message that gets routed to eventhub")
-    def test_module_output_routed_upstream(
+    async def test_module_output_routed_upstream(
         self, client, eventhub, test_object_stringified
     ):
 
@@ -146,7 +146,7 @@ class InputOutputTests(object):
     @pytest.mark.it(
         "Can send a message that gets routed to eventhub using the new Horton HubEvent"
     )
-    def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
+    async def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
 
         sent_message = HubEvent(body)
         client.send_output_event(telemetry_output_name, sent_message.convert_to_json())
@@ -160,7 +160,7 @@ class InputOutputTests(object):
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself")
-    def test_module_input_output_loopback(self, client, test_string, logger):
+    async def test_module_input_output_loopback(self, client, test_string, logger):
         client.enable_input_messages()
 
         input_thread = client.wait_for_input_event_async(loopback_input_name)
@@ -182,7 +182,7 @@ class InputOutputTests(object):
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself using the new Horton HubEvent")
-    def test_module_input_output_loopback_hubevent(self, client, body, logger):
+    async def test_module_input_output_loopback_hubevent(self, client, body, logger):
         client.enable_input_messages()
 
         input_thread = client.wait_for_input_event_async(loopback_input_name)

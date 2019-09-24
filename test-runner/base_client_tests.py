@@ -21,7 +21,7 @@ class BaseClientTests(object):
 class ConnectionStatusTests(object):
     @pytest.mark.uses_v2_connect_group
     @pytest.mark.it("Shows if the client is connected or disconnected")
-    def test_connection_status(self, client):
+    async def test_connection_status(self, client):
 
         assert client.get_connection_status() == "connected"
 

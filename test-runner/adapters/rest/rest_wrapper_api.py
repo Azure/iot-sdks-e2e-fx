@@ -7,7 +7,7 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 import msrest
 from .. import adapter_config
 from ..abstract_wrapper_api import AbstractWrapperApi
-from ..decorators import log_entry_and_exit
+from ..decorators import log_entry_and_exit, emulate_async
 
 rest_endpoints = None
 
@@ -84,13 +84,20 @@ class WrapperApi(AbstractWrapperApi):
             flags, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     def network_disconnect(self, disconnection_type):
         print("adapter disconnect")
         return self.rest_endpoint.network_disconnect(
             disconnection_type, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     def network_reconnect(self):
+        return self.rest_endpoint.network_reconnect(
+            timeout=adapter_config.default_api_timeout
+        )
+
+    def network_reconnect_sync(self):
         return self.rest_endpoint.network_reconnect(
             timeout=adapter_config.default_api_timeout
         )

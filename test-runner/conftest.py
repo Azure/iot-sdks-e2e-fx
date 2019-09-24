@@ -298,7 +298,7 @@ def pytest_collection_modifyitems(config, items):
 
     # make sure the network is connected before starting (this can happen with interrupted runs)
     if runtime_capabilities.get_test_module_capabilities_flag("v2_connect_group"):
-        runtime_config.get_test_module_wrapper_api().network_reconnect()
+        runtime_config.get_test_module_wrapper_api().network_reconnect_sync()
 
     skip_tests_by_marker(
         items, skip_list, "it isn't implemented in the {} wrapper".format(language)

@@ -10,11 +10,11 @@ receive_timeout = 60
 
 class C2dTests(object):
     @pytest.mark.it("Can connect, enable C2D, and disconnect")
-    def test_client_connect_enable_c2d_disconnect(self, client):
+    async def test_client_connect_enable_c2d_disconnect(self, client):
         client.enable_c2d()
 
     @pytest.mark.it("Can receive C2D messages from the IoTHub Service")
-    def test_device_receive_c2d(self, client, service, test_string):
+    async def test_device_receive_c2d(self, client, service, test_string):
         client.enable_c2d()
         test_input_thread = client.wait_for_c2d_message_async()
         time.sleep(2)  # wait for receive pipeline to finish setting up

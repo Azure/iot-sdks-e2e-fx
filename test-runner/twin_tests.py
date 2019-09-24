@@ -29,13 +29,13 @@ def get_patch_received(patch_received):
 
 class TwinTests(object):
     @pytest.mark.it("Can connect, enable twin, and disconnect")
-    def test_client_connect_enable_twin_disconnect(self, client):
+    async def test_client_connect_enable_twin_disconnect(self, client):
         client.enable_twin()
 
     @pytest.mark.timeout(180)
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can get the most recent twin from the service")
-    def test_service_can_set_desired_properties_and_client_can_retrieve_them(
+    async def test_service_can_set_desired_properties_and_client_can_retrieve_them(
         self, client, logger, registry
     ):
         twin_sent = {"properties": {"desired": {"foo": random.randint(1, 9999)}}}
@@ -66,7 +66,7 @@ class TwinTests(object):
 
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can receive desired property patches as events")
-    def test_service_can_set_multiple_desired_property_patches_and_client_can_retrieve_them_as_events(
+    async def test_service_can_set_multiple_desired_property_patches_and_client_can_retrieve_them_as_events(
         self, client, logger, registry
     ):
 
@@ -146,7 +146,7 @@ class TwinTests(object):
     @pytest.mark.it(
         "Can set reported properties which can be successfully retrieved by the service"
     )
-    def test_module_can_set_reported_properties_and_service_can_retrieve_them(
+    async def test_module_can_set_reported_properties_and_service_can_retrieve_them(
         self, client, logger, registry
     ):
         reported_properties_sent = {"foo": random.randint(1, 9999)}

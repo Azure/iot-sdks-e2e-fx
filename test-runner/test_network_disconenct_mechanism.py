@@ -5,6 +5,8 @@
 import pytest
 import msrest
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.describe("Network Disconnection Mechanism")
 @pytest.mark.testgroup_iothub_device_client
@@ -17,14 +19,14 @@ class TestNetworkDisconnectMechanism(object):
         [pytest.param("DROP", id="DROP"), pytest.param("REJECT", id="REJECT")],
     )
     @pytest.mark.it("Can disconnect and reconnect the network")
-    def test_disconnect_and_reconnect(
+    async def test_disconnect_and_reconnect(
         self, disconnection_type, test_module_wrapper_api
     ):
         test_module_wrapper_api.network_disconnect(disconnection_type)
         test_module_wrapper_api.network_reconnect()
 
     @pytest.mark.it("Fails with an invalid disconnection type")
-    def test_invalid_disconnect_type(self, test_module_wrapper_api):
+    async def test_invalid_disconnect_type(self, test_module_wrapper_api):
         with pytest.raises(Exception) as e_info:
             test_module_wrapper_api.network_disconnect("blah")
         assert e_info.value.__class__ in [
@@ -34,5 +36,5 @@ class TestNetworkDisconnectMechanism(object):
         ]
 
     @pytest.mark.it("Does not fail if reconnecting without disconnecting")
-    def test_reconnect_only(self, test_module_wrapper_api):
+    async def test_reconnect_only(self, test_module_wrapper_api):
         test_module_wrapper_api.network_reconnect()

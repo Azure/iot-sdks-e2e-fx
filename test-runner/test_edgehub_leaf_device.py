@@ -9,6 +9,8 @@ from method_tests import (
     ReceiveMethodCallFromModuleTests,
 )
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.describe("Edge Leaf Device")

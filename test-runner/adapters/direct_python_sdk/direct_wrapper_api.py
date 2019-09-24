@@ -5,6 +5,7 @@
 
 import internal_wrapper_glue
 from ..abstract_wrapper_api import AbstractWrapperApi
+from ..decorators import emulate_async
 
 
 class WrapperApi(AbstractWrapperApi):
@@ -20,8 +21,13 @@ class WrapperApi(AbstractWrapperApi):
     def set_flags(self, flags):
         internal_wrapper_glue.set_flags(flags)
 
+    @emulate_async
     def network_disconnect(self, disconnection_type):
         internal_wrapper_glue.network_disconnect(disconnection_type)
 
+    @emulate_async
     def network_reconnect(self):
+        internal_wrapper_glue.network_reconnect()
+
+    def network_reconnect_sync(self):
         internal_wrapper_glue.network_reconnect()

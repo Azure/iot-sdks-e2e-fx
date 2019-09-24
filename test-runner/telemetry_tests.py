@@ -13,7 +13,9 @@ class TelemetryTests(object):
     @pytest.mark.timeout(
         timeout=180
     )  # extra timeout in case eventhub needs to retry due to resource error
-    def test_send_telemetry_to_iothub(self, client, eventhub, test_object_stringified):
+    async def test_send_telemetry_to_iothub(
+        self, client, eventhub, test_object_stringified
+    ):
         client.send_event(test_object_stringified)
 
         received_message = eventhub.wait_for_next_event(
@@ -29,7 +31,7 @@ class TelemetryTests(object):
     @pytest.mark.it(
         "Can send telemetry directly to IoTHub using the new Horton HubEvent"
     )
-    def test_device_send_telemetry_using_new_message_format(
+    async def test_device_send_telemetry_using_new_message_format(
         self, client, eventhub, body
     ):
         sent_message = HubEvent(body)

@@ -24,9 +24,13 @@ class AbstractWrapperApi:
         pass
 
     @abc.abstractmethod
-    def network_disconnect(self, disconnection_type):
+    async def network_disconnect(self, disconnection_type):
         pass
 
     @abc.abstractmethod
-    def network_reconnect(self):
+    async def network_reconnect(self):
+        pass
+
+    @abc.abstractmethod
+    def network_reconnect_sync(self):
         pass
