@@ -4,7 +4,7 @@
 import logging
 import internal_wrapper_glue
 import convert
-from glue_utils import ConnectEventWatcher
+from connection_status import ConnectionStatus
 from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodResponse
 
 
@@ -20,7 +20,7 @@ except SyntaxError:
     pass
 
 
-class Connect(ConnectEventWatcher):
+class Connect(ConnectionStatus):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
@@ -176,25 +176,10 @@ class InputsAndOutputs(object):
         logger.info("send confirmation received")
 
 
-class ConnectionStatus(object):
-    def get_connection_status(self):
-        if self.connected:
-            return "connected"
-        else:
-            return "disconnected"
-
-    def wait_for_connection_status_change(self):
-        pass
-        # BKTODO
-
-
-class InternalDeviceGlueSync(
-    Connect, HandleMethods, C2d, Twin, Telemetry, ConnectionStatus
-):
+class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry):
     def __init__(self):
         self.client_class = IoTHubDeviceClient
         self.client = None
-        self.connected = False
 
 
 def InternalDeviceGlue():
@@ -214,12 +199,10 @@ class InternalModuleGlueSync(
     Twin,
     Telemetry,
     InputsAndOutputs,
-    ConnectionStatus,
 ):
     def __init__(self):
         self.client_class = IoTHubModuleClient
         self.client = None
-        self.connected = False
 
 
 def InternalModuleGlue():

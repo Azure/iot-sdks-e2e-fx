@@ -41,9 +41,7 @@ default_flags = {
     "supports_async": False,
     "new_message_format": False,
     "security_messages": False,
-    "connect_v2": False,
-    "network_disconnect": False,
-    "connection_status": False,
+    "v2_connect_group": False,
 }
 
 

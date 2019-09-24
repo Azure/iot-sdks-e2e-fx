@@ -3,7 +3,7 @@
 # full license information.
 from azure.iot.device.aio import IoTHubDeviceClient, IoTHubModuleClient
 from azure.iot.device import MethodResponse
-from glue_utils import ConnectEventWatcher
+from connection_status import ConnectionStatus
 import json
 import async_helper
 import convert
@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Connect(ConnectEventWatcher):
+class Connect(ConnectionStatus):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
@@ -181,21 +181,7 @@ class InputsAndOutputs(object):
         logger.info("send confirmation received")
 
 
-class ConnectionStatus(object):
-    def get_connection_status(self):
-        if self.connected:
-            return "connected"
-        else:
-            return "disconnected"
-
-    def wait_for_connection_status_change(self):
-        pass
-        # BKTODO
-
-
-class InternalDeviceGlueAsync(
-    Connect, HandleMethods, C2d, Telemetry, Twin, ConnectionStatus
-):
+class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin):
     def __init__(self):
         self.client = None
         self.client_class = IoTHubDeviceClient
@@ -212,7 +198,6 @@ class InternalModuleGlueAsync(
     Twin,
     Telemetry,
     InputsAndOutputs,
-    ConnectionStatus,
 ):
     def __init__(self):
         self.client = None

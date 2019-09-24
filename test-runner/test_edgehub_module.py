@@ -13,6 +13,7 @@ from method_tests import (
     InvokeMethodCallOnModuleTests,
     InvokeMethodCallOnLeafDeviceTests,
 )
+from retry_tests import RetryTests
 
 
 @pytest.mark.testgroup_edgehub_module_client
@@ -27,6 +28,7 @@ class TestIotHubModuleClient(
     InvokeMethodCallOnModuleTests,
     InvokeMethodCallOnLeafDeviceTests,
     ConnectionStatusTests,
+    RetryTests,
 ):
     @pytest.fixture
     def client(self, test_module):

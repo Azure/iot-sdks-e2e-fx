@@ -10,15 +10,17 @@ import msrest
 @pytest.mark.testgroup_iothub_device_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.uses_network_disconnect
+@pytest.mark.uses_v2_connect_group
 class TestNetworkDisconnectMechanism(object):
     @pytest.mark.parametrize(
-        "disconnect_type",
+        "disconnection_type",
         [pytest.param("DROP", id="DROP"), pytest.param("REJECT", id="REJECT")],
     )
     @pytest.mark.it("Can disconnect and reconnect the network")
-    def test_disconnect_and_reconnect(self, disconnect_type, test_module_wrapper_api):
-        test_module_wrapper_api.network_disconnect(disconnect_type)
+    def test_disconnect_and_reconnect(
+        self, disconnection_type, test_module_wrapper_api
+    ):
+        test_module_wrapper_api.network_disconnect(disconnection_type)
         test_module_wrapper_api.network_reconnect()
 
     @pytest.mark.it("Fails with an invalid disconnection type")
