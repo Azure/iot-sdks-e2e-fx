@@ -3,7 +3,6 @@
 # full license information.
 
 import json
-import time
 import docker
 import pytest
 import asyncio
@@ -57,11 +56,11 @@ async def do_device_method_call(
                 method_name, status_code, method_invoke_parameters, method_response_body
             )
         )
-        time.sleep(time_for_method_to_fully_register)
+        await asyncio.sleep(time_for_method_to_fully_register)
 
         disconnect_edgehub()
         # invoking the call from caller side
-        time.sleep(5)
+        await asyncio.sleep(5)
         connect_edgehub()
         print_message("invoking method call")
         response = await source_module.call_device_method(

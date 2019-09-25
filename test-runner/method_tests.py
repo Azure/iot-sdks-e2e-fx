@@ -5,7 +5,6 @@
 import pytest
 import json
 import multiprocessing
-import time
 import asyncio
 
 # How long do we have to wait after a module registers to receive
@@ -48,7 +47,7 @@ async def run_method_call_test(
             registration_sleep
         )
     )
-    time.sleep(registration_sleep)
+    await asyncio.sleep(registration_sleep)
 
     # invoking the call from caller side
     if getattr(destination, "module_id", None):

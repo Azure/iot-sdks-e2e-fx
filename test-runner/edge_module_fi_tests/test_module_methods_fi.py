@@ -6,7 +6,6 @@ import pytest
 import connections
 import json
 import multiprocessing
-import time
 import asyncio
 from adapters import print_message
 from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
@@ -63,13 +62,13 @@ async def do_module_method_call(
             registration_sleep
         )
     )
-    time.sleep(registration_sleep)
+    await asyncio.sleep(registration_sleep)
 
     disconnect_edgehub()  # One point that could be good to disconnect edgeHub
-    # time.sleep(1)
+    # await asyncio.sleep(1)
     connect_edgehub()
     print_message("Sleeping")
-    time.sleep(30)
+    await asyncio.sleep(30)
     print_message(" Done Sleeping")
 
     # invoking the call from caller side
@@ -99,7 +98,7 @@ async def test_module_method_call_invoked_from_service():
     """
 
     restart_edgehub(hard=True)
-    time.sleep(5)
+    await asyncio.sleep(5)
     service_client = connections.connect_service_client()
     module_client = connections.connect_test_module_client()
     await do_module_method_call(
@@ -124,7 +123,7 @@ async def test_module_method_from_test_to_friend_fi():
 
     module_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
-    time.sleep(5)
+    await asyncio.sleep(5)
     await do_module_method_call(
         module_client,
         friend_client,
@@ -147,7 +146,7 @@ async def test_module_method_from_friend_to_test_fi():
 
     module_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
-    time.sleep(5)
+    await asyncio.sleep(5)
     await do_module_method_call(
         friend_client,
         module_client,

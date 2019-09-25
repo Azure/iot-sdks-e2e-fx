@@ -5,7 +5,6 @@
 import pytest
 import random
 import json
-import time
 import asyncio
 
 # Amount of time to wait after updating desired properties.
@@ -49,7 +48,7 @@ class TwinTests(object):
             await registry.patch_device_twin(client.device_id, twin_sent)
 
         # BKTODO: Node needs this sleep to pass MQTT against edgeHub
-        time.sleep(5)
+        await asyncio.sleep(5)
         await client.enable_twin()
 
         while True:
@@ -65,7 +64,7 @@ class TwinTests(object):
                 return
             else:
                 logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
-                time.sleep(5)
+                await asyncio.sleep(5)
 
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can receive desired property patches as events")
@@ -93,7 +92,7 @@ class TwinTests(object):
             patch_future = asyncio.ensure_future(
                 client.wait_for_desired_property_patch()
             )
-            time.sleep(1)  # wait for async call to take effect
+            await asyncio.sleep(1)  # wait for async call to take effect
 
             logger("Tringgering patch #" + str(i) + " through registry client")
             twin_sent = {"properties": {"desired": {"foo": base + i}}}
@@ -143,7 +142,7 @@ class TwinTests(object):
                         patch_future = asyncio.ensure_future(
                             client.wait_for_desired_property_patch()
                         )
-                        time.sleep(0.5)  # wait for async call to take effect
+                        await asyncio.sleep(0.5)  # wait for async call to take effect
                     else:
                         logger("too many mistakes.  Failing")
                         assert False
@@ -182,4 +181,4 @@ class TwinTests(object):
                 return
             else:
                 logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
-                time.sleep(5)
+                await asyncio.sleep(5)

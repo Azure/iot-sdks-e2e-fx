@@ -3,7 +3,6 @@
 # full license information.
 
 import pytest
-import time
 import asyncio
 from models import HubEvent
 import sample_content
@@ -14,6 +13,7 @@ input_name_from_friend = "fromFriend"
 output_name_to_friend = "toFriend"
 
 receive_timeout = 60
+sleep_time_for_listener_start = 3
 
 telemetry_output_name = "telemetry"
 loopback_output_name = "loopout"
@@ -34,7 +34,7 @@ class InputOutputTests(object):
     async def test_module_client_connect_enable_input_messages_disconnect(self, client):
         await client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
-        time.sleep(2)
+        await asyncio.sleep(2)
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
@@ -43,15 +43,19 @@ class InputOutputTests(object):
     ):
 
         await friend.enable_input_messages()
+        print("messages enabled")
 
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
         )
-        time.sleep(3)
+        await asyncio.sleep(sleep_time_for_listener_start)
+        print("friend future created")
 
         await client.send_output_event(output_name_to_friend, test_string)
+        print("message sent")
 
         received_message = await friend_input_future
+        print("received message")
         assert received_message == test_string
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
@@ -68,7 +72,7 @@ class InputOutputTests(object):
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
         )
-        time.sleep(3)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         sent_message = HubEvent(body)
         await client.send_output_event(
@@ -89,7 +93,7 @@ class InputOutputTests(object):
         test_input_future = asyncio.ensure_future(
             client.wait_for_input_event(input_name_from_friend)
         )
-        time.sleep(3)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         await friend.send_output_event(output_name_to_test_client, test_string)
 
@@ -120,7 +124,7 @@ class InputOutputTests(object):
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
         )
-        time.sleep(3)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         await client.send_output_event(output_name_to_friend, test_string)
 
@@ -181,7 +185,7 @@ class InputOutputTests(object):
         )
 
         # give the registration a chance to take place
-        time.sleep(3)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         await client.send_output_event(loopback_output_name, test_string)
 
@@ -205,7 +209,7 @@ class InputOutputTests(object):
         )
 
         # give the registration a chance to take place
-        time.sleep(3)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         sent_message = HubEvent(body)
         await client.send_output_event(
