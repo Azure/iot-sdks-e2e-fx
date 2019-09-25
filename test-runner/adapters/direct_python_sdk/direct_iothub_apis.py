@@ -139,7 +139,8 @@ class InvokeMethods(object):
     @emulate_async
     def call_module_method(self, device_id, module_id, method_invoke_parameters):
         return self.glue.invoke_module_method(
-            device_id, module_id, method_invoke_parameters)
+            device_id, module_id, method_invoke_parameters
+        )
 
     @emulate_async
     def call_device_method(self, device_id, method_invoke_parameters):

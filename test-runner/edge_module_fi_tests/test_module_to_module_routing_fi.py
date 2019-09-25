@@ -32,7 +32,9 @@ async def test_module_to_friend_routing(test_string):
     friend_client = connections.connect_friend_module_client()
     await friend_client.enable_input_messages()
 
-    friend_input_future = asyncio.ensure_future(friend_client.wait_for_input_event(test_to_friend_input))
+    friend_input_future = asyncio.ensure_future(
+        friend_client.wait_for_input_event(test_to_friend_input)
+    )
 
     await test_client.send_output_event(test_to_friend_output, test_string)
 
@@ -51,7 +53,9 @@ async def test_friend_to_module_routing_fi(test_string):
     await test_client.enable_input_messages()
     friend_client = connections.connect_friend_module_client()
 
-    test_input_future = asyncio.ensure_future(test_client.wait_for_input_event(friend_to_test_input))
+    test_input_future = asyncio.ensure_future(
+        test_client.wait_for_input_event(friend_to_test_input)
+    )
 
     await friend_client.send_output_event(friend_to_test_output, test_string)
 

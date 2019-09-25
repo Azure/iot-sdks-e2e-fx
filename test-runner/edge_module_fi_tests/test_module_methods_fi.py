@@ -52,9 +52,11 @@ async def do_module_method_call(
 
     # start listening for method calls on the destination side
     print_message("starting to listen from destination module")
-    receiver_future = asyncio.ensure_future(destination_module.roundtrip_method_call(
-        method_name, status_code, method_invoke_parameters, method_response_body
-    ))
+    receiver_future = asyncio.ensure_future(
+        destination_module.roundtrip_method_call(
+            method_name, status_code, method_invoke_parameters, method_response_body
+        )
+    )
     print_message(
         "sleeping for {} seconds to make sure all registration is complete".format(
             registration_sleep

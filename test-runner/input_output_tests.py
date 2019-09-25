@@ -44,9 +44,9 @@ class InputOutputTests(object):
 
         await friend.enable_input_messages()
 
-        friend_input_future = asyncio.ensure_future(friend.wait_for_input_event(
-            input_name_from_test_client
-        ))
+        friend_input_future = asyncio.ensure_future(
+            friend.wait_for_input_event(input_name_from_test_client)
+        )
 
         await client.send_output_event(output_name_to_friend, test_string)
 
@@ -64,12 +64,14 @@ class InputOutputTests(object):
     ):
         await friend.enable_input_messages()
 
-        friend_input_future = asyncio.ensure_future(friend.wait_for_input_event(
-            input_name_from_test_client
-        ))
+        friend_input_future = asyncio.ensure_future(
+            friend.wait_for_input_event(input_name_from_test_client)
+        )
 
         sent_message = HubEvent(body)
-        await client.send_output_event(output_name_to_friend, sent_message.convert_to_json())
+        await client.send_output_event(
+            output_name_to_friend, sent_message.convert_to_json()
+        )
 
         received_message = await friend_input_future
         assert utilities.json_is_same(received_message, sent_message.body)
@@ -82,7 +84,9 @@ class InputOutputTests(object):
 
         await client.enable_input_messages()
 
-        test_input_future = asyncio.ensure_future(client.wait_for_input_event(input_name_from_friend))
+        test_input_future = asyncio.ensure_future(
+            client.wait_for_input_event(input_name_from_friend)
+        )
 
         await friend.send_output_event(output_name_to_test_client, test_string)
 
@@ -107,10 +111,12 @@ class InputOutputTests(object):
         await client.enable_input_messages()
         await friend.enable_input_messages()
 
-        test_input_future = asyncio.ensure_future(client.wait_for_input_event(input_name_from_friend))
-        friend_input_future = asyncio.ensure_future(friend.wait_for_input_event(
-            input_name_from_test_client
-        ))
+        test_input_future = asyncio.ensure_future(
+            client.wait_for_input_event(input_name_from_friend)
+        )
+        friend_input_future = asyncio.ensure_future(
+            friend.wait_for_input_event(input_name_from_test_client)
+        )
 
         await client.send_output_event(output_name_to_friend, test_string)
 
@@ -150,7 +156,9 @@ class InputOutputTests(object):
     async def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
 
         sent_message = HubEvent(body)
-        await client.send_output_event(telemetry_output_name, sent_message.convert_to_json())
+        await client.send_output_event(
+            telemetry_output_name, sent_message.convert_to_json()
+        )
 
         received_message = await eventhub.wait_for_next_event(
             client.device_id, expected=sent_message.body
@@ -164,7 +172,9 @@ class InputOutputTests(object):
     async def test_module_input_output_loopback(self, client, test_string, logger):
         await client.enable_input_messages()
 
-        input_future = asyncio.ensure_future(client.wait_for_input_event(loopback_input_name))
+        input_future = asyncio.ensure_future(
+            client.wait_for_input_event(loopback_input_name)
+        )
 
         # give the registration a chance to take place
         time.sleep(2)
@@ -186,13 +196,17 @@ class InputOutputTests(object):
     async def test_module_input_output_loopback_hubevent(self, client, body, logger):
         await client.enable_input_messages()
 
-        input_future = asyncio.ensure_future(client.wait_for_input_event(loopback_input_name))
+        input_future = asyncio.ensure_future(
+            client.wait_for_input_event(loopback_input_name)
+        )
 
         # give the registration a chance to take place
         time.sleep(2)
 
         sent_message = HubEvent(body)
-        await client.send_output_event(loopback_output_name, sent_message.convert_to_json())
+        await client.send_output_event(
+            loopback_output_name, sent_message.convert_to_json()
+        )
 
         received_message = await input_future
         logger("input message arrived")

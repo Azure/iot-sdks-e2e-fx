@@ -184,7 +184,12 @@ class HandleMethods(object):
             "responsePayload": response_payload,
             "statusCode": status_code,
         }
-        return self.rest_endpoint.roundtrip_method_call(self.connection_id, method_name, request_and_responsetimeout=adapter_config.default_api_timeout)
+        return self.rest_endpoint.roundtrip_method_call(
+            self.connection_id,
+            method_name,
+            request_and_response,
+            timeout=adapter_config.default_api_timeout,
+        )
 
 
 class Telemetry(object):
@@ -217,7 +222,9 @@ class InputsAndOutputs(object):
     @emulate_async
     @log_entry_and_exit
     def wait_for_input_event(self, input_name):
-        return self.rest_endpoint.wait_for_input_message(self.connection_id, input_name, timeout=adapter_config.default_api_timeout)
+        return self.rest_endpoint.wait_for_input_message(
+            self.connection_id, input_name, timeout=adapter_config.default_api_timeout
+        )
 
 
 class InvokeMethods(object):
@@ -225,15 +232,24 @@ class InvokeMethods(object):
     @log_entry_and_exit
     def call_module_method(self, device_id, module_id, method_invoke_parameters):
         return self.rest_endpoint.invoke_module_method(
-            self.connection_id, device_id, module_id, method_invoke_parameters,
-            timeout=adapter_config.default_api_timeout)
+            self.connection_id,
+            device_id,
+            module_id,
+            method_invoke_parameters,
+            timeout=adapter_config.default_api_timeout,
+        )
 
     @emulate_async
     @log_entry_and_exit
     def call_device_method(self, device_id, method_invoke_parameters):
-        return self.rest_endpoint.invoke_device_method(
-            self.connection_id, device_id, method_invoke_parameters,
-            timeout=adapter_config.default_api_timeout),
+        return (
+            self.rest_endpoint.invoke_device_method(
+                self.connection_id,
+                device_id,
+                method_invoke_parameters,
+                timeout=adapter_config.default_api_timeout,
+            ),
+        )
 
 
 class ConnectionStatus(object):

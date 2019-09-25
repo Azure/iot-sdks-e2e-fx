@@ -38,9 +38,11 @@ async def run_method_call_test(
     await destination.enable_methods()
 
     # start listening for method calls on the destination side
-    receiver_future = asyncio.ensure_future(destination.roundtrip_method(
-        method_name, status_code, method_invoke_parameters, method_response_body
-    ))
+    receiver_future = asyncio.ensure_future(
+        destination.roundtrip_method(
+            method_name, status_code, method_invoke_parameters, method_response_body
+        )
+    )
     logger(
         "sleeping for {} seconds to make sure all registration is complete".format(
             registration_sleep
@@ -116,4 +118,6 @@ class InvokeMethodCallOnLeafDeviceTests(object):
     async def test_method_call_invoked_on_leaf_device(
         self, client, leaf_device, logger
     ):
-        await run_method_call_test(source=client, destination=leaf_device, logger=logger)
+        await run_method_call_test(
+            source=client, destination=leaf_device, logger=logger
+        )

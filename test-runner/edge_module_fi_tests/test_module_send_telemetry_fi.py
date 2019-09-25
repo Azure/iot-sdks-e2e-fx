@@ -22,7 +22,7 @@ local_timeout = 60  # Seconds
 @pytest.mark.timeout(
     timeout=180
 )  # extra timeout in case eventhub needs to retry due to resource error
-def test_module_send_event_iothub_fi(
+async def test_module_send_event_iothub_fi(
     test_object_stringified, test_object_stringified_2
 ):
     """ Sends event through Edge Hub to IoT Hub and validates the message is received using the Event Hub API.
@@ -39,7 +39,7 @@ def test_module_send_event_iothub_fi(
         print_message("Intial message not received")
         assert False
     disconnect_edgehub()  # DISCONNECT EDGEHUB
-    module_client.send_event(test_object_stringified_2) # do not await
+    module_client.send_event(test_object_stringified_2)  # do not await
     connect_edgehub()  # RECONNECT EDGEHUB
     received_message = await eventhub_client.wait_for_next_event(
         get_current_config().test_module.device_id, expected=test_object_stringified_2

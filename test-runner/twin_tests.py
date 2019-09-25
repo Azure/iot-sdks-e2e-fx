@@ -90,7 +90,9 @@ class TwinTests(object):
             logger("patch " + str(i) + " sent")
 
             logger("start waiting for patch #" + str(i))
-            patch_future = asyncio.ensure_future(client.wait_for_desired_property_patch())
+            patch_future = asyncio.ensure_future(
+                client.wait_for_desired_property_patch()
+            )
             time.sleep(1)  # wait for async call to take effect
 
             logger("Tringgering patch #" + str(i) + " through registry client")
@@ -138,8 +140,10 @@ class TwinTests(object):
                             )
                         )
                         logger("start waiting for patch #{} again".format(i))
-                        patch_future = ensure_future(client.wait_for_desired_property_patch())
-                        time.sleep(.5)  # wait for async call to take effect
+                        patch_future = asyncio.ensure_future(
+                            client.wait_for_desired_property_patch()
+                        )
+                        time.sleep(0.5)  # wait for async call to take effect
                     else:
                         logger("too many mistakes.  Failing")
                         assert False

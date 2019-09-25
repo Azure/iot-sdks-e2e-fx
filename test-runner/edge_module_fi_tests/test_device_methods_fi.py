@@ -39,7 +39,9 @@ method_invoke_parameters = {
 method_response_body = {"response": "Look at me.  I'm a response!"}
 
 
-async def do_device_method_call(source_module, destination_module, destination_device_id):
+async def do_device_method_call(
+    source_module, destination_module, destination_device_id
+):
     """
     Helper function which invokes a method call on one module and responds to it from another module
     """
@@ -49,9 +51,11 @@ async def do_device_method_call(source_module, destination_module, destination_d
 
         # start listening for method calls on the destination side
         print_message("starting to listen from destination module")
-        receiver_future = asyncio.ensure_future(destination_module.roundtrip_method_call(
-            method_name, status_code, method_invoke_parameters, method_response_body
-        ))
+        receiver_future = asyncio.ensure_future(
+            destination_module.roundtrip_method_call(
+                method_name, status_code, method_invoke_parameters, method_response_body
+            )
+        )
         time.sleep(time_for_method_to_fully_register)
 
         disconnect_edgehub()
@@ -103,7 +107,7 @@ async def test_device_method_from_service_to_leaf_device_fi():
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.invokesDeviceMethodCalls
 @pytest.mark.module_under_test_has_device_wrapper
-await def test_device_method_from_module_to_leaf_device_fi():
+async def test_device_method_from_module_to_leaf_device_fi():
     """
     invoke a method call from the test module and respond to it from the leaf device
     """
