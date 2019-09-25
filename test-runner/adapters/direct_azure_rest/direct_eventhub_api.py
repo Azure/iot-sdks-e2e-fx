@@ -40,7 +40,7 @@ class EventHubApi:
         self.receivers = []
         object_list.append(self)
 
-    def connect(self, connection_string):
+    def connect_sync(self, connection_string):
         started = False
         while not started:
             print_message("EventHubApi: connecting EventHubClient")
@@ -79,7 +79,7 @@ class EventHubApi:
 
             print_message("EventHubApi: ready")
 
-    def disconnect(self):
+    def disconnect_sync(self):
         if self in object_list:
             object_list.remove(self)
         if self.client:

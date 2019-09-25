@@ -7,7 +7,7 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 )
 from multiprocessing.pool import ThreadPool
 from .. import adapter_config
-from ..decorators import log_entry_and_exit
+from ..decorators import log_entry_and_exit, emulate_async
 from ..abstract_iothub_apis import (
     AbstractDeviceApi,
     AbstractModuleApi,
@@ -21,14 +21,14 @@ wait_time_for_async_start = 5
 
 class ServiceConnectDisconnect(object):
     @log_entry_and_exit(print_args=False)
-    def connect(self, connection_string):
+    def connect_sync(self, connection_string):
         result = self.rest_endpoint.connect(
             connection_string, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    def disconnect(self):
+    def disconnect_sync(self):
         if self.connection_id:
             self.rest_endpoint.disconnect(
                 self.connection_id, timeout=adapter_config.default_api_timeout
@@ -38,7 +38,7 @@ class ServiceConnectDisconnect(object):
 
 class Connect(object):
     @log_entry_and_exit(print_args=False)
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_sync(self, transport, connection_string, ca_certificate):
         result = self.rest_endpoint.connect(
             transport,
             connection_string,
@@ -48,7 +48,7 @@ class Connect(object):
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    def disconnect(self):
+    def disconnect_sync(self):
         if self.connection_id:
             self.rest_endpoint.disconnect(
                 self.connection_id, timeout=adapter_config.default_api_timeout
@@ -58,7 +58,7 @@ class Connect(object):
             time.sleep(2)
 
     @log_entry_and_exit
-    def create_from_connection_string(
+    def create_from_connection_string_sync(
         self, transport, connection_string, ca_certificate
     ):
         result = self.rest_endpoint.create_from_connection_string(
@@ -70,12 +70,13 @@ class Connect(object):
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    def create_from_x509(self, transport, x509):
+    def create_from_x509_sync(self, transport, x509):
         result = self.rest_endpoint.create_from_x509(
             transport, x509, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id
 
+    @emulate_async
     @log_entry_and_exit
     def connect2(self):
         if self.connection_id:
@@ -83,6 +84,7 @@ class Connect(object):
                 self.connection_id, timeout=adapter_config.default_api_timeout
             )
 
+    @emulate_async
     @log_entry_and_exit
     def reconnect(self, force_password_renewal=False):
         if self.connection_id:
@@ -92,6 +94,7 @@ class Connect(object):
                 timeout=adapter_config.default_api_timeout,
             )
 
+    @emulate_async
     @log_entry_and_exit
     def disconnect2(self):
         if self.connection_id:
@@ -102,7 +105,7 @@ class Connect(object):
             time.sleep(2)
 
     @log_entry_and_exit
-    def destroy(self):
+    def destroy_sync(self):
         if self.connection_id:
             self.rest_endpoint.destroy(
                 self.connection_id, timeout=adapter_config.default_api_timeout
@@ -114,14 +117,14 @@ class Connect(object):
 
 class ConnectFromEnvironment(object):
     @log_entry_and_exit
-    def connect_from_environment(self, transport):
+    def connect_from_environment_sync(self, transport):
         result = self.rest_endpoint.connect_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    def create_from_environment(self, transport):
+    def create_from_environment_sync(self, transport):
         result = self.rest_endpoint.create_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
@@ -129,33 +132,33 @@ class ConnectFromEnvironment(object):
 
 
 class Twin(object):
+    @emulate_async
     @log_entry_and_exit
     def enable_twin(self):
         return self.rest_endpoint.enable_twin(
             self.connection_id, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     @log_entry_and_exit
     def get_twin(self):
         return self.rest_endpoint.get_twin(
             self.connection_id, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     @log_entry_and_exit
     def patch_twin(self, patch):
         self.rest_endpoint.patch_twin(
             self.connection_id, patch, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     @log_entry_and_exit
-    def wait_for_desired_property_patch_async(self):
-        thread = self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.wait_for_desired_properties_patch),
-            (self.connection_id,),
-            dict(timeout=adapter_config.default_api_timeout),
+    def wait_for_desired_property_patch(self):
+        return self.rest_endpoint.wait_for_desired_properties_patch(
+            self.connection_id, timeout=adapter_config.default_api_timeout
         )
-        time.sleep(wait_time_for_async_start)
-        return thread
 
 
 class HandleMethods(object):
@@ -280,6 +283,17 @@ class C2d(object):
 
 
 class ServiceSideOfTwin(object):
+    @emulate_async
+    @log_entry_and_exit
+    def get_module_twin(self, device_id, module_id):
+        return self.rest_endpoint.get_module_twin(
+            self.connection_id,
+            device_id,
+            module_id,
+            timeout=adapter_config.default_api_timeout,
+        )
+
+    @emulate_async
     @log_entry_and_exit
     def patch_module_twin(self, device_id, module_id, patch):
         self.rest_endpoint.patch_module_twin(
@@ -290,12 +304,14 @@ class ServiceSideOfTwin(object):
             timeout=adapter_config.default_api_timeout,
         )
 
+    @emulate_async
     @log_entry_and_exit
     def get_device_twin(self, device_id):
         return self.rest_endpoint.get_device_twin(
             self.connection_id, device_id, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     @log_entry_and_exit
     def patch_device_twin(self, device_id, patch):
         self.rest_endpoint.patch_device_twin(
@@ -349,15 +365,6 @@ class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryA
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).registry
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
-
-    @log_entry_and_exit
-    def get_module_twin(self, device_id, module_id):
-        return self.rest_endpoint.get_module_twin(
-            self.connection_id,
-            device_id,
-            module_id,
-            timeout=adapter_config.default_api_timeout,
-        )
 
 
 class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):

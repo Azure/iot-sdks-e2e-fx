@@ -74,7 +74,7 @@ class BaseReceiveMethodCallTests(object):
     @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from the IoTHub service")
     @pytest.mark.it("Can connect, enable methods, and disconnect")
-    def test_module_client_connect_enable_methods_disconnect(self, client):
+    async def test_module_client_connect_enable_methods_disconnect(self, client):
         client.enable_methods()
 
 
@@ -83,7 +83,7 @@ class ReceiveMethodCallFromServiceTests(BaseReceiveMethodCallTests):
     @pytest.mark.timeout(180)
     @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from the IoTHub service")
-    def test_method_call_invoked_from_service(self, client, service, logger):
+    async def test_method_call_invoked_from_service(self, client, service, logger):
         run_method_call_test(
             source=service,
             destination=client,
@@ -96,7 +96,7 @@ class ReceiveMethodCallFromModuleTests(BaseReceiveMethodCallTests):
     @pytest.mark.timeout(180)
     @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from an EdgeHub module")
-    def test_method_call_invoked_from_friend(self, client, friend, logger):
+    async def test_method_call_invoked_from_friend(self, client, friend, logger):
         run_method_call_test(source=friend, destination=client, logger=logger)
 
 
@@ -104,7 +104,7 @@ class InvokeMethodCallOnModuleTests(object):
     @pytest.mark.timeout(180)
     @pytest.mark.invokesModuleMethodCalls
     @pytest.mark.it("Can invoke a method call on an EdgeHub module")
-    def test_method_call_invoked_on_friend(self, client, friend, logger):
+    async def test_method_call_invoked_on_friend(self, client, friend, logger):
         run_method_call_test(source=client, destination=friend, logger=logger)
 
 
@@ -112,5 +112,7 @@ class InvokeMethodCallOnLeafDeviceTests(object):
     @pytest.mark.timeout(180)
     @pytest.mark.invokesDeviceMethodCalls
     @pytest.mark.it("Can invoke a method call on an EdgeHub leaf device")
-    def test_method_call_invoked_on_leaf_device(self, client, leaf_device, logger):
+    async def test_method_call_invoked_on_leaf_device(
+        self, client, leaf_device, logger
+    ):
         run_method_call_test(source=client, destination=leaf_device, logger=logger)

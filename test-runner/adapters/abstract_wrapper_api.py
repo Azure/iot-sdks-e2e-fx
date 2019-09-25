@@ -8,25 +8,29 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class AbstractWrapperApi:
     @abc.abstractmethod
-    def log_message(self, message):
+    def log_message_sync(self, message):
         pass
 
     @abc.abstractmethod
-    def cleanup(self):
+    def cleanup_sync(self):
         pass
 
     @abc.abstractmethod
-    def get_capabilities(self):
+    def get_capabilities_sync(self):
         pass
 
     @abc.abstractmethod
-    def set_flags(self, flags):
+    def set_flags_sync(self, flags):
         pass
 
     @abc.abstractmethod
-    def network_disconnect(self, disconnection_type):
+    async def network_disconnect(self, disconnection_type):
         pass
 
     @abc.abstractmethod
-    def network_reconnect(self):
+    async def network_reconnect(self):
+        pass
+
+    @abc.abstractmethod
+    def network_reconnect_sync(self):
         pass

@@ -38,14 +38,14 @@ def logger():
 def eventhub():
     eventhub = connections.connect_eventhub_client()
     yield eventhub
-    eventhub.disconnect()
+    eventhub.disconnect_sync()
 
 
 @pytest.fixture
 def registry():
     registry = connections.connect_registry_client()
     yield registry
-    registry.disconnect()
+    registry.disconnect_sync()
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def friend():
     friend.device_id = get_current_config().friend_module.device_id
     friend.module_id = get_current_config().friend_module.module_id
     yield friend
-    friend.disconnect()
+    friend.disconnect_sync()
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def test_module():
     test_module.device_id = get_current_config().test_module.device_id
     test_module.module_id = get_current_config().test_module.module_id
     yield test_module
-    test_module.disconnect()
+    test_module.disconnect_sync()
 
 
 @pytest.fixture
@@ -71,7 +71,7 @@ def leaf_device():
     leaf_device = connections.connect_leaf_device_client()
     leaf_device.device_id = get_current_config().leaf_device.device_id
     yield leaf_device
-    leaf_device.disconnect()
+    leaf_device.disconnect_sync()
 
 
 @pytest.fixture
@@ -79,14 +79,14 @@ def test_device():
     test_device = connections.connect_test_device_client()
     test_device.device_id = get_current_config().test_device.device_id
     yield test_device
-    test_device.disconnect()
+    test_device.disconnect_sync()
 
 
 @pytest.fixture
 def service():
     service = connections.connect_service_client()
     yield service
-    service.disconnect()
+    service.disconnect_sync()
 
 
 @pytest.fixture

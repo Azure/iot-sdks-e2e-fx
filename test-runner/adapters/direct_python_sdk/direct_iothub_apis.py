@@ -5,12 +5,13 @@
 from multiprocessing.pool import ThreadPool
 from internal_iothub_glue import InternalDeviceGlue, InternalModuleGlue
 from ..abstract_iothub_apis import AbstractDeviceApi, AbstractModuleApi
+from ..decorators import emulate_async
 
 client_object_list = []
 
 
 class Connect(object):
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_sync(self, transport, connection_string, ca_certificate):
         client_object_list.append(self)
         if "cert" in ca_certificate:
             cert = ca_certificate["cert"]
@@ -18,14 +19,14 @@ class Connect(object):
             cert = None
         self.glue.connect(transport, connection_string, cert)
 
-    def disconnect(self):
+    def disconnect_sync(self):
         if self in client_object_list:
             client_object_list.remove(self)
 
         self.glue.disconnect()
         self.glue = None
 
-    def create_from_connection_string(
+    def create_from_connection_string_sync(
         self, transport, connection_string, ca_certificate
     ):
         client_object_list.append(self)
@@ -35,20 +36,23 @@ class Connect(object):
             cert = None
         self.glue.create_from_connection_string(transport, connection_string, cert)
 
-    def create_from_x509(self, transport, x509):
+    def create_from_x509_sync(self, transport, x509):
         client_object_list.append(self)
         self.glue.create_from_x509(transport, x509)
 
+    @emulate_async
     def connect2(self):
         self.glue.connect2()
 
+    @emulate_async
     def reconnect(self, force_password_renewal=False):
         self.glue.reconnect(force_password_renewal)
 
+    @emulate_async
     def disconnect2(self):
         self.glue.disconnect2()
 
-    def destroy(self):
+    def destroy_sync(self):
         if self in client_object_list:
             client_object_list.remove(self)
 
@@ -56,27 +60,31 @@ class Connect(object):
 
 
 class ConnectFromEnvironment(object):
-    def connect_from_environment(self, transport):
+    def connect_from_environment_sync(self, transport):
         client_object_list.append(self)
         self.glue.connect_from_environment(transport)
 
-    def create_from_environment(self, transport):
+    def create_from_environment_sync(self, transport):
         client_object_list.append(self)
         self.glue.create_from_environment(transport)
 
 
 class Twin(object):
+    @emulate_async
     def enable_twin(self):
         self.glue.enable_twin()
 
+    @emulate_async
     def get_twin(self):
         return self.glue.get_twin()
 
+    @emulate_async
     def patch_twin(self, patch):
         self.glue.send_twin_patch(patch)
 
-    def wait_for_desired_property_patch_async(self):
-        return self.pool.apply_async(self.glue.wait_for_desired_property_patch)
+    @emulate_async
+    def wait_for_desired_property_patch(self):
+        return self.glue.wait_for_desired_property_patch()
 
 
 class Telemetry(object):

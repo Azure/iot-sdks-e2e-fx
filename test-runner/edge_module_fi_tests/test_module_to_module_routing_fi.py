@@ -38,8 +38,8 @@ def test_module_to_friend_routing(test_string):
     received_message = friend_input_thread.get(receive_timeout)
     assert received_message == test_string
 
-    friend_client.disconnect()
-    test_client.disconnect()
+    friend_client.disconnect_sync()
+    test_client.disconnect_sync()
 
 
 @pytest.mark.testgroup_edgehub_fault_injection
@@ -57,5 +57,5 @@ def test_friend_to_module_routing_fi(test_string):
     received_message = test_input_thread.get(receive_timeout)
     assert received_message == test_string
 
-    friend_client.disconnect()
-    test_client.disconnect()
+    friend_client.disconnect_sync()
+    test_client.disconnect_sync()

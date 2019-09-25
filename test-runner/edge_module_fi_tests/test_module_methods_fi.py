@@ -7,7 +7,7 @@ import connections
 import json
 import multiprocessing
 import time
-from adapters import print_message as log_message
+from adapters import print_message
 from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
 from runtime_config import get_current_config
 import docker
@@ -46,15 +46,15 @@ def do_module_method_call(
     """
     Helper function which invokes a method call on one module and responds to it from another module
     """
-    log_message("enabling methods on the destination")
+    print_message("enabling methods on the destination")
     destination_module.enable_methods()
 
     # start listening for method calls on the destination side
-    log_message("starting to listen from destination module")
+    print_message("starting to listen from destination module")
     receiver_thread = destination_module.roundtrip_method_async(
         method_name, status_code, method_invoke_parameters, method_response_body
     )
-    log_message(
+    print_message(
         "sleeping for {} seconds to make sure all registration is complete".format(
             registration_sleep
         )
@@ -64,17 +64,17 @@ def do_module_method_call(
     disconnect_edgehub()  # One point that could be good to disconnect edgeHub
     # time.sleep(1)
     connect_edgehub()
-    log_message("Sleeping")
+    print_message("Sleeping")
     time.sleep(30)
-    log_message(" Done Sleeping")
+    print_message(" Done Sleeping")
 
     # invoking the call from caller side
-    log_message("invoking method call")
+    print_message("invoking method call")
     response = source_module.call_module_method_async(
         destination_device_id, destination_module_id, method_invoke_parameters
     ).get()
-    log_message("method call complete.  Response is:")
-    log_message(str(response))
+    print_message("method call complete.  Response is:")
+    print_message(str(response))
 
     # wait for that response to arrive back at the source and verify that it's all good.
     assert response["status"] == status_code
@@ -106,8 +106,8 @@ def test_module_method_call_invoked_from_service():
         registration_sleep=time_for_method_to_fully_register_service_call,
     )
 
-    module_client.disconnect()
-    service_client.disconnect()
+    module_client.disconnect_sync()
+    service_client.disconnect_sync()
 
 
 @pytest.mark.timeout(180)
@@ -128,8 +128,8 @@ def test_module_method_from_test_to_friend_fi():
         get_current_config().friend_module.module_id,
     )
 
-    module_client.disconnect()
-    friend_client.disconnect()
+    module_client.disconnect_sync()
+    friend_client.disconnect_sync()
 
 
 @pytest.mark.timeout(180)
@@ -151,5 +151,5 @@ def test_module_method_from_friend_to_test_fi():
         get_current_config().test_module.module_id,
     )
 
-    module_client.disconnect()
-    friend_client.disconnect()
+    module_client.disconnect_sync()
+    friend_client.disconnect_sync()

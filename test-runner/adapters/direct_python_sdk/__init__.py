@@ -11,4 +11,4 @@ def cleanup_test_objects():
     # function modifies object_list which breaks the iteration
     list_copy = client_object_list.copy()
     for obj in list_copy:
-        obj.disconnect()
+        obj.disconnect_sync()

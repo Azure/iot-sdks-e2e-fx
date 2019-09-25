@@ -2,6 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import functools
+import asyncio
 
 from .print_message import print_message
 
@@ -38,3 +39,39 @@ def log_entry_and_exit(_func=None, *, print_args=True):
         return decorator_log_entry_and_exit
     else:
         return decorator_log_entry_and_exit(_func)
+
+
+def get_running_loop():
+    """
+    Gets the currently running event loop
+
+    Uses asyncio.get_running_loop() if available (Python 3.7+) or a backported
+    version of the same function in 3.5/3.6.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except AttributeError:
+        loop = asyncio._get_running_loop()
+        if loop is None:
+            raise RuntimeError("no running event loop")
+    return loop
+
+
+def emulate_async(fn):
+    """Returns a coroutine function that calls a given function with emulated asynchronous
+    behavior via use of mulithreading.
+
+    Can be applied as a decorator.
+
+    :param fn: The sync function to be run in async.
+    :returns: A coroutine function that will call the given sync function.
+    """
+
+    @functools.wraps(fn)
+    async def async_fn_wrapper(*args, **kwargs):
+        loop = get_running_loop()
+
+        # Run fn in default ThreadPoolExecutor (CPU * 5 threads)
+        return await loop.run_in_executor(None, functools.partial(fn, *args, **kwargs))
+
+    return async_fn_wrapper

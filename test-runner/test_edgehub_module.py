@@ -15,6 +15,8 @@ from method_tests import (
 )
 from retry_tests import RetryTests
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.describe("EdgeHub ModuleClient")

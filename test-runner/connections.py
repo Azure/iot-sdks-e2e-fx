@@ -16,9 +16,9 @@ def connect_test_module_client():
         current_config.test_module.connection_type
         == runtime_config_templates.ENVIRONMENT
     ):
-        client.connect_from_environment(current_config.test_module.transport)
+        client.connect_from_environment_sync(current_config.test_module.transport)
     else:
-        client.connect(
+        client.connect_sync(
             current_config.test_module.transport,
             current_config.test_module.connection_string,
             current_config.ca_certificate,
@@ -36,9 +36,9 @@ def connect_friend_module_client():
         current_config.friend_module.connection_type
         == runtime_config_templates.ENVIRONMENT
     ):
-        client.connect_from_environment(current_config.friend_module.transport)
+        client.connect_from_environment_sync(current_config.friend_module.transport)
     else:
-        client.connect(
+        client.connect_sync(
             current_config.friend_module.transport,
             current_config.friend_module.connection_string,
             current_config.ca_certificate,
@@ -52,7 +52,7 @@ def connect_eventhub_client():
     """
     current_config = runtime_config.get_current_config()
     client = adapters.EventHubClient()
-    client.connect(current_config.eventhub.connection_string)
+    client.connect_sync(current_config.eventhub.connection_string)
     return client
 
 
@@ -62,7 +62,7 @@ def connect_registry_client():
     """
     current_config = runtime_config.get_current_config()
     client = adapters.RegistryClient()
-    client.connect(current_config.registry.connection_string)
+    client.connect_sync(current_config.registry.connection_string)
     return client
 
 
@@ -72,7 +72,7 @@ def connect_service_client():
     """
     current_config = runtime_config.get_current_config()
     client = adapters.ServiceClient()
-    client.connect(current_config.service.connection_string)
+    client.connect_sync(current_config.service.connection_string)
     return client
 
 
@@ -82,7 +82,7 @@ def connect_leaf_device_client():
     """
     current_config = runtime_config.get_current_config()
     client = adapters.LeafDeviceClient()
-    client.connect(
+    client.connect_sync(
         current_config.leaf_device.transport,
         current_config.leaf_device.connection_string,
         current_config.ca_certificate,
@@ -96,7 +96,7 @@ def connect_test_device_client():
     """
     current_config = runtime_config.get_current_config()
     client = adapters.TestDeviceClient()
-    client.connect(
+    client.connect_sync(
         current_config.test_device.transport,
         current_config.test_device.connection_string,
         current_config.ca_certificate,
