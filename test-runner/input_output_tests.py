@@ -47,7 +47,7 @@ class InputOutputTests(object):
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
         )
-        time.sleep(1)
+        time.sleep(3)
 
         await client.send_output_event(output_name_to_friend, test_string)
 
@@ -68,7 +68,7 @@ class InputOutputTests(object):
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
         )
-        time.sleep(1)
+        time.sleep(3)
 
         sent_message = HubEvent(body)
         await client.send_output_event(
@@ -89,7 +89,7 @@ class InputOutputTests(object):
         test_input_future = asyncio.ensure_future(
             client.wait_for_input_event(input_name_from_friend)
         )
-        time.sleep(1)
+        time.sleep(3)
 
         await friend.send_output_event(output_name_to_test_client, test_string)
 
@@ -120,7 +120,7 @@ class InputOutputTests(object):
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
         )
-        time.sleep(1)
+        time.sleep(3)
 
         await client.send_output_event(output_name_to_friend, test_string)
 
@@ -181,7 +181,7 @@ class InputOutputTests(object):
         )
 
         # give the registration a chance to take place
-        time.sleep(2)
+        time.sleep(3)
 
         await client.send_output_event(loopback_output_name, test_string)
 
@@ -205,7 +205,7 @@ class InputOutputTests(object):
         )
 
         # give the registration a chance to take place
-        time.sleep(2)
+        time.sleep(3)
 
         sent_message = HubEvent(body)
         await client.send_output_event(
