@@ -10,6 +10,7 @@ from edgehub_control import connect_edgehub, disconnect_edgehub, restart_edgehub
 
 pytestmark = pytest.mark.asyncio
 
+
 @pytest.fixture(scope="module", autouse=True)
 def set_channels(request):
     global friend_to_test_output

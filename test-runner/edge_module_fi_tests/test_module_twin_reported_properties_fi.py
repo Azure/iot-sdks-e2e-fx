@@ -17,6 +17,7 @@ from time import sleep
 
 pytestmark = pytest.mark.asyncio
 
+
 @pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.supportsTwin
