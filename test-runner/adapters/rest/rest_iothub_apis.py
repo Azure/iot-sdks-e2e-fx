@@ -239,13 +239,11 @@ class InvokeMethods(object):
     @emulate_async
     @log_entry_and_exit
     def call_device_method(self, device_id, method_invoke_parameters):
-        return (
-            self.rest_endpoint.invoke_device_method(
-                self.connection_id,
-                device_id,
-                method_invoke_parameters,
-                timeout=adapter_config.default_api_timeout,
-            ),
+        return self.rest_endpoint.invoke_device_method(
+            self.connection_id,
+            device_id,
+            method_invoke_parameters,
+            timeout=adapter_config.default_api_timeout,
         )
 
 
