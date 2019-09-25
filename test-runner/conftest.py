@@ -7,8 +7,7 @@ import pytest
 import signal
 import adapters
 import logging
-from adapters import print_message as log_message
-from adapters import adapter_config
+from adapters import adapter_config, print_message
 from identity_helpers import ensure_edge_environment_variables
 import runtime_config_templates
 import runtime_config
@@ -180,45 +179,45 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="function", autouse=True)
 def function_log_fixture(request):
-    log_message("HORTON: Entering function {}".format(request.function.__name__))
+    print_message("HORTON: Entering function {}".format(request.function.__name__))
 
     def fin():
         print("")
         if hasattr(request.node, "rep_setup"):
-            log_message("setup:      " + str(request.node.rep_setup.outcome))
+            print_message("setup:      " + str(request.node.rep_setup.outcome))
         if hasattr(request.node, "rep_call"):
-            log_message("call:       " + str(request.node.rep_call.outcome))
+            print_message("call:       " + str(request.node.rep_call.outcome))
         if hasattr(request.node, "rep_teardown"):
-            log_message("teardown:   " + str(request.node.rep_call.outcome))
-        log_message(
+            print_message("teardown:   " + str(request.node.rep_call.outcome))
+        print_message(
             "HORTON: Cleaning up after function {}".format(request.function.__name__)
         )
         adapters.cleanup_test_objects()
-        log_message("HORTON: Exiting function {}".format(request.function.__name__))
+        print_message("HORTON: Exiting function {}".format(request.function.__name__))
 
     request.addfinalizer(fin)
 
 
 @pytest.fixture(scope="module", autouse=True)
 def module_log_fixture(request):
-    log_message("HORTON: Entering module {}".format(request.module.__name__))
+    print_message("HORTON: Entering module {}".format(request.module.__name__))
 
     def fin():
-        log_message("HORTON: Exiting module {}".format(request.module.__name__))
+        print_message("HORTON: Exiting module {}".format(request.module.__name__))
 
     request.addfinalizer(fin)
 
 
 @pytest.fixture(scope="session", autouse=True)
 def session_log_fixture(request):
-    log_message("HORTON: Preforming pre-session cleanup")
+    print_message("HORTON: Preforming pre-session cleanup")
     adapters.cleanup_test_objects()
-    log_message("HORTON: pre-session cleanup complete")
+    print_message("HORTON: pre-session cleanup complete")
 
     def fin():
-        log_message("Preforming post-session cleanup")
+        print_message("Preforming post-session cleanup")
         adapters.cleanup_test_objects()
-        log_message("HORTON: post-session cleanup complete")
+        print_message("HORTON: post-session cleanup complete")
 
     request.addfinalizer(fin)
 
@@ -298,7 +297,7 @@ def pytest_collection_modifyitems(config, items):
 
     # make sure the network is connected before starting (this can happen with interrupted runs)
     if runtime_capabilities.get_test_module_capabilities_flag("v2_connect_group"):
-        runtime_config.get_test_module_wrapper_api().network_reconnect()
+        runtime_config.get_test_module_wrapper_api().network_reconnect_sync()
 
     skip_tests_by_marker(
         items, skip_list, "it isn't implemented in the {} wrapper".format(language)

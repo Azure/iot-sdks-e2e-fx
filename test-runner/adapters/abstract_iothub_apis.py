@@ -8,32 +8,32 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class ServiceConnectDisconnect(object):
     @abc.abstractmethod
-    def connect(self, connection_string):
+    def connect_sync(self, connection_string):
         pass
 
     @abc.abstractmethod
-    def disconnect(self):
+    def disconnect_sync(self):
         pass
 
 
 @six.add_metaclass(abc.ABCMeta)
 class Connect(object):
     @abc.abstractmethod
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_sync(self, transport, connection_string, ca_certificate):
         pass
 
     @abc.abstractmethod
-    def disconnect(self):
+    def disconnect_sync(self):
         pass
 
     @abc.abstractmethod
-    def create_from_connection_string(
+    def create_from_connection_string_sync(
         self, transport, connection_string, ca_certificate
     ):
         pass
 
     @abc.abstractmethod
-    def create_from_x509(self, transport, x509):
+    def create_from_x509_sync(self, transport, x509):
         pass
 
     @abc.abstractmethod
@@ -49,18 +49,18 @@ class Connect(object):
         pass
 
     @abc.abstractmethod
-    def destroy(self):
+    def destroy_sync(self):
         pass
 
 
 @six.add_metaclass(abc.ABCMeta)
 class ConnectFromEnvironment(object):
     @abc.abstractmethod
-    def connect_from_environment(self, transport):
+    def connect_from_environment_sync(self, transport):
         pass
 
     @abc.abstractmethod
-    def create_from_environment(self, transport):
+    def create_from_environment_sync(self, transport):
         pass
 
 
@@ -79,7 +79,7 @@ class Twin(object):
         pass
 
     @abc.abstractmethod
-    def wait_for_desired_property_patch_async(self):
+    def wait_for_desired_property_patch(self):
         pass
 
 
@@ -90,7 +90,7 @@ class HandleMethods(object):
         pass
 
     @abc.abstractmethod
-    def roundtrip_method_async(
+    def roundtrip_method_call(
         self, method_name, status_code, request_payload, response_payload
     ):
         pass
@@ -100,10 +100,6 @@ class HandleMethods(object):
 class Telemetry(object):
     @abc.abstractmethod
     def send_event(self, body):
-        pass
-
-    @abc.abstractmethod
-    def send_event_async(self, body):
         pass
 
 
@@ -118,18 +114,18 @@ class InputsAndOutputs(object):
         pass
 
     @abc.abstractmethod
-    def wait_for_input_event_async(self, input_name):
+    def wait_for_input_event(self, input_name):
         pass
 
 
 @six.add_metaclass(abc.ABCMeta)
 class InvokeMethods(object):
     @abc.abstractmethod
-    def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
+    def call_module_method(self, device_id, module_id, method_invoke_parameters):
         pass
 
     @abc.abstractmethod
-    def call_device_method_async(self, device_id, method_invoke_parameters):
+    def call_device_method(self, device_id, method_invoke_parameters):
         pass
 
 
@@ -151,7 +147,7 @@ class C2d(object):
         pass
 
     @abc.abstractmethod
-    def wait_for_c2d_message_async(self):
+    def wait_for_c2d_message(self):
         pass
 
 

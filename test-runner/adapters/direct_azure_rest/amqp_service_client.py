@@ -37,7 +37,7 @@ def _build_iothub_amqp_endpoint(config):
 
 
 class AmqpServiceClient:
-    def connect(self, service_connection_string):
+    def connect_sync(self, service_connection_string):
         self.config = connection_string_to_dictionary(service_connection_string)
         self.endpoint = _build_iothub_amqp_endpoint(self.config)
         operation = "/messages/devicebound"
@@ -45,7 +45,7 @@ class AmqpServiceClient:
         logger.info("Target: {}".format(target))
         self.send_client = uamqp.SendClient(target, debug=True)
 
-    def disconnect(self):
+    def disconnect_sync(self):
         if self.send_client:
             self.send_client.close()
             self.send_client = None

@@ -12,4 +12,4 @@ def cleanup_test_objects():
     # function modifies object_list which breaks the iteration
     list_copy = eventhub_object_list + service_object_list + registry_object_list
     for obj in list_copy:
-        obj.disconnect()
+        obj.disconnect_sync()

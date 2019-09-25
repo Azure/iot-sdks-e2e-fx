@@ -2,15 +2,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
-from multiprocessing.pool import ThreadPool
 from internal_iothub_glue import InternalDeviceGlue, InternalModuleGlue
 from ..abstract_iothub_apis import AbstractDeviceApi, AbstractModuleApi
+from ..decorators import emulate_async
 
 client_object_list = []
 
 
 class Connect(object):
-    def connect(self, transport, connection_string, ca_certificate):
+    def connect_sync(self, transport, connection_string, ca_certificate):
         client_object_list.append(self)
         if "cert" in ca_certificate:
             cert = ca_certificate["cert"]
@@ -18,14 +18,14 @@ class Connect(object):
             cert = None
         self.glue.connect(transport, connection_string, cert)
 
-    def disconnect(self):
+    def disconnect_sync(self):
         if self in client_object_list:
             client_object_list.remove(self)
 
         self.glue.disconnect()
         self.glue = None
 
-    def create_from_connection_string(
+    def create_from_connection_string_sync(
         self, transport, connection_string, ca_certificate
     ):
         client_object_list.append(self)
@@ -35,20 +35,23 @@ class Connect(object):
             cert = None
         self.glue.create_from_connection_string(transport, connection_string, cert)
 
-    def create_from_x509(self, transport, x509):
+    def create_from_x509_sync(self, transport, x509):
         client_object_list.append(self)
         self.glue.create_from_x509(transport, x509)
 
+    @emulate_async
     def connect2(self):
         self.glue.connect2()
 
+    @emulate_async
     def reconnect(self, force_password_renewal=False):
         self.glue.reconnect(force_password_renewal)
 
+    @emulate_async
     def disconnect2(self):
         self.glue.disconnect2()
 
-    def destroy(self):
+    def destroy_sync(self):
         if self in client_object_list:
             client_object_list.remove(self)
 
@@ -56,61 +59,70 @@ class Connect(object):
 
 
 class ConnectFromEnvironment(object):
-    def connect_from_environment(self, transport):
+    def connect_from_environment_sync(self, transport):
         client_object_list.append(self)
         self.glue.connect_from_environment(transport)
 
-    def create_from_environment(self, transport):
+    def create_from_environment_sync(self, transport):
         client_object_list.append(self)
         self.glue.create_from_environment(transport)
 
 
 class Twin(object):
+    @emulate_async
     def enable_twin(self):
         self.glue.enable_twin()
 
+    @emulate_async
     def get_twin(self):
         return self.glue.get_twin()
 
+    @emulate_async
     def patch_twin(self, patch):
         self.glue.send_twin_patch(patch)
 
-    def wait_for_desired_property_patch_async(self):
-        return self.pool.apply_async(self.glue.wait_for_desired_property_patch)
+    @emulate_async
+    def wait_for_desired_property_patch(self):
+        return self.glue.wait_for_desired_property_patch()
 
 
 class Telemetry(object):
+    @emulate_async
     def send_event(self, body):
         self.glue.send_event(body)
 
-    def send_event_async(self, body):
-        return self.pool.apply_async(self.glue.send_event, (body,))
-
 
 class C2d(object):
+    @emulate_async
     def enable_c2d(self):
         self.glue.enable_c2d()
 
-    def wait_for_c2d_message_async(self):
-        return self.pool.apply_async(self.glue.wait_for_c2d_message)
+    @emulate_async
+    def wait_for_c2d_message(self):
+        return self.glue.wait_for_c2d_message()
 
 
 class InputsAndOutputs(object):
+    @emulate_async
     def enable_input_messages(self):
         self.glue.enable_input_messages()
 
+    @emulate_async
     def send_output_event(self, output_name, body):
         self.glue.send_output_event(output_name, body)
 
-    def wait_for_input_event_async(self, input_name):
-        return self.pool.apply_async(self.glue.wait_for_input_message, (input_name,))
+    @emulate_async
+    def wait_for_input_event(self, input_name):
+        return self.glue.wait_for_input_message(input_name)
 
 
 class HandleMethods(object):
+    @emulate_async
     def enable_methods(self):
         self.glue.enable_methods()
 
-    def roundtrip_method_async(
+    @emulate_async
+    def roundtrip_method_call(
         self, method_name, status_code, request_payload, response_payload
     ):
         class RequestAndResponse(object):
@@ -120,28 +132,27 @@ class HandleMethods(object):
         request_and_response.request_payload = request_payload
         request_and_response.response_payload = response_payload
         request_and_response.status_code = status_code
-        return self.pool.apply_async(
-            self.glue.roundtrip_method_call, (method_name, request_and_response)
-        )
+        return self.glue.roundtrip_method_call(method_name, request_and_response)
 
 
 class InvokeMethods(object):
-    def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
-        return self.pool.apply_async(
-            self.glue.invoke_module_method,
-            (device_id, module_id, method_invoke_parameters),
+    @emulate_async
+    def call_module_method(self, device_id, module_id, method_invoke_parameters):
+        return self.glue.invoke_module_method(
+            device_id, module_id, method_invoke_parameters
         )
 
-    def call_device_method_async(self, device_id, method_invoke_parameters):
-        return self.pool.apply_async(
-            self.glue.invoke_device_method, (device_id, method_invoke_parameters)
-        )
+    @emulate_async
+    def call_device_method(self, device_id, method_invoke_parameters):
+        return self.glue.invoke_device_method(device_id, method_invoke_parameters)
 
 
 class ConnectionStatus(object):
+    @emulate_async
     def get_connection_status(self):
         return self.glue.get_connection_status()
 
+    @emulate_async
     def wait_for_connection_status_change(self):
         return self.glue.wait_for_connection_status_change()
 
@@ -151,7 +162,6 @@ class DeviceApi(
 ):
     def __init__(self):
         self.glue = InternalDeviceGlue()
-        self.pool = ThreadPool()
 
 
 class ModuleApi(
@@ -167,4 +177,3 @@ class ModuleApi(
 ):
     def __init__(self):
         self.glue = InternalModuleGlue()
-        self.pool = ThreadPool()

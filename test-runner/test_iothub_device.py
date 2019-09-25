@@ -13,6 +13,8 @@ from method_tests import (
 from c2d_tests import C2dTests
 from retry_tests import RetryTests
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.describe("IoTHub Device")
 @pytest.mark.testgroup_iothub_device_client

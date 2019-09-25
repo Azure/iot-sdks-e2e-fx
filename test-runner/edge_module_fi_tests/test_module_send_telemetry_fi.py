@@ -5,7 +5,7 @@
 import pytest
 import connections
 from runtime_config import get_current_config
-from adapters import print_message as log_message
+from adapters import print_message
 from edgehub_control import (
     edgeHub,
     disconnect_edgehub,
@@ -13,6 +13,7 @@ from edgehub_control import (
     restart_edgehub,
 )
 
+pytestmark = pytest.mark.asyncio
 
 local_timeout = 60  # Seconds
 
@@ -22,7 +23,7 @@ local_timeout = 60  # Seconds
 @pytest.mark.timeout(
     timeout=180
 )  # extra timeout in case eventhub needs to retry due to resource error
-def test_module_send_event_iothub_fi(
+async def test_module_send_event_iothub_fi(
     test_object_stringified, test_object_stringified_2
 ):
     """ Sends event through Edge Hub to IoT Hub and validates the message is received using the Event Hub API.
@@ -31,21 +32,21 @@ def test_module_send_event_iothub_fi(
     """
     module_client = connections.connect_test_module_client()
     eventhub_client = connections.connect_eventhub_client()
-    module_client.send_event_async(test_object_stringified)
-    received_message = eventhub_client.wait_for_next_event(
+    await module_client.send_event(test_object_stringified)
+    received_message = await eventhub_client.wait_for_next_event(
         get_current_config().test_module.device_id, expected=test_object_stringified
     )
     if not received_message:
-        log_message("Intial message not received")
+        print_message("Intial message not received")
         assert False
     disconnect_edgehub()  # DISCONNECT EDGEHUB
-    module_client.send_event_async(test_object_stringified_2)
+    module_client.send_event(test_object_stringified_2)  # do not await
     connect_edgehub()  # RECONNECT EDGEHUB
-    received_message = eventhub_client.wait_for_next_event(
+    received_message = await eventhub_client.wait_for_next_event(
         get_current_config().test_module.device_id, expected=test_object_stringified_2
     )
     if not received_message:
-        log_message("Second message not received")
+        print_message("Second message not received")
         assert False
-    module_client.disconnect()
-    eventhub_client.disconnect()
+    module_client.disconnect_sync()
+    eventhub_client.disconnect_sync()

@@ -8,6 +8,7 @@ from azure.eventhub import EventHubClient
 from azure.eventhub.common import Offset
 from azure.eventhub.common import EventHubError
 from ..print_message import print_message
+from ..decorators import emulate_async
 
 # our receive loop cycles through our 4 partitions, waiting for
 # RECEIVE_CYCLE_TIME seconds at each partition for a message to arrive
@@ -40,7 +41,7 @@ class EventHubApi:
         self.receivers = []
         object_list.append(self)
 
-    def connect(self, connection_string):
+    def connect_sync(self, connection_string):
         started = False
         while not started:
             print_message("EventHubApi: connecting EventHubClient")
@@ -79,7 +80,7 @@ class EventHubApi:
 
             print_message("EventHubApi: ready")
 
-    def disconnect(self):
+    def disconnect_sync(self):
         if self in object_list:
             object_list.remove(self)
         if self.client:
@@ -87,6 +88,7 @@ class EventHubApi:
             self.client = None
 
     #  30 second timeout was too small.  Bumping to 90.
+    @emulate_async
     def wait_for_next_event(self, device_id, timeout=90, expected=None):
         print_message("EventHubApi: waiting for next event for {}".format(device_id))
         start_time = time.time()

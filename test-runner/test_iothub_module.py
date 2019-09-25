@@ -8,6 +8,8 @@ from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
 from retry_tests import RetryTests
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.describe("IoTHubModuleClient")
 @pytest.mark.testgroup_iothub_module_client

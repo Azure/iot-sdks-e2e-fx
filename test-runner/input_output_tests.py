@@ -3,7 +3,7 @@
 # full license information.
 
 import pytest
-import time
+import asyncio
 from models import HubEvent
 import sample_content
 import utilities
@@ -13,6 +13,7 @@ input_name_from_friend = "fromFriend"
 output_name_to_friend = "toFriend"
 
 receive_timeout = 60
+sleep_time_for_listener_start = 3
 
 telemetry_output_name = "telemetry"
 loopback_output_name = "loopout"
@@ -30,26 +31,31 @@ class InputOutputTests(object):
 
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can connect, enable input messages, and disconnect")
-    def test_module_client_connect_enable_input_messages_disconnect(self, client):
-        client.enable_input_messages()
+    async def test_module_client_connect_enable_input_messages_disconnect(self, client):
+        await client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
-        time.sleep(2)
+        await asyncio.sleep(2)
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
-    def test_module_to_friend_routing(
+    async def test_module_to_friend_routing(
         self, client, friend, test_string, input_name_from_test_client
     ):
 
-        friend.enable_input_messages()
+        await friend.enable_input_messages()
+        print("messages enabled")
 
-        friend_input_thread = friend.wait_for_input_event_async(
-            input_name_from_test_client
+        friend_input_future = asyncio.ensure_future(
+            friend.wait_for_input_event(input_name_from_test_client)
         )
+        await asyncio.sleep(sleep_time_for_listener_start)
+        print("friend future created")
 
-        client.send_output_event(output_name_to_friend, test_string)
+        await client.send_output_event(output_name_to_friend, test_string)
+        print("message sent")
 
-        received_message = friend_input_thread.get(receive_timeout)
+        received_message = await friend_input_future
+        print("received message")
         assert received_message == test_string
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
@@ -58,34 +64,40 @@ class InputOutputTests(object):
     @pytest.mark.it(
         "Can send an output message which gets routed to another module using new Horton HubEvent"
     )
-    def test_module_to_friend_routing_hubevent(
+    async def test_module_to_friend_routing_hubevent(
         self, client, friend, input_name_from_test_client, body
     ):
-        friend.enable_input_messages()
+        await friend.enable_input_messages()
 
-        friend_input_thread = friend.wait_for_input_event_async(
-            input_name_from_test_client
+        friend_input_future = asyncio.ensure_future(
+            friend.wait_for_input_event(input_name_from_test_client)
         )
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         sent_message = HubEvent(body)
-        client.send_output_event(output_name_to_friend, sent_message.convert_to_json())
+        await client.send_output_event(
+            output_name_to_friend, sent_message.convert_to_json()
+        )
 
-        received_message = friend_input_thread.get(receive_timeout)
+        received_message = await friend_input_future
         assert utilities.json_is_same(received_message, sent_message.body)
 
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can receive an input message which is routed from another module")
-    def test_friend_to_module_routing(
+    async def test_friend_to_module_routing(
         self, client, friend, test_string, output_name_to_test_client
     ):
 
-        client.enable_input_messages()
+        await client.enable_input_messages()
 
-        test_input_thread = client.wait_for_input_event_async(input_name_from_friend)
+        test_input_future = asyncio.ensure_future(
+            client.wait_for_input_event(input_name_from_friend)
+        )
+        await asyncio.sleep(sleep_time_for_listener_start)
 
-        friend.send_output_event(output_name_to_test_client, test_string)
+        await friend.send_output_event(output_name_to_test_client, test_string)
 
-        received_message = test_input_thread.get(receive_timeout)
+        received_message = await test_input_future
         assert received_message == test_string
 
     @pytest.mark.callsSendOutputEvent
@@ -93,7 +105,7 @@ class InputOutputTests(object):
     @pytest.mark.it(
         "Can send a message that gets routed to a friend and then receive a message in reply"
     )
-    def test_module_test_to_friend_and_back(
+    async def test_module_test_to_friend_and_back(
         self,
         client,
         friend,
@@ -103,22 +115,25 @@ class InputOutputTests(object):
         output_name_to_test_client,
     ):
 
-        client.enable_input_messages()
-        friend.enable_input_messages()
+        await client.enable_input_messages()
+        await friend.enable_input_messages()
 
-        test_input_thread = client.wait_for_input_event_async(input_name_from_friend)
-        friend_input_thread = friend.wait_for_input_event_async(
-            input_name_from_test_client
+        test_input_future = asyncio.ensure_future(
+            client.wait_for_input_event(input_name_from_friend)
         )
+        friend_input_future = asyncio.ensure_future(
+            friend.wait_for_input_event(input_name_from_test_client)
+        )
+        await asyncio.sleep(sleep_time_for_listener_start)
 
-        client.send_output_event(output_name_to_friend, test_string)
+        await client.send_output_event(output_name_to_friend, test_string)
 
-        midpoint_message = friend_input_thread.get(receive_timeout)
+        midpoint_message = await friend_input_future
         assert midpoint_message == test_string
 
-        friend.send_output_event(output_name_to_test_client, test_string_2)
+        await friend.send_output_event(output_name_to_test_client, test_string_2)
 
-        received_message = test_input_thread.get(receive_timeout)
+        received_message = await test_input_future
         assert received_message == test_string_2
 
     @pytest.mark.callsSendOutputEvent
@@ -126,13 +141,13 @@ class InputOutputTests(object):
         timeout=180
     )  # extra timeout in case eventhub needs to retry due to resource error
     @pytest.mark.it("Can send a message that gets routed to eventhub")
-    def test_module_output_routed_upstream(
+    async def test_module_output_routed_upstream(
         self, client, eventhub, test_object_stringified
     ):
 
-        client.send_output_event(telemetry_output_name, test_object_stringified)
+        await client.send_output_event(telemetry_output_name, test_object_stringified)
 
-        received_message = eventhub.wait_for_next_event(
+        received_message = await eventhub.wait_for_next_event(
             client.device_id, expected=test_object_stringified
         )
         assert received_message is not None, "Message not received"
@@ -146,12 +161,14 @@ class InputOutputTests(object):
     @pytest.mark.it(
         "Can send a message that gets routed to eventhub using the new Horton HubEvent"
     )
-    def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
+    async def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
 
         sent_message = HubEvent(body)
-        client.send_output_event(telemetry_output_name, sent_message.convert_to_json())
+        await client.send_output_event(
+            telemetry_output_name, sent_message.convert_to_json()
+        )
 
-        received_message = eventhub.wait_for_next_event(
+        received_message = await eventhub.wait_for_next_event(
             client.device_id, expected=sent_message.body
         )
         assert received_message is not None, "Message not received"
@@ -160,17 +177,19 @@ class InputOutputTests(object):
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself")
-    def test_module_input_output_loopback(self, client, test_string, logger):
-        client.enable_input_messages()
+    async def test_module_input_output_loopback(self, client, test_string, logger):
+        await client.enable_input_messages()
 
-        input_thread = client.wait_for_input_event_async(loopback_input_name)
+        input_future = asyncio.ensure_future(
+            client.wait_for_input_event(loopback_input_name)
+        )
 
         # give the registration a chance to take place
-        time.sleep(2)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
-        client.send_output_event(loopback_output_name, test_string)
+        await client.send_output_event(loopback_output_name, test_string)
 
-        received_message = input_thread.get(receive_timeout)
+        received_message = await input_future
         logger("input message arrived")
         logger("expected message: " + str(test_string))
         logger("received message: " + str(received_message))
@@ -182,18 +201,22 @@ class InputOutputTests(object):
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself using the new Horton HubEvent")
-    def test_module_input_output_loopback_hubevent(self, client, body, logger):
-        client.enable_input_messages()
+    async def test_module_input_output_loopback_hubevent(self, client, body, logger):
+        await client.enable_input_messages()
 
-        input_thread = client.wait_for_input_event_async(loopback_input_name)
+        input_future = asyncio.ensure_future(
+            client.wait_for_input_event(loopback_input_name)
+        )
 
         # give the registration a chance to take place
-        time.sleep(2)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         sent_message = HubEvent(body)
-        client.send_output_event(loopback_output_name, sent_message.convert_to_json())
+        await client.send_output_event(
+            loopback_output_name, sent_message.convert_to_json()
+        )
 
-        received_message = input_thread.get(receive_timeout)
+        received_message = await input_future
         logger("input message arrived")
         logger("expected message: " + str(body))
         logger("received message: " + str(received_message))

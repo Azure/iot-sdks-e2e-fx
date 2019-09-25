@@ -7,7 +7,7 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 import msrest
 from .. import adapter_config
 from ..abstract_wrapper_api import AbstractWrapperApi
-from ..decorators import log_entry_and_exit
+from ..decorators import log_entry_and_exit, emulate_async
 
 rest_endpoints = None
 
@@ -61,7 +61,7 @@ class WrapperApi(AbstractWrapperApi):
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).wrapper
         self.rest_endpoint.config.retry_policy.retries = 0
 
-    def log_message(self, message):
+    def log_message_sync(self, message):
         try:
             self.rest_endpoint.log_message(
                 {"message": "PYTEST: " + message},
@@ -71,26 +71,33 @@ class WrapperApi(AbstractWrapperApi):
             print("PYTEST: error logging to " + str(self.lrest_endpoint))
             # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
 
-    def cleanup(self):
+    def cleanup_sync(self):
         self.rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
 
-    def get_capabilities(self):
+    def get_capabilities_sync(self):
         return self.rest_endpoint.get_capabilities(
             timeout=adapter_config.default_api_timeout
         )
 
-    def set_flags(self, flags):
+    def set_flags_sync(self, flags):
         return self.rest_endpoint.set_flags(
             flags, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     def network_disconnect(self, disconnection_type):
         print("adapter disconnect")
         return self.rest_endpoint.network_disconnect(
             disconnection_type, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     def network_reconnect(self):
+        return self.rest_endpoint.network_reconnect(
+            timeout=adapter_config.default_api_timeout
+        )
+
+    def network_reconnect_sync(self):
         return self.rest_endpoint.network_reconnect(
             timeout=adapter_config.default_api_timeout
         )
