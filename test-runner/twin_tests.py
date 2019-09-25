@@ -92,7 +92,7 @@ class TwinTests(object):
             patch_future = asyncio.ensure_future(
                 client.wait_for_desired_property_patch()
             )
-            await asyncio.sleep(1)  # wait for async call to take effect
+            await asyncio.sleep(3)  # wait for async call to take effect
 
             logger("Tringgering patch #" + str(i) + " through registry client")
             twin_sent = {"properties": {"desired": {"foo": base + i}}}
