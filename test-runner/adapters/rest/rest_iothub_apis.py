@@ -14,9 +14,6 @@ from ..abstract_iothub_apis import (
     AbstractRegistryApi,
 )
 
-# Amount of time to wait after submitting async request.  Gives server time to call API before calling the next API.
-wait_time_for_async_start = 5
-
 
 class ServiceConnectDisconnect(object):
     @log_entry_and_exit(print_args=False)

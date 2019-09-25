@@ -39,7 +39,7 @@ async def run_method_call_test(
 
     # start listening for method calls on the destination side
     receiver_future = asyncio.ensure_future(
-        destination.roundtrip_method(
+        destination.roundtrip_method_call(
             method_name, status_code, method_invoke_parameters, method_response_body
         )
     )
@@ -56,7 +56,7 @@ async def run_method_call_test(
             destination.device_id, destination.module_id, method_invoke_parameters
         )
     else:
-        response = await source.call_device_method_async(
+        response = await source.call_device_method(
             destination.device_id, method_invoke_parameters
         )
 
