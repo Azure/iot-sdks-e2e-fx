@@ -13,6 +13,7 @@ from edgehub_control import (
     restart_edgehub,
 )
 
+pytestmark = pytest.mark.asyncio
 
 local_timeout = 60  # Seconds
 

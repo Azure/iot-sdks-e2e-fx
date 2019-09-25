@@ -14,6 +14,8 @@ from edgehub_control import connect_edgehub, disconnect_edgehub, restart_edgehub
 from time import sleep
 import docker
 
+pytestmark = pytest.mark.asyncio
+
 client = docker.from_env()
 
 # Amount of time to wait after updating desired properties.

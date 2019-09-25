@@ -13,6 +13,8 @@ from edgehub_control import (
 )
 from adapters import print_message
 
+pytestmark = pytest.mark.asyncio
+
 output_name = "telemetry"
 
 """

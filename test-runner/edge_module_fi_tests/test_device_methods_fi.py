@@ -20,6 +20,7 @@ from runtime_config import get_current_config
 
 client = docker.from_env()
 
+pytestmark = pytest.mark.asyncio
 
 # How long do we have to wait after a module registers to receive
 # method calls until we can actually call a method.

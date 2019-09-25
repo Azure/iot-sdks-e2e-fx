@@ -13,6 +13,7 @@ from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
 from runtime_config import get_current_config
 import docker
 
+pytestmark = pytest.mark.asyncio
 
 client = docker.from_env()
 

@@ -14,6 +14,8 @@ from edgehub_control import (
     restart_edgehub,
 )
 
+pytestmark = pytest.mark.asyncio
+
 """
 Test: test_module_client_connect_enable_twin_disconnect
 Connect Module Client, enable twin on Module Client, bring down edgeHub, verify twin cannot connect, reconnect edgeHub, verify twin can connect.
