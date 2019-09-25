@@ -6,6 +6,7 @@ import pytest
 import random
 import connections
 import time
+import asyncio
 from runtime_config import get_current_config
 import json
 from adapters import print_message
@@ -102,7 +103,7 @@ async def test_service_can_set_multiple_desired_property_patches_and_module_can_
         )
         print_message("patch " + str(i) + " sent")
         print_message("start waiting for patch #" + str(i))
-        patch_thread = (
+        patch_future = asyncio.ensure_future(
             module_client.wait_for_desired_property_patch()
         )  # Set Twin Callback
         print_message("Fault Injection: disconnecting edgehub")
@@ -120,7 +121,7 @@ async def test_service_can_set_multiple_desired_property_patches_and_module_can_
         )
         print_message("patch " + str(i) + " triggered")
         print_message("waiting for patch " + str(i) + " to arrive at module client")
-        patch_received = await patch_thread  # Get twin from patch received
+        patch_received = await patch_future  # Get twin from patch received
         print_message("patch received:" + json.dumps(patch_received))
         print_message(
             "desired properties sent:     "

@@ -5,7 +5,6 @@ import time
 from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_api import (
     AzureIOTEndToEndTestWrapperRestApi,
 )
-from multiprocessing.pool import ThreadPool
 from .. import adapter_config
 from ..decorators import log_entry_and_exit, emulate_async
 from ..abstract_iothub_apis import (
@@ -162,6 +161,7 @@ class Twin(object):
 
 
 class HandleMethods(object):
+    @emulate_async
     @log_entry_and_exit
     def enable_methods(self):
         return self.rest_endpoint.enable_methods(
@@ -169,13 +169,14 @@ class HandleMethods(object):
         )
 
     """
-    roundtrip_method_async
+    roundtrip_method_call
     Description: This is a poorly named method. It is essentially create a
     method callback and then wait for a method call.
     """
 
+    @emulate_async
     @log_entry_and_exit
-    def roundtrip_method_async(
+    def roundtrip_method_call(
         self, method_name, status_code, request_payload, response_payload
     ):
         request_and_response = {
@@ -183,33 +184,20 @@ class HandleMethods(object):
             "responsePayload": response_payload,
             "statusCode": status_code,
         }
-        thread = self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.roundtrip_method_call),
-            (self.connection_id, method_name, request_and_response),
-            dict(timeout=adapter_config.default_api_timeout),
-        )
-        return thread
+        return self.rest_endpoint.roundtrip_method_call(self.connection_id, method_name, request_and_responsetimeout=adapter_config.default_api_timeout)
 
 
 class Telemetry(object):
+    @emulate_async
     @log_entry_and_exit
     def send_event(self, body):
         self.rest_endpoint.send_event(
             self.connection_id, body, timeout=adapter_config.default_api_timeout
         )
 
-    @log_entry_and_exit
-    def send_event_async(self, body):
-        thread = self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.send_event),
-            (self.connection_id, body),
-            dict(timeout=adapter_config.default_api_timeout),
-        )
-        time.sleep(wait_time_for_async_start)
-        return thread
-
 
 class InputsAndOutputs(object):
+    @emulate_async
     @log_entry_and_exit
     def send_output_event(self, output_name, body):
         self.rest_endpoint.send_output_event(
@@ -219,67 +207,57 @@ class InputsAndOutputs(object):
             timeout=adapter_config.default_api_timeout,
         )
 
+    @emulate_async
     @log_entry_and_exit
     def enable_input_messages(self):
         return self.rest_endpoint.enable_input_messages(
             self.connection_id, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     @log_entry_and_exit
-    def wait_for_input_event_async(self, input_name):
-        thread = self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.wait_for_input_message),
-            (self.connection_id, input_name),
-            dict(timeout=adapter_config.default_api_timeout),
-        )
-        time.sleep(wait_time_for_async_start)
-        return thread
+    def wait_for_input_event(self, input_name):
+        return self.rest_endpoint.wait_for_input_message(self.connection_id, input_name, timeout=adapter_config.default_api_timeout)
 
 
 class InvokeMethods(object):
+    @emulate_async
     @log_entry_and_exit
-    def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
-        thread = self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.invoke_module_method),
-            (self.connection_id, device_id, module_id, method_invoke_parameters),
-            dict(timeout=adapter_config.default_api_timeout),
-        )
-        time.sleep(wait_time_for_async_start)
-        return thread
+    def call_module_method(self, device_id, module_id, method_invoke_parameters):
+        return self.rest_endpoint.invoke_module_method(
+            self.connection_id, device_id, module_id, method_invoke_parameters,
+            timeout=adapter_config.default_api_timeout)
 
+    @emulate_async
     @log_entry_and_exit
-    def call_device_method_async(self, device_id, method_invoke_parameters):
-        thread = self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.invoke_device_method),
-            (self.connection_id, device_id, method_invoke_parameters),
-            dict(timeout=adapter_config.default_api_timeout),
-        )
-        time.sleep(wait_time_for_async_start)
-        return thread
+    def call_device_method(self, device_id, method_invoke_parameters):
+        return self.rest_endpoint.invoke_device_method(
+            self.connection_id, device_id, method_invoke_parameters,
+            timeout=adapter_config.default_api_timeout),
 
 
 class ConnectionStatus(object):
+    @emulate_async
     @log_entry_and_exit
     def get_connection_status(self):
         return self.rest_endpoint.get_connection_status(self.connection_id)
 
+    @emulate_async
     @log_entry_and_exit
     def wait_for_connection_status_change(self):
         return self.rest_endpoint.wait_for_connection_status_change(self.connection_id)
 
 
 class C2d(object):
+    @emulate_async
     @log_entry_and_exit
     def enable_c2d(self):
         self.rest_endpoint.enable_c2d_messages(self.connection_id)
 
+    @emulate_async
     @log_entry_and_exit
-    def wait_for_c2d_message_async(self):
-        thread = self.pool.apply_async(
-            log_entry_and_exit(self.rest_endpoint.wait_for_c2d_message),
-            (self.connection_id,),
-        )
-        return thread
+    def wait_for_c2d_message(self):
+        return self.rest_endpoint.wait_for_c2d_message(self.connection_id)
 
 
 class ServiceSideOfTwin(object):
@@ -329,12 +307,6 @@ class DeviceApi(
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).device
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
-        self.pool = ThreadPool()
-
-    def __del__(self):
-        self.pool.close()
-        # Do not join.  If any threads hang, this thread will hang and we'll never exit pytest.
-        # self.pool.join()
 
 
 class ModuleApi(
@@ -352,12 +324,6 @@ class ModuleApi(
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).module
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
-        self.pool = ThreadPool()
-
-    def __del__(self):
-        self.pool.close()
-        # Do not join.  If any threads hang, this thread will hang and we'll never exit pytest.
-        # self.pool.join()
 
 
 class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryApi):
@@ -372,9 +338,3 @@ class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).service
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
-        self.pool = ThreadPool()
-
-    def __del__(self):
-        self.pool.close()
-        # Do not join.  If any threads hang, this thread will hang and we'll never exit pytest.
-        # self.pool.join()

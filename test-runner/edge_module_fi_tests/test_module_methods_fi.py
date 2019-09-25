@@ -7,6 +7,7 @@ import connections
 import json
 import multiprocessing
 import time
+import asyncio
 from adapters import print_message
 from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
 from runtime_config import get_current_config
@@ -36,7 +37,7 @@ method_invoke_parameters = {
 method_response_body = {"response": "Look at me.  I'm a response!"}
 
 
-def do_module_method_call(
+async def do_module_method_call(
     source_module,
     destination_module,
     destination_device_id,
@@ -47,13 +48,13 @@ def do_module_method_call(
     Helper function which invokes a method call on one module and responds to it from another module
     """
     print_message("enabling methods on the destination")
-    destination_module.enable_methods()
+    await destination_module.enable_methods()
 
     # start listening for method calls on the destination side
     print_message("starting to listen from destination module")
-    receiver_thread = destination_module.roundtrip_method_async(
+    receiver_future = asyncio.ensure_future(destination_module.roundtrip_method_call(
         method_name, status_code, method_invoke_parameters, method_response_body
-    )
+    ))
     print_message(
         "sleeping for {} seconds to make sure all registration is complete".format(
             registration_sleep
@@ -70,9 +71,9 @@ def do_module_method_call(
 
     # invoking the call from caller side
     print_message("invoking method call")
-    response = source_module.call_module_method_async(
+    response = await source_module.call_module_method(
         destination_device_id, destination_module_id, method_invoke_parameters
-    ).get()
+    )
     print_message("method call complete.  Response is:")
     print_message(str(response))
 
@@ -83,13 +84,13 @@ def do_module_method_call(
         response["payload"] = json.loads(response["payload"])
     assert response["payload"] == method_response_body
 
-    receiver_thread.wait()
+    await receiver_future
 
 
 @pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.receivesMethodCalls
-def test_module_method_call_invoked_from_service():
+async def test_module_method_call_invoked_from_service():
     """
     invoke a module call from the service and responds to it from the test module.
     """
@@ -98,7 +99,7 @@ def test_module_method_call_invoked_from_service():
     time.sleep(5)
     service_client = connections.connect_service_client()
     module_client = connections.connect_test_module_client()
-    do_module_method_call(
+    await do_module_method_call(
         service_client,
         module_client,
         get_current_config().test_module.device_id,
@@ -113,7 +114,7 @@ def test_module_method_call_invoked_from_service():
 @pytest.mark.timeout(180)
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.invokesModuleMethodCalls
-def test_module_method_from_test_to_friend_fi():
+async def test_module_method_from_test_to_friend_fi():
     """
   invoke a method call from the test module and respond to it from the friend module
   """
@@ -121,7 +122,7 @@ def test_module_method_from_test_to_friend_fi():
     module_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
     time.sleep(5)
-    do_module_method_call(
+    await do_module_method_call(
         module_client,
         friend_client,
         get_current_config().friend_module.device_id,
@@ -136,7 +137,7 @@ def test_module_method_from_test_to_friend_fi():
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.receivesMethodCalls
 @pytest.mark.invokesModuleMethodCalls
-def test_module_method_from_friend_to_test_fi():
+async def test_module_method_from_friend_to_test_fi():
     """
   invoke a method call from the friend module and respond to it from the test module
   """
@@ -144,7 +145,7 @@ def test_module_method_from_friend_to_test_fi():
     module_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
     time.sleep(5)
-    do_module_method_call(
+    await do_module_method_call(
         friend_client,
         module_client,
         get_current_config().test_module.device_id,

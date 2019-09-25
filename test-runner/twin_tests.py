@@ -6,6 +6,7 @@ import pytest
 import random
 import json
 import time
+import asyncio
 
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
@@ -89,7 +90,7 @@ class TwinTests(object):
             logger("patch " + str(i) + " sent")
 
             logger("start waiting for patch #" + str(i))
-            patch_thread = client.wait_for_desired_property_patch()
+            patch_future = asyncio.ensure_future(client.wait_for_desired_property_patch())
             time.sleep(1)  # wait for async call to take effect
 
             logger("Tringgering patch #" + str(i) + " through registry client")
@@ -108,7 +109,7 @@ class TwinTests(object):
             mistakes_left = 1
             while not done:
                 logger("getting patch " + str(i) + " on module client")
-                patch_received = await patch_thread
+                patch_received = await patch_future
                 logger("patch received:" + json.dumps(patch_received))
 
                 logger(
@@ -137,8 +138,8 @@ class TwinTests(object):
                             )
                         )
                         logger("start waiting for patch #{} again".format(i))
-                        patch_thread = client.wait_for_desired_property_patch()
-                        time.sleep(1)  # wait for async call to take effect
+                        patch_future = ensure_future(client.wait_for_desired_property_patch())
+                        time.sleep(.5)  # wait for async call to take effect
                     else:
                         logger("too many mistakes.  Failing")
                         assert False

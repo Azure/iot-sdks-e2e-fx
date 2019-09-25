@@ -23,20 +23,20 @@ class RetryTests(object):
     async def test_client_dropped_connection(
         self, client, test_module_wrapper_api, disconnection_type
     ):
-        assert client.get_connection_status() == "connected"
+        assert await client.get_connection_status() == "connected"
 
         logger.info("disconnecting network")
         await test_module_wrapper_api.network_disconnect(disconnection_type)
 
         logger.info("waiting for connection_status to change")
-        client.wait_for_connection_status_change()
-        assert client.get_connection_status() == "disconnected"
+        await client.wait_for_connection_status_change()
+        assert await client.get_connection_status() == "disconnected"
 
         logger.info("connection status has changed.  reconnecting")
         await test_module_wrapper_api.network_reconnect()
 
         logger.info("waiting for connection_status to change")
-        client.wait_for_connection_status_change()
-        assert client.get_connection_status() == "connected"
+        await client.wait_for_connection_status_change()
+        assert await client.get_connection_status() == "connected"
 
         logger.info("network is reconnected")

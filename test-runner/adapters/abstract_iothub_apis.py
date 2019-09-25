@@ -90,7 +90,7 @@ class HandleMethods(object):
         pass
 
     @abc.abstractmethod
-    def roundtrip_method_async(
+    def roundtrip_method_call(
         self, method_name, status_code, request_payload, response_payload
     ):
         pass
@@ -100,10 +100,6 @@ class HandleMethods(object):
 class Telemetry(object):
     @abc.abstractmethod
     def send_event(self, body):
-        pass
-
-    @abc.abstractmethod
-    def send_event_async(self, body):
         pass
 
 
@@ -118,18 +114,18 @@ class InputsAndOutputs(object):
         pass
 
     @abc.abstractmethod
-    def wait_for_input_event_async(self, input_name):
+    def wait_for_input_event(self, input_name):
         pass
 
 
 @six.add_metaclass(abc.ABCMeta)
 class InvokeMethods(object):
     @abc.abstractmethod
-    def call_module_method_async(self, device_id, module_id, method_invoke_parameters):
+    def call_module_method(self, device_id, module_id, method_invoke_parameters):
         pass
 
     @abc.abstractmethod
-    def call_device_method_async(self, device_id, method_invoke_parameters):
+    def call_device_method(self, device_id, method_invoke_parameters):
         pass
 
 
@@ -151,7 +147,7 @@ class C2d(object):
         pass
 
     @abc.abstractmethod
-    def wait_for_c2d_message_async(self):
+    def wait_for_c2d_message(self):
         pass
 
 

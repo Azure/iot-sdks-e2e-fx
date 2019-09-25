@@ -23,10 +23,10 @@ class ConnectionStatusTests(object):
     @pytest.mark.it("Shows if the client is connected or disconnected")
     async def test_connection_status(self, client):
 
-        assert client.get_connection_status() == "connected"
+        assert await client.get_connection_status() == "connected"
 
         await client.disconnect2()
-        assert client.get_connection_status() == "disconnected"
+        assert await client.get_connection_status() == "disconnected"
 
         await client.connect2()
-        assert client.get_connection_status() == "connected"
+        assert await client.get_connection_status() == "connected"
