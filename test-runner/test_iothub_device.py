@@ -3,7 +3,7 @@
 # full license information.
 
 import pytest
-from base_client_tests import BaseClientTests, ConnectionStatusTests
+from base_client_tests import BaseClientTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
 from method_tests import (
@@ -11,22 +11,38 @@ from method_tests import (
     ReceiveMethodCallFromModuleTests,
 )
 from c2d_tests import C2dTests
-from retry_tests import RetryTests
+import dropped_connection_tests
 
 pytestmark = pytest.mark.asyncio
+
+
+class IoTHubDeviceClient(object):
+    @pytest.fixture
+    def client(self, test_device):
+        return test_device
 
 
 @pytest.mark.describe("IoTHub Device")
 @pytest.mark.testgroup_iothub_device_client
 class TestIotHubDeviceClient(
+    IoTHubDeviceClient,
     BaseClientTests,
     TelemetryTests,
     TwinTests,
     ReceiveMethodCallFromServiceTests,
     C2dTests,
-    ConnectionStatusTests,
-    RetryTests,
 ):
-    @pytest.fixture
-    def client(self, test_device):
-        return test_device
+    pass
+
+
+@pytest.mark.dropped_connection_tests
+@pytest.mark.describe(
+    "IoTHub DeviceClient dropped connections - dropping but not disconnected"
+)
+@pytest.mark.testgroup_iothub_device_client
+class TestIoTHubDeviceDroppingButNotDisconnected(
+    IoTHubDeviceClient,
+    dropped_connection_tests.CallMethodBeforeOnDisconnected,
+    dropped_connection_tests.DroppedConnectionIoTHubDeviceTests,
+):
+    pass

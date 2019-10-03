@@ -45,12 +45,12 @@ class ConnectionStatus(object):
 
     def wait_for_connection_status_change(self):
         if self.connected:
-            logger.info("client is connected.  waiting for disconnect")
+            logger.info("Client appears connected.  Waiting for client to disconenct")
             self.disconnected_event.clear()
             self.disconnected_event.wait()
             logger.info("client is disconnected.  completing.")
         else:
-            logger.info("client is disconnected.  waiting for connect")
+            logger.info("Client appears disconnected.  Waiting for client to conenct")
             self.connected_event.clear()
             self.connected_event.wait()
             logger.info("client is connected.  completing.")

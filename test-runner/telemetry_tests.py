@@ -24,7 +24,7 @@ class TelemetryTests(object):
         assert received_message is not None, "Message not received"
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.uses_new_message_format
+    @pytest.mark.new_message_format
     @pytest.mark.timeout(
         timeout=180
     )  # extra timeout in case eventhub needs to retry due to resource error

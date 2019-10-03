@@ -12,12 +12,17 @@ pytestmark = pytest.mark.asyncio
 @pytest.mark.testgroup_iothub_device_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.uses_v2_connect_group
+@pytest.mark.v2_connect_group
 class TestNetworkDisconnectMechanism(object):
-    @pytest.mark.parametrize(
-        "disconnection_type",
-        [pytest.param("DROP", id="DROP"), pytest.param("REJECT", id="REJECT")],
+    @pytest.fixture(
+        params=[
+            pytest.param("DROP", id="use iptables DROP"),
+            pytest.param("REJECT", id="use iptables REJECT"),
+        ]
     )
+    def disconnection_type(self, request):
+        return request.param
+
     @pytest.mark.it("Can disconnect and reconnect the network")
     async def test_disconnect_and_reconnect(
         self, disconnection_type, test_module_wrapper_api
@@ -37,4 +42,10 @@ class TestNetworkDisconnectMechanism(object):
 
     @pytest.mark.it("Does not fail if reconnecting without disconnecting")
     async def test_reconnect_only(self, test_module_wrapper_api):
+        await test_module_wrapper_api.network_reconnect()
+
+    @pytest.mark.it("Does not fail if reconnecting twice")
+    async def test_reconnect_twice(self, test_module_wrapper_api, disconnection_type):
+        await test_module_wrapper_api.network_disconnect(disconnection_type)
+        await test_module_wrapper_api.network_reconnect()
         await test_module_wrapper_api.network_reconnect()

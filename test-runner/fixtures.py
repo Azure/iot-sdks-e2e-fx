@@ -7,6 +7,10 @@ from adapters import print_message
 import runtime_config
 from runtime_config import get_current_config
 from utilities import random_string
+from sample_content import next_random_string
+
+# TODO: replace test content fixtures with generator fixtures
+# TODO: remove test_ prefix on non-test functions
 
 
 @pytest.fixture
@@ -17,6 +21,11 @@ def test_string():
 @pytest.fixture
 def test_string_2():
     return random_string("String2")
+
+
+@pytest.fixture
+def test_payload(test_string):
+    return '{ "message": "' + test_string + '" }'
 
 
 @pytest.fixture
@@ -92,3 +101,8 @@ def service():
 @pytest.fixture
 def test_module_wrapper_api():
     return runtime_config.get_test_module_wrapper_api()
+
+
+@pytest.fixture
+def sample_reported_props():
+    return lambda: {"foo": next_random_string("reported props")}

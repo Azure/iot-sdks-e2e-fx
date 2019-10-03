@@ -42,6 +42,7 @@ default_flags = {
     "new_message_format": False,
     "security_messages": False,
     "v2_connect_group": False,
+    "dropped_connection_tests": False,
 }
 
 

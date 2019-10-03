@@ -60,6 +60,6 @@ class AmqpServiceClient:
             msg_content, properties=msg_props, application_properties=app_properties
         )
         self.send_client.queue_message(message)
-        results = self.send_client.send_all_messages()
+        results = self.send_client.send_all_messages(close_on_done=False)
         assert not [m for m in results if m == uamqp.constants.MessageState.SendFailed]
         logger.info("Message sent.")

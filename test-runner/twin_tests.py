@@ -27,6 +27,37 @@ def get_patch_received(patch_received):
     return foo_val
 
 
+async def wait_for_reported_properties_update(
+    *, reported_properties_sent, client, registry, logger
+):
+    """
+    Helper function which uses the registry to wait for reported properties
+    to update to the expected value
+    """
+    while True:
+        if getattr(client, "module_id", None):
+            twin_received = await registry.get_module_twin(
+                client.device_id, client.module_id
+            )
+        else:
+            twin_received = await registry.get_device_twin(client.device_id)
+
+        reported_properties_received = twin_received["properties"]["reported"]
+        if "$version" in reported_properties_received:
+            del reported_properties_received["$version"]
+        if "$metadata" in reported_properties_received:
+            del reported_properties_received["$metadata"]
+        logger("expected:" + str(reported_properties_sent))
+        logger("received:" + str(reported_properties_received))
+
+        if reported_properties_sent == reported_properties_received:
+            # test passed
+            return
+        else:
+            logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
+            await asyncio.sleep(5)
+
+
 class TwinTests(object):
     @pytest.mark.it("Can connect, enable twin, and disconnect")
     async def test_client_connect_enable_twin_disconnect(self, client):
@@ -160,25 +191,9 @@ class TwinTests(object):
         await client.enable_twin()
         await client.patch_twin(reported_properties_sent)
 
-        while True:
-            if getattr(client, "module_id", None):
-                twin_received = await registry.get_module_twin(
-                    client.device_id, client.module_id
-                )
-            else:
-                twin_received = await registry.get_device_twin(client.device_id)
-
-            reported_properties_received = twin_received["properties"]["reported"]
-            if "$version" in reported_properties_received:
-                del reported_properties_received["$version"]
-            if "$metadata" in reported_properties_received:
-                del reported_properties_received["$metadata"]
-            logger("expected:" + str(reported_properties_sent))
-            logger("received:" + str(reported_properties_received))
-
-            if reported_properties_sent == reported_properties_received:
-                # test passed
-                return
-            else:
-                logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
-                await asyncio.sleep(5)
+        await wait_for_reported_properties_update(
+            reported_properties_sent=reported_properties_sent,
+            client=client,
+            registry=registry,
+            logger=logger,
+        )

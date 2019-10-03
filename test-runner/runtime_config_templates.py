@@ -260,6 +260,7 @@ scenario_to_config = {
     scenarios.IOTHUB_MODULE: IotHubModuleRuntimeConfig,
     scenarios.EDGEHUB_MODULE_FI: EdgeHubModuleRuntimeConfig,
     scenarios.IOTHUB_MODULE_AND_DEVICE: IotHubModuleAndDeviceRuntimeConfig,
+    scenarios.IOTHUB_DEVICE: IotHubModuleAndDeviceRuntimeConfig,
 }
 
 scenario_to_config_direct = {
@@ -267,6 +268,7 @@ scenario_to_config_direct = {
     scenarios.IOTHUB_MODULE: IotHubModuleRuntimeConfigDirect,
     scenarios.EDGEHUB_MODULE_FI: EdgeHubModuleRuntimeConfigDirect,
     scenarios.IOTHUB_MODULE_AND_DEVICE: IotHubModuleAndDeviceRuntimeConfigDirect,
+    scenarios.IOTHUB_DEVICE: IotHubModuleAndDeviceRuntimeConfigDirect,
 }
 
 

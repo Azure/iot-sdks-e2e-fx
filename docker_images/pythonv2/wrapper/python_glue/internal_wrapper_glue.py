@@ -35,6 +35,7 @@ def get_capabilities():
             "security_messages": True,
             "new_message_format": True,
             "v2_connect_group": True,
+            "dropped_connection_tests": False,  # can't run these until Python PR 334 is accepted
         },
         "skip_list": ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"],
     }

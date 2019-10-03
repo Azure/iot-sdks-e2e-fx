@@ -1,13 +1,15 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from azure.iot.device.aio import IoTHubDeviceClient, IoTHubModuleClient
-from azure.iot.device import MethodResponse
-from connection_status import ConnectionStatus
-import json
-import async_helper
-import convert
+import heap_check
 import logging
+import convert
+import async_helper
+from connection_status import ConnectionStatus
+from azure.iot.device import MethodResponse
+from azure.iot.device.aio import IoTHubDeviceClient, IoTHubModuleClient
+from azure.iot.device.common import mqtt_transport
+from azure.iot.device.iothub.auth import base_renewable_token_authentication_provider
 
 logger = logging.getLogger(__name__)
 
@@ -16,13 +18,13 @@ class Connect(ConnectionStatus):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
+        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
+            mqtt_transport.DEFAULT_KEEPALIVE = 10
         async_helper.run_coroutine_sync(self.client.connect())
 
     def disconnect(self):
         logger.info("disconnecting")
-        if self.client:
-            async_helper.run_coroutine_sync(self.client.disconnect())
-            self.client = None
+        self.destroy()
 
     def create_from_connection_string(self, transport_type, connection_string, cert):
         if "GatewayHostName" in connection_string:
@@ -33,6 +35,8 @@ class Connect(ConnectionStatus):
             self.client = self.client_class.create_from_connection_string(
                 connection_string
             )
+        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
+            mqtt_transport.DEFAULT_KEEPALIVE = 10
         self._attach_connect_event_watcher()
 
     def create_from_x509(self, transport_type, x509):
@@ -50,10 +54,10 @@ class Connect(ConnectionStatus):
         async_helper.run_coroutine_sync(self.client.disconnect())
 
     def destroy(self):
-        logger.info("disconnecting")
         if self.client:
             async_helper.run_coroutine_sync(self.client.disconnect())
             self.client = None
+            heap_check.assert_all_iothub_objects_have_been_collected()
 
 
 class ConnectFromEnvironment(object):

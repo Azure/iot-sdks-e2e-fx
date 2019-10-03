@@ -2,10 +2,12 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import logging
-import internal_wrapper_glue
 import convert
+import internal_wrapper_glue
+import heap_check
 from connection_status import ConnectionStatus
 from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodResponse
+from azure.iot.device.common import mqtt_transport
 
 
 logger = logging.getLogger(__name__)
@@ -24,13 +26,13 @@ class Connect(ConnectionStatus):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
+        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
+            mqtt_transport.DEFAULT_KEEPALIVE = 10
         self.client.connect()
 
     def disconnect(self):
         logger.info("disconnecting")
-        if self.client:
-            self.client.disconnect()
-            self.client = None
+        self.destroy()
 
     def create_from_connection_string(self, transport_type, connection_string, cert):
         if "GatewayHostName" in connection_string:
@@ -41,6 +43,8 @@ class Connect(ConnectionStatus):
             self.client = self.client_class.create_from_connection_string(
                 connection_string
             )
+        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
+            mqtt_transport.DEFAULT_KEEPALIVE = 10
         self._attach_connect_event_watcher()
 
     def create_from_x509(self, transport_type, x509):
@@ -61,6 +65,7 @@ class Connect(ConnectionStatus):
         if self.client:
             self.client.disconnect()
             self.client = None
+            heap_check.assert_all_iothub_objects_have_been_collected()
 
 
 class ConnectFromEnvironment(object):

@@ -35,3 +35,11 @@ telemetry_test_objects = [
         object_with_3_layers_stringified, id="object with 3 layers, as string"
     ),
 ]
+
+string_index = 0
+
+
+def next_random_string(prefix):
+    global string_index
+    string_index = string_index + 1
+    return random_string("{} {}".format(prefix, string_index))

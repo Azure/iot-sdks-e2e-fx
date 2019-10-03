@@ -59,7 +59,7 @@ class InputOutputTests(object):
         assert received_message == test_string
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.uses_new_message_format
+    @pytest.mark.new_message_format
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it(
         "Can send an output message which gets routed to another module using new Horton HubEvent"
@@ -153,7 +153,7 @@ class InputOutputTests(object):
         assert received_message is not None, "Message not received"
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.uses_new_message_format
+    @pytest.mark.new_message_format
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.timeout(
         timeout=180
@@ -173,7 +173,7 @@ class InputOutputTests(object):
         )
         assert received_message is not None, "Message not received"
 
-    @pytest.mark.callsendOutputMessage
+    @pytest.mark.callsSendOutputEvent
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself")
@@ -196,8 +196,8 @@ class InputOutputTests(object):
         assert received_message == test_string
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.uses_new_message_format
-    @pytest.mark.callsendOutputMessage
+    @pytest.mark.new_message_format
+    @pytest.mark.callsSendOutputEvent
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself using the new Horton HubEvent")

@@ -27,6 +27,8 @@ from fixtures import (
     test_device,
     test_module,
     test_module_wrapper_api,
+    test_payload,
+    sample_reported_props,
 )
 
 # default to logging.INFO
@@ -37,6 +39,7 @@ logging.getLogger("paho").setLevel(level=logging.DEBUG)
 logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
+logging.getLogger("azure.iot.device").setLevel(level=logging.INFO)
 
 
 ensure_edge_environment_variables()
@@ -293,7 +296,7 @@ def pytest_collection_modifyitems(config, items):
     skip_list = runtime_capabilities.get_skip_list(language)
     for cap in runtime_capabilities.get_all_capabilities_flags():
         if not runtime_capabilities.get_test_module_capabilities_flag(cap):
-            skip_list.append("uses_" + cap)
+            skip_list.append(cap)
 
     # make sure the network is connected before starting (this can happen with interrupted runs)
     if runtime_capabilities.get_test_module_capabilities_flag("v2_connect_group"):
