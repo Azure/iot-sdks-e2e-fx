@@ -20,7 +20,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.describe("EdgeHub ModuleClient")
-class TestIotHubModuleClient(
+class TestEdgeHubModuleClient(
     BaseClientTests,
     TelemetryTests,
     TwinTests,
