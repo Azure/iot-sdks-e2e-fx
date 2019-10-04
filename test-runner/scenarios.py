@@ -19,12 +19,14 @@ valid_scenario_flags = [CONNECT_WITH_ENVIRONMENT, USE_IOTEDGE_GATEWAYHOST]
 
 EDGEHUB_MODULE = "edgehub_module"
 IOTHUB_MODULE = "iothub_module"
+IOTHUB_DEVICE = "iothub_device"
 EDGEHUB_MODULE_FI = "edgehub_module_fi"
 IOTHUB_MODULE_AND_DEVICE = "iothub_module_and_device"
 
 valid_scenarios = [
     EDGEHUB_MODULE,
     IOTHUB_MODULE,
+    IOTHUB_DEVICE,
     EDGEHUB_MODULE_FI,
     IOTHUB_MODULE_AND_DEVICE,
 ]
@@ -64,6 +66,12 @@ scenarios = {
             "testgroup_iothub_module_client",
             "testgroup_iothub_device_client",
         ],
+        scenario_flags=[],
+    ),
+    "iothub_device": HortonScenario(
+        scenario_name=IOTHUB_DEVICE,
+        deployment_type=IOTHUB_DEPLOYMENT,
+        pytest_markers=["testgroup_iothub_device_client"],
         scenario_flags=[],
     ),
 }

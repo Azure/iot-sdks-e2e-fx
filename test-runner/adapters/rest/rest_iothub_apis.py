@@ -251,12 +251,16 @@ class ConnectionStatus(object):
     @emulate_async
     @log_entry_and_exit
     def get_connection_status(self):
-        return self.rest_endpoint.get_connection_status(self.connection_id)
+        return self.rest_endpoint.get_connection_status(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
     @emulate_async
     @log_entry_and_exit
     def wait_for_connection_status_change(self):
-        return self.rest_endpoint.wait_for_connection_status_change(self.connection_id)
+        return self.rest_endpoint.wait_for_connection_status_change(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
 
 class C2d(object):

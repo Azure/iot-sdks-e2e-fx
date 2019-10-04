@@ -59,7 +59,7 @@ class InputOutputTests(object):
         assert received_message == test_string
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.uses_new_message_format
+    @pytest.mark.new_message_format
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it(
         "Can send an output message which gets routed to another module using new Horton HubEvent"
@@ -138,7 +138,7 @@ class InputOutputTests(object):
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.timeout(
-        timeout=180
+        timeout=240
     )  # extra timeout in case eventhub needs to retry due to resource error
     @pytest.mark.it("Can send a message that gets routed to eventhub")
     async def test_module_output_routed_upstream(
@@ -153,10 +153,10 @@ class InputOutputTests(object):
         assert received_message is not None, "Message not received"
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.uses_new_message_format
+    @pytest.mark.new_message_format
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.timeout(
-        timeout=180
+        timeout=240
     )  # extra timeout in case eventhub needs to retry due to resource error
     @pytest.mark.it(
         "Can send a message that gets routed to eventhub using the new Horton HubEvent"
@@ -173,7 +173,7 @@ class InputOutputTests(object):
         )
         assert received_message is not None, "Message not received"
 
-    @pytest.mark.callsendOutputMessage
+    @pytest.mark.callsSendOutputEvent
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself")
@@ -196,8 +196,8 @@ class InputOutputTests(object):
         assert received_message == test_string
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.uses_new_message_format
-    @pytest.mark.callsendOutputMessage
+    @pytest.mark.new_message_format
+    @pytest.mark.callsSendOutputEvent
     @pytest.mark.receivesInputMessages
     @pytest.mark.handlesLoopbackMessages
     @pytest.mark.it("Can send a message to itself using the new Horton HubEvent")
