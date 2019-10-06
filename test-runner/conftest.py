@@ -13,6 +13,7 @@ import runtime_config_templates
 import runtime_config
 import runtime_capabilities
 import scenarios
+from distutils.version import LooseVersion
 from fixtures import (
     test_string,
     test_string_2,
@@ -138,6 +139,13 @@ skip_for_c_connection_string = set(
 )
 
 
+def _get_marker(item, marker):
+    if LooseVersion(pytest.__version__) < LooseVersion("3.6"):
+        return item.get_marker(marker)
+    else:
+        return item.get_closest_marker(marker)
+
+
 def remove_tests_not_in_marker_list(items, markers):
     """
     remove all items that don't have one of the specified markers set
@@ -146,7 +154,7 @@ def remove_tests_not_in_marker_list(items, markers):
     for item in items:
         keep = False
         for marker in markers:
-            if item.get_marker(marker):
+            if _get_marker(item, marker):
                 keep = True
         if keep:
             remaining.append(item)
@@ -315,7 +323,12 @@ def pytest_collection_modifyitems(config, items):
         else:
             raise Exception("--async specified, but test module does not support async")
 
-    adapters.print_message("HORTON: starting run: {}".format(config._origargs))
+    if getattr(config, "_origargs", None):
+        adapters.print_message("HORTON: starting run: {}".format(config._origargs))
+    elif getattr(config, "invocation_params", None):
+        adapters.print_message(
+            "HORTON: starting run: {}".format(config.invocation_params.args)
+        )
 
     if config.getoption("--debug-container"):
         print("Debugging the container.  Removing all timeouts")
