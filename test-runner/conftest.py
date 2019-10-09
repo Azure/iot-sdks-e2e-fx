@@ -190,7 +190,7 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="function", autouse=True)
 def function_log_fixture(request):
-    print_message("HORTON: Entering function {}".format(request.function.__name__))
+    print_message("HORTON: Entering function {}".format(request.node.name))
 
     def fin():
         print("")
@@ -204,7 +204,7 @@ def function_log_fixture(request):
             "HORTON: Cleaning up after function {}".format(request.function.__name__)
         )
         adapters.cleanup_test_objects()
-        print_message("HORTON: Exiting function {}".format(request.function.__name__))
+        print_message("HORTON: Exiting function {}".format(request.node.name))
 
     request.addfinalizer(fin)
 
