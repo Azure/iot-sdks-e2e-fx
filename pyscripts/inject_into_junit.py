@@ -13,14 +13,18 @@ import argparse
 import shutil
 import re
 
-class InjectIntoJunit:
 
+class InjectIntoJunit:
     def __init__(self, args):
 
         # Parse args
         parser = argparse.ArgumentParser(description="Inject Into Junit")
-        parser.add_argument('-junit_file', required=True, nargs=1, help="filename of junit file")
-        parser.add_argument('-log_file', required=True, nargs=1, help="filename of log file")
+        parser.add_argument(
+            "-junit_file", required=True, nargs=1, help="filename of junit file"
+        )
+        parser.add_argument(
+            "-log_file", required=True, nargs=1, help="filename of log file"
+        )
         arguments = parser.parse_args(args)
 
         junit_path = arguments.junit_file[0]
@@ -31,62 +35,71 @@ class InjectIntoJunit:
         try:
             shutil.copyfile(junit_path, junit_save_path)
         except Exception as e:
-            print("Exception copying JUNIT file: " + junit_path )
+            print("Exception copying JUNIT file: " + junit_path)
             print(e)
             return
 
         try:
-            with open(merge_log_path, 'r', encoding="utf8") as f:
+            with open(merge_log_path, "r", encoding="utf8") as f:
                 read_file = f.read().splitlines()
 
         except Exception as e:
-            print("Exception opening LOG file: " + merge_log_path )
+            print("Exception opening LOG file: " + merge_log_path)
             print(e)
             return
 
         from junitparser import TestCase, TestSuite, JUnitXml
+
         try:
             xml = JUnitXml.fromfile(junit_save_path)
         except Exception as e:
-            print("Exception opening JUNIT file: " + junit_save_path )
+            print("Exception opening JUNIT file: " + junit_save_path)
             print(e)
             return
 
         for suite in xml:
-            if(suite):
+            if suite:
                 suite_name = suite.name
-                if(suite.system_out):
-                    lines_for_junit = self.get_suite_lines_from_log(read_file, suite_name)
-                    print("TestSuite: " + suite_name + " : Injecting (" + str(len(lines_for_junit)) + ") lines")
-                    parsed_loglines  = '\n'.join(lines_for_junit)
-                    suite.system_out = '\n' + parsed_loglines + '\n'
+                if suite.system_out:
+                    lines_for_junit = self.get_suite_lines_from_log(
+                        read_file, suite_name
+                    )
+                    print(
+                        "TestSuite: "
+                        + suite_name
+                        + " : Injecting ("
+                        + str(len(lines_for_junit))
+                        + ") lines"
+                    )
+                    parsed_loglines = "\n".join(lines_for_junit)
+                    suite.system_out = "\n" + parsed_loglines + "\n"
         try:
             xml.write()
         except Exception as e:
-            print("Exception writing JUNIT file: " + junit_save_path )
+            print("Exception writing JUNIT file: " + junit_save_path)
             print(e)
             return
 
-        #remove offending characters
-        with open(junit_save_path,'rt') as f:
+        # remove offending characters
+        with open(junit_save_path, "rt") as f:
             file_content = f.read()
         filtered = self.filter_esc_to_ascii7(file_content)
-        with open(junit_save_path,'w') as f:
+        with open(junit_save_path, "w") as f:
             f.write(filtered)
 
         try:
             shutil.copyfile(junit_save_path, junit_path)
         except Exception as e:
-            print("Exception copying JUNIT file: " + junit_path )
+            print("Exception copying JUNIT file: " + junit_path)
             print(e)
 
         print("SUCCESS!")
         return
 
     def filter_esc_to_ascii7(self, file_str):
-        ascii7 = ''.join([i if ord(i) < 128 else '#' for i in file_str])
-        ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
-        return ansi_escape.sub('', str(ascii7))
+        ascii7 = "".join([i if ord(i) < 128 else "#" for i in file_str])
+        ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]")
+        return ansi_escape.sub("", str(ascii7))
 
     def get_suite_lines_from_log(self, log_lines, suite_name):
         lines_for_junit = []
@@ -95,14 +108,20 @@ class InjectIntoJunit:
 
         got_start = False
         for log_line in log_lines:
-            if(got_start == False and log_start_tag in log_line):
+            if (not got_start) and log_line.endswith(log_start_tag):
                 got_start = True
-            if(got_start):
+            if got_start:
                 lines_for_junit.append(log_line)
-                if(log_end_tag in log_line):
+                if log_line.endswith(log_end_tag):
                     break
+        if len(lines_for_junit) == 0:
+            lines_for_junit.append(
+                "{} ERROR: Did not find any log lines that end with [{}]".format(
+                    __file__, log_start_tag
+                )
+            )
         return lines_for_junit
+
 
 if __name__ == "__main__":
     junit_processor = InjectIntoJunit(sys.argv[1:])
-    
