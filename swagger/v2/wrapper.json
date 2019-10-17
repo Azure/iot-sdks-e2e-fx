@@ -96,8 +96,11 @@
       "operationId": "Wrapper_NetworkDisconnect",
       "parameters": [
         {
+          "$ref": "parameters.json#/transportType"
+        },
+        {
           "name": "disconnectionType",
-          "in": "query",
+          "in": "path",
           "required": true,
           "type": "string"
         }
