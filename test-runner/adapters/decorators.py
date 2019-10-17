@@ -29,7 +29,11 @@ def log_entry_and_exit(_func=None, *, print_args=True):
             else:
                 func_name = func.__name__
             print_message(f"Callng {func_name!r}({signature})")
-            value = func(*args, **kwargs)
+            try:
+                value = func(*args, **kwargs)
+            except Exception as e:
+                print_message("Function {} raised {}".format(func_name, e))
+                raise
             print_message(f"{func_name!r} returned {value!r}")
             return value
 

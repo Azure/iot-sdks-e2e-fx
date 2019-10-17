@@ -199,7 +199,7 @@ def function_log_fixture(request):
         if hasattr(request.node, "rep_call"):
             print_message("call:       " + str(request.node.rep_call.outcome))
         if hasattr(request.node, "rep_teardown"):
-            print_message("teardown:   " + str(request.node.rep_call.outcome))
+            print_message("teardown:   " + str(request.node.rep_teardown.outcome))
         print_message(
             "HORTON: Cleaning up after function {}".format(request.function.__name__)
         )
