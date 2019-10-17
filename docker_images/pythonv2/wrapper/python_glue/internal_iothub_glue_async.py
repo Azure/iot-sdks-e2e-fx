@@ -27,13 +27,18 @@ class Connect(ConnectionStatus):
         self.destroy()
 
     def create_from_connection_string(self, transport_type, connection_string, cert):
+
+        kwargs = {}
+        if transport_type == "mqttws":
+            kwargs["websockets"] = True
+
         if "GatewayHostName" in connection_string:
             self.client = self.client_class.create_from_connection_string(
-                connection_string, ca_cert=cert
+                connection_string, ca_cert=cert, **kwargs
             )
         else:
             self.client = self.client_class.create_from_connection_string(
-                connection_string
+                connection_string, **kwargs
             )
         if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
             mqtt_transport.DEFAULT_KEEPALIVE = 10
@@ -67,7 +72,12 @@ class ConnectFromEnvironment(object):
         async_helper.run_coroutine_sync(self.client.connect())
 
     def create_from_environment(self, transport_type):
-        self.client = IoTHubModuleClient.create_from_edge_environment()
+
+        kwargs = {}
+        if transport_type == "mqttws":
+            kwargs["websockets"] = True
+
+        self.client = IoTHubModuleClient.create_from_edge_environment(**kwargs)
         self._attach_connect_event_watcher()
 
 

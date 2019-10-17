@@ -10,6 +10,7 @@ do_async = False
 
 all_disconnect_types = ["DROP", "REJECT"]
 mqtt_port = 8883
+mqttws_port = 443
 uninitialized = "uninitialized"
 sudo_prefix = uninitialized
 
@@ -104,15 +105,26 @@ def reconnect_port(port):
                 )
 
 
-def network_disconnect(disconnect_type):
+def network_disconnect(transport, disconnect_type):
     if disconnect_type not in all_disconnect_types:
         raise ValueError(
             "disconnect_type {} invalid.  Only DROP and REJECT are accepted".format(
                 disconnect_type
             )
         )
-    disconnect_port(disconnect_type, mqtt_port)
+
+    if transport == "mqtt":
+        disconnect_port(disconnect_type, mqtt_port)
+    elif transport == "mqttws":
+        disconnect_port(disconnect_type, mqttws_port)
+    else:
+        raise ValueError(
+            "transport_type {} invalid.  Only mqtt and mqttws are accepted".format(
+                transport
+            )
+        )
 
 
 def network_reconnect():
     reconnect_port(mqtt_port)
+    reconnect_port(mqttws_port)

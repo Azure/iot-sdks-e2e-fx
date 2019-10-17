@@ -22,8 +22,8 @@ class WrapperApi(AbstractWrapperApi):
         internal_wrapper_glue.set_flags(flags)
 
     @emulate_async
-    def network_disconnect(self, disconnection_type):
-        internal_wrapper_glue.network_disconnect(disconnection_type)
+    def network_disconnect(self, transport, disconnection_type):
+        internal_wrapper_glue.network_disconnect(transport, disconnection_type)
 
     @emulate_async
     def network_reconnect(self):

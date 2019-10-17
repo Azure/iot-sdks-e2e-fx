@@ -59,64 +59,127 @@ jobs:
         suite: edgehub_module_mqtt
         variant: py27
         async: no
+      edgehub_module_mqtt_ws_27:
+        suite: edgehub_module_mqtt_ws
+        variant: py27
+        async: no
       iothub_module_and_device_mqtt_27:
         suite: iothub_module_and_device_mqtt
         variant: py27
         async: no
+      iothub_module_and_device_mqtt_ws_27:
+        suite: iothub_module_and_device_mqtt_ws
+        variant: py27
+        async: no
       edgehub_module_mqtt_34:
         suite: edgehub_module_mqtt
+        variant: py34
+      edgehub_module_mqtt_ws_34:
+        suite: edgehub_module_mqtt_ws
         variant: py34
         async: no
       iothub_module_and_device_mqtt_34:
         suite: iothub_module_and_device_mqtt
         variant: py34
         async: no
+      iothub_module_and_device_mqtt_ws_34:
+        suite: iothub_module_and_device_mqtt_ws
+        variant: py34
+        async: no
       edgehub_module_mqtt_35:
         suite: edgehub_module_mqtt
+        variant: py35
+        async: no
+      edgehub_module_mqtt_ws_35:
+        suite: edgehub_module_mqtt_ws
         variant: py35
         async: no
       iothub_module_and_device_mqtt_35:
         suite: iothub_module_and_device_mqtt
         variant: py35
         async: no
+      iothub_module_and_device_mqtt_ws_35:
+        suite: iothub_module_and_device_mqtt_ws
+        variant: py35
+        async: no
       edgehub_module_mqtt_36:
         suite: edgehub_module_mqtt
+        variant: py36
+        async: no
+      edgehub_module_mqtt_ws_36:
+        suite: edgehub_module_mqtt_ws
         variant: py36
         async: no
       iothub_module_and_device_mqtt_36:
         suite: iothub_module_and_device_mqtt
         variant: py36
         async: no
+      iothub_module_and_device_mqtt_ws_36:
+        suite: iothub_module_and_device_mqtt_ws
+        variant: py36
+        async: no
       edgehub_module_mqtt_37:
         suite: edgehub_module_mqtt
+        variant: py37
+        async: no
+      edgehub_module_mqtt_ws_37:
+        suite: edgehub_module_mqtt_ws
         variant: py37
         async: no
       iothub_module_and_device_mqtt_37:
         suite: iothub_module_and_device_mqtt
         variant: py37
         async: no
+      iothub_module_and_device_mqtt_ws_37:
+        suite: iothub_module_and_device_mqtt_ws
+        variant: py37
+        async: no
       iothub_module_and_device_mqtt_35_async:
         suite: iothub_module_and_device_mqtt
+        variant: py35
+        async: yes
+      iothub_module_and_device_mqtt_ws_35_async:
+        suite: iothub_module_and_device_mqtt_ws
         variant: py35
         async: yes
       iothub_module_and_device_mqtt_36_async:
         suite: iothub_module_and_device_mqtt
         variant: py36
         async: yes
+      iothub_module_and_device_mqtt_ws_36_async:
+        suite: iothub_module_and_device_mqtt_ws
+        variant: py36
+        async: yes
       iothub_module_and_device_mqtt_37_async:
         suite: iothub_module_and_device_mqtt
+        variant: py37
+        async: yes
+      iothub_module_and_device_mqtt_ws_37_async:
+        suite: iothub_module_and_device_mqtt_ws
         variant: py37
         async: yes
       edgehub_module_mqtt_35_async:
         suite: edgehub_module_mqtt
         variant: py35
         async: yes
+      edgehub_module_mqtt_ws_35_async:
+        suite: edgehub_module_mqtt_ws
+        variant: py35
+        async: yes
       edgehub_module_mqtt_36_async:
         suite: edgehub_module_mqtt
         variant: py36
         async: yes
+      edgehub_module_mqtt_ws_36_async:
+        suite: edgehub_module_mqtt_ws
+        variant: py36
+        async: yes
       edgehub_module_mqtt_37_async:
         suite: edgehub_module_mqtt
+        variant: py37
+        async: yes
+      edgehub_module_mqtt_ws_37_async:
+        suite: edgehub_module_mqtt_ws
         variant: py37
         async: yes
 

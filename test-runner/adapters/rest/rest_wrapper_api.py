@@ -85,10 +85,10 @@ class WrapperApi(AbstractWrapperApi):
         )
 
     @emulate_async
-    def network_disconnect(self, disconnection_type):
+    def network_disconnect(self, transport, disconnection_type):
         print("adapter disconnect")
         return self.rest_endpoint.network_disconnect(
-            disconnection_type, timeout=adapter_config.default_api_timeout
+            transport, disconnection_type, timeout=adapter_config.default_api_timeout
         )
 
     @emulate_async
