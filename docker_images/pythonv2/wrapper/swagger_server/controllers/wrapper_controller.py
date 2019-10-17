@@ -43,18 +43,20 @@ def wrapper_log_message(msg):  # noqa: E501
     # changed from return 'do some magic!'
     wrapper_glue.log_message(msg)
 
-def wrapper_network_disconnect(disconnectionType):  # noqa: E501
+def wrapper_network_disconnect(transportType, disconnectionType):  # noqa: E501
     """simulate a network disconnection
 
      # noqa: E501
 
+    :param transportType: Transport to use
+    :type transportType: str
     :param disconnectionType: 
     :type disconnectionType: str
 
     :rtype: None
     """
     # changed from return 'do some magic!'
-    wrapper_glue.network_disconnect(disconnectionType)
+    wrapper_glue.network_disconnect(transportType, disconnectionType)
 
 
 def wrapper_network_reconnect():  # noqa: E501

@@ -202,9 +202,12 @@ class WrapperOperations(object):
     set_flags.metadata = {'url': '/wrapper/flags'}
 
     def network_disconnect(
-            self, disconnection_type, custom_headers=None, raw=False, **operation_config):
+            self, transport_type, disconnection_type, custom_headers=None, raw=False, **operation_config):
         """simulate a network disconnection.
 
+        :param transport_type: Transport to use. Possible values include:
+         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
+        :type transport_type: str
         :param disconnection_type:
         :type disconnection_type: str
         :param dict custom_headers: headers that will be added to the request
@@ -219,10 +222,14 @@ class WrapperOperations(object):
         """
         # Construct URL
         url = self.network_disconnect.metadata['url']
+        path_format_arguments = {
+            'transportType': self._serialize.url("transport_type", transport_type, 'str'),
+            'disconnectionType': self._serialize.url("disconnection_type", disconnection_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
 
         # Construct parameters
         query_parameters = {}
-        query_parameters['disconnectionType'] = self._serialize.query("disconnection_type", disconnection_type, 'str')
 
         # Construct headers
         header_parameters = {}
@@ -240,7 +247,7 @@ class WrapperOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    network_disconnect.metadata = {'url': '/wrapper/networkDisconnect'}
+    network_disconnect.metadata = {'url': '/wrapper/networkDisconnect/{transportType}/{disconnectionType}'}
 
     def network_reconnect(
             self, custom_headers=None, raw=False, **operation_config):

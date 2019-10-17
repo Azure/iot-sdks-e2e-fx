@@ -85,15 +85,26 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
-  /wrapper/networkDisconnect:
+  /wrapper/networkDisconnect/{transportType}/{disconnectionType}:
     put:
       tags:
       - "wrapper"
       summary: "simulate a network disconnection"
       operationId: "wrapper_network_disconnect"
       parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
       - name: "disconnectionType"
-        in: "query"
+        in: "path"
         required: true
         type: "string"
       responses:

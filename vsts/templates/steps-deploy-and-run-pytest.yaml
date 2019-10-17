@@ -66,6 +66,10 @@ steps:
         $Transport="mqtt"
         $Scenario="iothub_module_and_device"
       }
+      "iothub_module_and_device_mqtt_ws" {
+        $Transport="mqttws"
+        $Scenario="iothub_module_and_device"
+      }
 
       default {
         throw("Unknown suite: " + $env:Suite)
@@ -82,7 +86,7 @@ steps:
         }
       }
     } elseif ($env:Language -eq "pythonv2") {
-      if ($Transport -ne "mqtt") {
+      if (($Transport -ne "mqtt") -and ($Transport -ne "mqttws")) {
         $SkipTest="yes"
       }
     }

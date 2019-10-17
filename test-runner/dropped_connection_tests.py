@@ -4,6 +4,7 @@
 
 import pytest
 import asyncio
+import runtime_config
 from twin_tests import wait_for_reported_properties_update
 from sample_content import next_random_string
 
@@ -26,6 +27,10 @@ class MotherOfAllBaseClasses(object):
         """
         return request.param
 
+    @pytest.fixture
+    def test_module_transport(self):
+        return runtime_config.get_current_config().test_module.transport
+
     @pytest.fixture(autouse=True)
     def always_reconnect(self, request, logger, test_module_wrapper_api):
         # if this test is going to drop packets, add a finalizer to make sure we always stop
@@ -36,9 +41,13 @@ class MotherOfAllBaseClasses(object):
 
         request.addfinalizer(always_reconnect)
 
-    async def start_dropping(self, *, test_module_wrapper_api, logger, drop_mechanism):
+    async def start_dropping(
+        self, *, test_module_wrapper_api, logger, drop_mechanism, test_module_transport
+    ):
         logger("start drop packets")
-        await test_module_wrapper_api.network_disconnect(drop_mechanism)
+        await test_module_wrapper_api.network_disconnect(
+            test_module_transport, drop_mechanism
+        )
 
     async def wait_for_disconnection_event(self, *, client, logger):
         status = await client.get_connection_status()
@@ -62,12 +71,15 @@ class MotherOfAllBaseClasses(object):
 
 class CallMethodBeforeOnDisconnected(MotherOfAllBaseClasses):
     @pytest.fixture
-    def before_api_call(self, drop_mechanism, test_module_wrapper_api, logger):
+    def before_api_call(
+        self, drop_mechanism, test_module_wrapper_api, logger, test_module_transport
+    ):
         async def func():
             await self.start_dropping(
                 test_module_wrapper_api=test_module_wrapper_api,
                 logger=logger,
                 drop_mechanism=drop_mechanism,
+                test_module_transport=test_module_transport,
             )
 
         return func
@@ -111,12 +123,18 @@ class DroppedConnectionTestsBase(object):
 
     @pytest.mark.it("Can reconnect after dropped connection")
     async def test_client_dropped_connection(
-        self, client, test_module_wrapper_api, drop_mechanism, logger
+        self,
+        client,
+        test_module_wrapper_api,
+        drop_mechanism,
+        logger,
+        test_module_transport,
     ):
         await self.start_dropping(
             test_module_wrapper_api=test_module_wrapper_api,
             logger=logger,
             drop_mechanism=drop_mechanism,
+            test_module_transport=test_module_transport,
         )
         await self.wait_for_disconnection_event(client=client, logger=logger)
         await asyncio.sleep(10)

@@ -46,7 +46,7 @@
     "/wrapper/flags": {
       "$ref": "wrapper.json#/flags"
     },
-    "/wrapper/networkDisconnect": {
+    "/wrapper/networkDisconnect/{transportType}/{disconnectionType}": {
       "$ref": "wrapper.json#/networkDisconnect"
     },
     "/wrapper/networkReconnect": {

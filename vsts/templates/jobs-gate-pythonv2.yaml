@@ -47,15 +47,15 @@ jobs:
     - "build_py37_container"
   strategy:
     matrix:
-      edgehub_module_mqtt_py37:
-        suite: edgehub_module_mqtt
+      edgehub_module_mqtt_ws_py37:
+        suite: edgehub_module_mqtt_ws
       iothub_module_and_device_mqtt_py37:
         suite: iothub_module_and_device_mqtt
       edgehub_module_mqtt_py37_async:
         suite: edgehub_module_mqtt
         async: yes
-      iothub_module_and_device_mqtt_py37_async:
-        suite: iothub_module_and_device_mqtt
+      iothub_module_and_device_mqtt_ws_py37_async:
+        suite: iothub_module_and_device_mqtt_ws
         async: yes
   steps:
   - template: steps-deploy-and-run-pytest.yaml
@@ -98,8 +98,8 @@ jobs:
       edgehub_module_mqtt_py35_async:
         suite: edgehub_module_mqtt
         async: yes
-      iothub_module_and_device_mqtt_py35_async:
-        suite: iothub_module_and_device_mqtt
+      iothub_module_and_device_mqtt_ws_py35_async:
+        suite: iothub_module_and_device_mqtt_ws
         async: yes
   steps:
   - template: steps-deploy-and-run-pytest.yaml
@@ -117,8 +117,8 @@ jobs:
     - "build_py34_container"
   strategy:
     matrix:
-      edgehub_module_mqtt_py34:
-        suite: edgehub_module_mqtt
+      edgehub_module_mqtt_ws_py34:
+        suite: edgehub_module_mqtt_ws
       iothub_module_and_device_mqtt_py34:
         suite: iothub_module_and_device_mqtt
   steps:
@@ -139,8 +139,8 @@ jobs:
     matrix:
       edgehub_module_mqtt_py27:
         suite: edgehub_module_mqtt
-      iothub_module_and_device_mqtt_py27:
-        suite: iothub_module_and_device_mqtt
+      iothub_module_and_device_mqtt_ws_py27:
+        suite: iothub_module_and_device_mqtt_ws
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
