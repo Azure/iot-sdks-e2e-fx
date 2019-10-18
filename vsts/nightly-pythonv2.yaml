@@ -54,7 +54,7 @@ jobs:
     - "build_py36_container"
     - "build_py37_container"
   strategy:
-    maxParallel: 10
+    maxParallel: 15
     matrix:
       edgehub_module_mqtt_27:
         suite: edgehub_module_mqtt
