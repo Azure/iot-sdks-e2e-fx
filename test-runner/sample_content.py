@@ -24,16 +24,8 @@ object_with_3_layers = {
 object_with_3_layers_stringified = json.dumps(object_with_3_layers)
 
 telemetry_test_objects = [
-    pytest.param(string_64, id="64 character string"),
-    pytest.param(string_1K, id="1K character string"),
     pytest.param(string_2000, id="2000 character string"),
-    pytest.param(string_64K, id="64k character string"),
-    pytest.param(simple_object, id="simple object"),
-    pytest.param(simple_object_stringified, id="simple object, as string"),
     pytest.param(object_with_3_layers, id="object with 3 layers"),
-    pytest.param(
-        object_with_3_layers_stringified, id="object with 3 layers, as string"
-    ),
 ]
 
 string_index = 0
