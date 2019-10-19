@@ -144,6 +144,7 @@ def set_runtime_configuration(scenario, language, transport, local):
     # use the leaf device identity for our test_device tests for now.  This will change after we
     # update our deployment scripts
     if getattr(runtime_config, "test_device", None):
+        runtime_config.test_device.transport = transport
         runtime_config.test_device.device_id = hub.leaf_device_id
         runtime_config.test_device.connection_string = hub.leaf_device_connection_string
         if use_gateway_host:
