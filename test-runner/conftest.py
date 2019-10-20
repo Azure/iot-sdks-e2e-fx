@@ -188,18 +188,23 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + rep.when, rep)
 
 
+separator = "".join("-" for _ in range(0, 132))
+
+
 @pytest.fixture(scope="function", autouse=True)
 def function_log_fixture(request):
+    print_message(separator)
     print_message("HORTON: Entering function {}".format(request.node.name))
 
     def fin():
-        print("")
+        print_message(separator)
         if hasattr(request.node, "rep_setup"):
             print_message("setup:      " + str(request.node.rep_setup.outcome))
         if hasattr(request.node, "rep_call"):
             print_message("call:       " + str(request.node.rep_call.outcome))
         if hasattr(request.node, "rep_teardown"):
             print_message("teardown:   " + str(request.node.rep_teardown.outcome))
+        print_message(separator)
         print_message(
             "HORTON: Cleaning up after function {}".format(request.function.__name__)
         )
