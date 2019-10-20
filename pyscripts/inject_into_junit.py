@@ -57,22 +57,23 @@ class InjectIntoJunit:
             print(e)
             return
 
-        for suite in xml:
-            if suite:
-                suite_name = suite.name
-                if suite.system_out:
-                    lines_for_junit = self.get_suite_lines_from_log(
-                        read_file, suite_name
+        for testcase in xml:
+            if testcase:
+                class_name = testcase.classname
+                test_name = testcase.name
+                if testcase.system_out:
+                    lines_for_junit = self.get_testcase_lines_from_log(
+                        read_file, class_name, test_name
                     )
                     print(
-                        "TestSuite: "
-                        + suite_name
+                        "TestCase: "
+                        + test_name
                         + " : Injecting ("
                         + str(len(lines_for_junit))
                         + ") lines"
                     )
                     parsed_loglines = "\n".join(lines_for_junit)
-                    suite.system_out = "\n" + parsed_loglines + "\n"
+                    testcase.system_out = "\n" + parsed_loglines + "\n"
         try:
             xml.write()
         except Exception as e:
@@ -101,18 +102,19 @@ class InjectIntoJunit:
         ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]")
         return ansi_escape.sub("", str(ascii7))
 
-    def get_suite_lines_from_log(self, log_lines, suite_name):
+    def get_testcase_lines_from_log(self, log_lines, class_name, test_name):
         lines_for_junit = []
-        log_start_tag = "PYTEST: HORTON: Entering function " + suite_name
-        log_end_tag = "PYTEST: HORTON: Exiting function " + suite_name
+        # PYTEST: HORTON: Exiting function 'test_iothub_device.TestIotHubDeviceClient' 'test_method_call_invoked_from_service'
+        log_start_tag = "Entering function '{}' '{}'".format(class_name, test_name)
+        log_end_tag = "Exiting function '{}' '{}'".format(class_name, test_name)
 
         got_start = False
         for log_line in log_lines:
-            if (not got_start) and log_line.endswith(log_start_tag):
+            if (not got_start) and (log_start_tag in log_line):
                 got_start = True
             if got_start:
                 lines_for_junit.append(log_line)
-                if log_line.endswith(log_end_tag):
+                if log_end_tag in log_line:
                     break
         if len(lines_for_junit) == 0:
             lines_for_junit.append(

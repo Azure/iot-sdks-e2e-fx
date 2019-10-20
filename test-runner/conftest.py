@@ -4,7 +4,7 @@
 
 
 import pytest
-import signal
+import pathlib
 import adapters
 import logging
 from adapters import adapter_config, print_message
@@ -194,7 +194,11 @@ separator = "".join("-" for _ in range(0, 132))
 @pytest.fixture(scope="function", autouse=True)
 def function_log_fixture(request):
     print_message(separator)
-    print_message("HORTON: Entering function {}".format(request.node.name))
+    print_message(
+        "HORTON: Entering function '{}.{}' '{}'".format(
+            request.module.__name__, request.cls.__name__, request.node.name
+        )
+    )
 
     def fin():
         print_message(separator)
@@ -209,7 +213,11 @@ def function_log_fixture(request):
             "HORTON: Cleaning up after function {}".format(request.function.__name__)
         )
         adapters.cleanup_test_objects()
-        print_message("HORTON: Exiting function {}".format(request.node.name))
+        print_message(
+            "HORTON: Exiting function '{}.{}' '{}'".format(
+                request.module.__name__, request.cls.__name__, request.node.name
+            )
+        )
 
     request.addfinalizer(fin)
 
