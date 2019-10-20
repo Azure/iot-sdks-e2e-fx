@@ -26,8 +26,6 @@ class Connect(ConnectionStatus):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
-        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
-            mqtt_transport.DEFAULT_KEEPALIVE = 10
         self.client.connect()
 
     def disconnect(self):
@@ -86,6 +84,9 @@ class ConnectFromEnvironment(object):
             kwargs["websockets"] = True
 
         self.client = self.client_class.create_from_edge_environment(**kwargs)
+
+        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
+            mqtt_transport.DEFAULT_KEEPALIVE = 10
         self._attach_connect_event_watcher()
 
 
