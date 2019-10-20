@@ -44,7 +44,7 @@ class TestEdgeHubModuleClient(
 @pytest.mark.describe(
     "EdgeHub Module Client dropped connections - dropping but not disconnected"
 )
-@pytest.mark.testgroup_iothub_module_client
+@pytest.mark.testgroup_edgehub_module_client
 class TestEdgeHubModuleDroppingButNotDisconnected(
     EdgeHubModuleClient,
     dropped_connection_tests.CallMethodBeforeOnDisconnected,
