@@ -4,6 +4,7 @@
 import time
 import json
 import ast
+import random
 from azure.eventhub import EventHubClient
 from azure.eventhub.common import Offset
 from azure.eventhub.common import EventHubError
@@ -72,20 +73,27 @@ class EventHubApi:
             except EventHubError as e:
                 if e.message.startswith("ErrorCodes.ResourceLimitExceeded"):
                     print("eventhub ResourceLimitExceeded.  Sleeping and trying again")
-                    self.client.stop()
-                    self.client = None
-                    time.sleep(20)
+                    self._close_eventhub_client()
+                    time.sleep(20 + random.randint(-5, 5))
                 else:
                     raise e
 
             print_message("EventHubApi: ready")
 
+    def _close_eventhub_client(self):
+        if self.client:
+            print_message("_close_eventhub_client: stopping eventhub client")
+            self.receivers = []
+            self.client.stop()
+            print_message("_close_eventhub_client: done stopping")
+            self.client = None
+        else:
+            print_message("_close_eventhub_client: no client to stop")
+
     def disconnect_sync(self):
         if self in object_list:
             object_list.remove(self)
-        if self.client:
-            self.client.stop()
-            self.client = None
+            self._close_eventhub_client()
 
     #  30 second timeout was too small.  Bumping to 90.
     @emulate_async
