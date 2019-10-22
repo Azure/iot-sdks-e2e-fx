@@ -65,8 +65,8 @@ class Connect(ConnectionStatus):
 
     def disconnect2(self):
         self.client.disconnect()
-        packets_left = self.get_inflight_packet_count() == 0
-        logger("disconnect2: {} packets still in flight".format(packets_left))
+        packets_left = self.get_inflight_packet_count() 
+        logger.info("disconnect2: {} packets still in flight".format(packets_left))
         assert packets_left == 0
 
     def destroy(self):
