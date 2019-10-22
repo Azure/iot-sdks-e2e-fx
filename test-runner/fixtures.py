@@ -117,3 +117,15 @@ def test_module_wrapper_api():
 @pytest.fixture
 def sample_reported_props():
     return lambda: {"foo": next_random_string("reported props")}
+
+
+@pytest.fixture
+def sample_desired_props():
+    return lambda: {
+        "properties": {"desired": {"foo": next_random_string("desired props")}}
+    }
+
+
+@pytest.fixture
+def sample_payload():
+    return lambda: next_random_string("payload")
