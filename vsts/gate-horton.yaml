@@ -60,9 +60,9 @@ jobs:
     language: pythonv2
     repo: Azure/azure-iot-sdk-python  
     commit: master
-    job_tag: pythonv2_36
+    job_tag: pythonv2_38
     forced_image: $(Horton.ForcedImage)
-    variant: py36
+    variant: py38
 
 - job: "test"
   pool:
@@ -74,7 +74,7 @@ jobs:
     - "build_csharp_container"
     - "build_pythonv2_27_container"
     - "build_pythonv2_34_container"
-    - "build_pythonv2_36_container"
+    - "build_pythonv2_38_container"
 
   strategy:
     matrix:
@@ -90,8 +90,8 @@ jobs:
       pythonv2_27_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py27, suite: iothub_module_and_device_mqtt }
       pythonv2_34_edgehub_module_mqtt:                     { language: pythonv2, variant: py34, suite: edgehub_module_mqtt }
       pythonv2_34_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py34, suite: iothub_module_and_device_mqtt }
-      pythonv2_36_iothub_module_and_device_mqtt_async:     { language: pythonv2, variant: py36, suite: iothub_module_and_device_mqtt, async: yes }
-      pythonv2_36_edgehub_module_async:                    { language: pythonv2, variant: py36, suite: edgehub_module_mqtt, async: yes }
+      pythonv2_38_iothub_module_and_device_mqtt_async:     { language: pythonv2, variant: py38, suite: iothub_module_and_device_mqtt, async: yes }
+      pythonv2_38_edgehub_module_async:                    { language: pythonv2, variant: py38, suite: edgehub_module_mqtt, async: yes }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml

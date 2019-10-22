@@ -5,6 +5,14 @@ jobs:
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
+    job_tag: py38
+    variant: py38
+- template: jobs-build-docker-image.yaml
+  parameters:
+    language: $(Horton.Language)
+    repo: $(Horton.Repo)
+    commit: $(Horton.Commit)
+    forced_image: $(Horton.ForcedImage)
     job_tag: py37
     variant: py37
 - template: jobs-build-docker-image.yaml
@@ -40,6 +48,27 @@ jobs:
     job_tag: py27
     variant: py27
 
+- job: "test_py38"
+  pool:
+      vmImage: 'Ubuntu 16.04'
+  dependsOn:
+    - "build_py38_container"
+  strategy:
+    matrix:
+      iothub_module_and_device_mqtt_py38:
+        suite: iothub_module_and_device_mqtt
+      edgehub_module_mqtt_ws_py38_async:
+        suite: edgehub_module_mqtt_ws
+        async: yes
+  steps:
+  - template: steps-deploy-and-run-pytest.yaml
+    parameters:
+      language: $(Horton.Language)
+      forced_image: $(Horton.ForcedImage)
+      suite: $(suite)
+      async: $(async)
+      variant: py38
+
 - job: "test_py37"
   pool:
       vmImage: 'Ubuntu 16.04'
@@ -47,13 +76,8 @@ jobs:
     - "build_py37_container"
   strategy:
     matrix:
-      edgehub_module_mqtt_ws_py37:
-        suite: edgehub_module_mqtt_ws
-      iothub_module_and_device_mqtt_py37:
-        suite: iothub_module_and_device_mqtt
-      edgehub_module_mqtt_py37_async:
+      edgehub_module_mqtt_py37:
         suite: edgehub_module_mqtt
-        async: yes
       iothub_module_and_device_mqtt_ws_py37_async:
         suite: iothub_module_and_device_mqtt_ws
         async: yes
