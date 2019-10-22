@@ -20,8 +20,6 @@ class Connect(ConnectionStatus):
     def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
-        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
-            mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         async_helper.run_coroutine_sync(self.client.connect())
 
     def disconnect(self):
@@ -59,9 +57,13 @@ class Connect(ConnectionStatus):
 
     def disconnect2(self):
         async_helper.run_coroutine_sync(self.client.disconnect())
+        packets_left = self.get_inflight_packet_count()
+        logger.info("disconnect2: {} packets still in flight".format(packets_left))
+        assert packets_left == 0
 
     def destroy(self):
         if self.client:
+            self.disconnect2()
             async_helper.run_coroutine_sync(self.client.disconnect())
             self.client = None
             heap_check.assert_all_iothub_objects_have_been_collected()

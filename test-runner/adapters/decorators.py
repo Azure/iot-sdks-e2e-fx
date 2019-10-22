@@ -1,10 +1,17 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
+import concurrent.futures
 import functools
 import asyncio
 
 from .print_message import print_message
+
+# default executor is not sufficient since default threads == CPUx5 and
+# VMs will default to 1 CPU.
+emulate_async_executor = concurrent.futures.ThreadPoolExecutor(
+    max_workers=32, thread_name_prefix="emulate_async"
+)
 
 
 def log_entry_and_exit(_func=None, *, print_args=True):
@@ -75,7 +82,8 @@ def emulate_async(fn):
     async def async_fn_wrapper(*args, **kwargs):
         loop = get_running_loop()
 
-        # Run fn in default ThreadPoolExecutor (CPU * 5 threads)
-        return await loop.run_in_executor(None, functools.partial(fn, *args, **kwargs))
+        return await loop.run_in_executor(
+            emulate_async_executor, functools.partial(fn, *args, **kwargs)
+        )
 
     return async_fn_wrapper
