@@ -27,6 +27,13 @@ def get_patch_received(patch_received):
     return foo_val
 
 
+async def patch_desired_props(registry, client, props):
+    if getattr(client, "module_id", None):
+        await registry.patch_module_twin(client.device_id, client.module_id, props)
+    else:
+        await registry.patch_device_twin(client.device_id, props)
+
+
 async def wait_for_reported_properties_update(
     *, reported_properties_sent, client, registry, logger
 ):
@@ -58,6 +65,40 @@ async def wait_for_reported_properties_update(
             await asyncio.sleep(5)
 
 
+async def wait_for_desired_properties_patch(*, client, expected_twin, logger):
+    mistakes_left = 1
+    while True:
+        patch_received = await client.wait_for_desired_property_patch()
+        logger(
+            "desired properties sent:     "
+            + str(expected_twin["properties"]["desired"]["foo"])
+        )
+
+        foo_val = get_patch_received(patch_received)
+        if foo_val == -1:
+            logger("patch received of invalid format!")
+            assert 0
+        logger("desired properties recieved: " + str(foo_val))
+
+        if expected_twin["properties"]["desired"]["foo"] == foo_val:
+            logger("success")
+            return
+        else:
+            if mistakes_left:
+                # We sometimes get the old value before we get the new value, and that's
+                # perfectly valid (especially with QOS 1 on MQTT).  If we got the wrong
+                # value, we just try again.
+                mistakes_left = mistakes_left - 1
+                logger(
+                    "trying again.  We still have {} mistakes left".format(
+                        mistakes_left
+                    )
+                )
+            else:
+                logger("too many mistakes.  Failing")
+                assert False
+
+
 class TwinTests(object):
     @pytest.mark.it("Can connect, enable twin, and disconnect")
     async def test_client_connect_enable_twin_disconnect(self, client):
@@ -66,17 +107,12 @@ class TwinTests(object):
     @pytest.mark.timeout(180)
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can get the most recent twin from the service")
-    async def test_service_can_set_desired_properties_and_client_can_retrieve_them(
-        self, client, logger, registry
+    async def test_twin_desired_props(
+        self, client, logger, registry, sample_desired_props
     ):
-        twin_sent = {"properties": {"desired": {"foo": random.randint(1, 9999)}}}
+        twin_sent = sample_desired_props()
 
-        if getattr(client, "module_id", None):
-            await registry.patch_module_twin(
-                client.device_id, client.module_id, twin_sent
-            )
-        else:
-            await registry.patch_device_twin(client.device_id, twin_sent)
+        await patch_desired_props(registry, client, twin_sent)
 
         # BKTODO: Node needs this sleep to pass MQTT against edgeHub
         await asyncio.sleep(5)
@@ -97,96 +133,68 @@ class TwinTests(object):
                 logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
                 await asyncio.sleep(5)
 
+    @pytest.mark.timeout(180)
+    @pytest.mark.supportsTwin
+    @pytest.mark.it("Can get the most recent twin from the service 5 times")
+    @pytest.mark.skip("Failing on pythonv2")
+    async def test_twin_desired_props_5_times(
+        self, client, logger, registry, sample_desired_props
+    ):
+        await client.enable_twin()
+
+        for _ in range(0, 5):
+            twin_sent = sample_desired_props()
+
+            await patch_desired_props(registry, client, twin_sent)
+
+            while True:
+                twin_received = await client.get_twin()
+
+                logger("twin sent:    " + str(twin_sent))
+                logger("twin received:" + str(twin_received))
+                if (
+                    twin_sent["properties"]["desired"]["foo"]
+                    == twin_received["properties"]["desired"]["foo"]
+                ):
+                    break
+                else:
+                    logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
+                    await asyncio.sleep(5)
+
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can receive desired property patches as events")
-    async def test_service_can_set_multiple_desired_property_patches_and_client_can_retrieve_them_as_events(
-        self, client, logger, registry
+    async def test_twin_desired_props_patch(
+        self, client, logger, registry, sample_desired_props
     ):
 
         await client.enable_twin()
 
-        base = random.randint(1, 9999) * 100
         for i in range(1, 4):
-            logger("sending patch #" + str(i) + " through registry client")
-            twin_sent = {"properties": {"desired": {"foo": base + i}}}
+            twin_sent = sample_desired_props()
 
-            if getattr(client, "module_id", None):
-                await registry.patch_module_twin(
-                    client.device_id, client.module_id, twin_sent
-                )
-            else:
-                await registry.patch_device_twin(client.device_id, twin_sent)
-
-            logger("patch " + str(i) + " sent")
-
-            logger("start waiting for patch #" + str(i))
+            logger("start waiting for patch {}".format(i))
             patch_future = asyncio.ensure_future(
-                client.wait_for_desired_property_patch()
+                wait_for_desired_properties_patch(
+                    client=client, expected_twin=twin_sent, logger=logger
+                )
             )
             await asyncio.sleep(3)  # wait for async call to take effect
 
-            logger("Tringgering patch #" + str(i) + " through registry client")
-            twin_sent = {"properties": {"desired": {"foo": base + i}}}
+            await patch_desired_props(registry, client, twin_sent)
+            logger("patch {} sent".format(i))
 
-            if getattr(client, "module_id", None):
-                await registry.patch_module_twin(
-                    client.device_id, client.module_id, twin_sent
-                )
-            else:
-                await registry.patch_device_twin(client.device_id, twin_sent)
-
-            logger("patch " + str(i) + " triggered")
-
-            done = False
-            mistakes_left = 1
-            while not done:
-                logger("getting patch " + str(i) + " on module client")
-                patch_received = await patch_future
-                logger("patch received:" + json.dumps(patch_received))
-
-                logger(
-                    "desired properties sent:     "
-                    + str(twin_sent["properties"]["desired"]["foo"])
-                )
-
-                foo_val = get_patch_received(patch_received)
-                if foo_val == -1:
-                    logger("patch received of invalid format!")
-                    assert 0
-                logger("desired properties recieved: " + str(foo_val))
-
-                if twin_sent["properties"]["desired"]["foo"] == foo_val:
-                    logger("success")
-                    done = True
-                else:
-                    if mistakes_left:
-                        # We sometimes get the old value before we get the new value, and that's
-                        # perfectly valid (especially with QOS 1 on MQTT).  If we got the wrong
-                        # value, we just try again.
-                        mistakes_left = mistakes_left - 1
-                        logger(
-                            "trying again.  We still have {} mistakes left".format(
-                                mistakes_left
-                            )
-                        )
-                        logger("start waiting for patch #{} again".format(i))
-                        patch_future = asyncio.ensure_future(
-                            client.wait_for_desired_property_patch()
-                        )
-                        await asyncio.sleep(0.5)  # wait for async call to take effect
-                    else:
-                        logger("too many mistakes.  Failing")
-                        assert False
+            await patch_future  # raises if patch not received
+            logger("patch {} received".format(i))
 
     @pytest.mark.timeout(180)
     @pytest.mark.supportsTwin
     @pytest.mark.it(
         "Can set reported properties which can be successfully retrieved by the service"
     )
-    async def test_module_can_set_reported_properties_and_service_can_retrieve_them(
-        self, client, logger, registry
+    async def test_twin_reported_props(
+        self, client, logger, registry, sample_reported_props
     ):
-        reported_properties_sent = {"foo": random.randint(1, 9999)}
+        reported_properties_sent = sample_reported_props()
 
         await client.enable_twin()
         await client.patch_twin(reported_properties_sent)
@@ -197,3 +205,25 @@ class TwinTests(object):
             registry=registry,
             logger=logger,
         )
+
+    @pytest.mark.timeout(180)
+    @pytest.mark.supportsTwin
+    @pytest.mark.it(
+        "Can set reported properties 5 times and retrieve them from the service"
+    )
+    async def test_twin_reported_props_5_times(
+        self, client, logger, registry, sample_reported_props
+    ):
+        await client.enable_twin()
+
+        for _ in range(0, 5):
+            reported_properties_sent = sample_reported_props()
+
+            await client.patch_twin(reported_properties_sent)
+
+            await wait_for_reported_properties_update(
+                reported_properties_sent=reported_properties_sent,
+                client=client,
+                registry=registry,
+                logger=logger,
+            )
