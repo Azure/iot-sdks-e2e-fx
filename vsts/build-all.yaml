@@ -216,6 +216,10 @@ jobs:
       py38_mqttws_async_iothub_module_and_device:   { suite: py38_mqttws_async_iothub_module_and_device }
       py38_mqttws_async_edgehub_module:             { suite: py38_mqttws_async_edgehub_module }
 
-
   steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      forced_image: $(Horton.ForcedImage)
+      suite: $(suite)
+
 
