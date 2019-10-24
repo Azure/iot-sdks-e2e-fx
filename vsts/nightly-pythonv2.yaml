@@ -10,6 +10,7 @@ jobs:
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
     job_tag: py27
+    variant: py27
     
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -18,6 +19,7 @@ jobs:
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
     job_tag: py34
+    variant: py34
     
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -26,6 +28,7 @@ jobs:
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
     job_tag: py35
+    variant: py35
     
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -34,6 +37,7 @@ jobs:
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
     job_tag: py36
+    variant: py36
     
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -42,6 +46,7 @@ jobs:
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
     job_tag: py37
+    variant: py37
     
 - template: templates/jobs-build-docker-image.yaml
   parameters:
@@ -50,6 +55,7 @@ jobs:
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
     job_tag: py38
+    variant: py38
     
 
 - job: "test"

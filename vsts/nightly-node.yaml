@@ -34,7 +34,7 @@ jobs:
     - "build_node10_container"
   strategy:
     matrix:
-      node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub }
+      node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub_module }
       node6_mqtt_edgehub_module:    { suite: node6_mqtt_edgehub_module }
       node6_mqttws_iothub_module:   { suite: node6_mqttws_iothub_module }
       node6_mqttws_edgehub_module:  { suite: node6_mqttws_edgehub_module }
