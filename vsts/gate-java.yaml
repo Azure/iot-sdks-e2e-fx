@@ -1,4 +1,4 @@
-name: $(BuildID)_$(Horton.Language)_$(Horton.Commit)_$(BuildDefinitionName)
+name: $(BuildID)_java_$(Horton.Commit)_$(BuildDefinitionName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 jobs:

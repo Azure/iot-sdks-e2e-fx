@@ -1,7 +1,6 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
-  variant: ''
 
 jobs:
 

@@ -1,7 +1,7 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
-  variant: ''
+
 jobs:
 
 - template: templates/jobs-build-docker-image.yaml
@@ -119,107 +119,103 @@ jobs:
   strategy:
     maxParallel: 10
     matrix:
-      c_iothub_module_mqtt:                 { language: c, suite: iothub_module_mqtt }
-      c_edgehub_module_mqtt:                { language: c, suite: edgehub_module_mqtt }
-      c_iothub_module_mqtt_ws:              { language: c, suite: iothub_module_mqtt_ws }
-      c_edgehub_module_mqtt_ws:             { language: c, suite: edgehub_module_mqtt_ws }
-      c_iothub_module_amqp:                 { language: c, suite: iothub_module_amqp }
-      c_edgehub_module_amqp:                { language: c, suite: edgehub_module_amqp }
-      c_iothub_module_amqp_ws:              { language: c, suite: iothub_module_amqp_ws }
-      c_edgehub_module_amqp_ws:             { language: c, suite: edgehub_module_amqp_ws }
+      c_mqtt_iothub_module:     { suite: c_mqtt_iothub_moduled }
+      c_mqtt_edgehub_module:    { suite: c_mqtt_edgehub_module }
+      c_mqttws_iothub_module:   { suite: c_mqttws_iothub_module }
+      c_mqttws_edgehub_module:  { suite: c_mqttws_edgehub_module }
+      c_amqp_iothub_module:     { suite: c_amqp_iothub_module }
+      c_amqpws_iothub_module:   { suite: c_amqpws_iothub_module }
 
-      node10_iothub_module_mqtt:              { language: node, variant: node10, suite: iothub_module_mqtt }
-      node10_edgehub_module_mqtt:             { language: node, variant: node10, suite: edgehub_module_mqtt }
-      node10_iothub_module_mqtt_ws:           { language: node, variant: node10, suite: iothub_module_mqtt_ws }
-      node10_edgehub_module_mqtt_ws:          { language: node, variant: node10, suite: edgehub_module_mqtt_ws }
-      node10_iothub_module_amqp:              { language: node, variant: node10, suite: iothub_module_amqp }
-      node10_edgehub_module_amqp:             { language: node, variant: node10, suite: edgehub_module_amqp }
-      node10_iothub_module_amqp_ws:           { language: node, variant: node10, suite: iothub_module_amqp_ws }
-      node10_edgehub_module_amqp_ws:          { language: node, variant: node10, suite: edgehub_module_amqp_ws }
+      csharp_mqtt_iothub_module:    { suite: csharp_mqtt_iothub_module }
+      csharp_mqtt_edgehub_module:   { suite: csharp_mqtt_edgehub_module }
+      csharp_mqttws_iothub_module:  { suite: csharp_mqttws_iothub_module }
+      csharp_mqttws_edgehub_module: { suite: csharp_mqttws_edgehub_module } 
+      csharp_amqp_iothub_module:    { suite: csharp_amqp_iothub_module }
+      csharp_amqp_edgehub_module:   { suite: csharp_amqp_edgehub_module }
+      csharp_amqpws_iothub_module:  { suite: csharp_amqpws_iothub_module }
+      csharp_amqpws_edgehub_module: { suite: csharp_amqpws_edgehub_module }
 
-      node6_iothub_module_mqtt:              { language: node, variant: node6, suite: iothub_module_mqtt }
-      node6_edgehub_module_mqtt:             { language: node, variant: node6, suite: edgehub_module_mqtt }
-      node6_iothub_module_mqtt_ws:           { language: node, variant: node6, suite: iothub_module_mqtt_ws }
-      node6_edgehub_module_mqtt_ws:          { language: node, variant: node6, suite: edgehub_module_mqtt_ws }
-      node6_iothub_module_amqp:              { language: node, variant: node6, suite: iothub_module_amqp }
-      node6_edgehub_module_amqp:             { language: node, variant: node6, suite: edgehub_module_amqp }
-      node6_iothub_module_amqp_ws:           { language: node, variant: node6, suite: iothub_module_amqp_ws }
-      node6_edgehub_module_amqp_ws:          { language: node, variant: node6, suite: edgehub_module_amqp_ws }
+      java_mqtt_iothub_module:      { suite: java_mqtt_iothub_module }
+      java_mqtt_edgehub_module:     { suite: java_mqtt_edgehub_module }
+      java_mqttws_iothub_module:    { suite: java_mqttws_iothub_module }
+      java_mqttws_edgehub_module:   { suite: java_mqttws_edgehub_module }
+      java_amqp_iothub_module:      { suite: java_amqp_iothub_module }
+      java_amqp_edgehub_module:     { suite: java_amqp_edgehub_module }
+      java_amqpws_iothub_module:    { suite: java_amqpws_iothub_module }
+      java_amqpws_edgehub_module:   { suite: java_amqpws_edgehub_module }
 
-      node8_iothub_module_mqtt:              { language: node, variant: node8, suite: iothub_module_mqtt }
-      node8_edgehub_module_mqtt:             { language: node, variant: node8, suite: edgehub_module_mqtt }
-      node8_iothub_module_mqtt_ws:           { language: node, variant: node8, suite: iothub_module_mqtt_ws }
-      node8_edgehub_module_mqtt_ws:          { language: node, variant: node8, suite: edgehub_module_mqtt_ws }
-      node8_iothub_module_amqp:              { language: node, variant: node8, suite: iothub_module_amqp }
-      node8_edgehub_module_amqp:             { language: node, variant: node8, suite: edgehub_module_amqp }
-      node8_iothub_module_amqp_ws:           { language: node, variant: node8, suite: iothub_module_amqp_ws }
-      node8_edgehub_module_amqp_ws:          { language: node, variant: node8, suite: edgehub_module_amqp_ws }
+      node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub }
+      node6_mqtt_edgehub_module:    { suite: node6_mqtt_edgehub_module }
+      node6_mqttws_iothub_module:   { suite: node6_mqttws_iothub_module }
+      node6_mqttws_edgehub_module:  { suite: node6_mqttws_edgehub_module }
+      node6_amqp_iothub_module:     { suite: node6_amqp_iothub_module }
+      node6_amqp_edgehub_module:    { suite: node6_amqp_edgehub_module }
+      node6_amqpws_iothub_module:   { suite: node6_amqpws_iothub_module }
+      node6_amqpws_edgehub_module:  { suite: node6_amqpws_edgehub_module }
 
-      java_iothub_module_mqtt:              { language: java, suite: iothub_module_mqtt }
-      java_edgehub_module_mqtt:             { language: java, suite: edgehub_module_mqtt }
-      java_iothub_module_mqtt_ws:           { language: java, suite: iothub_module_mqtt_ws }
-      java_edgehub_module_mqtt_ws:          { language: java, suite: edgehub_module_mqtt_ws }
-      java_iothub_module_amqp:              { language: java, suite: iothub_module_amqp }
-      java_edgehub_module_amqp:             { language: java, suite: edgehub_module_amqp }
-      java_iothub_module_amqp_ws:           { language: java, suite: iothub_module_amqp_ws }
-      java_edgehub_module_amqp_ws:          { language: java, suite: edgehub_module_amqp_ws }
+      node8_mqtt_iothub_module:     { suite: node8_mqtt_iothub_module }
+      node8_mqtt_edgehub_module:    { suite: node8_mqtt_edgehub_module }
+      node8_mqttws_iothub_module:   { suite: node8_mqttws_iothub_module }
+      node8_mqttws_edgehub_module:  { suite: node8_mqttws_edgehub_module }
+      node8_amqp_iothub_module:     { suite: node8_amqp_iothub_module }
+      node8_amqp_edgehub_module:    { suite: node8_amqp_edgehub_module }
+      node8_amqpws_iothub_module:   { suite: node8_amqpws_iothub_module }
+      node8_amqpws_edgehub_module:  { suite: node8_amqpws_edgehub_module }
 
-      csharp_iothub_module_mqtt:            { language: csharp, suite: iothub_module_mqtt }
-      csharp_edgehub_module_mqtt:           { language: csharp, suite: edgehub_module_mqtt }
-      csharp_iothub_module_mqtt_ws:         { language: csharp, suite: iothub_module_mqtt_ws }
-      csharp_edgehub_module_mqtt_ws:        { language: csharp, suite: edgehub_module_mqtt_ws }
-      csharp_iothub_module_amqp:            { language: csharp, suite: iothub_module_amqp }
-      csharp_edgehub_module_amqp:           { language: csharp, suite: edgehub_module_amqp }
-      csharp_iothub_module_amqp_ws:         { language: csharp, suite: iothub_module_amqp_ws }
-      csharp_edgehub_module_amqp_ws:        { language: csharp, suite: edgehub_module_amqp_ws }
+      node10_mqtt_iothub_module:    { suite: node10_mqtt_iothub_module }
+      node10_mqtt_edgehub_module:   { suite: node10_mqtt_edgehub_module }
+      node10_mqttws_iothub_module:  { suite: node10_mqttws_iothub_module }
+      node10_mqttws_edgehub_module: { suite: node10_mqttws_edgehub_module }
+      node10_amqp_iothub_module:    { suite: node10_amqp_iothub_module }
+      node10_amqp_edgehub_module:   { suite: node10_amqp_edgehub_module }
+      node10_amqpws_iothub_module:  { suite: node10_amqpws_iothub_module }
+      node10_amqpws_edgehub_module: { suite: node10_amqpws_edgehub_module }
 
-      py27_iothub_module_and_device_mqtt:   { language: pythonv2, variant: py27, suite: iothub_module_and_device_mqtt }
-      py27_edgehub_module_mqtt:             { language: pythonv2, variant: py27, suite: edgehub_module_mqtt }
-      py27_iothub_module_and_device_mqtt_ws:   { language: pythonv2, variant: py27, suite: iothub_module_and_device_mqtt_ws }
-      py27_edgehub_module_mqtt_ws:             { language: pythonv2, variant: py27, suite: edgehub_module_mqtt_ws }
+      py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
+      py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
+      py27_mqttws_iothub_module_and_device:         { suite: py27_mqttws_iothub_module_and_device }
+      py27_mqttws_edgehub_module:                   { suite: py27_mqttws_edgehub_module }
 
-      py35_iothub_module_and_device_mqtt:         { language: pythonv2, variant: py35, suite: iothub_module_and_device_mqtt }
-      py35_edgehub_module_mqtt:                   { language: pythonv2, variant: py35, suite: edgehub_module_mqtt }
-      py35_iothub_module_and_device_mqtt_async:   { language: pythonv2, variant: py35, async: yes, suite: iothub_module_and_device_mqtt }
-      py35_edgehub_module_mqtt_async:             { language: pythonv2, variant: py35, async: yes, suite: edgehub_module_mqtt }
-      py35_iothub_module_and_device_mqtt_ws:         { language: pythonv2, variant: py35, suite: iothub_module_and_device_mqtt_ws }
-      py35_edgehub_module_mqtt_ws:                   { language: pythonv2, variant: py35, suite: edgehub_module_mqtt_ws }
-      py35_iothub_module_and_device_mqtt_ws_async:   { language: pythonv2, variant: py35, async: yes, suite: iothub_module_and_device_mqtt_ws }
-      py35_edgehub_module_mqtt_ws_async:             { language: pythonv2, variant: py35, async: yes, suite: edgehub_module_mqtt_ws }
+      py35_mqtt_iothub_module_and_device:           { suite: py35_mqtt_iothub_module_and_device }
+      py35_mqtt_edgehub_module:                     { suite: py35_mqtt_edgehub_module }
+      py35_mqttws_iothub_module_and_device:         { suite: py35_mqttws_iothub_module_and_device }
+      py35_mqttws_edgehub_module:                   { suite: py35_mqttws_edgehub_module }
 
-      py36_iothub_module_and_device_mqtt:         { language: pythonv2, variant: py36, suite: iothub_module_and_device_mqtt }
-      py36_edgehub_module_mqtt:                   { language: pythonv2, variant: py36, suite: edgehub_module_mqtt }
-      py36_iothub_module_and_device_mqtt_async:   { language: pythonv2, variant: py36, async: yes, suite: iothub_module_and_device_mqtt }
-      py36_edgehub_module_mqtt_async:             { language: pythonv2, variant: py36, async: yes, suite: edgehub_module_mqtt }
-      py36_iothub_module_and_device_mqtt_ws:         { language: pythonv2, variant: py36, suite: iothub_module_and_device_mqtt_ws }
-      py36_edgehub_module_mqtt_ws:                   { language: pythonv2, variant: py36, suite: edgehub_module_mqtt_ws }
-      py36_iothub_module_and_device_mqtt_ws_async:   { language: pythonv2, variant: py36, async: yes, suite: iothub_module_and_device_mqtt_ws }
-      py36_edgehub_module_mqtt_ws_async:             { language: pythonv2, variant: py36, async: yes, suite: edgehub_module_mqtt_ws }
+      py35_mqtt_async_iothub_module_and_device:     { suite: py35_mqtt_async_iothub_module_and_device }
+      py35_mqtt_async_edgehub_module:               { suite: py35_mqtt_async_edgehub_module }
+      py35_mqttws_async_iothub_module_and_device:   { suite: py35_mqttws_async_iothub_module_and_device }
+      py35_mqttws_async__edgehub_module:            { suite: py35_mqttws_async__edgehub_module }
 
-      py37_iothub_module_and_device_mqtt:         { language: pythonv2, variant: py37, suite: iothub_module_and_device_mqtt }
-      py37_edgehub_module_mqtt:                   { language: pythonv2, variant: py37, suite: edgehub_module_mqtt }
-      py37_iothub_module_and_device_mqtt_async:   { language: pythonv2, variant: py37, async: yes, suite: iothub_module_and_device_mqtt }
-      py37_edgehub_module_mqtt_async:             { language: pythonv2, variant: py37, async: yes, suite: edgehub_module_mqtt }
-      py37_iothub_module_and_device_mqtt_ws:         { language: pythonv2, variant: py37, suite: iothub_module_and_device_mqtt_ws }
-      py37_edgehub_module_mqtt_ws:                   { language: pythonv2, variant: py37, suite: edgehub_module_mqtt_ws }
-      py37_iothub_module_and_device_mqtt_ws_async:   { language: pythonv2, variant: py37, async: yes, suite: iothub_module_and_device_mqtt_ws }
-      py37_edgehub_module_mqtt_ws_async:             { language: pythonv2, variant: py37, async: yes, suite: edgehub_module_mqtt_ws }
+      py36_mqtt_iothub_module_and_device:           { suite: py36_mqtt_iothub_module_and_device }
+      py36_mqtt_edgehub_module:                     { suite: py36_mqtt_edgehub_module }
+      py36_mqttws_iothub_module_and_device:         { suite: py36_mqttws_iothub_module_and_device }
+      py36_mqttws_edgehub_module:                   { suite: py36_mqttws_edgehub_module }
 
-      py38_iothub_module_and_device_mqtt:         { language: pythonv2, variant: py38, suite: iothub_module_and_device_mqtt }
-      py38_edgehub_module_mqtt:                   { language: pythonv2, variant: py38, suite: edgehub_module_mqtt }
-      py38_iothub_module_and_device_mqtt_async:   { language: pythonv2, variant: py38, async: yes, suite: iothub_module_and_device_mqtt }
-      py38_edgehub_module_mqtt_async:             { language: pythonv2, variant: py38, async: yes, suite: edgehub_module_mqtt }
-      py38_iothub_module_and_device_mqtt_ws:         { language: pythonv2, variant: py38, suite: iothub_module_and_device_mqtt_ws }
-      py38_edgehub_module_mqtt_ws:                   { language: pythonv2, variant: py38, suite: edgehub_module_mqtt_ws }
-      py38_iothub_module_and_device_mqtt_ws_async:   { language: pythonv2, variant: py38, async: yes, suite: iothub_module_and_device_mqtt_ws }
-      py38_edgehub_module_mqtt_ws_async:             { language: pythonv2, variant: py38, async: yes, suite: edgehub_module_mqtt_ws }
+      py36_mqtt_async_iothub_module_and_device:     { suite: py36_mqtt_async_iothub_module_and_device }
+      py36_mqtt_async_edgehub_module:               { suite: py36_mqtt_async_edgehub_module }
+      py36_mqttws_async_iothub_module_and_device:   { suite: py36_mqttws_async_iothub_module_and_device }
+      py36_mqttws_async_edgehub_module:             { suite: py36_mqttws_async_edgehub_module }
+
+      py37_mqtt_iothub_module_and_device:           { suite: py37_mqtt_iothub_module_and_device }
+      py37_mqtt_edgehub_module:                     { suite: py37_mqtt_edgehub_module }
+      py37_mqttws_iothub_module_and_device:         { suite: py37_mqttws_iothub_module_and_device }
+      py37_mqttws_edgehub_module:                   { suite: py37_mqttws_edgehub_module }
+
+      py37_mqtt_async_iothub_module_and_device:     { suite: py37_mqtt_async_iothub_module_and_device }
+      py37_mqtt_async_edgehub_module:               { suite: py37_mqtt_async_edgehub_module }
+      py37_mqttws_async_iothub_module_and_device:   { suite: py37_mqttws_async_iothub_module_and_device }
+      py37_mqttws_async_edgehub_module:             { suite: py37_mqttws_async_edgehub_module }
+
+      py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
+      py38_mqtt_edgehub_module:                     { suite: py38_mqtt_edgehub_module }
+      py38_mqttws_iothub_module_and_device:         { suite: py38_mqttws_iothub_module_and_device }
+      py38_mqttws_edgehub_module:                   { suite: py38_mqttws_edgehub_module }
+
+      py38_mqtt_async_iothub_module_and_device:     { suite: py38_mqtt_async_iothub_module_and_device }
+      py38_mqtt_async_edgehub_module:               { suite: py38_mqtt_async_edgehub_module }
+      py38_mqttws_async_iothub_module_and_device:   { suite: py38_mqttws_async_iothub_module_and_device }
+      py38_mqttws_async_edgehub_module:             { suite: py38_mqttws_async_edgehub_module }
+
 
   steps:
-  - template: templates/steps-deploy-and-run-pytest.yaml
-    parameters:
-      language: $(language)
-      suite: $(suite)
-      forced_image: $(Horton.ForcedImage)
-      async: $(async)
-      variant: $(variant)
 

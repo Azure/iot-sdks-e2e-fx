@@ -1,7 +1,7 @@
 jobs:
 - template: jobs-build-docker-image.yaml
   parameters:
-    language: $(Horton.Language)
+    language: pythonv2
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
@@ -9,7 +9,7 @@ jobs:
     variant: py38
 - template: jobs-build-docker-image.yaml
   parameters:
-    language: $(Horton.Language)
+    language: pythonv2
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
@@ -17,7 +17,7 @@ jobs:
     variant: py37
 - template: jobs-build-docker-image.yaml
   parameters:
-    language: $(Horton.Language)
+    language: pythonv2
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
@@ -25,7 +25,7 @@ jobs:
     variant: py36
 - template: jobs-build-docker-image.yaml
   parameters:
-    language: $(Horton.Language)
+    language: pythonv2
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
@@ -33,7 +33,7 @@ jobs:
     variant: py35
 - template: jobs-build-docker-image.yaml
   parameters:
-    language: $(Horton.Language)
+    language: pythonv2
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
@@ -41,136 +41,41 @@ jobs:
     variant: py34
 - template: jobs-build-docker-image.yaml
   parameters:
-    language: $(Horton.Language)
+    language: pythonv2
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
     job_tag: py27
     variant: py27
 
-- job: "test_py38"
-  pool:
-      vmImage: 'Ubuntu 16.04'
-  dependsOn:
-    - "build_py38_container"
-  strategy:
-    matrix:
-      iothub_module_and_device_mqtt_py38:
-        suite: iothub_module_and_device_mqtt
-      edgehub_module_mqtt_ws_py38_async:
-        suite: edgehub_module_mqtt_ws
-        async: yes
-  steps:
-  - template: steps-deploy-and-run-pytest.yaml
-    parameters:
-      language: $(Horton.Language)
-      forced_image: $(Horton.ForcedImage)
-      suite: $(suite)
-      async: $(async)
-      variant: py38
-
-- job: "test_py37"
-  pool:
-      vmImage: 'Ubuntu 16.04'
-  dependsOn:
-    - "build_py37_container"
-  strategy:
-    matrix:
-      edgehub_module_mqtt_py37:
-        suite: edgehub_module_mqtt
-      iothub_module_and_device_mqtt_ws_py37_async:
-        suite: iothub_module_and_device_mqtt_ws
-        async: yes
-  steps:
-  - template: steps-deploy-and-run-pytest.yaml
-    parameters:
-      language: $(Horton.Language)
-      forced_image: $(Horton.ForcedImage)
-      suite: $(suite)
-      async: $(async)
-      variant: py37
-
-- job: "test_py36"
-  pool:
-      vmImage: 'Ubuntu 16.04'
-  dependsOn:
-    - "build_py36_container"
-  strategy:
-    matrix:
-      edgehub_module_mqtt_py36_async:
-        suite: edgehub_module_mqtt
-        async: yes
-      iothub_module_and_device_mqtt_py36_async:
-        suite: iothub_module_and_device_mqtt
-        async: yes
-  steps:
-  - template: steps-deploy-and-run-pytest.yaml
-    parameters:
-      language: $(Horton.Language)
-      forced_image: $(Horton.ForcedImage)
-      suite: $(suite)
-      async: $(async)
-      variant: py36
-
-- job: "test_py35"
-  pool:
-      vmImage: 'Ubuntu 16.04'
-  dependsOn:
-    - "build_py35_container"
-  strategy:
-    matrix:
-      edgehub_module_mqtt_py35_async:
-        suite: edgehub_module_mqtt
-        async: yes
-      iothub_module_and_device_mqtt_ws_py35_async:
-        suite: iothub_module_and_device_mqtt_ws
-        async: yes
-  steps:
-  - template: steps-deploy-and-run-pytest.yaml
-    parameters:
-      language: $(Horton.Language)
-      forced_image: $(Horton.ForcedImage)
-      suite: $(suite)
-      async: $(async)
-      variant: py35
-
-- job: "test_py34"
-  pool:
-      vmImage: 'Ubuntu 16.04'
-  dependsOn:
-    - "build_py34_container"
-  strategy:
-    matrix:
-      edgehub_module_mqtt_ws_py34:
-        suite: edgehub_module_mqtt_ws
-      iothub_module_and_device_mqtt_py34:
-        suite: iothub_module_and_device_mqtt
-  steps:
-  - template: steps-deploy-and-run-pytest.yaml
-    parameters:
-      language: $(Horton.Language)
-      forced_image: $(Horton.ForcedImage)
-      suite: $(suite)
-      async: $(async)
-      variant: py34
-
-- job: "test_py27"
+- job: "test8"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_py27_container"
+    - "build_py34_container"
+    - "build_py35_container"
+    - "build_py36_container"
+    - "build_py37_container"
+    - "build_py38_container"
   strategy:
     matrix:
-      edgehub_module_mqtt_py27:
-        suite: edgehub_module_mqtt
-      iothub_module_and_device_mqtt_ws_py27:
-        suite: iothub_module_and_device_mqtt_ws
+        py38_mqtt_iothub_module_and_device:         { suite: py38_mqtt_iothub_module_and_device }
+        py38_mqttws_async_edgehub_module:           { suite: py38_mqttws_async_edgehub_module }
+        py37_mqtt_edgehub_module:                   { suite: py37_mqtt_edgehub_module }
+        py37_mqttws_async_iothub_module_and_device: { suite: py37_mqttws_async_iothub_module_and_device }
+        py36_mqtt_async_edgehub_module:             { suite: py36_mqtt_async_edgehub_module }
+        py36_mqtt_async_iothub_module_and_device:   { suite: py36_mqtt_async_iothub_module_and_device }
+        py35_mqtt_async_edgehub_module:             { suite: py35_mqtt_async_edgehub_module }
+        py35_mqttws_async_iothub_module_and_device: { suite: py35_mqttws_async_iothub_module_and_device }
+        py34_mqttws_edgehub_module:                 { suite: py34_mqttws_edgehub_module }
+        py34_mqtt_iothub_module_and_device:         { suite: py34_mqtt_iothub_module_and_device }
+        py27_mqtt_edgehub_module:                   { suite: py27_mqtt_edgehub_module }
+        py27_mqttws_iothub_module_and_device:       { suite: py27_mqttws_iothub_module_and_device }
+
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
-      language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
-      async: $(async)
-      variant: py27
 

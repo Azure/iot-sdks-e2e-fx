@@ -1,7 +1,7 @@
 jobs:
 - template: jobs-build-docker-image.yaml
   parameters:
-    language: $(Horton.Language)
+    language: java
     repo: $(Horton.Repo)
     commit: $(Horton.Commit)
     forced_image: $(Horton.ForcedImage)
@@ -13,19 +13,18 @@ jobs:
     - "build_linux_container"
   strategy:
     matrix:
-      iothub_module_mqtt: { suite: iothub_module_mqtt }
-      edgehub_module_mqtt: { suite: edgehub_module_mqtt }
-      iothub_module_mqtt_ws: { suite: iothub_module_mqtt_ws }
-      edgehub_module_mqtt_ws: { suite: edgehub_module_mqtt_ws }
-      iothub_module_amqp: { suite: iothub_module_amqp }
-      edgehub_module_amqp: { suite: edgehub_module_amqp }
-      iothub_module_amqp_ws: { suite: iothub_module_amqp_ws }
-      edgehub_module_amqp_ws: { suite: edgehub_module_amqp_ws }
+      java_mqtt_iothub_module:      { suite: java_mqtt_iothub_module }
+      java_mqtt_edgehub_module:     { suite: java_mqtt_edgehub_module }
+      java_mqttws_iothub_module:    { suite: java_mqttws_iothub_module }
+      java_mqttws_edgehub_module:   { suite: java_mqttws_edgehub_module }
+      java_amqp_iothub_module:      { suite: java_amqp_iothub_module }
+      java_amqp_edgehub_module:     { suite: java_amqp_edgehub_module }
+      java_amqpws_iothub_module:    { suite: java_amqpws_iothub_module }
+      java_amqpws_edgehub_module:   { suite: java_amqpws_edgehub_module }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
-      language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
 
