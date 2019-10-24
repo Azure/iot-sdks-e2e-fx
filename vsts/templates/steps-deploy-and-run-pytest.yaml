@@ -1,91 +1,94 @@
 parameters:
   forced_image: ''
-  language: ''
   suite: ''
   testcase: ''
   repeat_count: ''
-  variant: ''
-  async: ''
 
 steps:
 - powershell: |
     $SkipTest="no"
 
-    Write-Host "Configuring test for language=$env:Language suite=$env:Suite"
+    Write-Host "Configuring test suite=$env:Suite"
 
-    switch ($env:Suite) {
-      "edgehub_module_mqtt" {
-        $Transport="mqtt"
-        $Scenario="edgehub_module"
-      }
-      "edgehub_module_mqtt_ws" {
-        $Transport="mqttws"
-        $Scenario="edgehub_module"
-      }
-      "edgehub_module_amqp" {
-        $Transport="amqp"
-        $Scenario="edgehub_module"
-      }
-      "edgehub_module_amqp_ws" {
-        $Transport="amqpws"
-        $Scenario="edgehub_module"
-      }
-      "iothub_module_mqtt" {
-        $Transport="mqtt"
-        $Scenario="iothub_module"
-      }
-      "iothub_module_mqtt_ws" {
-        $Transport="mqttws"
-        $Scenario="iothub_module"
-      }
-      "iothub_module_amqp" {
-        $Transport="amqp"
-        $Scenario="iothub_module"
-      }
-      "iothub_module_amqp_ws" {
-        $Transport="amqpws"
-        $Scenario="iothub_module"
-      }
-      "edgehub_module_fi_mqtt" {
-        $Transport="mqtt"
-        $Scenario="edgehub_module_fi"
-      }
-      "edgehub_module_fi_mqtt_ws" {
-        $Transport="mqttws"
-        $Scenario="edgehub_module_fi"
-      }
-      "edgehub_module_fi_amqp" {
-        $Transport="amqp"
-        $Scenario="edgehub_module_fi"
-      }
-      "edgehub_module_fi_amqp_ws" {
-        $Transport="amqpws"
-        $Scenario="edgehub_module_fi"
-      }
-      "iothub_module_and_device_mqtt" {
-        $Transport="mqtt"
-        $Scenario="iothub_module_and_device"
-      }
-      "iothub_module_and_device_mqtt_ws" {
-        $Transport="mqttws"
-        $Scenario="iothub_module_and_device"
-      }
-
-      default {
-        throw("Unknown suite: " + $env:Suite)
-      }
+    $Variant = ""
+    if $env:Suite.StartsWith("c_") {
+        $Language = "c"
+    } elif $env:Suite.StartsWith("java_") {
+        $Language = "java"
+    } elif $env:Suite.StartsWith("csharp_") {
+        $Language = "csharp"
+    } elif $env:Suite.StartsWith("node_") {
+        $Language = "node"
+    } elif $env:Suite.StartsWith("node6_") {
+        $Language = "node"
+        $Variant = "node6"
+    } elif $env:Suite.StartsWith("node8_") {
+        $Language = "node"
+        $Variant = "node8"
+    } elif $env:Suite.StartsWith("node10_") {
+        $Language = "node"
+        $Variant = "node10"
+    } elif $env:Suite.StartsWith("pythonv1_") {
+        $Language = "pythonv1"
+    } elif $env:Suite.StartsWith("py27_") {
+        $Language = "pythonv2"
+        $Variant = "py27"
+    } elif $env:Suite.StartsWith("py34_") {
+        $Language = "pythonv2"
+        $Variant = "py34"
+    } elif $env:Suite.StartsWith("py35_") {
+        $Language = "pythonv2"
+        $Variant = "py35"
+    } elif $env:Suite.StartsWith("py36_") {
+        $Language = "pythonv2"
+        $Variant = "py36"
+    } elif $env:Suite.StartsWith("py37_") {
+        $Language = "pythonv2"
+        $Variant = "py37"
+    } elif $env:Suite.StartsWith("py38_") {
+        $Language = "pythonv2"
+        $Variant = "py38"
+    } else {
+        throw("Unknown/missing language in suite: " + $env:Suite)
     }
-    Write-Host "Transport=${Transport} Scenario=${Scenario}"
 
+    if $env:Suite.Contains("iothub_module_and_device") {
+        $Scenario="iothub_module_and_device"
+    } elif $env:Suite.Contains("iothub_module") {
+        $Scenario="iothub_module"
+    } elif $env:Suite.Contains("edgehub_module_fi") {
+        $Scenario="edgehub_module_fi"
+    } elif $env:Suite.Contains("edgehub_module") {
+        $Scenario="edgehub_module"
+    } else {
+        throw("Unknown/missing scenario in suite: " + $env:Suite)
+    }
+
+    if $env:Suite.Contains("mqttws") {
+        $Transport="mqttws"
+    } elif $env:Suite.Contains("mqtt") {
+        $Transport="mqtt"
+    } elif $env:Suite.Contains("amqpws") {
+        $Transport="amqpws"
+    } elif $env:Suite.Contains("amqp") {
+        $Transport="amqp"
+    } else {
+        throw("Unknown/missing transport in suite: " + $env:Suite)
+    }
+
+    $Async = ""
+    if $env:Suite.Contains("async") {
+        $Async="yes"
+    }
 
     # Skip tests based on SDK transport support
-    if (($env:Language -eq "c") -or ($env:Language -eq "pythonv1")) {
+    if (($Language -eq "c") -or ($Language -eq "pythonv1")) {
       if (($Scenario -eq "edgehub_module") -or ($Scenario -eq "edgehub_module_fi")) {
         if (($Transport -eq "amqp") -or ($Transport -eq "amqpws")) {
           $SkipTest="yes"
         }
       }
-    } elseif ($env:Language -eq "pythonv2") {
+    } elseif ($Language -eq "pythonv2") {
       if (($Transport -ne "mqtt") -and ($Transport -ne "mqttws")) {
         $SkipTest="yes"
       }
@@ -101,7 +104,7 @@ steps:
     }
 
     # parameters for async
-    if ($env:Async -eq "yes") {
+    if ($Async -eq "yes") {
       $TestArgs=$TestArgs + " --async"
     }
 
@@ -109,46 +112,52 @@ steps:
     if ($env:AGENT_JOBNAME -ne "Job") {
       $LogFolderName=$env:AGENT_JOBNAME.replace(" + ","").replace(" ","_")
     } else {
-        $LogFolderName="${env:Language}_${Scenario}_${Transport}_${Variant}"
-        if ($env:Async -eq "yes") {
+        $LogFolderName="${Language}_${Scenario}_${Transport}_${Variant}"
+        if ($Async -eq "yes") {
           $LogFolderName="${LogFolderName}_Async"
         }
         $LogFolderName=$LogFolderName + "_" + $env:SYSTEM_JOBPOSITIONINPHASE
     }
 
     $TestImage=$env:DefaultImage
-    if ($env:Variant -ne "") {
-        $TestImage=$TestImage + "-" + $env:Variant
+    if ($Variant -ne "") {
+        $TestImage=$TestImage + "-" + $Variant
     }
     if ($env:ForcedImage -ne "") {
       $TestImage=$env:ForcedImage
     }
 
-    Write-Host "##vso[task.setvariable variable=logFolderName]${LogFolderName}"
-    Write-Host "##vso[task.setvariable variable=skipTest]${SkipTest}"
+    Write-Host "##vso[task.setvariable variable=language]${Language}"
+    Write-Host "##vso[task.setvariable variable=variant]${Variant}"
     Write-Host "##vso[task.setvariable variable=scenario]${Scenario}"
     Write-Host "##vso[task.setvariable variable=transport]${Transport}"
+    Write-Host "##vso[task.setvariable variable=async]${Async}"
+
+    Write-Host "##vso[task.setvariable variable=logFolderName]${LogFolderName}"
+    Write-Host "##vso[task.setvariable variable=skipTest]${SkipTest}"
     Write-Host "##vso[task.setvariable variable=testArgs]${TestArgs}"
     Write-Host "##vso[task.setvariable variable=testImage]${TestImage}"
+
+    Write-Host "Language=${Language}"
+    Write-Host "Variant=${Variant}"
+    Write-Host "Scenario=${Scenario}"
+    Write-Host "Transport=${Transport}"
+    Write-Host "Async=${Async}"
 
     Write-Host "AgentJobName=${env:AGENT_JOBNAME}"
     Write-Host "LogFolderName=${LogFolderName}"
     Write-Host "SkipTest=${SkipTest}"
-    Write-Host "Scenario=${Scenario}"
-    Write-Host "Transport=${Transport}"
     Write-Host "TestArgs=${TestArgs}"
     Write-Host "TestImage=${TestImage}"
 
+
   displayName: Custom task execution logic
   env:
-    Language: ${{ parameters.language }}
     Suite: ${{ parameters.suite }}
     DefaultImage: "vsts-$(Build.BuildId)"
     ForcedImage: ${{ parameters.forced_image }}
     TestCase: ${{ parameters.testcase }}
     RepeatCount: ${{ parameters.repeat_count }}
-    Variant: ${{ parameters.variant }}
-    Async: ${{ parameters.async }}
   ignoreLASTEXITCODE: false
   errorActionPreference: Stop
   failOnStderr: true
@@ -157,12 +166,12 @@ steps:
 
 - template: pre-test-steps.yaml
   parameters:
-    language: ${{ parameters.language }}
+    language: $(language)
     test_image: $(testImage)
 
 - template: pytest-test-steps.yaml
   parameters:
-    language: ${{ parameters.language }}
+    language: $(language)
     transport: $(transport)
     scenario: $(scenario)
     log_folder_name: $(logFolderName)
@@ -170,6 +179,6 @@ steps:
 
 - template: post-test-steps.yaml
   parameters:
-    language: ${{ parameters.language }}
+    language: $(language)
     log_folder_name: $(logFolderName)
 
