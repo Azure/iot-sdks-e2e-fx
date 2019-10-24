@@ -1,7 +1,6 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
-  variant: ''
 
 jobs:
 
@@ -42,7 +41,7 @@ jobs:
     language: pythonv2
     repo: Azure/azure-iot-sdk-python  
     commit: master
-    job_tag: pythonv2_27
+    job_tag: py27
     forced_image: $(Horton.ForcedImage)
     variant: py27
 
@@ -51,7 +50,7 @@ jobs:
     language: pythonv2
     repo: Azure/azure-iot-sdk-python  
     commit: master
-    job_tag: pythonv2_34
+    job_tag: py34
     forced_image: $(Horton.ForcedImage)
     variant: py34
 
@@ -60,7 +59,7 @@ jobs:
     language: pythonv2
     repo: Azure/azure-iot-sdk-python  
     commit: master
-    job_tag: pythonv2_38
+    job_tag: py38
     forced_image: $(Horton.ForcedImage)
     variant: py38
 
@@ -72,33 +71,30 @@ jobs:
     - "build_c_container"
     - "build_java_container"
     - "build_csharp_container"
-    - "build_pythonv2_27_container"
-    - "build_pythonv2_34_container"
-    - "build_pythonv2_38_container"
+    - "build_py27_container"
+    - "build_py34_container"
+    - "build_py38_container"
 
   strategy:
     matrix:
-      node_iothub_module_amqp:              { language: node, suite: iothub_module_amqp }
-      node_edgehub_module_amqpws:           { language: node, suite: edgehub_module_amqp_ws }
-      node_edgehub_module_mqttws:           { language: node, suite: edgehub_module_mqtt_ws }
-      c_iothub_module_mqtt:                 { language: c, suite: iothub_module_mqtt }
-      c_edgehub_module_mqttws:              { language: c, suite: edgehub_module_mqtt_ws }
-      java_iothub_module_mqtt:              { language: java, suite: iothub_module_mqtt }
-      csharp_iothub_module_mqtt:            { language: csharp, suite: iothub_module_mqtt }
-      csharp_edgehub_module_mqttws:         { language: csharp, suite: edgehub_module_mqtt_ws }
-      pythonv2_27_edgehub_module_mqtt:                     { language: pythonv2, variant: py27, suite: edgehub_module_mqtt }
-      pythonv2_27_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py27, suite: iothub_module_and_device_mqtt }
-      pythonv2_34_edgehub_module_mqtt:                     { language: pythonv2, variant: py34, suite: edgehub_module_mqtt }
-      pythonv2_34_iothub_module_and_device_mqtt:           { language: pythonv2, variant: py34, suite: iothub_module_and_device_mqtt }
-      pythonv2_38_iothub_module_and_device_mqtt_async:     { language: pythonv2, variant: py38, suite: iothub_module_and_device_mqtt, async: yes }
-      pythonv2_38_edgehub_module_async:                    { language: pythonv2, variant: py38, suite: edgehub_module_mqtt, async: yes }
+      node_amqp_iothub_module:              { suite: node_amqp_iothub_module }
+      node_amqpws_edgehub_module:           { suite: node_amqpws_edgehub_module }
+      node_mqttws_edgehub_module:           { suite: node_mqttws_edgehub_module }
+      c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
+      c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
+      java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
+      csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
+      csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
+      py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
+      py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
+      py34_mqtt_edgehub_module:                     { suite: py34_mqtt_edgehub_module }
+      py34_mqtt_iothub_module_and_device:           { suite: py34_mqtt_iothub_module_and_device }
+      py38_mqtt_iothub_module_and_device_async:     { suite: py38_mqtt_iothub_module_and_device_async }
+      py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
-      language: $(language)
       suite: $(suite)
       forced_image: $(Horton.ForcedImage)
-      async: $(async)
-      variant: $(variant)
 

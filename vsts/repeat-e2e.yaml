@@ -18,7 +18,6 @@ jobs:
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
-      language: $(Horton.Language)
       forced_image: $(Horton.ForcedImage)
       suite: $(Horton.Suite)
       testcase: $(Horton.TestCase)
