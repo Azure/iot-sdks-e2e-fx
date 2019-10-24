@@ -25,7 +25,7 @@ jobs:
     job_tag: node10
     variant: node10
 
-- job: "test_node6"
+- job: "test"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
