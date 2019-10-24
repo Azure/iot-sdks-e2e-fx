@@ -13,39 +13,39 @@ steps:
     $Variant = ""
     if ($env:Suite.StartsWith("c_")) {
         $Language = "c"
-    } elif ($env:Suite.StartsWith("java_")) {
+    } elseif ($env:Suite.StartsWith("java_")) {
         $Language = "java"
-    } elif ($env:Suite.StartsWith("csharp_")) {
+    } elseif ($env:Suite.StartsWith("csharp_")) {
         $Language = "csharp"
-    } elif ($env:Suite.StartsWith("node_")) {
+    } elseif ($env:Suite.StartsWith("node_")) {
         $Language = "node"
-    } elif ($env:Suite.StartsWith("node6_")) {
+    } elseif ($env:Suite.StartsWith("node6_")) {
         $Language = "node"
         $Variant = "node6"
-    } elif ($env:Suite.StartsWith("node8_")) {
+    } elseif ($env:Suite.StartsWith("node8_")) {
         $Language = "node"
         $Variant = "node8"
-    } elif ($env:Suite.StartsWith("node10_")) {
+    } elseif ($env:Suite.StartsWith("node10_")) {
         $Language = "node"
         $Variant = "node10"
-    } elif ($env:Suite.StartsWith("pythonv1_")) {
+    } elseif ($env:Suite.StartsWith("pythonv1_")) {
         $Language = "pythonv1"
-    } elif ($env:Suite.StartsWith("py27_")) {
+    } elseif ($env:Suite.StartsWith("py27_")) {
         $Language = "pythonv2"
         $Variant = "py27"
-    } elif ($env:Suite.StartsWith("py34_")) {
+    } elseif ($env:Suite.StartsWith("py34_")) {
         $Language = "pythonv2"
         $Variant = "py34"
-    } elif ($env:Suite.StartsWith("py35_")) {
+    } elseif ($env:Suite.StartsWith("py35_")) {
         $Language = "pythonv2"
         $Variant = "py35"
-    } elif ($env:Suite.StartsWith("py36_")) {
+    } elseif ($env:Suite.StartsWith("py36_")) {
         $Language = "pythonv2"
         $Variant = "py36"
-    } elif ($env:Suite.StartsWith("py37_")) {
+    } elseif ($env:Suite.StartsWith("py37_")) {
         $Language = "pythonv2"
         $Variant = "py37"
-    } elif ($env:Suite.StartsWith("py38_")) {
+    } elseif ($env:Suite.StartsWith("py38_")) {
         $Language = "pythonv2"
         $Variant = "py38"
     } else {
@@ -54,11 +54,11 @@ steps:
 
     if ($env:Suite.Contains("iothub_module_and_device")) {
         $Scenario="iothub_module_and_device"
-    } elif ($env:Suite.Contains("iothub_module")) {
+    } elseif ($env:Suite.Contains("iothub_module")) {
         $Scenario="iothub_module"
-    } elif ($env:Suite.Contains("edgehub_module_fi")) {
+    } elseif ($env:Suite.Contains("edgehub_module_fi")) {
         $Scenario="edgehub_module_fi"
-    } elif ($env:Suite.Contains("edgehub_module")) {
+    } elseif ($env:Suite.Contains("edgehub_module")) {
         $Scenario="edgehub_module"
     } else {
         throw("Unknown/missing scenario in suite: " + $env:Suite)
@@ -66,11 +66,11 @@ steps:
 
     if ($env:Suite.Contains("mqttws")) {
         $Transport="mqttws"
-    } elif ($env:Suite.Contains("mqtt")) {
+    } elseif ($env:Suite.Contains("mqtt")) {
         $Transport="mqtt"
-    } elif ($env:Suite.Contains("amqpws")) {
+    } elseif ($env:Suite.Contains("amqpws")) {
         $Transport="amqpws"
-    } elif ($env:Suite.Contains("amqp")) {
+    } elseif ($env:Suite.Contains("amqp")) {
         $Transport="amqp"
     } else {
         throw("Unknown/missing transport in suite: " + $env:Suite)
