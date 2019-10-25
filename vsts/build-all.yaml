@@ -117,7 +117,6 @@ jobs:
     - "build_py38_container"
 
   strategy:
-    maxParallel: 10
     matrix:
       c_mqtt_iothub_module:     { suite: c_mqtt_iothub_moduled }
       c_mqtt_edgehub_module:    { suite: c_mqtt_edgehub_module }

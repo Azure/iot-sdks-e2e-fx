@@ -69,7 +69,6 @@ jobs:
     - "build_py37_container"
     - "build_py38_container"
   strategy:
-    maxParallel: 10
     matrix:
       py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
       py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
