@@ -31,6 +31,7 @@ class Connect(ConnectionStatus):
         self.client.connect()
 
     def disconnect(self):
+        # disconnect destroys the object.  We will never use it again
         logger.info("disconnecting")
         self.destroy()
 
@@ -64,8 +65,9 @@ class Connect(ConnectionStatus):
         pass
 
     def disconnect2(self):
+        # disconnect2 keeps the object around.  We might use it again
         self.client.disconnect()
-        packets_left = self.get_inflight_packet_count() 
+        packets_left = self.get_inflight_packet_count()
         logger.info("disconnect2: {} packets still in flight".format(packets_left))
         assert packets_left == 0
 

@@ -24,6 +24,7 @@ class Connect(ConnectionStatus):
 
     def disconnect(self):
         logger.info("disconnecting")
+        # disconnect destroys the object.  We will never use it again
         self.destroy()
 
     def create_from_connection_string(self, transport_type, connection_string, cert):
@@ -56,6 +57,7 @@ class Connect(ConnectionStatus):
         pass
 
     def disconnect2(self):
+        # disconnect2 keeps the object around.  We might use it again
         async_helper.run_coroutine_sync(self.client.disconnect())
         packets_left = self.get_inflight_packet_count()
         logger.info("disconnect2: {} packets still in flight".format(packets_left))
@@ -64,7 +66,6 @@ class Connect(ConnectionStatus):
     def destroy(self):
         if self.client:
             self.disconnect2()
-            async_helper.run_coroutine_sync(self.client.disconnect())
             self.client = None
             heap_check.assert_all_iothub_objects_have_been_collected()
 

@@ -5,8 +5,6 @@
 import pytest
 import asyncio
 
-receive_timeout = 60
-
 
 class C2dTests(object):
     @pytest.mark.it("Can connect, enable C2D, and disconnect")

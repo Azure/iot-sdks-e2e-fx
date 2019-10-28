@@ -38,7 +38,7 @@ def test_object_stringified_2(test_string_2):
     return '{ "message": "' + test_string_2 + '" }'
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def logger():
     return print_message
 
