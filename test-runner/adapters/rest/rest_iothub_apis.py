@@ -267,12 +267,16 @@ class C2d(object):
     @emulate_async
     @log_entry_and_exit
     def enable_c2d(self):
-        self.rest_endpoint.enable_c2d_messages(self.connection_id)
+        self.rest_endpoint.enable_c2d_messages(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
     @emulate_async
     @log_entry_and_exit
     def wait_for_c2d_message(self):
-        return self.rest_endpoint.wait_for_c2d_message(self.connection_id)
+        return self.rest_endpoint.wait_for_c2d_message(
+            self.connection_id, timeout=adapter_config.default_api_timeout
+        )
 
 
 class ServiceSideOfTwin(object):

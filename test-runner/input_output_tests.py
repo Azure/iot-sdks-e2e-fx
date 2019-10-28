@@ -12,7 +12,6 @@ import utilities
 input_name_from_friend = "fromFriend"
 output_name_to_friend = "toFriend"
 
-receive_timeout = 60
 sleep_time_for_listener_start = 3
 
 telemetry_output_name = "telemetry"

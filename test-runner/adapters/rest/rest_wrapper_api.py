@@ -71,20 +71,24 @@ class WrapperApi(AbstractWrapperApi):
             print("PYTEST: error logging to " + str(self.lrest_endpoint))
             # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
 
+    @log_entry_and_exit
     def cleanup_sync(self):
         self.rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
 
+    @log_entry_and_exit
     def get_capabilities_sync(self):
         return self.rest_endpoint.get_capabilities(
             timeout=adapter_config.default_api_timeout
         )
 
+    @log_entry_and_exit
     def set_flags_sync(self, flags):
         return self.rest_endpoint.set_flags(
             flags, timeout=adapter_config.default_api_timeout
         )
 
     @emulate_async
+    @log_entry_and_exit
     def network_disconnect(self, transport, disconnection_type):
         print("adapter disconnect")
         return self.rest_endpoint.network_disconnect(
@@ -92,11 +96,13 @@ class WrapperApi(AbstractWrapperApi):
         )
 
     @emulate_async
+    @log_entry_and_exit
     def network_reconnect(self):
         return self.rest_endpoint.network_reconnect(
             timeout=adapter_config.default_api_timeout
         )
 
+    @log_entry_and_exit
     def network_reconnect_sync(self):
         return self.rest_endpoint.network_reconnect(
             timeout=adapter_config.default_api_timeout
