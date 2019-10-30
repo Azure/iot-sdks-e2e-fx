@@ -3,6 +3,7 @@
 # full license information.
 
 import pytest
+from timeouts import timeouts
 from base_client_tests import BaseClientTests
 from method_tests import (
     ReceiveMethodCallFromServiceTests,
@@ -14,6 +15,7 @@ pytestmark = pytest.mark.asyncio
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.describe("Edge Leaf Device")
+@pytest.mark.timeout(timeouts.generic_test_timeout)
 class TestIotHubModuleClient(
     BaseClientTests, ReceiveMethodCallFromServiceTests, ReceiveMethodCallFromModuleTests
 ):

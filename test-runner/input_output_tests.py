@@ -136,9 +136,6 @@ class InputOutputTests(object):
         assert received_message == test_string_2
 
     @pytest.mark.callsSendOutputEvent
-    @pytest.mark.timeout(
-        timeout=240
-    )  # extra timeout in case eventhub needs to retry due to resource error
     @pytest.mark.it("Can send a message that gets routed to eventhub")
     async def test_module_output_routed_upstream(
         self, client, eventhub, test_object_stringified
@@ -154,9 +151,6 @@ class InputOutputTests(object):
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
     @pytest.mark.new_message_format
     @pytest.mark.callsSendOutputEvent
-    @pytest.mark.timeout(
-        timeout=240
-    )  # extra timeout in case eventhub needs to retry due to resource error
     @pytest.mark.it(
         "Can send a message that gets routed to eventhub using the new Horton HubEvent"
     )

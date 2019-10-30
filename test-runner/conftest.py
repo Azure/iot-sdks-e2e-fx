@@ -7,6 +7,7 @@ import pytest
 import pathlib
 import adapters
 import logging
+import traceback
 from adapters import adapter_config, print_message
 from identity_helpers import ensure_edge_environment_variables
 import runtime_config_templates
@@ -32,6 +33,12 @@ from fixtures import (
     sample_reported_props,
     sample_desired_props,
     sample_payload,
+)
+from log_fixtures import (
+    pytest_runtest_makereport,
+    session_log_fixture,
+    module_log_fixture,
+    function_log_fixture,
 )
 
 # default to logging.INFO
@@ -175,77 +182,6 @@ def skip_tests_by_marker(items, skiplist, reason):
 
 
 __tracebackhide__ = True
-
-
-# from https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    # execute all other hooks to obtain the report object
-    outcome = yield
-    rep = outcome.get_result()
-
-    # set a report attribute for each phase of a call, which can
-    # be 'setup', 'call', 'teardown'
-
-    setattr(item, "rep_" + rep.when, rep)
-
-
-separator = "".join("-" for _ in range(0, 132))
-
-
-@pytest.fixture(scope="function", autouse=True)
-def function_log_fixture(request):
-    print_message(separator)
-    print_message(
-        "HORTON: Entering function '{}.{}' '{}'".format(
-            request.module.__name__, request.cls.__name__, request.node.name
-        )
-    )
-
-    def fin():
-        print_message(separator)
-        if hasattr(request.node, "rep_setup"):
-            print_message("setup:      " + str(request.node.rep_setup.outcome))
-        if hasattr(request.node, "rep_call"):
-            print_message("call:       " + str(request.node.rep_call.outcome))
-        if hasattr(request.node, "rep_teardown"):
-            print_message("teardown:   " + str(request.node.rep_teardown.outcome))
-        print_message(separator)
-        print_message(
-            "HORTON: Cleaning up after function {}".format(request.function.__name__)
-        )
-        adapters.cleanup_test_objects()
-        print_message(
-            "HORTON: Exiting function '{}.{}' '{}'".format(
-                request.module.__name__, request.cls.__name__, request.node.name
-            )
-        )
-
-    request.addfinalizer(fin)
-
-
-@pytest.fixture(scope="module", autouse=True)
-def module_log_fixture(request):
-    print_message("HORTON: Entering module {}".format(request.module.__name__))
-
-    def fin():
-        print_message("HORTON: Exiting module {}".format(request.module.__name__))
-
-    request.addfinalizer(fin)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def session_log_fixture(request):
-    print_message("HORTON: Preforming pre-session cleanup")
-    adapters.cleanup_test_objects()
-    print_message("HORTON: pre-session cleanup complete")
-
-    def fin():
-        print_message("Preforming post-session cleanup")
-        adapters.cleanup_test_objects()
-        print_message("HORTON: post-session cleanup complete")
-
-    request.addfinalizer(fin)
 
 
 def pytest_collection_modifyitems(config, items):

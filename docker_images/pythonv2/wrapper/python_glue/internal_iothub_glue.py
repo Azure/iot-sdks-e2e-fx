@@ -73,9 +73,12 @@ class Connect(ConnectionStatus):
 
     def destroy(self):
         if self.client:
-            self.disconnect2()
+            self.client.disconnect()
+            packets_left = self.get_inflight_packet_count()
+            logger.info("destroy: {} packets still in flight".format(packets_left))
             self.client = None
             heap_check.assert_all_iothub_objects_have_been_collected()
+            assert packets_left == 0
 
 
 class ConnectFromEnvironment(object):

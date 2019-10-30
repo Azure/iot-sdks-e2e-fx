@@ -3,6 +3,7 @@
 # full license information.
 
 import pytest
+from timeouts import timeouts
 from base_client_tests import BaseClientTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
@@ -26,6 +27,7 @@ class EdgeHubModuleClient(object):
 
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.describe("EdgeHub ModuleClient")
+@pytest.mark.timeout(timeouts.generic_test_timeout)
 class TestEdgeHubModuleClient(
     EdgeHubModuleClient,
     BaseClientTests,
@@ -45,6 +47,7 @@ class TestEdgeHubModuleClient(
     "EdgeHub Module Client dropped connections - dropping but not disconnected"
 )
 @pytest.mark.testgroup_edgehub_module_client
+@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
 class TestEdgeHubModuleDroppingButNotDisconnected(
     EdgeHubModuleClient,
     dropped_connection_tests.CallMethodBeforeOnDisconnected,

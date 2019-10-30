@@ -3,6 +3,7 @@
 # full license information.
 
 import pytest
+from timeouts import timeouts
 from base_client_tests import BaseClientTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
@@ -24,6 +25,7 @@ class IoTHubDeviceClient(object):
 
 @pytest.mark.describe("IoTHub Device")
 @pytest.mark.testgroup_iothub_device_client
+@pytest.mark.timeout(timeouts.generic_test_timeout)
 class TestIotHubDeviceClient(
     IoTHubDeviceClient,
     BaseClientTests,
@@ -40,6 +42,7 @@ class TestIotHubDeviceClient(
     "IoTHub DeviceClient dropped connections - dropping but not disconnected"
 )
 @pytest.mark.testgroup_iothub_device_client
+@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
 class TestIoTHubDeviceDroppingButNotDisconnected(
     IoTHubDeviceClient,
     dropped_connection_tests.CallMethodBeforeOnDisconnected,
