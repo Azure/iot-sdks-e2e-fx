@@ -37,8 +37,8 @@ def json_is_same(a, b):
 
 def get_retry_time(x):
     c = 2
-    cMin = 10
-    cMax = 60
+    cMin = 1
+    cMax = 30
     ju = 0.5
     jd = 0.25
     return min(
