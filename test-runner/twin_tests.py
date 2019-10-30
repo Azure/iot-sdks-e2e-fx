@@ -104,7 +104,6 @@ class TwinTests(object):
     async def test_client_connect_enable_twin_disconnect(self, client):
         await client.enable_twin()
 
-    @pytest.mark.timeout(180)
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can get the most recent twin from the service")
     async def test_twin_desired_props(
@@ -133,7 +132,6 @@ class TwinTests(object):
                 logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
                 await asyncio.sleep(5)
 
-    @pytest.mark.timeout(180)
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can get the most recent twin from the service 5 times")
     @pytest.mark.skip("Failing on pythonv2")
@@ -186,7 +184,6 @@ class TwinTests(object):
             await patch_future  # raises if patch not received
             logger("patch {} received".format(i))
 
-    @pytest.mark.timeout(180)
     @pytest.mark.supportsTwin
     @pytest.mark.it(
         "Can set reported properties which can be successfully retrieved by the service"
@@ -206,7 +203,6 @@ class TwinTests(object):
             logger=logger,
         )
 
-    @pytest.mark.timeout(180)
     @pytest.mark.supportsTwin
     @pytest.mark.it(
         "Can set reported properties 5 times and retrieve them from the service"

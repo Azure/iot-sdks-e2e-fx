@@ -48,7 +48,7 @@ jobs:
     job_tag: py27
     variant: py27
 
-- job: "test8"
+- job: "test"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:

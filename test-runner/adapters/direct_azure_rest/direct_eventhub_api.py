@@ -35,6 +35,17 @@ def json_is_same(a, b):
     return a == b
 
 
+def get_retry_time(x):
+    c = 2
+    cMin = 10
+    cMax = 60
+    ju = 0.5
+    jd = 0.25
+    return min(
+        cMin + (pow(2, x - 1) - 1) * random.uniform(c * (1 - jd), c * (1 + ju)), cMax
+    )
+
+
 class EventHubApi:
     def __init__(self):
         global object_list
@@ -44,12 +55,13 @@ class EventHubApi:
 
     def connect_sync(self, connection_string):
         started = False
+        retry_iteration = 0
         while not started:
             print_message("EventHubApi: connecting EventHubClient")
             self.client = EventHubClient.from_iothub_connection_string(
                 connection_string
             )
-            print("EventHubApi: enabling EventHub telemetry")
+            print_message("EventHubApi: enabling EventHub telemetry")
             # partition_ids = self.client.get_eventhub_info()["partition_ids"]
             partition_ids = [0, 1, 2, 3]
             self.receivers = []
@@ -72,9 +84,15 @@ class EventHubApi:
                 started = True
             except EventHubError as e:
                 if e.message.startswith("ErrorCodes.ResourceLimitExceeded"):
-                    print("eventhub ResourceLimitExceeded.  Sleeping and trying again")
+                    retry_iteration += 1
+                    retry_time = get_retry_time(retry_iteration)
+                    print_message(
+                        "eventhub ResourceLimitExceeded.  Sleeping for {} seconds and trying again".format(
+                            retry_time
+                        )
+                    )
                     self._close_eventhub_client()
-                    time.sleep(20 + random.randint(-5, 5))
+                    time.sleep(retry_time)
                 else:
                     raise e
 
