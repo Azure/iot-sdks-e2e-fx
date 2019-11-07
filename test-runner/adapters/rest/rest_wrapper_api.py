@@ -43,14 +43,12 @@ def cleanup_test_objects():
 
 class WrapperApi(AbstractWrapperApi):
     def __init__(self, hostname):
-        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).wrapper
-        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
+        self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).wrapper
+        self.rest_endpoint.config.retry_policy.retries = 0
 
     def log_message_sync(self, message):
         try:
-            self.wrapper_rest_endpoint.log_message(
+            self.rest_endpoint.log_message(
                 {"message": "PYTEST: " + message},
                 timeout=adapter_config.print_message_timeout,
             )
@@ -60,36 +58,36 @@ class WrapperApi(AbstractWrapperApi):
 
     @log_entry_and_exit
     def cleanup_sync(self):
-        self.wrapper_rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
+        self.rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
 
     @log_entry_and_exit
     def get_capabilities_sync(self):
-        return self.wrapper_rest_endpoint.get_capabilities(
+        return self.rest_endpoint.get_capabilities(
             timeout=adapter_config.default_api_timeout
         )
 
     @log_entry_and_exit
     def set_flags_sync(self, flags):
-        return self.wrapper_rest_endpoint.set_flags(
+        return self.rest_endpoint.set_flags(
             flags, timeout=adapter_config.default_api_timeout
         )
 
     @emulate_async
     @log_entry_and_exit
     def network_disconnect(self, transport, disconnection_type):
-        return self.wrapper_rest_endpoint.network_disconnect(
+        return self.rest_endpoint.network_disconnect(
             transport, disconnection_type, timeout=adapter_config.default_api_timeout
         )
 
     @emulate_async
     @log_entry_and_exit
     def network_reconnect(self):
-        return self.wrapper_rest_endpoint.network_reconnect(
+        return self.rest_endpoint.network_reconnect(
             timeout=adapter_config.default_api_timeout
         )
 
     @log_entry_and_exit
     def network_reconnect_sync(self):
-        return self.wrapper_rest_endpoint.network_reconnect(
+        return self.rest_endpoint.network_reconnect(
             timeout=adapter_config.default_api_timeout
         )
