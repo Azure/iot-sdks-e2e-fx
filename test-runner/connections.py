@@ -2,26 +2,37 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import adapters
-import runtime_config
-import runtime_config_templates
+import base64
+from horton_settings import settings
+
+
+def get_ca_cert():
+    if settings.iotedge.ca_cert_base64:
+        return {
+            "cert": base64.b64decode(settings.iotedge.ca_cert_base64).decode("utf-8")
+        }
+    else:
+        return {}
 
 
 def connect_test_module_client():
     """
     connect the module client for the code-under-test and return the client object
     """
-    current_config = runtime_config.get_current_config()
-    client = adapters.TestModuleClient()
-    if (
-        current_config.test_module.connection_type
-        == runtime_config_templates.ENVIRONMENT
-    ):
-        client.connect_from_environment_sync(current_config.test_module.transport)
+    client = adapters.create_adapter(
+        settings.test_module.adapter_address, "module_client"
+    )
+
+    client.device_id = settings.test_module.device_id
+    client.module_id = settings.test_module.module_id
+
+    if settings.test_module.connection_type == "environment":
+        client.connect_from_environment_sync(settings.test_module.transport)
     else:
         client.connect_sync(
-            current_config.test_module.transport,
-            current_config.test_module.connection_string,
-            current_config.ca_certificate,
+            settings.test_module.transport,
+            settings.test_module.connection_string,
+            get_ca_cert(),
         )
     return client
 
@@ -30,18 +41,20 @@ def connect_friend_module_client():
     """
     connect the module client for the friend module and return the client object
     """
-    current_config = runtime_config.get_current_config()
-    client = adapters.FriendModuleClient()
-    if (
-        current_config.friend_module.connection_type
-        == runtime_config_templates.ENVIRONMENT
-    ):
-        client.connect_from_environment_sync(current_config.friend_module.transport)
+    client = adapters.create_adapter(
+        settings.friend_module.adapter_address, "module_client"
+    )
+
+    client.device_id = settings.friend_module.device_id
+    client.module_id = settings.friend_module.module_id
+
+    if settings.friend_module.connection_type == "environment":
+        client.connect_from_environment_sync(settings.friend_module.transport)
     else:
         client.connect_sync(
-            current_config.friend_module.transport,
-            current_config.friend_module.connection_string,
-            current_config.ca_certificate,
+            settings.friend_module.transport,
+            settings.friend_module.connection_string,
+            get_ca_cert(),
         )
     return client
 
@@ -50,9 +63,8 @@ def connect_eventhub_client():
     """
     connect the module client for the EventHub implementation we're using return the client object
     """
-    current_config = runtime_config.get_current_config()
-    client = adapters.EventHubClient()
-    client.connect_sync(current_config.eventhub.connection_string)
+    client = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
+    client.connect_sync(settings.eventhub.connection_string)
     return client
 
 
@@ -60,9 +72,8 @@ def connect_registry_client():
     """
     connect the module client for the Registry implementation we're using return the client object
     """
-    current_config = runtime_config.get_current_config()
-    client = adapters.RegistryClient()
-    client.connect_sync(current_config.registry.connection_string)
+    client = adapters.create_adapter(settings.registry.adapter_address, "registry")
+    client.connect_sync(settings.registry.connection_string)
     return client
 
 
@@ -70,9 +81,8 @@ def connect_service_client():
     """
     connect the module client for the ServiceClient implementation we're using return the client object
     """
-    current_config = runtime_config.get_current_config()
-    client = adapters.ServiceClient()
-    client.connect_sync(current_config.service.connection_string)
+    client = adapters.create_adapter(settings.service.adapter_address, "service")
+    client.connect_sync(settings.service.connection_string)
     return client
 
 
@@ -80,12 +90,16 @@ def connect_leaf_device_client():
     """
     connect the device client for the leaf device and return the client object
     """
-    current_config = runtime_config.get_current_config()
-    client = adapters.LeafDeviceClient()
+    client = adapters.create_adapter(
+        settings.leaf_device.adapter_address, "device_client"
+    )
+
+    client.device_id = settings.leaf_device.device_id
+
     client.connect_sync(
-        current_config.leaf_device.transport,
-        current_config.leaf_device.connection_string,
-        current_config.ca_certificate,
+        settings.leaf_device.transport,
+        settings.leaf_device.connection_string,
+        get_ca_cert(),
     )
     return client
 
@@ -94,11 +108,13 @@ def connect_test_device_client():
     """
     connect the device client for the test device and return the client object
     """
-    current_config = runtime_config.get_current_config()
-    client = adapters.TestDeviceClient()
+    client = adapters.create_adapter(
+        settings.test_device.adapter_address, "device_client"
+    )
+
+    client.device_id = settings.test_device.device_id
+
     client.connect_sync(
-        current_config.test_device.transport,
-        current_config.test_device.connection_string,
-        current_config.ca_certificate,
+        settings.test_device.transport, settings.test_device.connection_string, {}
     )
     return client

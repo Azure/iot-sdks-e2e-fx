@@ -18,9 +18,12 @@ steps:
   displayName: 'Install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/run-pytest-module.ps1 ${{ parameters.scenario }} ${{ parameters.transport }} ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml ${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
+- script: |
+    mkdir $(Horton.FrameworkRoot)/results &&
+    cd $(Horton.FrameworkRoot)/test-runner &&
+    python3 -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --junitxml=../results/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
   workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'PYTEST: ${{ parameters.scenario }} ${{ parameters.transport }} ${{ parameters.language }} $(Build.SourcesDirectory)/TEST-${{ parameters.log_folder_name }}.xml ${{ parameters.log_folder_name }} ${{ parameters.extra_args }}'
+  displayName: 'Run pytest'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)

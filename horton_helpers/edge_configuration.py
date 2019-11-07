@@ -24,7 +24,7 @@ class EdgeConfiguration:
                 os.environ["IOTHUB_E2E_EDGE_PRIVATE_REGISTRY"]
             )
 
-        self.registryCredentials["bertkcontainers"] = {
+        self.registryCredentials["hortoncontainers"] = {
             "address": os.environ["IOTHUB_E2E_REPO_ADDRESS"],
             "username": os.environ["IOTHUB_E2E_REPO_USER"],
             "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
@@ -93,7 +93,7 @@ class EdgeConfiguration:
             }
         }
 
-    def _add_module_container(self, name, image, containerPort, hostPort):
+    def add_module_container(self, name, image, containerPort, hostPort):
         """
         Internal function which adds the module container to the edgehub configuration structure.
         """
@@ -123,7 +123,7 @@ class EdgeConfiguration:
             "settings": {"image": image, "createOptions": json.dumps(createOptions)},
         }
 
-    def _add_routes_for_module(self, modName):
+    def add_routes_for_module(self, modName):
         """
         Internal function which adds various routes for testing the given module to the edgehub configuration.
         """
@@ -157,19 +157,6 @@ class EdgeConfiguration:
                 + "/* INTO $upstream",
             }
         )
-
-    def add_module(self, mod):
-        """
-    Add a module to the configuration.  Accepts a Container object from containers.py
-    """
-        self._add_module_container(
-            mod.module_id,
-            mod.image_to_deploy or mod.lkg_image,
-            mod.container_port,
-            mod.host_port,
-        )
-        if mod.add_routes:
-            self._add_routes_for_module(mod.module_id)
 
     def get_module_config(self):
         """

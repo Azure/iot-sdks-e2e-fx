@@ -8,7 +8,7 @@ import random
 from azure.eventhub import EventHubClient
 from azure.eventhub.common import Offset
 from azure.eventhub.common import EventHubError
-from ..print_message import print_message
+from .. import adapter_config
 from ..decorators import emulate_async
 
 # our receive loop cycles through our 4 partitions, waiting for
@@ -57,16 +57,16 @@ class EventHubApi:
         started = False
         retry_iteration = 0
         while not started:
-            print_message("EventHubApi: connecting EventHubClient")
+            adapter_config.logger("EventHubApi: connecting EventHubClient")
             self.client = EventHubClient.from_iothub_connection_string(
                 connection_string
             )
-            print_message("EventHubApi: enabling EventHub telemetry")
+            adapter_config.logger("EventHubApi: enabling EventHub telemetry")
             # partition_ids = self.client.get_eventhub_info()["partition_ids"]
             partition_ids = [0, 1, 2, 3]
             self.receivers = []
             for id in partition_ids:
-                print_message(
+                adapter_config.logger(
                     "EventHubApi: adding receiver for partition {}".format(id)
                 )
                 receiver = self.client.add_receiver(
@@ -77,7 +77,7 @@ class EventHubApi:
                 )
                 self.receivers.append(receiver)
 
-            print_message("EventHubApi: starting client")
+            adapter_config.logger("EventHubApi: starting client")
 
             try:
                 self.client.run()
@@ -86,7 +86,7 @@ class EventHubApi:
                 if e.message.startswith("ErrorCodes.ResourceLimitExceeded"):
                     retry_iteration += 1
                     retry_time = get_retry_time(retry_iteration)
-                    print_message(
+                    adapter_config.logger(
                         "eventhub ResourceLimitExceeded.  Sleeping for {} seconds and trying again".format(
                             retry_time
                         )
@@ -96,17 +96,17 @@ class EventHubApi:
                 else:
                     raise e
 
-            print_message("EventHubApi: ready")
+            adapter_config.logger("EventHubApi: ready")
 
     def _close_eventhub_client(self):
         if self.client:
-            print_message("_close_eventhub_client: stopping eventhub client")
+            adapter_config.logger("_close_eventhub_client: stopping eventhub client")
             self.receivers = []
             self.client.stop()
-            print_message("_close_eventhub_client: done stopping")
+            adapter_config.logger("_close_eventhub_client: done stopping")
             self.client = None
         else:
-            print_message("_close_eventhub_client: no client to stop")
+            adapter_config.logger("_close_eventhub_client: no client to stop")
 
     def disconnect_sync(self):
         if self in object_list:
@@ -116,21 +116,27 @@ class EventHubApi:
     #  30 second timeout was too small.  Bumping to 90.
     @emulate_async
     def wait_for_next_event(self, device_id, timeout=90, expected=None):
-        print_message("EventHubApi: waiting for next event for {}".format(device_id))
+        adapter_config.logger(
+            "EventHubApi: waiting for next event for {}".format(device_id)
+        )
         start_time = time.time()
         while (time.time() - start_time) < timeout:
             for receiver in self.receivers:
                 batch = receiver.receive(max_batch_size=1, timeout=RECEIVE_CYCLE_TIME)
                 if batch and (batch[0].device_id.decode("ascii") == device_id):
-                    print_message(
+                    adapter_config.logger(
                         "EventHubApi: received event: {}".format(batch[0].body_as_str())
                     )
                     received = batch[0].body_as_json()
                     if expected:
                         if json_is_same(expected, received):
-                            print_message("EventHubApi: message received as expected")
+                            adapter_config.logger(
+                                "EventHubApi: message received as expected"
+                            )
                             return received
                         else:
-                            print_message("EventHubApi: unexpected message.  skipping")
+                            adapter_config.logger(
+                                "EventHubApi: unexpected message.  skipping"
+                            )
                     else:
                         return received

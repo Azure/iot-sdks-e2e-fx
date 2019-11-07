@@ -279,13 +279,25 @@ class DockerLogProcessor:
                                         log_data = log_line_parts[1]
                                 if num_parts >= 2:
                                     try:
-                                        log_time = DockerLogProcessor.format_date_and_time(log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f")
-                                        log_line_object = LogLineObject(log_time, module_name, log_data)
+                                        log_time = DockerLogProcessor.format_date_and_time(
+                                            log_line_parts[0], "%Y-%m-%d %H:%M:%S.%f"
+                                        )
+                                        log_line_object = LogLineObject(
+                                            log_time, module_name, log_data
+                                        )
                                         loglines.append(log_line_object)
-                                    except:
-                                        print("INVALID_TIMESTAMP({}):{}".format(module_name, log_line))
+                                    except Exception:
+                                        print(
+                                            "INVALID_TIMESTAMP({}):{}".format(
+                                                module_name, log_line
+                                            )
+                                        )
                                 else:
-                                    print("INVALID_LINE({}):{}".format(module_name, log_line))
+                                    print(
+                                        "INVALID_LINE({}):{}".format(
+                                            module_name, log_line
+                                        )
+                                    )
 
         # Sort the merged static file lines by timestamp
         loglines.sort(key=lambda x: x.timestamp)
@@ -299,10 +311,12 @@ class DockerLogProcessor:
                 "HORTON: Entering function" in log_line.log_data
                 or "HORTON: Exiting function" in log_line.log_data
             ):
-                date_delta = str(logline_timestamp)
+                date_delta = logline_timestamp.isoformat(timespec="microseconds")
             else:
                 date_delta = self.get_timestamp_delta(
-                    str(logline_timestamp), str(last_timestamp), line_count
+                    logline_timestamp.isoformat(timespec="microseconds"),
+                    last_timestamp.isoformat(timespec="microseconds"),
+                    line_count,
                 )
             line_count += 1
             out_line = (
@@ -334,10 +348,12 @@ class DockerLogProcessor:
                 "HORTON: Entering function" in log_line.log_data
                 or "HORTON: Exiting function" in log_line.log_data
             ):
-                date_delta = str(logline_timestamp)
+                date_delta = logline_timestamp.isoformat(timespec="microseconds")
             else:
                 date_delta = self.get_timestamp_delta(
-                    str(logline_timestamp), str(last_timestamp), line_count
+                    logline_timestamp.isoformat(timespec="microseconds"),
+                    last_timestamp.isoformat(timespec="microseconds"),
+                    line_count,
                 )
             line_count += 1
             last_timestamp = logline_timestamp

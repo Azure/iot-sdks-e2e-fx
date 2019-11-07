@@ -3,14 +3,14 @@ parameters:
   language: ''
 
 steps:
-- powershell: $(Horton.FrameworkRoot)/scripts/remove-edgehub-device.ps1
-  workingDirectory: $(Horton.FrameworkRoot)
+- script: python remove_deployment.py
+  workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
   displayName: 'remove devices'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/fetch-logs.ps1 ${{ parameters.language }} $(Build.SourcesDirectory) ${{ parameters.log_folder_name }}
+- script: $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.log_folder_name }}
   displayName: 'Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 

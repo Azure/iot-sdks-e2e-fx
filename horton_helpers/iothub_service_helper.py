@@ -46,7 +46,7 @@ def run_with_retry(fun, args, kwargs):
                 raise e
 
 
-class Helper:
+class IoTHubServiceHelper:
     def __init__(self, service_connection_string):
         self.cn = connection_string.connection_string_to_sas_token(
             service_connection_string

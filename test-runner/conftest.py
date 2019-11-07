@@ -8,13 +8,12 @@ import pathlib
 import adapters
 import logging
 import traceback
-from adapters import adapter_config, print_message
-from identity_helpers import ensure_edge_environment_variables
-import runtime_config_templates
-import runtime_config
+from adapters import adapter_config
+from dump_object import dump_object
 import runtime_capabilities
 import scenarios
 from distutils.version import LooseVersion
+from horton_settings import settings
 from fixtures import (
     test_string,
     test_string_2,
@@ -52,9 +51,6 @@ logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
 logging.getLogger("azure.iot.device").setLevel(level=logging.INFO)
 
 
-ensure_edge_environment_variables()
-
-
 def pytest_addoption(parser):
     parser.addoption(
         "--scenario",
@@ -62,36 +58,6 @@ def pytest_addoption(parser):
         required=True,
         type=str,
         choices=scenarios.scenarios.keys(),
-    )
-    parser.addoption(
-        "--node-wrapper",
-        action="store_true",
-        default=False,
-        help="run tests for node wrapper",
-    )
-    parser.addoption(
-        "--csharp-wrapper",
-        action="store_true",
-        default=False,
-        help="run tests for csharp wrapper",
-    )
-    parser.addoption(
-        "--pythonv1-wrapper",
-        action="store_true",
-        default=False,
-        help="run tests for pythonv1 wrapper",
-    )
-    parser.addoption(
-        "--c-wrapper",
-        action="store_true",
-        default=False,
-        help="run tests for c wrapper",
-    )
-    parser.addoption(
-        "--java-wrapper",
-        action="store_true",
-        default=False,
-        help="run tests for java wrapper",
     )
     parser.addoption(
         "--local",
@@ -104,16 +70,10 @@ def pytest_addoption(parser):
         action="store",
         default="mqtt",
         help="transport to use for test",
-        choices=runtime_config_templates.valid_transports,
+        choices=["mqtt", "mqttws", "amqp", "amqpws"],
     )
     parser.addoption(
-        "--pythonv2-wrapper",
-        action="store_true",
-        default=False,
-        help="run tests for the pythonv2 wrapper",
-    )
-    parser.addoption(
-        "--ppdirect-wrapper",
+        "--direct-python",
         action="store_true",
         default=False,
         help="run tests for the pythonv2 wrapper in-proc",
@@ -130,13 +90,6 @@ def pytest_addoption(parser):
         default=False,
         help="run async tests (currently pythonv2 only)",
     )
-
-
-# langauge that we're running against
-language = ""
-
-# Transport to use for test
-transport = "mqtt"
 
 
 skip_for_c_amqp = set(["receivesInputMessages", "callsSendOutputEvent"])
@@ -184,100 +137,158 @@ def skip_tests_by_marker(items, skiplist, reason):
 __tracebackhide__ = True
 
 
-def pytest_collection_modifyitems(config, items):
-    print("")
-
-    test_module_use_connection_string = False
-    local = False
-
-    scenario = scenarios.scenarios[config.getoption("--scenario")]
-    remove_tests_not_in_marker_list(items, scenario.pytest_markers)
-
-    transport = config.getoption("--transport")
+def set_transport(transport):
     print("Using " + transport)
+    settings.friend_module.transport = "mqtt"
+    settings.test_module.transport = transport
+    settings.leaf_device.transport = transport
+    settings.test_device.transport = transport
 
-    if config.getoption("--local"):
-        print("Running against local module")
-        local = True
-        test_module_use_connection_string = True
+
+def set_local():
+    print("Running against local module")
+    if settings.test_module.connection_type == "environment":
+        settings.test_module.connection_type = "connection_string_with_edge_gateway"
+        # any objects that were previously using the test module host port now use
+        # the test module container port.
+        for obj in (settings.test_module, settings.test_device, settings.leaf_device):
+            if obj.host_port == settings.test_module.host_port:
+                obj.adapter_address = "http://localhost:{}".format(
+                    settings.test_module.container_port
+                )
+
+
+def set_python_direct():
+    print("Using pythonv2 wrapper in-proc")
+    settings.test_module.adapter_address = "direct_python"
+    settings.test_device.adapter_address = "direct_python"
+    settings.leaf_device.adapter_address = "direct_python"
+
+
+def set_async():
+    if (
+        settings.test_module.device_id
+        and settings.test_module.capabilities.supports_async
+    ):
+        settings.test_module.wrapper_api.set_flags_sync({"test_async": True})
+    else:
+        raise Exception("--async specified, but test module does not support async")
+
+
+def add_service_settings():
+    class ServiceSettings:
+        pass
+
+    settings.eventhub = ServiceSettings()
+    settings.eventhub.name = "eventhub"
+    settings.eventhub.connection_string = settings.iothub.connection_string
+    settings.eventhub.adapter_address = "direct_rest"
+
+    settings.registry = ServiceSettings()
+    settings.registry.name = "registry"
+    settings.registry.connection_string = settings.iothub.connection_string
+    settings.registry.adapter_address = settings.test_module.adapter_address
+
+    settings.service = ServiceSettings()
+    settings.service.name = "service"
+    settings.service.connection_string = settings.iothub.connection_string
+    settings.service.adapter_address = settings.test_module.adapter_address
+
+
+def adjust_surfaces_for_missing_implementations():
+    if (
+        settings.test_module.language
+        not in runtime_capabilities.language_has_service_client
+    ):
+        settings.registry.adapter_address = "direct_rest"
+        settings.service.adapter_address = "direct_rest"
+
+    if settings.test_module.language not in (
+        runtime_capabilities.language_has_leaf_device_client
+        + runtime_capabilities.language_has_full_device_client
+    ):
+        settings.leaf_device.adapter_address = settings.friend_module.adapter_address
+        settings.leaf_device.container_port = settings.friend_module.container_port
+        settings.leaf_device.host_port = settings.friend_module.host_port
 
     if (
-        test_module_use_connection_string
-        or scenarios.CONNECT_WITH_ENVIRONMENT not in scenario.scenario_flags
+        settings.test_module.language
+        not in runtime_capabilities.language_has_full_device_client
     ):
-        print("Using connection string to connect")
-        test_module_use_connection_string = True
+        settings.test_device.adapter_address = None
 
-    if config.getoption("--node-wrapper"):
-        print("Using node wrapper")
-        language = "node"
-    elif config.getoption("--csharp-wrapper"):
-        print("Using csharp wrapper")
-        language = "csharp"
-    elif config.getoption("--pythonv1-wrapper"):
-        print("Using pythonv1 wrapper")
-        language = "pythonv1"
-    elif config.getoption("--c-wrapper"):
+
+def only_include_scenario_tests(items, scenario_name):
+    scenario = scenarios.scenarios[scenario_name]
+    remove_tests_not_in_marker_list(items, scenario.pytest_markers)
+
+
+def skip_unsupported_tests(items):
+    if settings.test_module.language == "c":
         print("Using C wrapper")
-        language = "c"
-        if test_module_use_connection_string:
+        if settings.test_module.connection_type.startswith("connection_string"):
             skip_tests_by_marker(
                 items,
                 skip_for_c_connection_string,
                 "it isn't implemented in the c wrapper with connection strings",
             )
-        if transport.startswith("amqp"):
+        if settings.test_module.transport.startswith("amqp"):
             skip_tests_by_marker(
                 items,
                 skip_for_c_amqp,
                 "it isn't implemented in the c wrapper with amqp",
             )
-        if transport.startswith("mqttws"):
+        if settings.test_module.transport.startswith("mqttws"):
             skip_tests_by_marker(
                 items,
                 skip_for_c_mqttws,
                 "it isn't implemented in the c wrapper with mqtt-ws",
             )
-    elif config.getoption("--java-wrapper"):
-        print("Using Java wrapper")
-        language = "java"
-    elif config.getoption("--pythonv2-wrapper"):
-        print("Using pythonv2 wrapper")
-        language = "pythonv2"
-    elif config.getoption("--ppdirect-wrapper"):
-        print("Using pythonv2 wrapper in-proc")
-        language = "ppdirect"
-    else:
-        print("you must specify a wrapper")
-        raise Exception("no wrapper specified")
-
-    runtime_config.set_runtime_configuration(scenario, language, transport, local)
-    skip_list = runtime_capabilities.get_skip_list(language)
-    for cap in runtime_capabilities.get_all_capabilities_flags():
-        if not runtime_capabilities.get_test_module_capabilities_flag(cap):
-            skip_list.append(cap)
-
-    # make sure the network is connected before starting (this can happen with interrupted runs)
-    if runtime_capabilities.get_test_module_capabilities_flag("v2_connect_group"):
-        runtime_config.get_test_module_wrapper_api().network_reconnect_sync()
 
     skip_tests_by_marker(
-        items, skip_list, "it isn't implemented in the {} wrapper".format(language)
+        items,
+        settings.test_module.skip_list,
+        "it isn't implemented in the {} wrapper".format(settings.test_module.language),
     )
 
+
+def set_logger():
+    settings.test_module.wrapper_api = adapters.create_adapter(
+        settings.test_module.adapter_address, "wrapper"
+    )
+
+    def print_and_log(message):
+        print(message)
+        settings.test_module.wrapper_api.log_message_sync(message)
+
+    adapter_config.logger = print_and_log
+
+
+def pytest_collection_modifyitems(config, items):
+    print("")
+
+    set_transport(config.getoption("--transport"))
+    if config.getoption("--local"):
+        set_local()
+    if config.getoption("--direct-python"):
+        set_python_direct()
+    set_logger()
+    runtime_capabilities.collect_capabilities()
     if config.getoption("--async"):
-        test_module_supports_async = runtime_capabilities.get_test_module_capabilities_flag(
-            "supports_async"
-        )
-        if test_module_supports_async:
-            runtime_capabilities.set_test_module_flag("test_async", True)
-        else:
-            raise Exception("--async specified, but test module does not support async")
+        set_async()
+    add_service_settings()
+    adjust_surfaces_for_missing_implementations()
+    only_include_scenario_tests(items, config.getoption("--scenario"))
+    skip_unsupported_tests(items)
+
+    # make sure the network is connected before starting (this can happen with interrupted runs)
+    if settings.test_module.capabilities.v2_connect_group:
+        settings.test_module.wrapper_api.network_reconnect_sync()
 
     if getattr(config, "_origargs", None):
-        adapters.print_message("HORTON: starting run: {}".format(config._origargs))
+        adapter_config.logger("HORTON: starting run: {}".format(config._origargs))
     elif getattr(config, "invocation_params", None):
-        adapters.print_message(
+        adapter_config.logger(
             "HORTON: starting run: {}".format(config.invocation_params.args)
         )
 
@@ -285,3 +296,5 @@ def pytest_collection_modifyitems(config, items):
         print("Debugging the container.  Removing all timeouts")
         adapter_config.default_api_timeout = 3600
         config._env_timeout = 0
+
+    dump_object(settings)

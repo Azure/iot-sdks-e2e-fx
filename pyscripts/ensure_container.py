@@ -9,15 +9,7 @@ import json
 import inspect
 from pprint import pprint
 
-containerMap = {
-    "nodeMod": 8080,
-    "pythonv1Mod": 8081,
-    "cMod": 8082,
-    "csharpMod": 8083,
-    "javaMod": 8084,
-    "pythonv2Mod": 8085,
-    "friendMod": 8099,
-}
+containerMap = {"friendMod": 8098, "testMod": 8099}
 
 parser = argparse.ArgumentParser(
     description="ensure that a test container is running.  Restart the container if it does not respond."

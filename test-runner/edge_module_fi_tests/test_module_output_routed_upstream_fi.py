@@ -4,14 +4,12 @@
 
 import pytest
 import connections
-from runtime_config import get_current_config
 from edgehub_control import (
     disconnect_edgehub,
     connect_edgehub,
     edgeHub,
     restart_edgehub,
 )
-from adapters import print_message
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,7 +26,7 @@ There's a rule in the routing table that sends the 'telemetry' output event to e
 @pytest.mark.timeout(
     timeout=180
 )  # extra timeout in case eventhub needs to retry due to resource error
-async def test_module_output_routed_upstream_fi(test_object_stringified):
+async def test_module_output_routed_upstream_fi(test_object_stringified, logger):
     try:
         module_client = connections.connect_test_module_client()
         eventhub_client = connections.connect_eventhub_client()
@@ -38,10 +36,10 @@ async def test_module_output_routed_upstream_fi(test_object_stringified):
         await module_client.send_output_event(output_name, test_object_stringified)
 
         received_message = await eventhub_client.wait_for_next_event(
-            get_current_config().test_module.device_id, expected=test_object_stringified
+            module_client.device_id, expected=test_object_stringified
         )
         if not received_message:
-            print_message("Message not received")
+            logger("Message not received")
             assert False
 
         module_client.disconnect_sync()

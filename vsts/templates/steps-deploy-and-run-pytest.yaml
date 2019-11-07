@@ -54,12 +54,16 @@ steps:
 
     if ($env:Suite.Contains("iothub_module_and_device")) {
         $Scenario="iothub_module_and_device"
+        $DeployScript="deploy_for_iothub.py"
     } elseif ($env:Suite.Contains("iothub_module")) {
         $Scenario="iothub_module"
+        $DeployScript="deploy_for_iothub.py"
     } elseif ($env:Suite.Contains("edgehub_module_fi")) {
         $Scenario="edgehub_module_fi"
+        $DeployScript="deploy_for_iotedge.py"
     } elseif ($env:Suite.Contains("edgehub_module")) {
         $Scenario="edgehub_module"
+        $DeployScript="deploy_for_iotedge.py"
     } else {
         throw("Unknown/missing scenario in suite: " + $env:Suite)
     }
@@ -119,13 +123,14 @@ steps:
         $LogFolderName=$LogFolderName + "_" + $env:SYSTEM_JOBPOSITIONINPHASE
     }
 
-    $TestImage=$env:DefaultImage
+    $TestImageTag=$env:DefaultImageTag
     if ($Variant -ne "") {
-        $TestImage=$TestImage + "-" + $Variant
+        $TestImageTag=$TestImageTag + "-" + $Variant
     }
-    if ($env:ForcedImage -ne "") {
-      $TestImage=$env:ForcedImage
+    if ($env:ForcedImageTag -ne "") {
+      $TestImageTag=$env:ForcedImageTag
     }
+    $ImageTestMod = $env:IOTHUB_E2E_REPO_ADDRESS + "/" + ${Language} + "-e2e-v3:" + ${TestImageTag}
 
     Write-Host "##vso[task.setvariable variable=language]${Language}"
     Write-Host "##vso[task.setvariable variable=variant]${Variant}"
@@ -136,7 +141,9 @@ steps:
     Write-Host "##vso[task.setvariable variable=logFolderName]${LogFolderName}"
     Write-Host "##vso[task.setvariable variable=skipTest]${SkipTest}"
     Write-Host "##vso[task.setvariable variable=testArgs]${TestArgs}"
-    Write-Host "##vso[task.setvariable variable=testImage]${TestImage}"
+    Write-Host "##vso[task.setvariable variable=testImageTag]${TestImageTag}"
+    Write-Host "##vso[task.setvariable variable=imageTestMod]${ImageTestMod}"
+    Write-Host "##vso[task.setvariable variable=deployScript]${DeployScript}"
 
     Write-Host "Language=${Language}"
     Write-Host "Variant=${Variant}"
@@ -148,16 +155,19 @@ steps:
     Write-Host "LogFolderName=${LogFolderName}"
     Write-Host "SkipTest=${SkipTest}"
     Write-Host "TestArgs=${TestArgs}"
-    Write-Host "TestImage=${TestImage}"
+    Write-Host "TestImageTag=${TestImageTag}"
+    Write-Host "ImageTestMod=${ImageTestMod}"
+    Write-Host "DeployScript=${DeployScript}"
 
 
   displayName: Custom task execution logic
   env:
     Suite: ${{ parameters.suite }}
-    DefaultImage: "vsts-$(Build.BuildId)"
-    ForcedImage: ${{ parameters.forced_image }}
+    DefaultImageTag: "vsts-$(Build.BuildId)"
+    ForcedImageTag: ${{ parameters.forced_image }}
     TestCase: ${{ parameters.testcase }}
     RepeatCount: ${{ parameters.repeat_count }}
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
   ignoreLASTEXITCODE: false
   errorActionPreference: Stop
   failOnStderr: true
@@ -167,7 +177,9 @@ steps:
 - template: pre-test-steps.yaml
   parameters:
     language: $(language)
-    test_image: $(testImage)
+    test_image_tag: $(testImageTag)
+    image_testMod: $(imageTestMod)
+    deploy_script: $(deployScript)
 
 - template: pytest-test-steps.yaml
   parameters:
