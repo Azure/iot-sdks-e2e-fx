@@ -203,9 +203,9 @@ def adjust_surfaces_for_missing_implementations():
         settings.registry.adapter_address = "direct_rest"
         settings.service.adapter_address = "direct_rest"
 
-    if settings.test_module.language not in (
-        runtime_capabilities.language_has_leaf_device_client
-        + runtime_capabilities.language_has_full_device_client
+    if (
+        settings.test_module.language
+        not in runtime_capabilities.language_has_leaf_device_client
     ):
         settings.leaf_device.adapter_address = settings.friend_module.adapter_address
         settings.leaf_device.container_port = settings.friend_module.container_port
