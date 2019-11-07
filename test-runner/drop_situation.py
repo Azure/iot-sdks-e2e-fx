@@ -4,8 +4,8 @@
 
 import pytest
 import asyncio
-import runtime_config
 from adapters import adapter_config
+from horton_settings import settings
 
 
 class DropSituationBaseClass(object):
@@ -45,7 +45,7 @@ class DropSituationBaseClass(object):
 
     @pytest.fixture
     def test_module_transport(self):
-        return runtime_config.get_current_config().test_module.transport
+        return settings.test_module.transport
 
     @pytest.fixture(autouse=True)
     def reconnect_after_each_test(self, request, logger, test_module_wrapper_api):

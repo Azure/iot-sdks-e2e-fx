@@ -72,18 +72,15 @@ scenarios = {
         scenario_name=IOTHUB_MODULE_DROP,
         deployment_type=IOTHUB_DEPLOYMENT,
         pytest_markers=["testgroup_iothub_module_drop"],
-        scenario_flags=[],
     ),
     "iothub_device_drop": HortonScenario(
         scenario_name=IOTHUB_DEVICE_DROP,
         deployment_type=IOTHUB_DEPLOYMENT,
         pytest_markers=["testgroup_iothub_device_drop"],
-        scenario_flags=[],
     ),
     "edgehub_module_drop": HortonScenario(
         scenario_name=EDGEHUB_MODULE_DROP,
         deployment_type=EDGEHUB_DEPLOYMENT,
         pytest_markers=["testgroup_edgehub_module_drop"],
-        scenario_flags=[CONNECT_WITH_ENVIRONMENT, USE_IOTEDGE_GATEWAYHOST],
     ),
 }
