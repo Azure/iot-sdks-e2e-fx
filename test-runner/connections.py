@@ -6,8 +6,11 @@ import base64
 from horton_settings import settings
 
 
-def get_ca_cert():
-    if settings.iotedge.ca_cert_base64:
+def get_ca_cert(object):
+    if (
+        object.connection_type == "connection_string_with_edge_gateway"
+        and settings.iotedge.ca_cert_base64
+    ):
         return {
             "cert": base64.b64decode(settings.iotedge.ca_cert_base64).decode("utf-8")
         }
@@ -32,7 +35,7 @@ def connect_test_module_client():
         client.connect_sync(
             settings.test_module.transport,
             settings.test_module.connection_string,
-            get_ca_cert(),
+            get_ca_cert(settings.test_module),
         )
     return client
 
@@ -54,7 +57,7 @@ def connect_friend_module_client():
         client.connect_sync(
             settings.friend_module.transport,
             settings.friend_module.connection_string,
-            get_ca_cert(),
+            get_ca_cert(settings.friend_module),
         )
     return client
 
@@ -99,7 +102,7 @@ def connect_leaf_device_client():
     client.connect_sync(
         settings.leaf_device.transport,
         settings.leaf_device.connection_string,
-        get_ca_cert(),
+        get_ca_cert(settings.leaf_device),
     )
     return client
 
