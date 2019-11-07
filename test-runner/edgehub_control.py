@@ -1,7 +1,7 @@
 import docker
 import sys
 import os
-from adapters import print_message
+from adapters import adapter_config
 from time import sleep
 
 # Create Global Variables
@@ -22,7 +22,7 @@ def get_network_list():
 
 
 def disconnect_edgehub(network=True):
-    print_message("disconnecting edgehub from network")
+    adapter_config.logger("disconnecting edgehub from network")
     try:
         edgeHub = client.containers.get(EDGEHUB_NAME)
         if network:
@@ -30,56 +30,60 @@ def disconnect_edgehub(network=True):
                 edge_network.disconnect(EDGEHUB_NAME)
                 sleep(10)
             else:  # Edge Network alreday contains EdgeHub
-                print_message("Note: {} not in IoT Edge Network".format(EDGEHUB_NAME))
+                adapter_config.logger(
+                    "Note: {} not in IoT Edge Network".format(EDGEHUB_NAME)
+                )
         else:
             if EDGEHUB_NAME in list(map(lambda x: x.name, client.containers.list())):
                 edgeHub.restart()
             else:  # Edge Network alreday contains EdgeHub
-                print_message("Note: {} not in IoT Edge Network".format(EDGEHUB_NAME))
+                adapter_config.logger(
+                    "Note: {} not in IoT Edge Network".format(EDGEHUB_NAME)
+                )
     except Exception as e:
-        print_message("Error: {}".format(sys.exc_info()[0]))
+        adapter_config.logger("Error: {}".format(sys.exc_info()[0]))
         raise e
 
 
 def connect_edgehub(network=True):
-    print_message("connecting edgehub to network")
+    adapter_config.logger("connecting edgehub to network")
     try:
-        print_message(" edgeHub = client.containers.get(EDGEHUB_NAME)")
+        adapter_config.logger(" edgeHub = client.containers.get(EDGEHUB_NAME)")
         edgeHub = client.containers.get(EDGEHUB_NAME)
         if network:
             if EDGEHUB_NAME not in get_network_list():
-                print_message("edge_network.connect(EDGEHUB_NAME)")
+                adapter_config.logger("edge_network.connect(EDGEHUB_NAME)")
                 edge_network.connect(EDGEHUB_NAME)
             else:  # Edge Network alreday contains EdgeHub
-                print_message(
+                adapter_config.logger(
                     "Note: {} already in IoT Edge Network".format(EDGEHUB_NAME)
                 )
         else:
-            print_message("network=False")
+            adapter_config.logger("network=False")
             while edgeHub.status != "running":
-                print_message("edgehub not running")
+                adapter_config.logger("edgehub not running")
                 edgeHub.start()
-                print_message("Waiting for edgeHub to come back online...")
+                adapter_config.logger("Waiting for edgeHub to come back online...")
                 sleep(1)
                 edgeHub = client.containers.get(EDGEHUB_NAME)
-            print_message("EXITED WHILE LOOP")
+            adapter_config.logger("EXITED WHILE LOOP")
             if edgeHub.status == "running":
-                print_message(
+                adapter_config.logger(
                     "~~~~~~~~~~~~~~~~~~edgeHub started~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
                 )
-                print_message("sleeping...")
+                adapter_config.logger("sleeping...")
                 sleep(5)
-                print_message("done sleeping!")
+                adapter_config.logger("done sleeping!")
     except Exception as e:
-        print_message(
+        adapter_config.logger(
             "THIS IS AN EXCEPTION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         )
-        print_message("Error: {}".format(sys.exc_info()[0]))
+        adapter_config.logger("Error: {}".format(sys.exc_info()[0]))
         raise e
 
 
 def restart_edgehub(hard=False):
-    print_message("restarting edgehub")
+    adapter_config.logger("restarting edgehub")
     sleep(5)
     client = docker.from_env()
     edgeHub = client.containers.get(EDGEHUB_NAME)
@@ -103,5 +107,5 @@ def restart_edgehub(hard=False):
             edgeHub.restart()
             sleep(5)
     except Exception as e:
-        print_message("Error: {}".format(sys.exc_info()[0]))
+        adapter_config.logger("Error: {}".format(sys.exc_info()[0]))
         raise e

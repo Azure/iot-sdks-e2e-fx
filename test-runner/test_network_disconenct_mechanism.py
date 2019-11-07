@@ -4,8 +4,8 @@
 
 import pytest
 import msrest
-import runtime_config
 from timeouts import timeouts
+from horton_settings import settings
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,7 +28,7 @@ class TestNetworkDisconnectMechanism(object):
 
     @pytest.fixture
     def test_module_transport(self):
-        return runtime_config.get_current_config().test_module.transport
+        return settings.test_module.transport
 
     @pytest.mark.it("Can disconnect and reconnect the network")
     async def test_disconnect_and_reconnect(

@@ -12,6 +12,7 @@ import os
 import argparse
 import shutil
 import re
+from junitparser import TestCase, TestSuite, JUnitXml
 
 
 class InjectIntoJunit:
@@ -27,35 +28,13 @@ class InjectIntoJunit:
         )
         arguments = parser.parse_args(args)
 
-        junit_path = arguments.junit_file[0]
-        merge_log_path = arguments.log_file[0]
-        junit_base_path = junit_path.lower().split(".xml")
-        junit_save_path = junit_base_path[0] + "_MERGED.xml"
+        junit_file_name = arguments.junit_file[0]
+        log_file_nanme = arguments.log_file[0]
 
-        try:
-            shutil.copyfile(junit_path, junit_save_path)
-        except Exception as e:
-            print("Exception copying JUNIT file: " + junit_path)
-            print(e)
-            return
+        with open(log_file_nanme, "r", encoding="utf8") as f:
+            log_file_lines = f.read().splitlines()
 
-        try:
-            with open(merge_log_path, "r", encoding="utf8") as f:
-                read_file = f.read().splitlines()
-
-        except Exception as e:
-            print("Exception opening LOG file: " + merge_log_path)
-            print(e)
-            return
-
-        from junitparser import TestCase, TestSuite, JUnitXml
-
-        try:
-            xml = JUnitXml.fromfile(junit_save_path)
-        except Exception as e:
-            print("Exception opening JUNIT file: " + junit_save_path)
-            print(e)
-            return
+        xml = JUnitXml.fromfile(junit_file_name)
 
         for testcase in xml:
             if testcase:
@@ -63,7 +42,7 @@ class InjectIntoJunit:
                 test_name = testcase.name
                 if testcase.system_out:
                     lines_for_junit = self.get_testcase_lines_from_log(
-                        read_file, class_name, test_name
+                        log_file_lines, class_name, test_name
                     )
                     print(
                         "TestCase: "
@@ -74,25 +53,15 @@ class InjectIntoJunit:
                     )
                     parsed_loglines = "\n".join(lines_for_junit)
                     testcase.system_out = "\n" + parsed_loglines + "\n"
-        try:
-            xml.write()
-        except Exception as e:
-            print("Exception writing JUNIT file: " + junit_save_path)
-            print(e)
-            return
+
+        xml.write()
 
         # remove offending characters
-        with open(junit_save_path, "rt") as f:
+        with open(junit_file_name, "rt") as f:
             file_content = f.read()
         filtered = self.filter_esc_to_ascii7(file_content)
-        with open(junit_save_path, "w") as f:
+        with open(junit_file_name, "w") as f:
             f.write(filtered)
-
-        try:
-            shutil.copyfile(junit_save_path, junit_path)
-        except Exception as e:
-            print("Exception copying JUNIT file: " + junit_path)
-            print(e)
 
         print("SUCCESS!")
         return

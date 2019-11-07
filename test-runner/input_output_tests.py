@@ -38,23 +38,23 @@ class InputOutputTests(object):
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
     async def test_module_to_friend_routing(
-        self, client, friend, test_string, input_name_from_test_client
+        self, client, friend, test_string, input_name_from_test_client, logger
     ):
 
         await friend.enable_input_messages()
-        print("messages enabled")
+        logger("messages enabled")
 
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
         )
         await asyncio.sleep(sleep_time_for_listener_start)
-        print("friend future created")
+        logger("friend future created")
 
         await client.send_output_event(output_name_to_friend, test_string)
-        print("message sent")
+        logger("message sent")
 
         received_message = await friend_input_future
-        print("received message")
+        logger("received message")
         assert received_message == test_string
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)

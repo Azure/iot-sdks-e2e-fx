@@ -6,7 +6,8 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
     AzureIOTEndToEndTestWrapperRestApi,
 )
 from .. import adapter_config
-from ..decorators import log_entry_and_exit, emulate_async
+from .rest_decorators import log_entry_and_exit
+from ..decorators import emulate_async
 from ..abstract_iothub_apis import (
     AbstractDeviceApi,
     AbstractModuleApi,
@@ -323,6 +324,10 @@ class DeviceApi(
     Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, AbstractDeviceApi
 ):
     def __init__(self, hostname):
+        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+            hostname
+        ).wrapper
+        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).device
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
@@ -340,6 +345,10 @@ class ModuleApi(
     AbstractModuleApi,
 ):
     def __init__(self, hostname):
+        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+            hostname
+        ).wrapper
+        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).module
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
@@ -347,6 +356,10 @@ class ModuleApi(
 
 class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryApi):
     def __init__(self, hostname):
+        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+            hostname
+        ).wrapper
+        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).registry
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
@@ -354,6 +367,10 @@ class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryA
 
 class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
     def __init__(self, hostname):
+        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+            hostname
+        ).wrapper
+        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).service
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""

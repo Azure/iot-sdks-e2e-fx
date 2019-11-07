@@ -4,9 +4,9 @@
 
 import pytest
 import asyncio
-import runtime_config
 from twin_tests import wait_for_reported_properties_update
 from sample_content import next_random_string
+from horton_settings import settings
 
 
 telemetry_output_name = "telemetry"
@@ -29,7 +29,7 @@ class MotherOfAllBaseClasses(object):
 
     @pytest.fixture
     def test_module_transport(self):
-        return runtime_config.get_current_config().test_module.transport
+        return settings.test_module.transport
 
     @pytest.fixture(autouse=True)
     def always_reconnect(self, request, logger, test_module_wrapper_api):
@@ -197,7 +197,7 @@ class DroppedConnectionTestsC2d(object):
     @pytest.mark.it("Can reliably reveive c2d (1st-time possible subscribe)")
     @pytest.mark.skip("#BKTODO")
     async def test_client_dropped_c2d_1st_call(
-        self, client, service, before_api_call, after_api_call, test_string
+        self, client, service, before_api_call, after_api_call, test_string, logger
     ):
         await client.enable_c2d()
 
@@ -207,14 +207,14 @@ class DroppedConnectionTestsC2d(object):
 
         await service.send_c2d(client.device_id, test_string)
 
-        print("Awaiting input")
+        logger("Awaiting input")
         received_message = await test_input_future
         assert received_message == test_string
 
     @pytest.mark.skip("#BKTODO")
     @pytest.mark.it("Can reliably reveive c2d (2nd-time)")
     async def test_client_dropped_c2d_2nd_call(
-        self, client, service, before_api_call, after_api_call
+        self, client, service, before_api_call, after_api_call, logger
     ):
 
         # 1st call
@@ -236,7 +236,7 @@ class DroppedConnectionTestsC2d(object):
 
         await service.send_c2d(client.device_id, test_string)
 
-        print("Awaiting input")
+        logger("Awaiting input")
         received_message = await test_input_future
         assert received_message == test_string
 

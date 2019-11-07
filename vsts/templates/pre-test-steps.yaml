@@ -6,7 +6,9 @@ parameters:
   image_edgeHub: mcr.microsoft.com/azureiotedge-hub:1.0
   image_edgeAgent: mcr.microsoft.com/azureiotedge-agent:1.0
   image_friendMod: $(IOTHUB-E2E-REPO-ADDRESS)/default-friend-module:latest
-  test_image: ''
+  image_testMod: ''
+  test_image_tag: ''
+  deploy_script: ''
   
 steps:
 - task: UsePythonVersion@0
@@ -27,32 +29,21 @@ steps:
 
 - script: |
     docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} &&
-    docker pull ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }} &&
+    docker pull ${{ parameters.image_testMod }} &&
     docker pull ${{ parameters.image_edgeAgent }} &&
     docker pull ${{ parameters.image_edgeHub }} &&
     docker pull ${{ parameters.image_friendmod }} 
   displayName: 'pre-cache docker images'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/create-new-edgehub-device.ps1
-  workingDirectory: $(Horton.FrameworkRoot)
+- script: python ${{ parameters.deploy_script }} --image ${{ parameters.image_testMod }}
+  workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
   displayName: 'Create new edgehub identity'
   env:
-    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
-
-- powershell: $(Horton.FrameworkRoot)/scripts/deploy-test-containers.ps1 ${{ parameters.language }} ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
-  workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'Deploy manifest (${{ parameters.test_image }})'
-  env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
-    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
-    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
-    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
@@ -68,22 +59,26 @@ steps:
   displayName: 'Verify friendMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}
-  displayName: 'Verify deploymet ${{ parameters.language }}Mod ${{ parameters.repo_address }}/${{ parameters.language }}-e2e-v3:${{ parameters.test_image }}'
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 testMod ${{ parameters.image_testMod }}
+  displayName: 'Verify deploymet testMod'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-container-running.ps1 ${{ parameters.language }}Mod
-  workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'Verify that ${{ parameters.language }}Mod is responding'
+- script: python ensure_container.py testMod
+  workingDirectory: $(Horton.FrameworkRoot)/pyscripts
+  displayName: 'Verify that testMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-container-running.ps1 friendMod
-  workingDirectory: $(Horton.FrameworkRoot)
+- script: python ensure_container.py friendMod
+  workingDirectory: $(Horton.FrameworkRoot)/pyscripts
   displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: |
-    Start-Sleep -s 30  
+- script: sleep 30
   displayName: 'give edgeHub 30 seconds to start up'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
   
+- script: python populate_credentials.py
+  workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
+  displayName: 'Get credentials'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+

@@ -7,7 +7,8 @@ from rest_wrappers.generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_a
 import msrest
 from .. import adapter_config
 from ..abstract_wrapper_api import AbstractWrapperApi
-from ..decorators import log_entry_and_exit, emulate_async
+from ..decorators import emulate_async
+from .rest_decorators import log_entry_and_exit
 
 rest_endpoints = None
 
@@ -38,22 +39,6 @@ def cleanup_test_objects():
             rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
         except Exception:
             pass
-
-
-def print_message(message):
-    """
-    log the given message to to stdout on any
-    modules that are being used for the current test run.
-    """
-    for rest_endpoint in _get_rest_endpoints():
-        try:
-            rest_endpoint.log_message(
-                {"message": "PYTEST: " + message},
-                timeout=adapter_config.print_message_timeout,
-            )
-        except msrest.exceptions.ClientRequestError:
-            print("PYTEST: error logging to " + str(rest_endpoint))
-            # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
 
 
 class WrapperApi(AbstractWrapperApi):
@@ -90,7 +75,6 @@ class WrapperApi(AbstractWrapperApi):
     @emulate_async
     @log_entry_and_exit
     def network_disconnect(self, transport, disconnection_type):
-        print("adapter disconnect")
         return self.rest_endpoint.network_disconnect(
             transport, disconnection_type, timeout=adapter_config.default_api_timeout
         )

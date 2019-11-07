@@ -14,8 +14,7 @@ from edgehub_control import (
     edgeHub,
     restart_edgehub,
 )
-from adapters import print_message
-from runtime_config import get_current_config
+from adapters import adapter_config
 
 client = docker.from_env()
 
@@ -46,11 +45,11 @@ async def do_device_method_call(
     Helper function which invokes a method call on one module and responds to it from another module
     """
     try:
-        print_message("enabling methods on the destination")
+        adapter_config.logger("enabling methods on the destination")
         await destination_module.enable_methods()
 
         # start listening for method calls on the destination side
-        print_message("starting to listen from destination module")
+        adapter_config.logger("starting to listen from destination module")
         receiver_future = asyncio.ensure_future(
             destination_module.roundtrip_method_call(
                 method_name, status_code, method_invoke_parameters, method_response_body
@@ -62,15 +61,15 @@ async def do_device_method_call(
         # invoking the call from caller side
         await asyncio.sleep(5)
         connect_edgehub()
-        print_message("invoking method call")
+        adapter_config.logger("invoking method call")
         response = await source_module.call_device_method(
             destination_device_id, method_invoke_parameters
         )
-        print("method call complete.  Response is:")
-        print(str(response))
+        adapter_config.logger("method call complete.  Response is:")
+        adapter_config.logger(str(response))
 
         # wait for that response to arrive back at the source and verify that it's all good.
-        print_message("response = " + str(response) + "\n")
+        adapter_config.logger("response = " + str(response) + "\n")
         assert response["status"] == status_code
         # edge bug: the response that edge returns is stringified.  The same response that comes back from an iothub service call is not stringified
         if isinstance(response["payload"], str):
@@ -97,7 +96,7 @@ async def test_device_method_from_service_to_leaf_device_fi():
     leaf_device_client = connections.connect_leaf_device_client()
 
     await do_device_method_call(
-        service_client, leaf_device_client, get_current_config().leaf_device.device_id
+        service_client, leaf_device_client, leaf_device_client.device_id
     )
 
     service_client.disconnect_sync()
@@ -116,7 +115,7 @@ async def test_device_method_from_module_to_leaf_device_fi():
     leaf_device_client = connections.connect_leaf_device_client()
 
     await do_device_method_call(
-        module_client, leaf_device_client, get_current_config().leaf_device.device_id
+        module_client, leaf_device_client, leaf_device_client.device_id
     )
 
     module_client.disconnect_sync()

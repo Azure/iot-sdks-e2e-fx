@@ -7,9 +7,8 @@ import connections
 import json
 import multiprocessing
 import asyncio
-from adapters import print_message
+from adapters import adapter_config
 from edgehub_control import disconnect_edgehub, connect_edgehub, restart_edgehub
-from runtime_config import get_current_config
 import docker
 
 pytestmark = pytest.mark.asyncio
@@ -47,17 +46,17 @@ async def do_module_method_call(
     """
     Helper function which invokes a method call on one module and responds to it from another module
     """
-    print_message("enabling methods on the destination")
+    adapter_config.logger("enabling methods on the destination")
     await destination_module.enable_methods()
 
     # start listening for method calls on the destination side
-    print_message("starting to listen from destination module")
+    adapter_config.logger("starting to listen from destination module")
     receiver_future = asyncio.ensure_future(
         destination_module.roundtrip_method_call(
             method_name, status_code, method_invoke_parameters, method_response_body
         )
     )
-    print_message(
+    adapter_config.logger(
         "sleeping for {} seconds to make sure all registration is complete".format(
             registration_sleep
         )
@@ -67,17 +66,17 @@ async def do_module_method_call(
     disconnect_edgehub()  # One point that could be good to disconnect edgeHub
     # await asyncio.sleep(1)
     connect_edgehub()
-    print_message("Sleeping")
+    adapter_config.logger("Sleeping")
     await asyncio.sleep(30)
-    print_message(" Done Sleeping")
+    adapter_config.logger(" Done Sleeping")
 
     # invoking the call from caller side
-    print_message("invoking method call")
+    adapter_config.logger("invoking method call")
     response = await source_module.call_module_method(
         destination_device_id, destination_module_id, method_invoke_parameters
     )
-    print_message("method call complete.  Response is:")
-    print_message(str(response))
+    adapter_config.logger("method call complete.  Response is:")
+    adapter_config.logger(str(response))
 
     # wait for that response to arrive back at the source and verify that it's all good.
     assert response["status"] == status_code
@@ -104,8 +103,8 @@ async def test_module_method_call_invoked_from_service():
     await do_module_method_call(
         service_client,
         module_client,
-        get_current_config().test_module.device_id,
-        get_current_config().test_module.module_id,
+        module_client.device_id,
+        module_client.module_id,
         registration_sleep=time_for_method_to_fully_register_service_call,
     )
 
@@ -125,10 +124,7 @@ async def test_module_method_from_test_to_friend_fi():
     friend_client = connections.connect_friend_module_client()
     await asyncio.sleep(5)
     await do_module_method_call(
-        module_client,
-        friend_client,
-        get_current_config().friend_module.device_id,
-        get_current_config().friend_module.module_id,
+        module_client, friend_client, friend_client.device_id, friend_client.module_id
     )
 
     module_client.disconnect_sync()
@@ -148,10 +144,7 @@ async def test_module_method_from_friend_to_test_fi():
     friend_client = connections.connect_friend_module_client()
     await asyncio.sleep(5)
     await do_module_method_call(
-        friend_client,
-        module_client,
-        get_current_config().test_module.device_id,
-        get_current_config().test_module.module_id,
+        friend_client, module_client, module_client.device_id, module_client.module_id
     )
 
     module_client.disconnect_sync()

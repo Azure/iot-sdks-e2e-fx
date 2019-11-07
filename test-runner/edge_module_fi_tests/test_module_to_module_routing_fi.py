@@ -5,8 +5,8 @@
 import pytest
 import connections
 import asyncio
-from runtime_config import get_current_config
 from edgehub_control import connect_edgehub, disconnect_edgehub, restart_edgehub
+from horton_settings import settings
 
 pytestmark = pytest.mark.asyncio
 
@@ -15,8 +15,8 @@ pytestmark = pytest.mark.asyncio
 def set_channels(request):
     global friend_to_test_output
     global test_to_friend_input
-    friend_to_test_output = "to" + get_current_config().test_module.module_id
-    test_to_friend_input = "from" + get_current_config().test_module.module_id
+    friend_to_test_output = "to" + settings.test_module.module_id
+    test_to_friend_input = "from" + settings.test_module.module_id
 
 
 friend_to_test_output = None

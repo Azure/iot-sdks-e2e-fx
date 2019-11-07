@@ -7,3 +7,6 @@ default_api_timeout = 60
 
 # timeout for print_message calls
 print_message_timeout = 2
+
+# function that adapters can use to log messages to the output stream
+logger = None
