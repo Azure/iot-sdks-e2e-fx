@@ -13,6 +13,7 @@ from method_tests import (
 )
 from c2d_tests import C2dTests
 import dropped_connection_tests
+import drop_situation
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,13 +40,13 @@ class TestIotHubDeviceClient(
 
 @pytest.mark.dropped_connection_tests
 @pytest.mark.describe(
-    "IoTHub DeviceClient dropped connections - dropping but not disconnected"
+    "IoTHub DeviceClient dropped connections - network dropped and client still connected"
 )
-@pytest.mark.testgroup_iothub_device_client
+@pytest.mark.testgroup_iothub_device_drop
 @pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestIoTHubDeviceDroppingButNotDisconnected(
+class TestIoTHubDeviceNetworkDroppedAndClientStillConnected(
     IoTHubDeviceClient,
-    dropped_connection_tests.CallMethodBeforeOnDisconnected,
+    drop_situation.NetworkDroppedAndClientStillConnected,
     dropped_connection_tests.DroppedConnectionIoTHubDeviceTests,
 ):
     pass

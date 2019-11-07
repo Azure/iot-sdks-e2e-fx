@@ -10,6 +10,7 @@ from hashlib import sha256
 from hmac import HMAC
 from time import time
 from uuid import uuid4
+from ..print_message import print_message
 
 try:
     from urllib import quote, quote_plus, urlencode  # Py2
@@ -44,11 +45,13 @@ class AmqpServiceClient:
         target = "amqps://" + self.endpoint + operation
         logger.info("Target: {}".format(target))
         self.send_client = uamqp.SendClient(target, debug=True)
+        print_message("AMQP service client connected")
 
     def disconnect_sync(self):
         if self.send_client:
             self.send_client.close()
             self.send_client = None
+            print_message("AMQP service client disconnected")
 
     def send_to_device(self, device_id, message):
         msg_content = message
@@ -62,4 +65,4 @@ class AmqpServiceClient:
         self.send_client.queue_message(message)
         results = self.send_client.send_all_messages(close_on_done=False)
         assert not [m for m in results if m == uamqp.constants.MessageState.SendFailed]
-        logger.info("Message sent.")
+        print_message("AMQP service client sent: {}".format(message))

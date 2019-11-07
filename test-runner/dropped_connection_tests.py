@@ -1,4 +1,3 @@
-# Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
@@ -10,103 +9,8 @@ from horton_settings import settings
 
 
 telemetry_output_name = "telemetry"
+output_name_to_friend = "toFriend"
 
-
-class MotherOfAllBaseClasses(object):
-    @pytest.fixture(
-        params=[
-            pytest.param("DROP", id="Drop using iptables DROP"),
-            # pytest.param("REJECT", id="Drop using iptables REJECT"),
-        ]
-    )
-    def drop_mechanism(self, request):
-        """
-        Parametrized fixture which lets our tests run against the full set
-        of dropping mechanisms.  Every test in this file will run using each value
-        for this array of parameters.
-        """
-        return request.param
-
-    @pytest.fixture
-    def test_module_transport(self):
-        return settings.test_module.transport
-
-    @pytest.fixture(autouse=True)
-    def always_reconnect(self, request, logger, test_module_wrapper_api):
-        # if this test is going to drop packets, add a finalizer to make sure we always stop
-        # stop dropping it when we're done.  Calling network_connect_sync twice in a row is allowed.
-        def always_reconnect():
-            logger("in finalizer: no longer dropping packets")
-            test_module_wrapper_api.network_reconnect_sync()
-
-        request.addfinalizer(always_reconnect)
-
-    async def start_dropping(
-        self, *, test_module_wrapper_api, logger, drop_mechanism, test_module_transport
-    ):
-        logger("start drop packets")
-        await test_module_wrapper_api.network_disconnect(
-            test_module_transport, drop_mechanism
-        )
-
-    async def wait_for_disconnection_event(self, *, client, logger):
-        status = await client.get_connection_status()
-        assert status == "connected"
-
-        logger("waiting for client disconnection event")
-        status = await client.wait_for_connection_status_change()
-        assert status == "disconnected"
-        logger("client disconnection event received")
-
-    async def stop_dropping(self, *, test_module_wrapper_api, logger):
-        logger("stop dropping packets")
-        await test_module_wrapper_api.network_reconnect()
-
-    async def wait_for_reconnection_event(self, *, client, logger):
-        logger("waiting for client reconnection event")
-        status = await client.wait_for_connection_status_change()
-        assert status == "connected"
-        logger("client reconnection event received")
-
-
-class CallMethodBeforeOnDisconnected(MotherOfAllBaseClasses):
-    @pytest.fixture
-    def before_api_call(
-        self, drop_mechanism, test_module_wrapper_api, logger, test_module_transport
-    ):
-        async def func():
-            await self.start_dropping(
-                test_module_wrapper_api=test_module_wrapper_api,
-                logger=logger,
-                drop_mechanism=drop_mechanism,
-                test_module_transport=test_module_transport,
-            )
-
-        return func
-
-    @pytest.fixture
-    def after_api_call(self, client, test_module_wrapper_api, logger):
-        async def func():
-            await self.wait_for_disconnection_event(client=client, logger=logger)
-            await asyncio.sleep(10)
-            await self.stop_dropping(
-                test_module_wrapper_api=test_module_wrapper_api, logger=logger
-            )
-            await self.wait_for_reconnection_event(client=client, logger=logger)
-
-        return func
-
-
-class CallMethodAfterOnDisconencted(object):
-    pass
-
-
-class CallMethodWhileDisconnectedNetworkAvailable(object):
-    pass
-
-
-class CallMethodWhileDisconnectedNetworkNotAvailable(object):
-    pass
 
 
 class DroppedConnectionTestsBase(object):
@@ -146,7 +50,6 @@ class DroppedConnectionTestsBase(object):
 
 class DroppedConnectionTestsTelemetry(object):
     @pytest.mark.it("Can reliably send an event")
-    @pytest.mark.skip("#BKTODO")
     async def test_client_dropped_send_event(
         self, client, before_api_call, after_api_call, eventhub, test_payload
     ):
@@ -164,39 +67,15 @@ class DroppedConnectionTestsTelemetry(object):
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
 
+    @pytest.mark.it("Can reliably send 5 events")
+    @pytest.mark.skip("#BKTODO")
+    async def test_client_dropped_send_event_5x(self):
+        pass
+
 
 class DroppedConnectionTestsC2d(object):
-    @pytest.mark.skip("#BKTODO")
-    @pytest.mark.it("Does not leak if a C2D never arrives")
-    async def test_client_c2d_timeout(self, client):
-        pytest.skip("our code leaks right now.")
-
-        asyncio.ensure_future(client.wait_for_c2d_message())
-        # this future should never complete, but we don't care.
-        # this test will fail in the cleanup when the test wrapper has
-        # a chance to look for leaks
-
-    @pytest.mark.it("Can reliably subscribe to the C2d topic")
-    @pytest.mark.skip("#BKTODO")
-    async def test_client_dropped_c2d_subscribe(
-        self, client, service, before_api_call, after_api_call, test_string
-    ):
-        await before_api_call()
-        subscribe_future = asyncio.ensure_future(client.enable_c2d())
-        await after_api_call()
-
-        await subscribe_future
-        test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
-        await asyncio.sleep(2)  # wait for receive pipeline to finish setting up
-
-        await service.send_c2d(client.device_id, test_string)
-
-        received_message = await test_input_future
-        assert received_message == test_string
-
     @pytest.mark.it("Can reliably reveive c2d (1st-time possible subscribe)")
-    @pytest.mark.skip("#BKTODO")
-    async def test_client_dropped_c2d_1st_call(
+    async def test_dropped_c2d_1st_call(
         self, client, service, before_api_call, after_api_call, test_string, logger
     ):
         await client.enable_c2d()
@@ -205,15 +84,18 @@ class DroppedConnectionTestsC2d(object):
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
         await after_api_call()
 
+        await asyncio.sleep(30)  # long time necessary to let subscribe happen
+        logger("transport connected.  Sending C2D")
+
         await service.send_c2d(client.device_id, test_string)
 
-        logger("Awaiting input")
+        logger("C2D sent.  Waiting for response")
+
         received_message = await test_input_future
         assert received_message == test_string
 
-    @pytest.mark.skip("#BKTODO")
     @pytest.mark.it("Can reliably reveive c2d (2nd-time)")
-    async def test_client_dropped_c2d_2nd_call(
+    async def test_dropped_c2d_2nd_call(
         self, client, service, before_api_call, after_api_call, logger
     ):
 
@@ -245,8 +127,7 @@ class DroppedConnectionTestsTwin(object):
     @pytest.mark.it(
         "Can reliably update reported properties (1st time - possible subscribe)"
     )
-    @pytest.mark.skip("#BKTODO")
-    async def test_client_dropped_reported_properties_publish_1st_call(
+    async def test_twin_dropped_reported_properties_publish_1st_call(
         self,
         client,
         before_api_call,
@@ -255,9 +136,6 @@ class DroppedConnectionTestsTwin(object):
         registry,
         sample_reported_props,
     ):
-        if isinstance(self, CallMethodBeforeOnDisconnected):
-            # paho doesn't retry subscribe so this fails
-            pytest.skip()
 
         props = sample_reported_props()
 
@@ -274,8 +152,7 @@ class DroppedConnectionTestsTwin(object):
         )
 
     @pytest.mark.it("Can reliably update reported properties (2nd time)")
-    @pytest.mark.skip("#BKTODO")
-    async def test_client_dropped_reported_properties_publish_2nd_call(
+    async def test_twin_dropped_reported_properties_publish_2nd_call(
         self,
         client,
         before_api_call,
@@ -299,27 +176,133 @@ class DroppedConnectionTestsTwin(object):
             logger=logger,
         )
 
+    @pytest.mark.it("Can reliably get the twin (1st call - possible subscribe)")
+    async def test_twin_dropped_get_twin_1st_call(
+        self, client, before_api_call, after_api_call
+    ):
+        await before_api_call()
+        get_twin_future = asyncio.ensure_future(client.get_twin())
+        await after_api_call()
+
+        twin = await get_twin_future
+        assert twin["properties"]["desired"]["$version"]
+
+    @pytest.mark.it("Can reliably get the twin (2nd call)")
+    async def test_twin_dropped_get_twin_2nd_call(
+        self, client, before_api_call, after_api_call
+    ):
+        await client.get_twin()
+
+        await before_api_call()
+        get_twin_future = asyncio.ensure_future(client.get_twin())
+        await after_api_call()
+
+        twin = await get_twin_future
+        assert twin["properties"]["desired"]["$version"]
+
+    @pytest.mark.it(
+        "Can reliably receive a desired property patch (1st call - possible subscribe)"
+    )
+    @pytest.mark.skip("#BKTODO")
+    async def test_twin_dropped_wait_for_desired_properties_patch_1st_call(self):
+        pass
+
+    @pytest.mark.it("Can reliably receive a desired property patch (2nd call)")
+    @pytest.mark.skip("#BKTODO")
+    async def test_twin_dropped_wait_for_desired_properties_patch_2nd_call(self):
+        pass
+
 
 class DroppedConnectionTestsInputOutput(object):
-    @pytest.mark.it("Can rerliably send an output event")
-    @pytest.mark.skip("#BKTODO")
-    async def test_client_dropped_send_output(
-        self, client, before_api_call, after_api_call, eventhub, test_payload
+    @pytest.fixture
+    def input_name_from_test_client(self, client):
+        return "from" + client.module_id
+
+    @pytest.mark.it("Can reliably send an output event")
+    async def test_dropped_send_output(
+        self,
+        client,
+        friend,
+        input_name_from_test_client,
+        before_api_call,
+        after_api_call,
+        sample_payload,
     ):
-        receive_message_future = asyncio.ensure_future(
-            eventhub.wait_for_next_event(client.device_id, expected=test_payload)
+        test_payload = sample_payload()
+
+        friend_input_future = asyncio.ensure_future(
+            friend.wait_for_input_event(input_name_from_test_client)
         )
 
         await before_api_call()
         send_future = asyncio.ensure_future(
-            client.send_output_event(telemetry_output_name, test_payload)
+            client.send_output_event(output_name_to_friend, test_payload)
         )
         await after_api_call()
 
         # wait for the send to complete, and verify that it arrvies
         await send_future
-        received_message = await receive_message_future
-        assert received_message is not None, "Message not received"
+        received_message = await friend_input_future
+        print("received message")
+        assert received_message == test_payload
+
+    @pytest.mark.it("Can reliably send 5 output events")
+    async def test_dropped_send_output_5x(
+        self, client, eventhub, sample_payload, logger, before_api_call, after_api_call
+    ):
+        payloads = [sample_payload() for x in range(0, 5)]
+        futures = []
+
+        # start listening before we send
+        receive_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(client.device_id)
+        )
+
+        await before_api_call()
+        for payload in payloads:
+            futures.append(
+                asyncio.ensure_future(
+                    client.send_output_event(telemetry_output_name, payload)
+                )
+            )
+        await after_api_call()
+
+        # wait for the send to complete, and verify that it arrvies
+        await asyncio.gather(*futures)
+
+        logger("All messages sent.  Awaiting reception")
+
+        while len(payloads):
+            received_message = await receive_future
+
+            if received_message in payloads:
+                logger(
+                    "Received expected message: {}, removing from list".format(
+                        received_message
+                    )
+                )
+                payloads.remove(received_message)
+            else:
+                logger(
+                    "Received unexpected message: {}, removing from list".format(
+                        received_message
+                    )
+                )
+
+            if len(payloads):
+                receive_future = asyncio.ensure_future(
+                    eventhub.wait_for_next_event(client.device_id)
+                )
+
+    @pytest.mark.it("Can reliably receive an input event")
+    @pytest.mark.skip("#BKTODO")
+    async def test_dropped_receive_input(self):
+        pass
+
+    @pytest.mark.it("Can reliably receive 5 input events")
+    @pytest.mark.skip("#BKTODO")
+    async def test_dropped_receive_input_5x(self):
+        pass
 
 
 class DroppedConnectionIoTHubDeviceTests(

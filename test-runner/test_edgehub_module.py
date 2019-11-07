@@ -15,6 +15,7 @@ from method_tests import (
     InvokeMethodCallOnLeafDeviceTests,
 )
 import dropped_connection_tests
+import drop_situation
 
 pytestmark = pytest.mark.asyncio
 
@@ -44,13 +45,13 @@ class TestEdgeHubModuleClient(
 
 @pytest.mark.dropped_connection_tests
 @pytest.mark.describe(
-    "EdgeHub Module Client dropped connections - dropping but not disconnected"
+    "EdgeHub ModuleClient dropped connections - network dropped and client still connected"
 )
-@pytest.mark.testgroup_edgehub_module_client
+@pytest.mark.testgroup_edgehub_module_drop
 @pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestEdgeHubModuleDroppingButNotDisconnected(
+class TestEdgeHubModuleNetworkDroppedAndClientStillConnected(
     EdgeHubModuleClient,
-    dropped_connection_tests.CallMethodBeforeOnDisconnected,
+    drop_situation.NetworkDroppedAndClientStillConnected,
     dropped_connection_tests.DroppedConnectionEdgeHubModuleTests,
 ):
     pass
