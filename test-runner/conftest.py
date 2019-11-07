@@ -258,7 +258,8 @@ def set_logger():
     )
 
     def print_and_log(message):
-        print(message)
+        if settings.test_module.adapter_address != "direct_python":
+            print(message)
         settings.test_module.wrapper_api.log_message_sync(message)
 
     adapter_config.logger = print_and_log
