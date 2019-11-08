@@ -16,6 +16,9 @@ IOTHUB_MODULE = "iothub_module"
 IOTHUB_DEVICE = "iothub_device"
 EDGEHUB_MODULE_FI = "edgehub_module_fi"
 IOTHUB_MODULE_AND_DEVICE = "iothub_module_and_device"
+IOTHUB_MODULE_DROP = "iothub_module_drop"
+IOTHUB_DEVICE_DROP = "iothub_device_drop"
+EDGEHUB_MODULE_DROP = "edgehub_module_drop"
 
 valid_scenarios = [
     EDGEHUB_MODULE,
@@ -23,6 +26,9 @@ valid_scenarios = [
     IOTHUB_DEVICE,
     EDGEHUB_MODULE_FI,
     IOTHUB_MODULE_AND_DEVICE,
+    IOTHUB_MODULE_DROP,
+    IOTHUB_DEVICE_DROP,
+    EDGEHUB_MODULE_DROP,
 ]
 
 
@@ -61,5 +67,20 @@ scenarios = {
         scenario_name=IOTHUB_DEVICE,
         deployment_type=IOTHUB_DEPLOYMENT,
         pytest_markers=["testgroup_iothub_device_client"],
+    ),
+    "iothub_module_drop": HortonScenario(
+        scenario_name=IOTHUB_MODULE_DROP,
+        deployment_type=IOTHUB_DEPLOYMENT,
+        pytest_markers=["testgroup_iothub_module_drop"],
+    ),
+    "iothub_device_drop": HortonScenario(
+        scenario_name=IOTHUB_DEVICE_DROP,
+        deployment_type=IOTHUB_DEPLOYMENT,
+        pytest_markers=["testgroup_iothub_device_drop"],
+    ),
+    "edgehub_module_drop": HortonScenario(
+        scenario_name=EDGEHUB_MODULE_DROP,
+        deployment_type=EDGEHUB_DEPLOYMENT,
+        pytest_markers=["testgroup_edgehub_module_drop"],
     ),
 }

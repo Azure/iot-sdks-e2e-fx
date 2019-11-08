@@ -143,7 +143,7 @@ jobs:
       java_amqpws_iothub_module:    { suite: java_amqpws_iothub_module }
       java_amqpws_edgehub_module:   { suite: java_amqpws_edgehub_module }
 
-      node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub }
+      node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub_module }
       node6_mqtt_edgehub_module:    { suite: node6_mqtt_edgehub_module }
       node6_mqttws_iothub_module:   { suite: node6_mqttws_iothub_module }
       node6_mqttws_edgehub_module:  { suite: node6_mqttws_edgehub_module }

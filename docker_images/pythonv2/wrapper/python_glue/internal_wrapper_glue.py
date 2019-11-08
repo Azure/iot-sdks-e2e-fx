@@ -16,7 +16,7 @@ sudo_prefix = uninitialized
 
 
 def log_message(msg):
-    if "message" in msg:
+    if isinstance(msg, dict) and "message" in msg:
         print(msg["message"])
     else:
         print(str(msg))
