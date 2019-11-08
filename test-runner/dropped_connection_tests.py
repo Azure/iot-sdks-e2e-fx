@@ -12,7 +12,6 @@ telemetry_output_name = "telemetry"
 output_name_to_friend = "toFriend"
 
 
-
 class DroppedConnectionTestsBase(object):
     @pytest.mark.it("Shows if the client is connected or disconnected")
     async def test_connection_status(self, client):
@@ -54,6 +53,7 @@ class DroppedConnectionTestsTelemetry(object):
         self, client, before_api_call, after_api_call, eventhub, test_payload
     ):
         # start listening before we send
+        await eventhub.connect()
         received_message_future = asyncio.ensure_future(
             eventhub.wait_for_next_event(client.device_id, expected=test_payload)
         )

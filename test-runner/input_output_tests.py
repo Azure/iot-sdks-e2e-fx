@@ -140,6 +140,7 @@ class InputOutputTests(object):
     async def test_module_output_routed_upstream(
         self, client, eventhub, test_object_stringified
     ):
+        await eventhub.connect()
 
         await client.send_output_event(telemetry_output_name, test_object_stringified)
 
@@ -155,6 +156,7 @@ class InputOutputTests(object):
         "Can send a message that gets routed to eventhub using the new Horton HubEvent"
     )
     async def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
+        await eventhub.connect()
 
         sent_message = HubEvent(body)
         await client.send_output_event(

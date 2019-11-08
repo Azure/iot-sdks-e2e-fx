@@ -62,15 +62,6 @@ def connect_friend_module_client():
     return client
 
 
-def connect_eventhub_client():
-    """
-    connect the module client for the EventHub implementation we're using return the client object
-    """
-    client = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
-    client.connect_sync(settings.eventhub.connection_string)
-    return client
-
-
 def connect_registry_client():
     """
     connect the module client for the Registry implementation we're using return the client object
