@@ -3,6 +3,7 @@
 # full license information.
 import pytest
 import connections
+import adapters
 from adapters import adapter_config
 from utilities import random_string
 from sample_content import next_random_string
@@ -48,7 +49,8 @@ separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
 
 @pytest.fixture
 def eventhub(logger):
-    eventhub = connections.connect_eventhub_client()
+    eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
+    eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
     yield eventhub
     logger(separator.format("eventhub"))
     eventhub.disconnect_sync()

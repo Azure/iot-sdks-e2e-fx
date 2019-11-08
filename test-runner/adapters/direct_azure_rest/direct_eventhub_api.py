@@ -51,15 +51,20 @@ class EventHubApi:
         global object_list
         self.client = None
         self.receivers = []
+        self.connection_string = None
         object_list.append(self)
 
-    def connect_sync(self, connection_string):
+    def create_from_connection_string_sync(self, connection_string):
+        self.connection_string = connection_string
+
+    @emulate_async
+    def connect(self, offset="@latest"):
         started = False
         retry_iteration = 0
         while not started:
             adapter_config.logger("EventHubApi: connecting EventHubClient")
             self.client = EventHubClient.from_iothub_connection_string(
-                connection_string
+                self.connection_string
             )
             adapter_config.logger("EventHubApi: enabling EventHub telemetry")
             # partition_ids = self.client.get_eventhub_info()["partition_ids"]
@@ -70,10 +75,7 @@ class EventHubApi:
                     "EventHubApi: adding receiver for partition {}".format(id)
                 )
                 receiver = self.client.add_receiver(
-                    "$default",
-                    id,
-                    operation="/messages/events",
-                    offset=Offset("@latest"),
+                    "$default", id, operation="/messages/events", offset=Offset(offset)
                 )
                 self.receivers.append(receiver)
 

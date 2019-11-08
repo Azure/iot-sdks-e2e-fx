@@ -26,16 +26,18 @@ There's a rule in the routing table that sends the 'telemetry' output event to e
 @pytest.mark.timeout(
     timeout=180
 )  # extra timeout in case eventhub needs to retry due to resource error
-async def test_module_output_routed_upstream_fi(test_object_stringified, logger):
+async def test_module_output_routed_upstream_fi(
+    test_object_stringified, logger, eventhub
+):
     try:
+        await eventhub.connect()
         module_client = connections.connect_test_module_client()
-        eventhub_client = connections.connect_eventhub_client()
 
         disconnect_edgehub()
         connect_edgehub()
         await module_client.send_output_event(output_name, test_object_stringified)
 
-        received_message = await eventhub_client.wait_for_next_event(
+        received_message = await eventhub.wait_for_next_event(
             module_client.device_id, expected=test_object_stringified
         )
         if not received_message:
@@ -43,6 +45,5 @@ async def test_module_output_routed_upstream_fi(test_object_stringified, logger)
             assert False
 
         module_client.disconnect_sync()
-        eventhub_client.disconnect_sync()
     finally:
         restart_edgehub(hard=False)
