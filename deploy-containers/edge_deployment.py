@@ -15,14 +15,14 @@ iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 friendMod_container_port = 8080
 friendMod_host_port = 8098
 friendMod_language = "node"
-friendMod_image = (
-    os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/default-friend-module:latest"
-)
 
 testMod_host_port = 8099
 
 
 def add_edge_modules(testMod_image):
+    friendMod_image = (
+        os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/default-friend-module:latest"
+    )
 
     settings.friend_module.host_port = friendMod_host_port
     settings.friend_module.device_id = settings.iotedge.device_id
