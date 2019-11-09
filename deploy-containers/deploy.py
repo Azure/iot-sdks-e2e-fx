@@ -8,36 +8,12 @@ from horton_settings import settings
 import edge_deployment
 import utilities
 
-iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
-
-
-device_id_base = utilities.get_random_device_name()
-
-
-def remove_instance(settings_object):
-    if settings_object.device_id:
-        iothub_service_helper.try_delete_device(settings_object.device_id)
-        print(
-            "Removed {} device with id {}".format(
-                settings_object.name, settings_object.device_id
-            )
-        )
-    settings.clear_object(settings_object)
-    settings.save()
-
-
-def remove_old_instances():
-    remove_instance(settings.test_module)
-    remove_instance(settings.friend_module)
-    remove_instance(settings.iotedge)
-    remove_instance(settings.test_device)
-    remove_instance(settings.leaf_device)
-
 
 def deploy_for_iotedge(testMod_image):
-    remove_old_instances()
+    utilities.remove_old_instances()
 
     settings.iotedge.hostname = utilities.get_computer_name()
+    device_id_base = utilities.get_random_device_name()
 
     host = connection_string_to_sas_token(settings.iothub.connection_string)["host"]
     print("Creating new device on hub {}".format(host))
@@ -87,20 +63,32 @@ def deploy_for_iothub(testMod_image):
     settings.save()
 
 
+def create_docker_container(obj):
+    pass
+
+
 def deploy_for_iothub_new(testMod_image):
-    remove_old_instances()
+    settings.remove_old_instances()
+
+    device_id_base = utilities.get_random_device_name()
 
     host = connection_string_to_sas_token(settings.iothub.connection_string)["host"]
     print("Creating new device on hub {}".format(host))
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
     settings.test_device.device_id = device_id_base + "_test_device"
+    settings.test_device.connection_type = "connection_string"
+    utilities.set_args_from_image(settings.test_device, testMod_image)
     iothub_service_helper.create_device(settings.test_device.device_id)
 
-    settings.test_device.language = settings.test_module.language
-    settings.test_device.adapter_address = settings.test_module.adapter_address
-    settings.test_device.connection_type = "connection_string"
-    settings.test_device.host_port = settings.test_module.host_port
-    settings.test_device.container_port = settings.test_module.container_port
+    settings.test_module.device_id = settings.iotedge.device_id
+    settings.test_module.module_id = "testMod"
+    settings.test_module.connection_type = "connection_string"
+    utilities.set_args_from_image(settings.test_module, testMod_image)
+    iothub_service_helper.create_module(
+        settings.test_module.device_id, settings.test_module.module_id
+    )
+
+    create_docker_container(settings.test_device)
 
     settings.save()
