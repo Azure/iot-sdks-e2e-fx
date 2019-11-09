@@ -4,6 +4,6 @@
 
 
 class timeouts:
-    generic_test_timeout = 600
+    generic_test_timeout = 300
 
-    dropped_connection_test_timeout = 900
+    dropped_connection_test_timeout = 600

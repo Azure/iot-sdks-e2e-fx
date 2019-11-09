@@ -72,6 +72,9 @@ jobs:
         py34_mqtt_iothub_module_and_device:         { suite: py34_mqtt_iothub_module_and_device }
         py27_mqtt_edgehub_module:                   { suite: py27_mqtt_edgehub_module }
         py27_mqttws_iothub_module_and_device:       { suite: py27_mqttws_iothub_module_and_device }
+        py38_mqtt_iothub_module_quick_drop:         { suite: py38_mqtt_iothub_module_quick_drop }
+        py37_mqtt_edgehub_module_quick_drop:        { suite: py37_mqtt_edgehub_module_quick_drop }
+        py36_mqtt_iothub_device_quick_drop:         { suite: py36_mqtt_iothub_device_quick_drop }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml

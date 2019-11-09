@@ -3,6 +3,7 @@
 
 import pytest
 import asyncio
+import datetime
 from twin_tests import wait_for_reported_properties_update
 from sample_content import next_random_string
 from horton_settings import settings
@@ -52,11 +53,9 @@ class DroppedConnectionTestsTelemetry(object):
     async def test_client_dropped_send_event(
         self, client, before_api_call, after_api_call, eventhub, test_payload
     ):
-        # start listening before we send
-        await eventhub.connect()
-        received_message_future = asyncio.ensure_future(
-            eventhub.wait_for_next_event(client.device_id, expected=test_payload)
-        )
+        start_listening_time = datetime.datetime.utcnow() - datetime.timedelta(
+            seconds=30
+        )  # start listning early because of clock skew
 
         await before_api_call()
         send_future = asyncio.ensure_future(client.send_event(test_payload))
@@ -64,6 +63,11 @@ class DroppedConnectionTestsTelemetry(object):
 
         # wait for the send to complete, and verify that it arrvies
         await send_future
+
+        await eventhub.connect(offset=start_listening_time)
+        received_message_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(client.device_id, expected=test_payload)
+        )
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
 
@@ -250,13 +254,11 @@ class DroppedConnectionTestsInputOutput(object):
     async def test_dropped_send_output_5x(
         self, client, eventhub, sample_payload, logger, before_api_call, after_api_call
     ):
+        start_listening_time = datetime.datetime.utcnow() - datetime.timedelta(
+            seconds=30
+        )  # start listning early because of clock skew
         payloads = [sample_payload() for x in range(0, 5)]
         futures = []
-
-        # start listening before we send
-        receive_future = asyncio.ensure_future(
-            eventhub.wait_for_next_event(client.device_id)
-        )
 
         await before_api_call()
         for payload in payloads:
@@ -272,6 +274,12 @@ class DroppedConnectionTestsInputOutput(object):
 
         logger("All messages sent.  Awaiting reception")
 
+        logger("connecting eventhub")
+        await eventhub.connect(offset=start_listening_time)
+        receive_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(client.device_id)
+        )
+
         while len(payloads):
             received_message = await receive_future
 
@@ -283,11 +291,7 @@ class DroppedConnectionTestsInputOutput(object):
                 )
                 payloads.remove(received_message)
             else:
-                logger(
-                    "Received unexpected message: {}, removing from list".format(
-                        received_message
-                    )
-                )
+                logger("Received unexpected message: {}".format(received_message))
 
             if len(payloads):
                 receive_future = asyncio.ensure_future(

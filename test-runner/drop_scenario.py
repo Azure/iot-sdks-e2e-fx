@@ -8,7 +8,7 @@ from adapters import adapter_config
 from horton_settings import settings
 
 
-class DropSituationBaseClass(object):
+class DropScenarioBaseClass(object):
     @pytest.fixture(scope="class", autouse=True)
     def extend_rest_timeout(self, request, logger):
         previous_timeout = adapter_config.default_api_timeout
@@ -85,7 +85,7 @@ class DropSituationBaseClass(object):
         logger("client reconnection event received")
 
 
-class NetworkDroppedAndClientStillConnected(DropSituationBaseClass):
+class NetworkGlitchClientConnected(DropScenarioBaseClass):
     """
     Tests using this class will disconnect the network before making
     the API call that we're testing.  This way, the SDK thinks it's still
@@ -121,7 +121,7 @@ class NetworkDroppedAndClientStillConnected(DropSituationBaseClass):
         return func
 
 
-class NetworkDroppedAndClientDisconnected(DropSituationBaseClass):
+class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
     """
     Tests using this class will disconnect the network and wait for the
     SDK to notice the disconnection before making the API call that we're
@@ -163,35 +163,7 @@ class NetworkDroppedAndClientDisconnected(DropSituationBaseClass):
         return func
 
 
-class ClientDisconnectedAndNetworkAvailable(DropSituationBaseClass):
-    """
-    Tests using this class will start with the client disconnected
-    but the network available.
-    """
-
-    @pytest.fixture
-    def before_api_call(
-        self,
-        client,
-        drop_mechanism,
-        test_module_wrapper_api,
-        logger,
-        test_module_transport,
-    ):
-        async def func():
-            await client.disconnect2()
-
-        return func
-
-    @pytest.fixture
-    def after_api_call(self, client, test_module_wrapper_api, logger):
-        async def func():
-            pass
-
-        return func
-
-
-class ClientDisconnectedAndNetworkNotAvailable(DropSituationBaseClass):
+class NetworkDroppedClientDisconnected(DropScenarioBaseClass):
     @pytest.fixture
     def before_api_call(
         self,

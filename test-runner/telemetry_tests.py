@@ -74,11 +74,7 @@ class TelemetryTests(object):
                 )
                 payloads.remove(received_message)
             else:
-                logger(
-                    "Received unexpected message: {}, removing from list".format(
-                        received_message
-                    )
-                )
+                logger("Received unexpected message: {}".format(received_message))
 
             received_message_future = asyncio.ensure_future(
                 eventhub.wait_for_next_event(client.device_id)

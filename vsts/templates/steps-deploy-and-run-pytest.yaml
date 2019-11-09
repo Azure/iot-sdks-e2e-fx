@@ -52,14 +52,23 @@ steps:
         throw("Unknown/missing language in suite: " + $env:Suite)
     }
 
-    if ($env:Suite.Contains("iothub_module_drop")) {
-        $Scenario="iothub_module_drop"
+    if ($env:Suite.Contains("iothub_module_quick_drop")) {
+        $Scenario="iothub_module_quick_drop"
         $DeployScript="deploy_for_iothub.py"
-    } elseif ($env:Suite.Contains("iothub_device_drop")) {
-        $Scenario="iothub_device_drop"
+    } elseif ($env:Suite.Contains("iothub_module_full_drop")) {
+        $Scenario="iothub_module_full_drop"
         $DeployScript="deploy_for_iothub.py"
-    } elseif ($env:Suite.Contains("edgehub_module_drop")) {
-        $Scenario="edgehub_module_drop"
+    } elseif ($env:Suite.Contains("iothub_device_quick_drop")) {
+        $Scenario="iothub_device_quick_drop"
+        $DeployScript="deploy_for_iothub.py"
+    } elseif ($env:Suite.Contains("iothub_device_full_drop")) {
+        $Scenario="iothub_device_full_drop"
+        $DeployScript="deploy_for_iothub.py"
+    } elseif ($env:Suite.Contains("edgehub_module_quick_drop")) {
+        $Scenario="edgehub_module_quick_drop"
+        $DeployScript="deploy_for_iotedge.py"
+    } elseif ($env:Suite.Contains("edgehub_module_full_drop")) {
+        $Scenario="edgehub_module_quick_drop"
         $DeployScript="deploy_for_iotedge.py"
     } elseif ($env:Suite.Contains("iothub_module_and_device")) {
         $Scenario="iothub_module_and_device"

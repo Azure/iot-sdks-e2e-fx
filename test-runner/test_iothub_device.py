@@ -13,7 +13,7 @@ from method_tests import (
 )
 from c2d_tests import C2dTests
 import dropped_connection_tests
-import drop_situation
+import drop_scenario
 
 pytestmark = pytest.mark.asyncio
 
@@ -38,15 +38,41 @@ class TestIotHubDeviceClient(
     pass
 
 
-@pytest.mark.dropped_connection_tests
 @pytest.mark.describe(
-    "IoTHub DeviceClient dropped connections - network dropped and client still connected"
+    "IoTHub DeviceClient dropped connections - network glitched and client still connected"
 )
-@pytest.mark.testgroup_iothub_device_drop
+@pytest.mark.testgroup_iothub_device_quick_drop
+@pytest.mark.testgroup_iothub_device_full_drop
 @pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestIoTHubDeviceNetworkDroppedAndClientStillConnected(
+class TestIoTHubDeviceNetworkGlitchClientConnected(
     IoTHubDeviceClient,
-    drop_situation.NetworkDroppedAndClientStillConnected,
+    drop_scenario.NetworkGlitchClientConnected,
     dropped_connection_tests.DroppedConnectionIoTHubDeviceTests,
+):
+    pass
+
+
+@pytest.mark.describe(
+    "IoTHub DeviceClient dropped connections - network glitched and client disconencted"
+)
+@pytest.mark.testgroup_iothub_device_full_drop
+@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
+class TestIoTHubModuleNetworkGlitchClientDisconnected(
+    IoTHubDeviceClient,
+    drop_scenario.NetworkGlitchClientDisconnected,
+    dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
+):
+    pass
+
+
+@pytest.mark.describe(
+    "IoTHub DeviceClient dropped connections - network dropped and client disconnected"
+)
+@pytest.mark.testgroup_iothub_device_full_drop
+@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
+class TestIoTHubDeviceNetworkDroppedClientDisconnected(
+    IoTHubDeviceClient,
+    drop_scenario.NetworkDroppedClientDisconnected,
+    dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
 ):
     pass

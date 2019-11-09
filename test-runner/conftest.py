@@ -163,6 +163,8 @@ def set_python_direct():
     settings.test_module.adapter_address = "direct_python"
     settings.test_device.adapter_address = "direct_python"
     settings.leaf_device.adapter_address = "direct_python"
+    if settings.test_module.connection_type == "environment":
+        settings.test_module.connection_type = "connection_string_with_edge_gateway"
 
 
 def set_async():
@@ -219,8 +221,8 @@ def adjust_surfaces_for_missing_implementations():
 
 
 def only_include_scenario_tests(items, scenario_name):
-    scenario = scenarios.scenarios[scenario_name]
-    remove_tests_not_in_marker_list(items, scenario.pytest_markers)
+    markers = scenarios.scenarios[scenario_name]
+    remove_tests_not_in_marker_list(items, markers)
 
 
 def skip_unsupported_tests(items):
