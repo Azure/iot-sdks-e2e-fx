@@ -2,7 +2,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-import deploy
+import credentials
+
+# BKTODO: combine this with credentials.py
 
 if __name__ == "__main__":
-    deploy.populate_credentials()
+    credentials.populate_credentials()

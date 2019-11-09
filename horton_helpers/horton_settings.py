@@ -37,8 +37,9 @@ class HortonSettings:
 
         self.test_module = HortonSettingsObject()
         self.test_module.name = "test_module"
+        self.test_module.module_id = "testMod"
+        self.test_module.image = None
         self.test_module.device_id = None
-        self.test_module.module_id = None
         self.test_module.language = None
         self.test_module.adapter_address = None
         self.test_module.connection_type = None
@@ -50,8 +51,9 @@ class HortonSettings:
 
         self.friend_module = HortonSettingsObject()
         self.friend_module.name = "friend_module"
+        self.friend_module.module_id = "friendMod"
+        self.friend_module.image = None
         self.friend_module.device_id = None
-        self.friend_module.module_id = None
         self.friend_module.language = None
         self.friend_module.adapter_address = None
         self.friend_module.connection_type = None

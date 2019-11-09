@@ -4,6 +4,7 @@
 
 import argparse
 import deploy
+import utilities
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="deploy iotedge instance for testing")
@@ -11,5 +12,5 @@ if __name__ == "__main__":
         "--image", help="docker image to deploy", type=str, required=True
     )
     args = parser.parse_args()
-    deploy.get_language_from_image_name(args.image)
+    utilities.get_language_from_image_name(args.image)
     deploy.deploy_for_iotedge(args.image)
