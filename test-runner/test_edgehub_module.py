@@ -15,7 +15,7 @@ from method_tests import (
     InvokeMethodCallOnLeafDeviceTests,
 )
 import dropped_connection_tests
-import drop_situation
+import drop_scenario
 
 pytestmark = pytest.mark.asyncio
 
@@ -43,15 +43,41 @@ class TestEdgeHubModuleClient(
     pass
 
 
-@pytest.mark.dropped_connection_tests
 @pytest.mark.describe(
-    "EdgeHub ModuleClient dropped connections - network dropped and client still connected"
+    "EdgeHub ModuleClient dropped connections - network glitched and client still connected"
 )
-@pytest.mark.testgroup_edgehub_module_drop
+@pytest.mark.testgroup_edgehub_module_quick_drop
+@pytest.mark.testgroup_edgehub_module_full_drop
 @pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestEdgeHubModuleNetworkDroppedAndClientStillConnected(
+class TestEdgeHubModuleNetworkGlitchClientConnected(
     EdgeHubModuleClient,
-    drop_situation.NetworkDroppedAndClientStillConnected,
+    drop_scenario.NetworkGlitchClientConnected,
+    dropped_connection_tests.DroppedConnectionEdgeHubModuleTests,
+):
+    pass
+
+
+@pytest.mark.describe(
+    "EdgeHub ModuleClient dropped connections - network glitched and client disconencted"
+)
+@pytest.mark.testgroup_edgehub_module_full_drop
+@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
+class TestEdgeHubModuleNetworkGlitchClientDisconnected(
+    EdgeHubModuleClient,
+    drop_scenario.NetworkGlitchClientDisconnected,
+    dropped_connection_tests.DroppedConnectionEdgeHubModuleTests,
+):
+    pass
+
+
+@pytest.mark.describe(
+    "EdgeHub ModuleClient dropped connections - network dropped and client disconencted"
+)
+@pytest.mark.testgroup_edgehub_module_full_drop
+@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
+class TestEdgeHubModuleNetworkDroppedClientDisconnected(
+    EdgeHubModuleClient,
+    drop_scenario.NetworkDroppedClientDisconnected,
     dropped_connection_tests.DroppedConnectionEdgeHubModuleTests,
 ):
     pass

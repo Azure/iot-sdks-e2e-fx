@@ -5,7 +5,7 @@
 import pytest
 from timeouts import timeouts
 import dropped_connection_tests
-import drop_situation
+import drop_scenario
 from base_client_tests import BaseClientTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
@@ -28,57 +28,41 @@ class TestIotHubModuleClient(
     pass
 
 
-@pytest.mark.dropped_connection_tests
 @pytest.mark.describe(
-    "IoTHub ModuleClient dropped connections - network dropped and client still connected"
+    "IoTHub ModuleClient dropped connections - network glitched and client still connected"
 )
-@pytest.mark.testgroup_iothub_module_drop
+@pytest.mark.testgroup_iothub_module_quick_drop
+@pytest.mark.testgroup_iothub_module_full_drop
 @pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestIoTHubModuleNetworkDroppedAndClientStillConnected(
+class TestIoTHubModuleNetworkGlitchClientConnected(
     IoTHubModuleClient,
-    drop_situation.NetworkDroppedAndClientStillConnected,
+    drop_scenario.NetworkGlitchClientConnected,
     dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
 ):
     pass
 
 
-@pytest.mark.dropped_connection_tests
 @pytest.mark.describe(
-    "IoTHub ModuleClient dropped connections - network dropped and client disconencted"
+    "IoTHub ModuleClient dropped connections - network glitched and client disconencted"
 )
-@pytest.mark.testgroup_iothub_module_drop
+@pytest.mark.testgroup_iothub_module_full_drop
 @pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestIoTHubModuleNetworkDroppedAndClientDisconnected(
+class TestIoTHubModuleNetworkGlitchClientDisconnected(
     IoTHubModuleClient,
-    drop_situation.NetworkDroppedAndClientDisconnected,
+    drop_scenario.NetworkGlitchClientDisconnected,
     dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
 ):
     pass
 
 
-@pytest.mark.dropped_connection_tests
 @pytest.mark.describe(
-    "IoTHub ModuleClient dropped connections - client disconencted with network available"
+    "IoTHub ModuleClient dropped connections - network dropped and client disconnected"
 )
-@pytest.mark.testgroup_iothub_module_drop
+@pytest.mark.testgroup_iothub_module_full_drop
 @pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestIoTHubModuleClientDisconnectedAndNetworkAvailable(
+class TestIoTHubModuleNetworkDroppedClientDisconnected(
     IoTHubModuleClient,
-    drop_situation.ClientDisconnectedAndNetworkAvailable,
-    dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
-):
-    pass
-
-
-@pytest.mark.dropped_connection_tests
-@pytest.mark.describe(
-    "IoTHub ModuleClient dropped connections - client disconencted with network not available"
-)
-@pytest.mark.testgroup_iothub_module_drop
-@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestIoTHubModuleClientDisconnectedAndNetworkNotAvailable(
-    IoTHubModuleClient,
-    drop_situation.ClientDisconnectedAndNetworkNotAvailable,
+    drop_scenario.NetworkDroppedClientDisconnected,
     dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
 ):
     pass
