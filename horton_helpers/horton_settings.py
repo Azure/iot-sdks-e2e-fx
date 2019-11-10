@@ -17,6 +17,40 @@ class HortonSettingsObject(object):
     pass
 
 
+class HortonDeviceSettings(HortonSettingsObject):
+    def __init__(self, name):
+        self.name = name
+        self.device_id = None
+        self.language = None
+        self.adapter_address = None
+        self.connection_type = None
+        self.connection_string = None
+        self.x509_cert_path = None
+        self.x509_key_path = None
+        self.host_port = None
+        self.container_port = None
+        self.container_name = None
+        self.image = None
+
+
+class HortonModuleSettings(HortonSettingsObject):
+    def __init__(self, name):
+        self.name = name
+        self.device_id = None
+        self.module_id = None
+        self.image = None
+        self.language = None
+        self.adapter_address = None
+        self.connection_type = None
+        self.connection_string = None
+        self.x509_cert_path = None
+        self.x509_key_path = None
+        self.host_port = None
+        self.container_port = None
+        self.container_name = None
+        self.image = None
+
+
 class HortonSettings:
     def __init__(self):
         self.load()
@@ -35,57 +69,10 @@ class HortonSettings:
         self.iotedge.debug_log = None
         self.iotedge.hostname = None
 
-        self.test_module = HortonSettingsObject()
-        self.test_module.name = "test_module"
-        self.test_module.module_id = "testMod"
-        self.test_module.image = None
-        self.test_module.device_id = None
-        self.test_module.language = None
-        self.test_module.adapter_address = None
-        self.test_module.connection_type = None
-        self.test_module.connection_string = None
-        self.test_module.x509_cert_path = None
-        self.test_module.x509_key_path = None
-        self.test_module.host_port = None
-        self.test_module.container_port = None
-
-        self.friend_module = HortonSettingsObject()
-        self.friend_module.name = "friend_module"
-        self.friend_module.module_id = "friendMod"
-        self.friend_module.image = None
-        self.friend_module.device_id = None
-        self.friend_module.language = None
-        self.friend_module.adapter_address = None
-        self.friend_module.connection_type = None
-        self.friend_module.connection_string = None
-        self.friend_module.x509_cert_path = None
-        self.friend_module.x509_key_path = None
-        self.friend_module.host_port = None
-        self.friend_module.container_port = None
-
-        self.leaf_device = HortonSettingsObject()
-        self.leaf_device.name = "leaf_device"
-        self.leaf_device.device_id = None
-        self.leaf_device.language = None
-        self.leaf_device.adapter_address = None
-        self.leaf_device.connection_type = None
-        self.leaf_device.connection_string = None
-        self.leaf_device.x509_cert_path = None
-        self.leaf_device.x509_key_path = None
-        self.leaf_device.host_port = None
-        self.leaf_device.container_port = None
-
-        self.test_device = HortonSettingsObject()
-        self.test_device.name = "test_device"
-        self.test_device.device_id = None
-        self.test_device.language = None
-        self.test_device.adapter_address = None
-        self.test_device.connection_type = None
-        self.test_device.connection_string = None
-        self.test_device.x509_cert_path = None
-        self.test_device.x509_key_path = None
-        self.test_device.host_port = None
-        self.test_device.container_port = None
+        self.test_module = HortonModuleSettings("test_module")
+        self.friend_module = HortonModuleSettings("friend_module")
+        self.leaf_device = HortonDeviceSettings("leaf_device")
+        self.test_device = HortonDeviceSettings("test_device")
 
         self._objects = [
             self.iothub,

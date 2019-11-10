@@ -73,8 +73,6 @@ def set_args_from_image(obj, image):
 def remove_instance(settings_object):
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
-    run_shell_command("sudo -f systemctl stop iotege")
-
     if settings_object.device_id:
         iothub_service_helper.try_delete_device(settings_object.device_id)
         print(
@@ -88,6 +86,16 @@ def remove_instance(settings_object):
 
 
 def remove_old_instances():
+    run_shell_command("sudo -n systemctl stop iotedge")
+
+    if settings.test_module.container_name:
+        run_shell_command(
+            "sudo -n docker stop {}".format(settings.test_module.container_name)
+        )
+        run_shell_command(
+            "sudo -n docker rm {}".format(settings.test_module.container_name)
+        )
+
     remove_instance(settings.test_module)
     remove_instance(settings.friend_module)
     remove_instance(settings.iotedge)

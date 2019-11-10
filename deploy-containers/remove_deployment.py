@@ -2,7 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-import deploy
+import utilities
 
 if __name__ == "__main__":
-    deploy.remove_old_instances()
+    utilities.remove_old_instances()
