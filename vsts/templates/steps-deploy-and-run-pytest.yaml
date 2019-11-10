@@ -213,3 +213,4 @@ steps:
   parameters:
     language: $(language)
     log_folder_name: $(logFolderName)
+    deployment_type: $(deploymentType)
