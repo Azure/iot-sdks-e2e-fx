@@ -5,10 +5,27 @@ root_dir=$(cd "${script_dir}/.." && pwd)
 
 echo "fetching docker logs"
 
-resultsdir=$1/$2
+deployment_type=$1
+result_root=$2
+job_name=$3
+
+case "$deployment_type" in
+  iothub)
+    module_list=testMod
+    ;;
+  iotedge)
+    module_list="testMod friendMod edgeHub edgeAgent"
+    ;;
+  *)
+    echo "Usage: $0 [iothub | edgehub] result_root job_name"
+    exit 1
+    ;;
+esac
+
+resultsdir=${result_root}/${job_name}
 mkdir -p $resultsdir
 
-for mod in testMod friendMod edgeHub edgeAgent; do
+for mod in ${module_list}; do
   echo "getting log for $mod"
   sudo docker logs -t ${mod} &> $resultsdir/${mod}.log 
   if [ $? -ne 0 ]; then
@@ -24,7 +41,7 @@ if [ $? -ne 0 ]; then
 fi
 
 args="-filterfile ${root_dir}/pyscripts/docker_log_processor_filters.json"
-for mod in testMod friendMod edgeHub edgeAgent; do
+for mod in ${module_list}; do
     args="${args} -staticfile ${mod}.log"
 done
 pushd $resultsdir && python ${root_dir}/pyscripts/docker_log_processor.py $args > merged.log
@@ -34,7 +51,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "injecting merged.log into junit"
-pushd $resultsdir && python ${root_dir}/pyscripts/inject_into_junit.py -junit_file ../TEST-$2.xml -log_file merged.log
+pushd $resultsdir && python ${root_dir}/pyscripts/inject_into_junit.py -junit_file ../TEST-${job_name}.xml -log_file merged.log
 if [ $? -ne 0 ]; then
   echo "error injecting into junit"
   exit 1
