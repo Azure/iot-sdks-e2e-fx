@@ -3,8 +3,6 @@
 script_dir=$(cd "$(dirname "$0")" && pwd)
 root_dir=$(cd "${script_dir}/.." && pwd)
 
-echo "fetching docker logs"
-
 deployment_type=$1
 result_root=$2
 job_name=$3
@@ -22,38 +20,36 @@ case "$deployment_type" in
     ;;
 esac
 
+echo "running docker ps -a"
+sudo -n docker ps -a
+[ $? -eq 0 ] || { echo "error running docker ps"; exit 1; }
+
 resultsdir=${result_root}/${job_name}
 mkdir -p $resultsdir
+[ $? -eq 0 ] || { echo "mkdir ${resultsdir} failed"; exit 1; }
 
+echo "fetching docker logs for ${module_list}"
 for mod in ${module_list}; do
   echo "getting log for $mod"
   sudo docker logs -t ${mod} &> $resultsdir/${mod}.log 
-  if [ $? -ne 0 ]; then
-    echo "error fetching logs for ${mod}"
-    exit 1
-  fi
+  [ $? -eq 0 ] || { echo "error fetching logs for ${mod}"; exit 1; }
 done
 
-sudo journalctl -u iotedge -n 500 -e  &> $resultsdir/iotedged.log
-if [ $? -ne 0 ]; then
-  echo "error fetching iotedged journal"
-  exit 1
+if [ "${deployment_type}" -eq "iotedge" ]; then
+    echo getting iotedged log
+    sudo journalctl -u iotedge -n 500 -e  &> $resultsdir/iotedged.log
+    [ $? -eq 0 ] || { echo "error fetching iotedged journal"; exit 1; }
 fi
 
+echo "merging logs"
 args="-filterfile ${root_dir}/pyscripts/docker_log_processor_filters.json"
 for mod in ${module_list}; do
     args="${args} -staticfile ${mod}.log"
 done
 pushd $resultsdir && python ${root_dir}/pyscripts/docker_log_processor.py $args > merged.log
-if [ $? -ne 0 ]; then
-  echo "error merging logs"
-  exit 1
-fi
+[ $? -eq 0 ] || { echo "error merging logs"; exit 1; }
 
 echo "injecting merged.log into junit"
 pushd $resultsdir && python ${root_dir}/pyscripts/inject_into_junit.py -junit_file ../TEST-${job_name}.xml -log_file merged.log
-if [ $? -ne 0 ]; then
-  echo "error injecting into junit"
-  exit 1
-fi
+[ $? -eq 0 ] || { echo "error injecting into junit"; exit 1; }
 
