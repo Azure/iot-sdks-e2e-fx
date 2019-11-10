@@ -54,36 +54,36 @@ steps:
 
     if ($env:Suite.Contains("iothub_module_quick_drop")) {
         $Scenario="iothub_module_quick_drop"
-        $DeployScript="deploy_for_iothub.py"
+        $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("iothub_module_full_drop")) {
         $Scenario="iothub_module_full_drop"
-        $DeployScript="deploy_for_iothub.py"
+        $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("iothub_device_quick_drop")) {
         $Scenario="iothub_device_quick_drop"
-        $DeployScript="deploy_for_iothub.py"
+        $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("iothub_device_full_drop")) {
         $Scenario="iothub_device_full_drop"
-        $DeployScript="deploy_for_iothub.py"
+        $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("edgehub_module_quick_drop")) {
         $Scenario="edgehub_module_quick_drop"
-        $DeployScript="deploy_for_iotedge.py"
+        $DeploymentType="iotedge"
     } elseif ($env:Suite.Contains("edgehub_module_full_drop")) {
         $Scenario="edgehub_module_quick_drop"
-        $DeployScript="deploy_for_iotedge.py"
+        $DeploymentType="iotedge"
     } elseif ($env:Suite.Contains("iothub_module_and_device")) {
         $Scenario="iothub_module_and_device"
-        $DeployScript="deploy_for_iothub.py"
+        $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("iothub_module")) {
         $Scenario="iothub_module"
-        $DeployScript="deploy_for_iothub.py"
+        $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("iothub_device")) {
-        $DeployScript="deploy_for_iothub.py"
+        $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("edgehub_module_fi")) {
         $Scenario="edgehub_module_fi"
-        $DeployScript="deploy_for_iotedge.py"
+        $DeploymentType="iotedge"
     } elseif ($env:Suite.Contains("edgehub_module")) {
         $Scenario="edgehub_module"
-        $DeployScript="deploy_for_iotedge.py"
+        $DeploymentType="iotedge"
     } else {
         throw("Unknown/missing scenario in suite: " + $env:Suite)
     }
@@ -163,7 +163,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=testArgs]${TestArgs}"
     Write-Host "##vso[task.setvariable variable=testImageTag]${TestImageTag}"
     Write-Host "##vso[task.setvariable variable=imageTestMod]${ImageTestMod}"
-    Write-Host "##vso[task.setvariable variable=deployScript]${DeployScript}"
+    Write-Host "##vso[task.setvariable variable=deploymentType]${DeploymentType}"
 
     Write-Host "Language=${Language}"
     Write-Host "Variant=${Variant}"
@@ -177,7 +177,7 @@ steps:
     Write-Host "TestArgs=${TestArgs}"
     Write-Host "TestImageTag=${TestImageTag}"
     Write-Host "ImageTestMod=${ImageTestMod}"
-    Write-Host "DeployScript=${DeployScript}"
+    Write-Host "DeploymentType=${DeploymentType}"
 
 
   displayName: Custom task execution logic
@@ -199,7 +199,7 @@ steps:
     language: $(language)
     test_image_tag: $(testImageTag)
     image_testMod: $(imageTestMod)
-    deploy_script: $(deployScript)
+    deployment_type: $(deploymentType)
 
 - template: pytest-test-steps.yaml
   parameters:
