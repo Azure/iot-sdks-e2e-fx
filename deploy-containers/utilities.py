@@ -97,7 +97,10 @@ def try_remove_container(container_name):
 
 
 def remove_old_instances():
-    run_shell_command("sudo -n systemctl stop iotedge")
+    try:
+        run_shell_command("sudo -n systemctl stop iotedge")
+    except subprocess.CalledProcessError:
+        print("Ignoring failure")
 
     if settings.test_module.container_name:
         try_remove_container(settings.test_module.container_name)
