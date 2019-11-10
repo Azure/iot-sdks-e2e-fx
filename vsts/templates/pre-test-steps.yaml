@@ -43,7 +43,7 @@ steps:
 
 - script: python deploy_for_${{ parameters.deployment_type }}.py --image ${{ parameters.image_testMod }}
   workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
-  displayName: 'Create new identites and deploy containers"
+  displayName: 'Create new identites and deploy containers'
   env:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
