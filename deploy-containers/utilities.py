@@ -85,16 +85,22 @@ def remove_instance(settings_object):
     settings.save()
 
 
+def try_remove_container(container_name):
+    try:
+        run_shell_command("sudo -n docker stop {}".format(container_name))
+    except subprocess.CalledProcessError:
+        print("Ignoring failure")
+    try:
+        run_shell_command("sudo -n docker rm {}".format(container_name))
+    except subprocess.CalledProcessError:
+        print("Ignoring failure")
+
+
 def remove_old_instances():
     run_shell_command("sudo -n systemctl stop iotedge")
 
     if settings.test_module.container_name:
-        run_shell_command(
-            "sudo -n docker stop {}".format(settings.test_module.container_name)
-        )
-        run_shell_command(
-            "sudo -n docker rm {}".format(settings.test_module.container_name)
-        )
+        try_remove_container(settings.test_module.container_name)
 
     remove_instance(settings.test_module)
     remove_instance(settings.friend_module)

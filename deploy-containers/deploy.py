@@ -67,8 +67,8 @@ def deploy_for_iothub_old(testMod_image):
 
 
 def create_docker_container(obj):
-    utilities.run_shell_command("sudo -n docker stop {}".format(obj.container_name))
-    utilities.run_shell_command("sudo -n docker rm {}".format(obj.container_name))
+    utilities.try_remove_container(obj.container_name)
+
     utilities.run_shell_command(
         "docker run -d -p {host_port_1}:{container_port_1} -p {host_port_2}:{container_port_2} --name {name} --restart unless-stopped --cap-add NET_ADMIN --cap-add NET_RAW {image}".format(
             host_port_1=obj.host_port,
