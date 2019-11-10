@@ -20,7 +20,8 @@ def get_edge_ca_cert_base64():
 
 def populate_credentials():
 
-    settings.iotedge.ca_cert_base64 = get_edge_ca_cert_base64()
+    if settings.iotedge.device_id:
+        settings.iotedge.ca_cert_base64 = get_edge_ca_cert_base64()
 
     for device in (settings.leaf_device, settings.test_device):
         if device.device_id:
@@ -56,7 +57,9 @@ def populate_credentials():
                         settings.iotedge.hostname
                     )
 
-                "Added connection string for {} module {},{}".format(
-                    module.name, module.device_id, module.module_id
+                print(
+                    "Added connection string for {} module {},{}".format(
+                        module.name, module.device_id, module.module_id
+                    )
                 )
     settings.save()

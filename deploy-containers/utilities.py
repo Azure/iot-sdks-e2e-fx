@@ -6,6 +6,8 @@ import os
 import socket
 import random
 import string
+from iothub_service_helper import IoTHubServiceHelper
+from horton_settings import settings
 
 
 def run_shell_command(cmd):
@@ -66,3 +68,45 @@ def set_args_from_image(obj, image):
     obj.container_port = get_container_port_from_language(obj.language)
     obj.adapter_address = "http://{}:{}".format("localhost", obj.host_port)
     obj.image = image
+
+
+def remove_instance(settings_object):
+    iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
+
+    if settings_object.device_id:
+        iothub_service_helper.try_delete_device(settings_object.device_id)
+        print(
+            "Removed {} device with id {}".format(
+                settings_object.name, settings_object.device_id
+            )
+        )
+
+    settings.clear_object(settings_object)
+    settings.save()
+
+
+def try_remove_container(container_name):
+    try:
+        run_shell_command("sudo -n docker stop {}".format(container_name))
+    except subprocess.CalledProcessError:
+        print("Ignoring failure")
+    try:
+        run_shell_command("sudo -n docker rm {}".format(container_name))
+    except subprocess.CalledProcessError:
+        print("Ignoring failure")
+
+
+def remove_old_instances():
+    try:
+        run_shell_command("sudo -n systemctl stop iotedge")
+    except subprocess.CalledProcessError:
+        print("Ignoring failure")
+
+    if settings.test_module.container_name:
+        try_remove_container(settings.test_module.container_name)
+
+    remove_instance(settings.test_module)
+    remove_instance(settings.friend_module)
+    remove_instance(settings.iotedge)
+    remove_instance(settings.test_device)
+    remove_instance(settings.leaf_device)
