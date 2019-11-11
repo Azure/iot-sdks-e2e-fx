@@ -32,10 +32,12 @@ ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
-COPY wrapper /wrapper
+COPY wrapper/src/*.csproj /wrapper/src/
 
 COPY ./prebuild.sh /
 RUN /prebuild.sh
+
+COPY wrapper /wrapper
 
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME
