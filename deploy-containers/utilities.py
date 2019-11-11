@@ -110,3 +110,18 @@ def remove_old_instances():
     remove_instance(settings.iotedge)
     remove_instance(settings.test_device)
     remove_instance(settings.leaf_device)
+
+
+def create_docker_container(obj):
+    try_remove_container(obj.container_name)
+
+    run_shell_command(
+        "docker run -d -p {host_port_1}:{container_port_1} -p {host_port_2}:{container_port_2} --name {name} --restart unless-stopped --cap-add NET_ADMIN --cap-add NET_RAW {image}".format(
+            host_port_1=obj.host_port,
+            container_port_1=obj.container_port,
+            host_port_2=obj.host_port + 100,
+            container_port_2=22,
+            name=obj.container_name,
+            image=obj.image,
+        )
+    )

@@ -7,6 +7,7 @@ from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 import edge_deployment
 import utilities
+import argparse
 
 testMod_host_port = 8099
 
@@ -47,40 +48,6 @@ def deploy_for_iotedge(testMod_image):
     )
 
 
-def deploy_for_iothub_old(testMod_image):
-    deploy_for_iotedge(testMod_image)
-
-    settings.test_device.device_id = settings.leaf_device.device_id
-    settings.test_device.language = settings.test_module.language
-    settings.test_device.adapter_address = settings.test_module.adapter_address
-    settings.test_device.connection_type = "connection_string"
-    settings.test_device.host_port = settings.test_module.host_port
-    settings.test_device.container_port = settings.test_module.container_port
-    settings.test_device.container_name = "hortonObjectUnderTest"
-
-    settings.test_module.connection_type = "connection_string"
-
-    settings.clear_object(settings.leaf_device)
-    settings.clear_object(settings.friend_module)
-
-    settings.save()
-
-
-def create_docker_container(obj):
-    utilities.try_remove_container(obj.container_name)
-
-    utilities.run_shell_command(
-        "docker run -d -p {host_port_1}:{container_port_1} -p {host_port_2}:{container_port_2} --name {name} --restart unless-stopped --cap-add NET_ADMIN --cap-add NET_RAW {image}".format(
-            host_port_1=obj.host_port,
-            container_port_1=obj.container_port,
-            host_port_2=obj.host_port + 100,
-            container_port_2=22,
-            name=obj.container_name,
-            image=obj.image,
-        )
-    )
-
-
 def deploy_for_iothub(testMod_image):
     utilities.remove_old_instances()
 
@@ -107,6 +74,24 @@ def deploy_for_iothub(testMod_image):
         settings.test_module.device_id, settings.test_module.module_id
     )
 
-    create_docker_container(settings.test_module)
+    utilities.create_docker_container(settings.test_module)
 
     settings.save()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="deploy containers for testing")
+    parser.add_argument("deployment_type", type=str, choices=["iothub", "iotedge"])
+    parser.add_argument(
+        "--image", help="docker image to deploy", type=str, required=True
+    )
+
+    args = parser.parse_args()
+    utilities.get_language_from_image_name(
+        args.image
+    )  # validate image name before continuing
+
+    if args.deployment_type == "iothub":
+        deploy_for_iothub(args.image)
+    elif args.deployment_type == "iotedge":
+        deploy_for_iotedge(args.image)
