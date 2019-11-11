@@ -63,3 +63,7 @@ def populate_credentials():
                     )
                 )
     settings.save()
+
+
+if __name__ == "__main__":
+    populate_credentials()

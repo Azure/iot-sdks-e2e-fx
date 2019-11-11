@@ -41,7 +41,7 @@ steps:
   displayName: 'pre-cache edge images'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- script: python deploy_for_${{ parameters.deployment_type }}.py --image ${{ parameters.image_testMod }}
+- script: python deploy.py ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
   workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
   displayName: 'Create new identites and deploy containers'
   env:
@@ -82,7 +82,7 @@ steps:
   displayName: 'give edgeHub 30 seconds to start up'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
   
-- script: python populate_credentials.py
+- script: python get_credentials.py
   workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
   displayName: 'Get credentials'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
