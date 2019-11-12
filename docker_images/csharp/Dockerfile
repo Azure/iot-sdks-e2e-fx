@@ -32,12 +32,18 @@ ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
+COPY wrapper/src/*.csproj /wrapper/src/
+workdir /wrapper/src
+RUN dotnet restore
+
 COPY wrapper /wrapper
 
 COPY ./prebuild.sh /
 RUN /prebuild.sh
 
+
 # phase 2: grab the code we want to test and rebuild
+WORKDIR /sdk
 ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
 RUN git pull 
