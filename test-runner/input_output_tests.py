@@ -15,8 +15,6 @@ output_name_to_friend = "toFriend"
 sleep_time_for_listener_start = 3
 
 telemetry_output_name = "telemetry"
-loopback_output_name = "loopout"
-loopback_input_name = "loopin"
 
 
 class InputOutputTests(object):
@@ -167,52 +165,3 @@ class InputOutputTests(object):
             client.device_id, expected=sent_message.body
         )
         assert received_message is not None, "Message not received"
-
-    @pytest.mark.callsSendOutputEvent
-    @pytest.mark.receivesInputMessages
-    @pytest.mark.handlesLoopbackMessages
-    @pytest.mark.it("Can send a message to itself")
-    async def test_module_input_output_loopback(self, client, test_string, logger):
-        await client.enable_input_messages()
-
-        input_future = asyncio.ensure_future(
-            client.wait_for_input_event(loopback_input_name)
-        )
-
-        # give the registration a chance to take place
-        await asyncio.sleep(sleep_time_for_listener_start)
-
-        await client.send_output_event(loopback_output_name, test_string)
-
-        received_message = await input_future
-        logger("input message arrived")
-        logger("expected message: " + str(test_string))
-        logger("received message: " + str(received_message))
-        assert received_message == test_string
-
-    @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.new_message_format
-    @pytest.mark.callsSendOutputEvent
-    @pytest.mark.receivesInputMessages
-    @pytest.mark.handlesLoopbackMessages
-    @pytest.mark.it("Can send a message to itself using the new Horton HubEvent")
-    async def test_module_input_output_loopback_hubevent(self, client, body, logger):
-        await client.enable_input_messages()
-
-        input_future = asyncio.ensure_future(
-            client.wait_for_input_event(loopback_input_name)
-        )
-
-        # give the registration a chance to take place
-        await asyncio.sleep(sleep_time_for_listener_start)
-
-        sent_message = HubEvent(body)
-        await client.send_output_event(
-            loopback_output_name, sent_message.convert_to_json()
-        )
-
-        received_message = await input_future
-        logger("input message arrived")
-        logger("expected message: " + str(body))
-        logger("received message: " + str(received_message))
-        assert utilities.json_is_same(sent_message.body, received_message)
