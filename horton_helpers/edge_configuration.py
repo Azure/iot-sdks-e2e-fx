@@ -134,12 +134,6 @@ class EdgeConfiguration:
                 + modName
                 + "/outputs/telemetry INTO $upstream",
                 modName
-                + "Loopback": "FROM /messages/modules/"
-                + modName
-                + '/outputs/loopout INTO BrokeredEndpoint("/modules/'
-                + modName
-                + '/inputs/loopin")',
-                modName
                 + "ToFriend": "FROM /messages/modules/"
                 + modName
                 + '/outputs/toFriend INTO BrokeredEndpoint("/modules/friendMod/inputs/from'
@@ -152,7 +146,7 @@ class EdgeConfiguration:
                 + modName
                 + '/inputs/fromFriend")',
                 modName
-                + "C2D": "FROM /messages/modules/"
+                + "Default": "FROM /messages/modules/"
                 + modName
                 + "/* INTO $upstream",
             }
