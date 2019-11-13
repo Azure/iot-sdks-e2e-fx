@@ -87,7 +87,7 @@ class EdgeConfiguration:
                     "properties.desired": {
                         "schemaVersion": "1.0",
                         "routes": {},
-                        "storeAndForwardConfiguration": {"timeToLiveSecs": 30},
+                        "storeAndForwardConfiguration": {"timeToLiveSecs": 180},
                     }
                 },
             }
