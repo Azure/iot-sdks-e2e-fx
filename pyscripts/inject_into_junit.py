@@ -41,6 +41,8 @@ class InjectIntoJunit:
                 class_name = testcase.classname
                 test_name = testcase.name
                 if testcase.system_out:
+                    testcase.system_err = testcase.system_out
+
                     lines_for_junit = self.get_testcase_lines_from_log(
                         log_file_lines, class_name, test_name
                     )
