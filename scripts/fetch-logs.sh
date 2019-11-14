@@ -53,7 +53,7 @@ python ${root_dir}/pyscripts/docker_log_processor.py $args > merged.log
 [ $? -eq 0 ] || { echo "error merging logs"; exit 1; }
 
 echo "saving original junit"
-cp "../TEST-${job_name}.xml" "./TEST-${job_name}.orig_xml"
+cp "../TEST-${job_name}.xml" "./orig-TEST-${job_name}.xml"
 [ $? -eq 0 ] || { echo "error saving junit"; exit 1; }
 
 echo "injecting merged.log into junit"
