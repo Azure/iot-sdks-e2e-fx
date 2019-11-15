@@ -3,7 +3,7 @@
 # full license information.
 
 # default timeout for all rest API calls, not otherwise specified
-default_api_timeout = 90
+default_api_timeout = 120
 
 # timeout for print_message calls
 print_message_timeout = 2
