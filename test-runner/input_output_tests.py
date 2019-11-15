@@ -138,13 +138,17 @@ class InputOutputTests(object):
     async def test_module_output_routed_upstream(
         self, client, eventhub, test_object_stringified
     ):
+        # start listening before we send
         await eventhub.connect()
+        received_message_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(
+                client.device_id, expected=test_object_stringified
+            )
+        )
 
         await client.send_output_event(telemetry_output_name, test_object_stringified)
 
-        received_message = await eventhub.wait_for_next_event(
-            client.device_id, expected=test_object_stringified
-        )
+        received_message = await received_message_future
         assert received_message is not None, "Message not received"
 
     @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
