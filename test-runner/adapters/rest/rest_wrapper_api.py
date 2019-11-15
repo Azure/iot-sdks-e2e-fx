@@ -53,7 +53,7 @@ class WrapperApi(AbstractWrapperApi):
                 timeout=adapter_config.print_message_timeout,
             )
         except msrest.exceptions.ClientRequestError:
-            print("PYTEST: error logging to " + str(self.lrest_endpoint))
+            print("PYTEST: error logging to " + str(self.rest_endpoint))
             # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
 
     @log_entry_and_exit
