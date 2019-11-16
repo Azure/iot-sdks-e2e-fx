@@ -10,10 +10,26 @@ from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 
 
+def is_windows():
+    return ("OS" in os.environ) and (os.environ["OS"] == "Windows_NT")
+
+
+def sudo_prefix():
+    if is_windows():
+        return ""
+    else:
+        return "sudo -n "
+
+
 def run_shell_command(cmd):
-    print("running [{}]".format(cmd))
+    cmd_with_prefix = sudo_prefix() + cmd
+    print("running [{}]".format(cmd_with_prefix))
     try:
-        return subprocess.check_output(cmd.split(" ")).decode("utf-8").splitlines()
+        return (
+            subprocess.check_output(cmd_with_prefix.split(" "))
+            .decode("utf-8")
+            .splitlines()
+        )
     except subprocess.CalledProcessError as e:
         print("Error spawning {}".format(e.cmd))
         print("Process returned {}".format(e.returncode))
@@ -87,20 +103,21 @@ def remove_instance(settings_object):
 
 def try_remove_container(container_name):
     try:
-        run_shell_command("sudo -n docker stop {}".format(container_name))
+        run_shell_command("docker stop {}".format(container_name))
     except subprocess.CalledProcessError:
         print("Ignoring failure")
     try:
-        run_shell_command("sudo -n docker rm {}".format(container_name))
+        run_shell_command("docker rm {}".format(container_name))
     except subprocess.CalledProcessError:
         print("Ignoring failure")
 
 
 def remove_old_instances():
-    try:
-        run_shell_command("sudo -n systemctl stop iotedge")
-    except subprocess.CalledProcessError:
-        print("Ignoring failure")
+    if not is_windows():
+        try:
+            run_shell_command("systemctl stop iotedge")
+        except subprocess.CalledProcessError:
+            print("Ignoring failure")
 
     if settings.test_module.container_name:
         try_remove_container(settings.test_module.container_name)
