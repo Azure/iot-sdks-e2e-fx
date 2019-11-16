@@ -178,6 +178,7 @@ class TwinTests(object):
             )
             await asyncio.sleep(3)  # wait for async call to take effect
 
+            logger("sending patch {}".format(i))
             await patch_desired_props(registry, client, twin_sent)
             logger("patch {} sent".format(i))
 

@@ -53,7 +53,10 @@ def eventhub(logger):
     eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
     yield eventhub
     logger(separator.format("eventhub"))
-    eventhub.disconnect_sync()
+    try:
+        eventhub.disconnect_sync()
+    except e:
+        logger("exception disconnecting eventhub: {}".format(e))
 
 
 @pytest.fixture
@@ -61,7 +64,10 @@ def registry(logger):
     registry = connections.connect_registry_client()
     yield registry
     logger(separator.format("registry"))
-    registry.disconnect_sync()
+    try:
+        registry.disconnect_sync()
+    except e:
+        logger("exception disconnecting registry: {}".format(e))
 
 
 @pytest.fixture
@@ -69,7 +75,10 @@ def friend(logger):
     friend = connections.connect_friend_module_client()
     yield friend
     logger(separator.format("friend module"))
-    friend.disconnect_sync()
+    try:
+        friend.disconnect_sync()
+    except e:
+        logger("exception disconnecting friend module: {}".format(e))
 
 
 @pytest.fixture
@@ -77,7 +86,10 @@ def test_module(logger):
     test_module = connections.connect_test_module_client()
     yield test_module
     logger(separator.format("test module"))
-    test_module.disconnect_sync()
+    try:
+        test_module.disconnect_sync()
+    except e:
+        logger("exception disconnecting test module: {}".format(e))
 
 
 @pytest.fixture
@@ -85,7 +97,10 @@ def leaf_device(logger):
     leaf_device = connections.connect_leaf_device_client()
     yield leaf_device
     logger(separator.format("leaf device"))
-    leaf_device.disconnect_sync()
+    try:
+        leaf_device.disconnect_sync()
+    except e:
+        logger("exception disconnecting leaf device: {}".format(e))
 
 
 @pytest.fixture
@@ -93,7 +108,10 @@ def test_device(logger):
     test_device = connections.connect_test_device_client()
     yield test_device
     logger(separator.format("device"))
-    test_device.disconnect_sync()
+    try:
+        test_device.disconnect_sync()
+    except e:
+        logger("exception disconnecting test device: {}".format(e))
 
 
 @pytest.fixture
@@ -101,7 +119,10 @@ def service(logger):
     service = connections.connect_service_client()
     yield service
     logger(separator.format("service"))
-    service.disconnect_sync()
+    try:
+        service.disconnect_sync()
+    except e:
+        logger("exception disconnecting service: {}".format(e))
 
 
 @pytest.fixture

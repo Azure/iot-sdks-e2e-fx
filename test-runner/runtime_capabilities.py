@@ -6,7 +6,7 @@ from horton_settings import settings
 
 hardcoded_skip_list = {
     "node": [],
-    "csharp": ["module_under_test_has_device_wrapper", "handlesLoopbackMessages"],
+    "csharp": ["module_under_test_has_device_wrapper"],
     "pythonv1": [
         "module_under_test_has_device_wrapper",
         "invokesModuleMethodCalls",
