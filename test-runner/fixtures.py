@@ -55,7 +55,7 @@ def eventhub(logger):
     logger(separator.format("eventhub"))
     try:
         eventhub.disconnect_sync()
-    except e:
+    except Exception as e:
         logger("exception disconnecting eventhub: {}".format(e))
 
 
@@ -66,7 +66,7 @@ def registry(logger):
     logger(separator.format("registry"))
     try:
         registry.disconnect_sync()
-    except e:
+    except Exception as e:
         logger("exception disconnecting registry: {}".format(e))
 
 
@@ -77,7 +77,7 @@ def friend(logger):
     logger(separator.format("friend module"))
     try:
         friend.disconnect_sync()
-    except e:
+    except Exception as e:
         logger("exception disconnecting friend module: {}".format(e))
 
 
@@ -88,7 +88,7 @@ def test_module(logger):
     logger(separator.format("test module"))
     try:
         test_module.disconnect_sync()
-    except e:
+    except Exception as e:
         logger("exception disconnecting test module: {}".format(e))
 
 
@@ -99,7 +99,7 @@ def leaf_device(logger):
     logger(separator.format("leaf device"))
     try:
         leaf_device.disconnect_sync()
-    except e:
+    except Exception as e:
         logger("exception disconnecting leaf device: {}".format(e))
 
 
@@ -110,7 +110,7 @@ def test_device(logger):
     logger(separator.format("device"))
     try:
         test_device.disconnect_sync()
-    except e:
+    except Exception as e:
         logger("exception disconnecting test device: {}".format(e))
 
 
@@ -121,7 +121,7 @@ def service(logger):
     logger(separator.format("service"))
     try:
         service.disconnect_sync()
-    except e:
+    except Exception as e:
         logger("exception disconnecting service: {}".format(e))
 
 
