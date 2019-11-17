@@ -249,6 +249,47 @@ class WrapperOperations(object):
             return client_raw_response
     network_disconnect.metadata = {'url': '/wrapper/networkDisconnect/{transportType}/{disconnectionType}'}
 
+    def send_command(
+            self, cmd, custom_headers=None, raw=False, **operation_config):
+        """send an arbitrary command.
+
+        :param cmd: command string
+        :type cmd: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.send_command.metadata['url']
+
+        # Construct parameters
+        query_parameters = {}
+        query_parameters['cmd'] = self._serialize.query("cmd", cmd, 'str')
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters)
+        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    send_command.metadata = {'url': '/wrapper/command'}
+
     def network_reconnect(
             self, custom_headers=None, raw=False, **operation_config):
         """Reconnect the network after a simulated network disconnection.

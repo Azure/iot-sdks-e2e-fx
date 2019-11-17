@@ -111,6 +111,22 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
+  /wrapper/command:
+    put:
+      tags:
+      - "wrapper"
+      summary: "send an arbitrary command"
+      operationId: "wrapper_send_command"
+      parameters:
+      - name: "cmd"
+        in: "query"
+        description: "command string"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
   /wrapper/networkReconnect:
     put:
       tags:

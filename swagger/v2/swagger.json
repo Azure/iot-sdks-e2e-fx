@@ -49,6 +49,9 @@
     "/wrapper/networkDisconnect/{transportType}/{disconnectionType}": {
       "$ref": "wrapper.json#/networkDisconnect"
     },
+    "/wrapper/command": {
+      "$ref": "wrapper.json#/command"
+    },
     "/wrapper/networkReconnect": {
       "$ref": "wrapper.json#/networkReconnect"
     },
