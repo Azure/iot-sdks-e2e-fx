@@ -70,6 +70,18 @@ def wrapper_network_reconnect():  # noqa: E501
     # changed from return 'do some magic!'
     wrapper_glue.network_reconnect()
 
+def wrapper_send_command(cmd):  # noqa: E501
+    """send an arbitrary command
+
+     # noqa: E501
+
+    :param cmd: command string
+    :type cmd: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
+
 
 def wrapper_set_flags(flags):  # noqa: E501
     """set flags for the wrapper to use
