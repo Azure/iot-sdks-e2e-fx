@@ -10,7 +10,7 @@ import drop
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("droopy." + __name__)
 
 default_port = 8040
 client_transport = ""
@@ -35,23 +35,30 @@ def split_path(path):
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        logger.info("Received GET for ".format(self.path))
-        if self.path.startswith("/set_dest/"):
-            self.handle_set_destination()
-        elif self.path.startswith("/disconnect/"):
-            self.handle_disconnect()
-        elif self.path.startswith("/reconnect/"):
-            self.handle_reconnect()
-        elif self.path.startswith("/disconnect_after_c2d/"):
-            self.handle_disconnect_after_c2d()
-        elif self.path.startswith("/disconnect_after_d2c/"):
-            self.handle_disconnect_after_d2c()
-        else:
-            self.send_response(404)
-        logger.info("done handling GET for ".format(self.path))
+        logger.info("Received GET for {}".format(self.path))
+        try:
+            if self.path.startswith("/set_destination/"):
+                self.handle_set_destination()
+            elif self.path.startswith("/disconnect/"):
+                self.handle_disconnect()
+            elif self.path.startswith("/reconnect/"):
+                self.handle_reconnect()
+            elif self.path.startswith("/disconnect_after_c2d/"):
+                self.handle_disconnect_after_c2d()
+            elif self.path.startswith("/disconnect_after_d2c/"):
+                self.handle_disconnect_after_d2c()
+            else:
+                self.send_response(404)
+        except Exception:
+            logger.error("exception in do_GET", exc_info=True)
+            self.send_response(500)
+
+        self.end_headers()
+        logger.info("done handling GET for {}".format(self.path))
 
     def handle_set_destination(self):
         # /set_dest/<IP>/<transport>/
+        logger.info("inside handle_set_destination")
         parts = split_path(self.path)
         if len(parts) != 3:
             self.send_response(404)
@@ -59,9 +66,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(404)
         else:
             self.do_set_destination(parts[1], parts[2])
+            self.send_response(200)
 
-    def handle_disconnet(self):
+    def handle_disconnect(self):
         # /disconnect/<drop_mathod>/
+        logger.info("inside handle_set_disconnect")
         parts = split_path(self.path)
         if len(parts) != 2:
             self.send_response(404)
@@ -69,19 +78,21 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(404)
         else:
             self.do_disconnect(parts[1])
+            self.send_response(200)
 
     def handle_reconnect(self):
-        # /reconnect/<disconnect_type>/
+        # /reconnect/
+        logger.info("inside handle_reconnect")
         parts = split_path(self.path)
-        if len(parts) != 2:
-            self.send_response(404)
-        elif parts[1] not in drop.all_disconnect_types:
+        if len(parts) != 1:
             self.send_response(404)
         else:
-            self.do_reconnect(parts[1])
+            self.do_reconnect()
+            self.send_response(200)
 
     def handle_disconnet_after_c2d(self):
         # /disconnect_after_c2d/<disconnect_type>/
+        logger.info("inside handle_disconnect_after_c2d")
         parts = split_path(self.path)
         if len(parts) != 2:
             self.send_response(404)
@@ -89,9 +100,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(404)
         else:
             self.do_disconnect_after_c2d(parts[1])
+            self.send_response(200)
 
     def handle_disconnect_after_d2c(self):
         # /disconnect_after_d2c/<disconnect_type>/
+        logger.info("inside handle_disconnect_after_d2c")
         parts = split_path(self.path)
         if len(parts) != 2:
             self.send_response(404)
@@ -99,27 +112,28 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(404)
         else:
             self.do_disconnect_after_d2c(parts[1])
+            self.send_response(200)
 
     def do_set_destination(self, ip, transport):
         global destination_ip
         global client_transport
         destination_ip = ip
         client_transport = transport
-        self.send_reponse(200)
+        self.send_response(200)
 
     def do_disconnect(self, disconnect_type):
         drop.disconnect_port(disconnect_type, client_transport)
 
-    def do_reconnect(self, disconnect_type):
-        drop.reconnect_port(disconnect_type, client_transport)
+    def do_reconnect(self):
+        drop.reconnect_port(client_transport)
 
     def do_disconnect_after_c2d(self, disconnect_type):
         # BKTODO
-        pass
+        self.send_response(500)
 
     def do_disconnect_after_d2c(self, disconnect_type):
         # BKTODO
-        pass
+        self.send_response(500)
 
 
 if __name__ == "__main__":
