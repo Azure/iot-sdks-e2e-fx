@@ -7,12 +7,18 @@ from six.moves import urllib
 from urllib.parse import urlparse
 import posixpath
 import drop
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+default_port = 8040
 client_transport = ""
 destination_ip = ""
 
 
 def run_server(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
+    logger.info("listening on port 8040")
     server_address = ("", 8040)
     httpd = server_class(server_address, handler_class)
     httpd.serve_forever()
@@ -29,6 +35,7 @@ def split_path(path):
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        logger.info("Received GET for ".format(self.path))
         if self.path.startswith("/set_dest/"):
             self.handle_set_destination()
         elif self.path.startswith("/disconnect/"):
@@ -41,6 +48,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.handle_disconnect_after_d2c()
         else:
             self.send_response(404)
+        logger.info("done handling GET for ".format(self.path))
 
     def handle_set_destination(self):
         # /set_dest/<IP>/<transport>/
