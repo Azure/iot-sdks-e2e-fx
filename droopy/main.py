@@ -63,7 +63,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.do_disconnect(parts[1])
 
     def handle_reconnect(self):
-        # /reconnect/<drop_method>/
+        # /reconnect/<disconnect_type>/
         parts = split_path(self.path)
         if len(parts) != 2:
             self.send_response(404)
@@ -73,7 +73,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.do_reconnect(parts[1])
 
     def handle_disconnet_after_c2d(self):
-        # /disconnect_after_c2d/<drop_method>/
+        # /disconnect_after_c2d/<disconnect_type>/
         parts = split_path(self.path)
         if len(parts) != 2:
             self.send_response(404)
@@ -83,7 +83,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.do_disconnect_after_c2d(parts[1])
 
     def handle_disconnect_after_d2c(self):
-        # /disconnect_after_d2c/<drop_method>/
+        # /disconnect_after_d2c/<disconnect_type>/
         parts = split_path(self.path)
         if len(parts) != 2:
             self.send_response(404)
@@ -99,19 +99,17 @@ class RequestHandler(BaseHTTPRequestHandler):
         client_transport = transport
         self.send_reponse(200)
 
-    def do_disconnect(self, drop_method):
+    def do_disconnect(self, disconnect_type):
+        drop.disconnect_port(disconnect_type, client_transport)
+
+    def do_reconnect(self, disconnect_type):
+        drop.reconnect_port(disconnect_type, client_transport)
+
+    def do_disconnect_after_c2d(self, disconnect_type):
         # BKTODO
         pass
 
-    def do_reconnect(self, drop_method):
-        # BKTODO
-        pass
-
-    def do_disconnect_after_c2d(self, drop_method):
-        # BKTODO
-        pass
-
-    def do_disconnect_after_d2c(self, drop_method):
+    def do_disconnect_after_d2c(self, disconnect_type):
         # BKTODO
         pass
 
