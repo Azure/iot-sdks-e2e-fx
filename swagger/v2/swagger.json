@@ -32,6 +32,10 @@
       "name": "registry",
       "description": "registry APIs"
     }
+    {
+      "name": "net",
+      "description": "network control APIs"
+    }
   ],
   "paths": {
     "/wrapper/capabilities": {
@@ -204,6 +208,21 @@
     },
     "/device/{connectionId}/connectionStatusChange": {
       "$ref": "device.json#/connectionStatusChange"
+    },
+    "/net/setDestination/{ip}/{transportType}": {
+      "$ref": "net.json#/netSetDestination"
+    },
+    "/net/disconnect/{disconnectType}": {
+      "$ref": "net.json#/netDisconnect"
+    },
+    "/net/reconnect": {
+      "$ref": "net.json#/netReconnect"
+    },
+    "/net/disconnectAfterC2D/{disconnectType}": {
+      "$ref": "net.json#/netDisconnectAfterC2d"
+    },
+    "/net/disconnectAfterD2c/{disconnectType}": {
+      "$ref": "net.json#/netDisconnectAfterD2c"
     }
   }
 }

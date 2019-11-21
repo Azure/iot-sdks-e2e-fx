@@ -37,6 +37,7 @@ def get_capabilities():
             "new_message_format": True,
             "v2_connect_group": True,
             "dropped_connection_tests": True,
+            "net_control_app": True,
         },
         "skip_list": ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"],
     }
