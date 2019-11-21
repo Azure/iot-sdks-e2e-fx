@@ -39,7 +39,7 @@ cd ${root_dir}/test-runner/adapters/rest/generated/
 rm -r e2erestapi/
 [ $? -eq 0 ] || { echo "rm e2erestapi failed"; exit 1; }
 
-cp -r ../../../swagger/swagger_generated/yaml/generated/e2erestapi/ .
+cp -r ../../../../swagger/swagger_generated/yaml/generated/e2erestapi/ .
 [ $? -eq 0 ] || { echo "cp"; exit 1; }
 
 colorecho $_green "SUCCESS!"
