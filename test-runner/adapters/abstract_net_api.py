@@ -12,7 +12,11 @@ class AbstractNetApi:
         pass
 
     @abc.abstractmethod
-    def disconnect_sync(self, disconnect_type):
+    def disconnect(self, disconnect_type):
+        pass
+
+    @abc.abstractmethod
+    def reconnect(self):
         pass
 
     @abc.abstractmethod
@@ -20,9 +24,9 @@ class AbstractNetApi:
         pass
 
     @abc.abstractmethod
-    def disconnect_after_c2d_sync(self, disconnect_type):
+    def disconnect_after_c2d(self, disconnect_type):
         pass
 
     @abc.abstractmethod
-    def disconnect_after_d2c_sync(self, disconnect_type):
+    def disconnect_after_d2c(self, disconnect_type):
         pass

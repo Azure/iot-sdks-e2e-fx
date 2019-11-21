@@ -38,6 +38,8 @@ def deploy_for_iotedge(testMod_image):
     settings.leaf_device.host_port = settings.test_module.host_port
     settings.leaf_device.container_port = settings.test_module.container_port
 
+    settings.net_control.test_destination = host
+
     edge_deployment.set_config_yaml()
     edge_deployment.restart_iotedge()
 
@@ -73,6 +75,8 @@ def deploy_for_iothub(testMod_image):
     iothub_service_helper.create_device_module(
         settings.test_module.device_id, settings.test_module.module_id
     )
+
+    settings.net_control.test_destination = host
 
     utilities.create_docker_container(settings.test_module)
 

@@ -79,6 +79,7 @@ class HortonSettings:
         self.net_control.host_port = 8140
         self.net_control.container_port = 8040
         self.net_control.adapter_address = "http://localhost:8140"
+        self.net_control.test_destination = None
 
         self._objects = [
             self.iothub,

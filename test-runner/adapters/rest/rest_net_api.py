@@ -8,6 +8,7 @@ import msrest
 from .. import adapter_config
 from ..abstract_net_api import AbstractNetApi
 from .rest_decorators import log_entry_and_exit
+from ..decorators import emulate_async
 
 
 class NetApi(AbstractNetApi):
@@ -21,24 +22,32 @@ class NetApi(AbstractNetApi):
             ip, transport, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     @log_entry_and_exit
-    def disconnect_sync(self, disconnect_type):
+    def disconnect(self, disconnect_type):
         self.rest_endpoint.disconnect(
             disconnect_type, timeout=adapter_config.default_api_timeout
         )
+
+    @emulate_async
+    @log_entry_and_exit
+    def reconnect(self):
+        self.rest_endpoint.reconnect(timeout=adapter_config.default_api_timeout)
 
     @log_entry_and_exit
     def reconnect_sync(self):
         self.rest_endpoint.reconnect(timeout=adapter_config.default_api_timeout)
 
+    @emulate_async
     @log_entry_and_exit
-    def disconnect_after_c2d_sync(self, disconnect_type):
+    def disconnect_after_c2d(self, disconnect_type):
         self.rest_endpoint.disconnect_after_c2d(
             disconnect_type, timeout=adapter_config.default_api_timeout
         )
 
+    @emulate_async
     @log_entry_and_exit
-    def disconnect_after_d2c_sync(self, disconnect_type):
+    def disconnect_after_d2c(self, disconnect_type):
         self.rest_endpoint.disconnect_after_d2c(
             disconnect_type, timeout=adapter_config.default_api_timeout
         )

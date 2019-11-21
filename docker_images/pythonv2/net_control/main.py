@@ -34,84 +34,89 @@ def split_path(path):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        logger.info("Received GET for {}".format(self.path))
+    def do_PUT(self):
+        logger.info("Received PUT for {}".format(self.path))
         try:
-            if self.path.startswith("/set_destination/"):
+            if self.path.startswith("/net/setDestination/"):
                 self.handle_set_destination()
-            elif self.path.startswith("/disconnect/"):
+            elif self.path.startswith("/net/disconnect/"):
                 self.handle_disconnect()
-            elif self.path.startswith("/reconnect/"):
+            elif self.path.startswith("/net/reconnect"):
                 self.handle_reconnect()
-            elif self.path.startswith("/disconnect_after_c2d/"):
+            elif self.path.startswith("/net/disconnect_after_c2d/"):
                 self.handle_disconnect_after_c2d()
-            elif self.path.startswith("/disconnect_after_d2c/"):
+            elif self.path.startswith("/net/disconnect_after_d2c/"):
                 self.handle_disconnect_after_d2c()
             else:
                 self.send_response(404)
         except Exception:
-            logger.error("exception in do_GET", exc_info=True)
+            logger.error("exception in do_PUT", exc_info=True)
             self.send_response(500)
 
         self.end_headers()
-        logger.info("done handling GET for {}".format(self.path))
+        logger.info("done handling PUT for {}".format(self.path))
 
     def handle_set_destination(self):
-        # /set_dest/<IP>/<transport>/
+        # /net/setDestination/<IP>/<transport>/
         logger.info("inside handle_set_destination")
         parts = split_path(self.path)
-        if len(parts) != 3:
+        logger.info("parts={}".format(parts))
+        if len(parts) != 4:
             self.send_response(404)
-        elif parts[2] not in drop.all_transports:
+        elif parts[3] not in drop.all_transports:
             self.send_response(404)
         else:
-            self.do_set_destination(parts[1], parts[2])
+            self.do_set_destination(parts[2], parts[3])
             self.send_response(200)
 
     def handle_disconnect(self):
-        # /disconnect/<disconnect_type>/
-        logger.info("inside handle_set_disconnect")
+        # /net/disconnect/<disconnect_type>/
+        logger.info("inside handle_disconnect")
         parts = split_path(self.path)
-        if len(parts) != 2:
+        logger.info("parts={}".format(parts))
+        if len(parts) != 3:
             self.send_response(404)
-        elif parts[1] not in drop.all_disconnect_types:
+        elif parts[2] not in drop.all_disconnect_types:
             self.send_response(404)
         else:
-            self.do_disconnect(parts[1])
+            self.do_disconnect(parts[2])
             self.send_response(200)
 
     def handle_reconnect(self):
-        # /reconnect/
+        # /net/reconnect/
         logger.info("inside handle_reconnect")
         parts = split_path(self.path)
-        if len(parts) != 1:
+        logger.info("parts={}".format(parts))
+        if len(parts) != 2:
             self.send_response(404)
         else:
             self.do_reconnect()
             self.send_response(200)
 
     def handle_disconnet_after_c2d(self):
-        # /disconnect_after_c2d/<disconnect_type>/
+        # /net/disconnect_after_c2d/<disconnect_type>/
         logger.info("inside handle_disconnect_after_c2d")
         parts = split_path(self.path)
-        if len(parts) != 2:
+        logger.info("parts={}".format(parts))
+        if len(parts) != 3:
             self.send_response(404)
-        elif parts[1] not in drop.all_disconnect_types:
+        elif parts[2] not in drop.all_disconnect_types:
             self.send_response(404)
         else:
-            self.do_disconnect_after_c2d(parts[1])
+            self.do_disconnect_after_c2d(parts[2])
             self.send_response(200)
 
     def handle_disconnect_after_d2c(self):
-        # /disconnect_after_d2c/<disconnect_type>/
+        # /net/disconnect_after_d2c/<disconnect_type>/
         logger.info("inside handle_disconnect_after_d2c")
         parts = split_path(self.path)
-        if len(parts) != 2:
+        logger.info("parts={}".format(parts))
+        if len(parts) != 3:
             self.send_response(404)
-        elif parts[1] not in drop.all_disconnect_types:
+        elif parts[2] not in drop.all_disconnect_types:
             self.send_response(404)
         else:
-            self.do_disconnect_after_d2c(parts[1])
+            self.do_disconnect_after_d2c(parts[2])
             self.send_response(200)
 
     def do_set_destination(self, ip, transport):

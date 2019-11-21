@@ -5,3 +5,4 @@
 from .rest_iothub_apis import ModuleApi, DeviceApi, ServiceApi, RegistryApi
 from .rest_wrapper_api import WrapperApi
 from .rest_wrapper_api import add_rest_uri, cleanup_test_objects
+from .rest_net_api import NetApi
