@@ -10,7 +10,7 @@ import drop
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("droopy." + __name__)
+logger = logging.getLogger("net_control." + __name__)
 
 default_port = 8040
 client_transport = ""

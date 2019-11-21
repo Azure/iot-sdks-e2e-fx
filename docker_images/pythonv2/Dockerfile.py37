@@ -12,6 +12,9 @@ RUN git config --global user.email "you@example.com" \
 EXPOSE 8080
 
 # wrapper requirements almost never change.  Install those first.
+WORKDIR /net_control
+copy ./net_control .
+
 WORKDIR /wrapper
 COPY ./wrapper/requirements.txt .
 RUN pip install -r requirements.txt
