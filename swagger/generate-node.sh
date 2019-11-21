@@ -4,6 +4,12 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 root_dir=$(cd "${script_dir}/.." && pwd)
 source "$script_dir/../scripts/colorecho.sh"
 
+node_root=$1
+if [ ! -d $1/edge-e2e/wrapper ]; then
+    colorecho $_red "Error: $1 is not the root to the node tree.  Please specify the node root as the first parameter
+    exit 1
+fi
+
 colorecho $_red "WARNING: This script overwrites code.  If you have anything checked out, it might be destroyed by this script."
 colorecho $_red "Do you wish to run this anyway?"
 select yn in "Yes" "No"; do
@@ -22,20 +28,26 @@ rm -r swagger_generated/node
 ./generate.sh node
 [ $? -eq 0 ] || { echo "generate.sh failed"; exit 1; }
 
+colorecho $_yellow "cleaning out old wrappers"
+cd ${node_root}/edge-e2e/wrapper/nodejs-server-server
+[ $? -eq 0 ] || { echo "cd ${root_dir}/edge-e2e/wrapper/nodejs-server-server failed"; exit 1; }
+
+for f in *; do
+    if [ "$f" -ne "glue" ] && [ "$f" -ne "node_modules" ]; do
+        if [ -d $f ]; then
+            colorecho $_yellow "--removing directory $f"
+            rm -r $f
+            [ $? -eq 0 ] || { echo "rm -r $f failed"; exit 1; }
+        else
+            colorecho $_yellow "--removing file $f"
+            rm $f
+            [ $? -eq 0 ] || { echo "rm $f failed"; exit 1; }
+        fi
+    fi
+done
+
 colorecho $_yellow "copying generated files"
-
-exit 0
-
-cd ${root_dir}
-[ $? -eq 0 ] || { echo "cd ${root_dir} failed"; exit 1; }
-
-rm -r docker_images/pythonv2/wrapper/swagger_server
-[ $? -eq 0 ] || { echo "rm swagger_swerver failed"; exit 1; }
-
-cp -r swagger/swagger_generated/pythonv2/swagger_server/ docker_images/pythonv2/wrapper/swagger_server/
+cp -r ${script_dir}/generated/node/* .
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
-
-rm -r docker_images/pythonv2/wrapper/swagger_server/test/
-[ $? -eq 0 ] || { echo "rm test failed"; exit 1; }
 
 colorecho $_green "SUCCESS!"
