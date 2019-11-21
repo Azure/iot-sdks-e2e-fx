@@ -33,7 +33,7 @@ autorest --python --input-file=e2e-restapi.yaml
 
 colorecho $_yellow "copying generated files"
 
-cd ${root_dir}/test-runner/rest_wrappers/generated/
+cd ${root_dir}/test-runner/adapters/rest/generated/
 [ $? -eq 0 ] || { echo "cd test-runner/rest_wrappers/generated"; exit 1; }
 
 rm -r e2erestapi/
