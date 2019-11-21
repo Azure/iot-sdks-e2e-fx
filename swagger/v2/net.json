@@ -5,7 +5,7 @@
         "net"
       ],
       "summary": "Set destination for net disconnect ops",
-      "operationId": "netSetDestination",
+      "operationId": "Net_SetDestination",
       "parameters": [
         {
           "name": "ip",
@@ -30,7 +30,7 @@
         "net"
       ],
       "summary": "Simulate a network disconnection",
-      "operationId": "netDisconnect",
+      "operationId": "Net_Disconnect",
       "parameters": [
         {
           "$ref": "parameters.json#/disconnectType"
@@ -49,7 +49,7 @@
         "net"
       ],
       "summary": "Reconnect the network after a simulated network disconnection",
-      "operationId": "netReconnect",
+      "operationId": "Net_Reconnect",
       "responses": {
         "200": {
           "description": "OK"
@@ -63,7 +63,7 @@
         "net"
       ],
       "summary": "Simulate a disconnect after the next C2D transfer",
-      "operationId": "netDisconnectAfterC2d",
+      "operationId": "Net_DisconnectAfterC2d",
       "parameters": [
         {
           "$ref": "parameters.json#/disconnectType"
@@ -82,7 +82,7 @@
         "net"
       ],
       "summary": "Simulate a disconnect after the next D2C transfer",
-      "operationId": "netDisconnectAfterD2c",
+      "operationId": "Net_DisconnectAfterD2c",
       "parameters": [
         {
           "$ref": "parameters.json#/disconnectType"
