@@ -69,7 +69,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(200)
 
     def handle_disconnect(self):
-        # /disconnect/<drop_mathod>/
+        # /disconnect/<disconnect_type>/
         logger.info("inside handle_set_disconnect")
         parts = split_path(self.path)
         if len(parts) != 2:

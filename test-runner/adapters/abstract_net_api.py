@@ -6,19 +6,23 @@ import abc
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractWrapperApi:
+class AbstractNetApi:
     @abc.abstractmethod
-    def log_message_sync(self, message):
+    def set_destination_sync(self, ip, transport):
         pass
 
     @abc.abstractmethod
-    def cleanup_sync(self):
+    def disconnect_sync(self, disconnect_type):
         pass
 
     @abc.abstractmethod
-    def get_capabilities_sync(self):
+    def reconnect_sync(self):
         pass
 
     @abc.abstractmethod
-    def set_flags_sync(self, flags):
+    def disconnect_after_c2d_sync(self, disconnect_type):
+        pass
+
+    @abc.abstractmethod
+    def disconnect_after_d2c_sync(self, disconnect_type):
         pass
