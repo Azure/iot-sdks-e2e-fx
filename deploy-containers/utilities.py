@@ -55,7 +55,7 @@ def get_random_device_name(extension=""):
     )
 
 
-def get_container_port_from_language(language):
+def get_cp_from_language(language):
     port_map = {
         "node": 8080,
         "pythonv1": 8080,
@@ -81,7 +81,7 @@ def get_language_from_image_name(image):
 
 def set_args_from_image(obj, image):
     obj.language = get_language_from_image_name(image)
-    obj.container_port = get_container_port_from_language(obj.language)
+    obj.container_port = get_cp_from_language(obj.language)
     obj.adapter_address = "http://{}:{}".format("localhost", obj.host_port)
     obj.image = image
 
@@ -132,12 +132,16 @@ def remove_old_instances():
 def create_docker_container(obj):
     try_remove_container(obj.container_name)
 
+    # hp_x = host port (port as seen by host OS)
+    # cp_x = container port (port as exposed from app inside container)
     run_shell_command(
-        "docker run -d -p {host_port_1}:{container_port_1} -p {host_port_2}:{container_port_2} --name {name} --restart=on-failure:10 --cap-add NET_ADMIN --cap-add NET_RAW {image}".format(
-            host_port_1=obj.host_port,
-            container_port_1=obj.container_port,
-            host_port_2=obj.host_port + 100,
-            container_port_2=22,
+        "docker run -d -p {hp_1}:{cp_1} -p {hp_2}:{cp_2} -p {hp_3}:{cp_3} --name {name} --restart=on-failure:10 --cap-add NET_ADMIN --cap-add NET_RAW {image}".format(
+            hp_1=obj.host_port,
+            cp_1=obj.container_port,
+            hp_2=obj.host_port + 100,
+            cp_2=22,
+            hp_3=8140,
+            cp_3=8040,
             name=obj.container_name,
             image=obj.image,
         )

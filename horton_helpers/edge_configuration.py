@@ -103,6 +103,7 @@ class EdgeConfiguration:
                     "PortBindings": {
                         str(containerPort) + "/tcp": [{"HostPort": str(hostPort)}],
                         "22/tcp": [{"HostPort": hostPort + 100}],
+                        "8040/tcp": "8140",
                     }
                 }
             }
