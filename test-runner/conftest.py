@@ -149,18 +149,21 @@ def set_transport(transport):
 
 def set_local():
     print("Running against local module")
+
+    if settings.test_module.connection_type == "environment":
+        settings.test_module.connection_type = "connection_string_with_edge_gateway"
+
+    # any objects that were previously using the test module host port now use
+    # the test module container port.
+    for obj in (settings.test_module, settings.test_device, settings.leaf_device):
+        if obj.host_port == settings.test_module.host_port:
+            obj.adapter_address = "http://localhost:{}".format(
+                settings.test_module.container_port
+            )
+
     settings.net_control.adapter_address = "http://localhost:{}".format(
         settings.net_control.container_port
     )
-    if settings.test_module.connection_type == "environment":
-        settings.test_module.connection_type = "connection_string_with_edge_gateway"
-        # any objects that were previously using the test module host port now use
-        # the test module container port.
-        for obj in (settings.test_module, settings.test_device, settings.leaf_device):
-            if obj.host_port == settings.test_module.host_port:
-                obj.adapter_address = "http://localhost:{}".format(
-                    settings.test_module.container_port
-                )
 
 
 def set_python_direct():
