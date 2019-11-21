@@ -100,12 +100,12 @@
   "disconnectType": {
     "name": "disconnectType",
     "in": "path",
-    "description": "disconnect method for dropped connection tests"
+    "description": "disconnect method for dropped connection tests",
     "required": true,
     "type": "string",
     "enum": [
       "DROP",
-      "REJECT",
+      "REJECT"
     ]
   }
 }
