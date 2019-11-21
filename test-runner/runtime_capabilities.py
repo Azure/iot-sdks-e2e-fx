@@ -28,6 +28,7 @@ class HortonCapabilities(object):
         self.security_messages = False
         self.v2_connect_group = False
         self.dropped_connection_tests = False
+        self.net_connect_app = False
 
 
 def collect_capabilities():

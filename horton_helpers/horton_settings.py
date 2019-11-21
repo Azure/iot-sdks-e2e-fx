@@ -74,6 +74,13 @@ class HortonSettings:
         self.leaf_device = HortonDeviceSettings("leaf_device")
         self.test_device = HortonDeviceSettings("test_device")
 
+        self.net_control = HortonSettingsObject()
+        self.net_control.name = "net_control"
+        self.net_control.host_port = 8140
+        self.net_control.container_port = 8040
+        self.net_control.adapter_address = "http://localhost:8140"
+        self.net_control.test_destination = None
+
         self._objects = [
             self.iothub,
             self.iotedge,
@@ -81,6 +88,7 @@ class HortonSettings:
             self.friend_module,
             self.leaf_device,
             self.test_device,
+            self.net_control,
         ]
 
     def load(self):

@@ -12,6 +12,7 @@ from adapters import adapter_config
 from dump_object import dump_object
 import runtime_capabilities
 import scenarios
+import connections
 from distutils.version import LooseVersion
 from horton_settings import settings
 from fixtures import (
@@ -32,6 +33,7 @@ from fixtures import (
     sample_reported_props,
     sample_desired_props,
     sample_payload,
+    net_control,
 )
 from log_fixtures import (
     pytest_runtest_makereport,
@@ -147,15 +149,21 @@ def set_transport(transport):
 
 def set_local():
     print("Running against local module")
+
     if settings.test_module.connection_type == "environment":
         settings.test_module.connection_type = "connection_string_with_edge_gateway"
-        # any objects that were previously using the test module host port now use
-        # the test module container port.
-        for obj in (settings.test_module, settings.test_device, settings.leaf_device):
-            if obj.host_port == settings.test_module.host_port:
-                obj.adapter_address = "http://localhost:{}".format(
-                    settings.test_module.container_port
-                )
+
+    # any objects that were previously using the test module host port now use
+    # the test module container port.
+    for obj in (settings.test_module, settings.test_device, settings.leaf_device):
+        if obj.host_port == settings.test_module.host_port:
+            obj.adapter_address = "http://localhost:{}".format(
+                settings.test_module.container_port
+            )
+
+    settings.net_control.adapter_address = "http://localhost:{}".format(
+        settings.net_control.container_port
+    )
 
 
 def set_python_direct():
@@ -285,8 +293,9 @@ def pytest_collection_modifyitems(config, items):
     skip_unsupported_tests(items)
 
     # make sure the network is connected before starting (this can happen with interrupted runs)
-    if settings.test_module.capabilities.v2_connect_group:
-        settings.test_module.wrapper_api.network_reconnect_sync()
+    if settings.test_module.capabilities.dropped_connection_tests:
+        settings.net_control.api = connections.get_net_control_api()
+        settings.net_control.api.reconnect_sync()
 
     if getattr(config, "_origargs", None):
         adapter_config.logger("HORTON: starting run: {}".format(config._origargs))

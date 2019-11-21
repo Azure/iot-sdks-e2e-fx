@@ -10,6 +10,7 @@ from .registry_operations import RegistryOperations
 from .module_operations import ModuleOperations
 from .service_operations import ServiceOperations
 from .device_operations import DeviceOperations
+from .net_operations import NetOperations
 
 __all__ = [
     'WrapperOperations',
@@ -17,4 +18,5 @@ __all__ = [
     'ModuleOperations',
     'ServiceOperations',
     'DeviceOperations',
+    'NetOperations',
 ]

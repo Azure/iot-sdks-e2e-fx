@@ -15,6 +15,7 @@ pytestmark = pytest.mark.asyncio
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.v2_connect_group
+@pytest.mark.v2_dropped_connection_tests
 @pytest.mark.timeout(timeouts.generic_test_timeout)
 class TestNetworkDisconnectMechanism(object):
     @pytest.fixture(
@@ -31,34 +32,14 @@ class TestNetworkDisconnectMechanism(object):
         return settings.test_module.transport
 
     @pytest.mark.it("Can disconnect and reconnect the network")
-    async def test_disconnect_and_reconnect(
-        self, disconnection_type, test_module_wrapper_api, test_module_transport
-    ):
-        await test_module_wrapper_api.network_disconnect(
-            test_module_transport, disconnection_type
-        )
-        await test_module_wrapper_api.network_reconnect()
-
-    @pytest.mark.it("Fails with an invalid transport")
-    async def test_invalid_disconnect_type(
-        self, test_module_wrapper_api, test_module_transport
-    ):
-        with pytest.raises(Exception) as e_info:
-            await test_module_wrapper_api.network_disconnect("inalid_transport", "DROP")
-        assert e_info.value.__class__ in [
-            ValueError,
-            msrest.exceptions.HttpOperationError,
-            msrest.exceptions.ClientRequestError,
-        ]
+    async def test_disconnect_and_reconnect(self, disconnection_type, net_control):
+        await net_control.disconnect(disconnection_type)
+        await net_control.reconnect()
 
     @pytest.mark.it("Fails with an invalid disconnection type")
-    async def test_invalid_transport(
-        self, test_module_wrapper_api, test_module_transport
-    ):
+    async def test_invalid_transport(self, net_control):
         with pytest.raises(Exception) as e_info:
-            await test_module_wrapper_api.network_disconnect(
-                test_module_transport, "invalid_disconnection_type"
-            )
+            await net_control.disconnect("invalid_disconnection_type")
         assert e_info.value.__class__ in [
             ValueError,
             msrest.exceptions.HttpOperationError,
@@ -66,15 +47,11 @@ class TestNetworkDisconnectMechanism(object):
         ]
 
     @pytest.mark.it("Does not fail if reconnecting without disconnecting")
-    async def test_reconnect_only(self, test_module_wrapper_api):
-        await test_module_wrapper_api.network_reconnect()
+    async def test_reconnect_only(self, net_control):
+        await net_control.reconnect()
 
     @pytest.mark.it("Does not fail if reconnecting twice")
-    async def test_reconnect_twice(
-        self, test_module_wrapper_api, disconnection_type, test_module_transport
-    ):
-        await test_module_wrapper_api.network_disconnect(
-            test_module_transport, disconnection_type
-        )
-        await test_module_wrapper_api.network_reconnect()
-        await test_module_wrapper_api.network_reconnect()
+    async def test_reconnect_twice(self, net_control, disconnection_type):
+        await net_control.disconnect(disconnection_type)
+        await net_control.reconnect()
+        await net_control.reconnect()

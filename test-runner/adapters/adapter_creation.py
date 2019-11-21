@@ -21,6 +21,7 @@ api_surfaces = [
     "service",
     "registry",
     "eventhub",
+    "net",
 ]
 
 
@@ -71,5 +72,7 @@ def create_rest_adapter(adapter_address, api_surface):
         return rest.ServiceApi(adapter_address)
     elif api_surface == "registry":
         return rest.RegistryApi(adapter_address)
+    elif api_surface == "net":
+        return rest.NetApi(adapter_address)
     else:
         raise ValueError("rest adapter for {} invalid".format(api_surface))

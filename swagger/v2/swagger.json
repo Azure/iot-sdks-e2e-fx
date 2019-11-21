@@ -31,6 +31,10 @@
     {
       "name": "registry",
       "description": "registry APIs"
+    },
+    {
+      "name": "net",
+      "description": "network control APIs"
     }
   ],
   "paths": {
@@ -46,14 +50,8 @@
     "/wrapper/flags": {
       "$ref": "wrapper.json#/flags"
     },
-    "/wrapper/networkDisconnect/{transportType}/{disconnectionType}": {
-      "$ref": "wrapper.json#/networkDisconnect"
-    },
     "/wrapper/command": {
       "$ref": "wrapper.json#/command"
-    },
-    "/wrapper/networkReconnect": {
-      "$ref": "wrapper.json#/networkReconnect"
     },
     "/registry/connect": {
       "$ref": "registry.json#/connect"
@@ -204,6 +202,21 @@
     },
     "/device/{connectionId}/connectionStatusChange": {
       "$ref": "device.json#/connectionStatusChange"
+    },
+    "/net/setDestination/{ip}/{transportType}": {
+      "$ref": "net.json#/setDestination"
+    },
+    "/net/disconnect/{disconnectType}": {
+      "$ref": "net.json#/disconnect"
+    },
+    "/net/reconnect": {
+      "$ref": "net.json#/reconnect"
+    },
+    "/net/disconnectAfterC2D/{disconnectType}": {
+      "$ref": "net.json#/disconnectAfterC2d"
+    },
+    "/net/disconnectAfterD2c/{disconnectType}": {
+      "$ref": "net.json#/disconnectAfterD2c"
     }
   }
 }

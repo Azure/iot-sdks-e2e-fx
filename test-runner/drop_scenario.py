@@ -48,22 +48,20 @@ class DropScenarioBaseClass(object):
         return settings.test_module.transport
 
     @pytest.fixture(autouse=True)
-    def reconnect_after_each_test(self, request, logger, test_module_wrapper_api):
+    def reconnect_after_each_test(self, request, logger, net_control):
         # if this test is going to drop packets, add a finalizer to make sure we always stop
-        # stop dropping it when we're done.  Calling network_connect_sync twice in a row is allowed.
+        # stop dropping it when we're done.  Calling reconnect_sync twice in a row is allowed.
         def finalizer():
             logger("in finalizer: no longer dropping packets")
-            test_module_wrapper_api.network_reconnect_sync()
+            net_control.reconnect_sync()
 
         request.addfinalizer(finalizer)
 
     async def start_dropping(
-        self, *, test_module_wrapper_api, logger, drop_mechanism, test_module_transport
+        self, *, net_control, logger, drop_mechanism, test_module_transport
     ):
         logger("start drop packets")
-        await test_module_wrapper_api.network_disconnect(
-            test_module_transport, drop_mechanism
-        )
+        await net_control.disconnect(drop_mechanism)
 
     async def wait_for_disconnection_event(self, *, client, logger):
         status = await client.get_connection_status()
@@ -74,9 +72,9 @@ class DropScenarioBaseClass(object):
         assert status == "disconnected"
         logger("client disconnection event received")
 
-    async def stop_dropping(self, *, test_module_wrapper_api, logger):
+    async def stop_dropping(self, *, net_control, logger):
         logger("stop dropping packets")
-        await test_module_wrapper_api.network_reconnect()
+        await net_control.reconnect()
 
     async def wait_for_reconnection_event(self, *, client, logger):
         logger("waiting for client reconnection event")
@@ -95,11 +93,11 @@ class NetworkGlitchClientConnected(DropScenarioBaseClass):
 
     @pytest.fixture
     def before_api_call(
-        self, drop_mechanism, test_module_wrapper_api, logger, test_module_transport
+        self, drop_mechanism, net_control, logger, test_module_transport
     ):
         async def func():
             await self.start_dropping(
-                test_module_wrapper_api=test_module_wrapper_api,
+                net_control=net_control,
                 logger=logger,
                 drop_mechanism=drop_mechanism,
                 test_module_transport=test_module_transport,
@@ -108,13 +106,11 @@ class NetworkGlitchClientConnected(DropScenarioBaseClass):
         return func
 
     @pytest.fixture
-    def after_api_call(self, client, test_module_wrapper_api, logger):
+    def after_api_call(self, client, net_control, logger):
         async def func():
             await self.wait_for_disconnection_event(client=client, logger=logger)
             await asyncio.sleep(5)
-            await self.stop_dropping(
-                test_module_wrapper_api=test_module_wrapper_api, logger=logger
-            )
+            await self.stop_dropping(net_control=net_control, logger=logger)
             await self.wait_for_reconnection_event(client=client, logger=logger)
             await asyncio.sleep(5)
 
@@ -132,16 +128,11 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
 
     @pytest.fixture
     def before_api_call(
-        self,
-        client,
-        drop_mechanism,
-        test_module_wrapper_api,
-        logger,
-        test_module_transport,
+        self, client, drop_mechanism, net_control, logger, test_module_transport
     ):
         async def func():
             await self.start_dropping(
-                test_module_wrapper_api=test_module_wrapper_api,
+                net_control=net_control,
                 logger=logger,
                 drop_mechanism=drop_mechanism,
                 test_module_transport=test_module_transport,
@@ -151,12 +142,10 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
         return func
 
     @pytest.fixture
-    def after_api_call(self, client, test_module_wrapper_api, logger):
+    def after_api_call(self, client, net_control, logger):
         async def func():
             await asyncio.sleep(5)
-            await self.stop_dropping(
-                test_module_wrapper_api=test_module_wrapper_api, logger=logger
-            )
+            await self.stop_dropping(net_control=net_control, logger=logger)
             await self.wait_for_reconnection_event(client=client, logger=logger)
             await asyncio.sleep(5)
 
@@ -166,17 +155,12 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
 class NetworkDroppedClientDisconnected(DropScenarioBaseClass):
     @pytest.fixture
     def before_api_call(
-        self,
-        client,
-        drop_mechanism,
-        test_module_wrapper_api,
-        logger,
-        test_module_transport,
+        self, client, drop_mechanism, net_control, logger, test_module_transport
     ):
         async def func():
             await client.disconnect2()
             await self.start_dropping(
-                test_module_wrapper_api=test_module_wrapper_api,
+                net_control=net_control,
                 logger=logger,
                 drop_mechanism=drop_mechanism,
                 test_module_transport=test_module_transport,
@@ -185,12 +169,10 @@ class NetworkDroppedClientDisconnected(DropScenarioBaseClass):
         return func
 
     @pytest.fixture
-    def after_api_call(self, client, test_module_wrapper_api, logger):
+    def after_api_call(self, client, net_control, logger):
         async def wait_and_reconnect():
             await asyncio.sleep(30)
-            await self.stop_dropping(
-                test_module_wrapper_api=test_module_wrapper_api, logger=logger
-            )
+            await self.stop_dropping(net_control=net_control, logger=logger)
 
         async def func():
             asyncio.ensure_future(wait_and_reconnect())

@@ -112,3 +112,14 @@ def connect_test_device_client():
         settings.test_device.transport, settings.test_device.connection_string, {}
     )
     return client
+
+
+def get_net_control_api():
+    """
+    return an object that can be used to control the network
+    """
+    api = adapters.create_adapter(settings.net_control.adapter_address, "net")
+    api.set_destination_sync(
+        settings.net_control.test_destination, settings.test_module.transport
+    )
+    return api

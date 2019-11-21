@@ -146,3 +146,8 @@ def sample_desired_props():
 @pytest.fixture
 def sample_payload():
     return lambda: next_random_string("payload")
+
+
+@pytest.fixture
+def net_control():
+    return settings.net_control.api

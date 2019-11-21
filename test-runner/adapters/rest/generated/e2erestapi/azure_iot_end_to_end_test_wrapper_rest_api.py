@@ -14,6 +14,7 @@ from .operations.registry_operations import RegistryOperations
 from .operations.module_operations import ModuleOperations
 from .operations.service_operations import ServiceOperations
 from .operations.device_operations import DeviceOperations
+from .operations.net_operations import NetOperations
 from . import models
 
 
@@ -52,6 +53,8 @@ class AzureIOTEndToEndTestWrapperRestApi(object):
     :vartype service: e2erestapi.operations.ServiceOperations
     :ivar device: Device operations
     :vartype device: e2erestapi.operations.DeviceOperations
+    :ivar net: Net operations
+    :vartype net: e2erestapi.operations.NetOperations
 
     :param str base_url: Service URL
     """
@@ -76,4 +79,6 @@ class AzureIOTEndToEndTestWrapperRestApi(object):
         self.service = ServiceOperations(
             self._client, self.config, self._serialize, self._deserialize)
         self.device = DeviceOperations(
+            self._client, self.config, self._serialize, self._deserialize)
+        self.net = NetOperations(
             self._client, self.config, self._serialize, self._deserialize)
