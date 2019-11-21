@@ -1,0 +1,98 @@
+{
+  "setDestination": {
+    "put": {
+      "tags": [
+        "net"
+      ],
+      "summary": "Set destination for net disconnect ops",
+      "operationId": "netSetDestination",
+      "parameters": [
+        {
+          "name": "ip",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "$ref": "parameters.json#/transportType"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "disconnect": {
+    "put": {
+      "tags": [
+        "net"
+      ],
+      "summary": "Simulate a network disconnection",
+      "operationId": "netDisconnect",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/disconnectType"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "reconnect": {
+    "put": {
+      "tags": [
+        "net"
+      ],
+      "summary": "Reconnect the network after a simulated network disconnection",
+      "operationId": "netReconnect",
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "disconnectAfterC2d": {
+    "put": {
+      "tags": [
+        "net"
+      ],
+      "summary": "Simulate a disconnect after the next C2D transfer",
+      "operationId": "netDisconnectAfterC2d",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/disconnectType"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "disconnectAfterD2c": {
+    "put": {
+      "tags": [
+        "net"
+      ],
+      "summary": "Simulate a disconnect after the next D2C transfer",
+      "operationId": "netDisconnectAfterD2c",
+      "parameters": [
+        {
+          "$ref": "parameters.json#/disconnectType"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  }
+}

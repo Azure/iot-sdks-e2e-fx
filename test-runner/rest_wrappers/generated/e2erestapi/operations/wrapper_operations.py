@@ -201,54 +201,6 @@ class WrapperOperations(object):
             return client_raw_response
     set_flags.metadata = {'url': '/wrapper/flags'}
 
-    def network_disconnect(
-            self, transport_type, disconnection_type, custom_headers=None, raw=False, **operation_config):
-        """simulate a network disconnection.
-
-        :param transport_type: Transport to use. Possible values include:
-         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
-        :type transport_type: str
-        :param disconnection_type:
-        :type disconnection_type: str
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.network_disconnect.metadata['url']
-        path_format_arguments = {
-            'transportType': self._serialize.url("transport_type", transport_type, 'str'),
-            'disconnectionType': self._serialize.url("disconnection_type", disconnection_type, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    network_disconnect.metadata = {'url': '/wrapper/networkDisconnect/{transportType}/{disconnectionType}'}
-
     def send_command(
             self, cmd, custom_headers=None, raw=False, **operation_config):
         """send an arbitrary command.
@@ -289,41 +241,3 @@ class WrapperOperations(object):
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
     send_command.metadata = {'url': '/wrapper/command'}
-
-    def network_reconnect(
-            self, custom_headers=None, raw=False, **operation_config):
-        """Reconnect the network after a simulated network disconnection.
-
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.network_reconnect.metadata['url']
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    network_reconnect.metadata = {'url': '/wrapper/networkReconnect'}
