@@ -2,8 +2,6 @@ import connexion
 import six
 
 from swagger_server import util
-# added 1 line in merge
-import wrapper_glue
 
 
 def wrapper_cleanup():  # noqa: E501
@@ -14,8 +12,7 @@ def wrapper_cleanup():  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    wrapper_glue.cleanup_resources()
+    return 'do some magic!'
 
 
 def wrapper_get_capabilities():  # noqa: E501
@@ -26,8 +23,7 @@ def wrapper_get_capabilities():  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return wrapper_glue.get_capabilities()
+    return 'do some magic!'
 
 
 def wrapper_log_message(msg):  # noqa: E501
@@ -40,35 +36,8 @@ def wrapper_log_message(msg):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    wrapper_glue.log_message(msg)
+    return 'do some magic!'
 
-def wrapper_network_disconnect(transportType, disconnectionType):  # noqa: E501
-    """simulate a network disconnection
-
-     # noqa: E501
-
-    :param transportType: Transport to use
-    :type transportType: str
-    :param disconnectionType: 
-    :type disconnectionType: str
-
-    :rtype: None
-    """
-    # changed from return 'do some magic!'
-    wrapper_glue.network_disconnect(transportType, disconnectionType)
-
-
-def wrapper_network_reconnect():  # noqa: E501
-    """Reconnect the network after a simulated network disconnection
-
-     # noqa: E501
-
-
-    :rtype: None
-    """
-    # changed from return 'do some magic!'
-    wrapper_glue.network_reconnect()
 
 def wrapper_send_command(cmd):  # noqa: E501
     """send an arbitrary command
@@ -93,6 +62,4 @@ def wrapper_set_flags(flags):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    wrapper_glue.set_flags(flags)
-
+    return 'do some magic!'

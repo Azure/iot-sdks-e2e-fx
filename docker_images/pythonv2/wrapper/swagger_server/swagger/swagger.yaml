@@ -18,6 +18,8 @@ tags:
   description: "ServiceClient APIs"
 - name: "registry"
   description: "registry APIs"
+- name: "net"
+  description: "network control APIs"
 schemes:
 - "https"
 produces:
@@ -85,32 +87,6 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
-  /wrapper/networkDisconnect/{transportType}/{disconnectionType}:
-    put:
-      tags:
-      - "wrapper"
-      summary: "simulate a network disconnection"
-      operationId: "wrapper_network_disconnect"
-      parameters:
-      - name: "transportType"
-        in: "path"
-        description: "Transport to use"
-        required: true
-        type: "string"
-        enum:
-        - "amqp"
-        - "amqpws"
-        - "mqtt"
-        - "mqttws"
-        - "http"
-      - name: "disconnectionType"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
   /wrapper/command:
     put:
       tags:
@@ -123,17 +99,6 @@ paths:
         description: "command string"
         required: true
         type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
-  /wrapper/networkReconnect:
-    put:
-      tags:
-      - "wrapper"
-      summary: "Reconnect the network after a simulated network disconnection"
-      operationId: "wrapper_network_reconnect"
-      parameters: []
       responses:
         200:
           description: "OK"
@@ -1392,6 +1357,100 @@ paths:
           schema:
             type: "string"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /net/setDestination/{ip}/{transportType}:
+    put:
+      tags:
+      - "net"
+      summary: "Set destination for net disconnect ops"
+      operationId: "net_set_destination"
+      parameters:
+      - name: "ip"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.net_controller"
+  /net/disconnect/{disconnectType}:
+    put:
+      tags:
+      - "net"
+      summary: "Simulate a network disconnection"
+      operationId: "net_disconnect"
+      parameters:
+      - name: "disconnectType"
+        in: "path"
+        description: "disconnect method for dropped connection tests"
+        required: true
+        type: "string"
+        enum:
+        - "DROP"
+        - "REJECT"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.net_controller"
+  /net/reconnect:
+    put:
+      tags:
+      - "net"
+      summary: "Reconnect the network after a simulated network disconnection"
+      operationId: "net_reconnect"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.net_controller"
+  /net/disconnectAfterC2D/{disconnectType}:
+    put:
+      tags:
+      - "net"
+      summary: "Simulate a disconnect after the next C2D transfer"
+      operationId: "net_disconnect_after_c2d"
+      parameters:
+      - name: "disconnectType"
+        in: "path"
+        description: "disconnect method for dropped connection tests"
+        required: true
+        type: "string"
+        enum:
+        - "DROP"
+        - "REJECT"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.net_controller"
+  /net/disconnectAfterD2c/{disconnectType}:
+    put:
+      tags:
+      - "net"
+      summary: "Simulate a disconnect after the next D2C transfer"
+      operationId: "net_disconnect_after_d2c"
+      parameters:
+      - name: "disconnectType"
+        in: "path"
+        description: "disconnect method for dropped connection tests"
+        required: true
+        type: "string"
+        enum:
+        - "DROP"
+        - "REJECT"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "swagger_server.controllers.net_controller"
 definitions:
   connectResponse:
     type: "object"
