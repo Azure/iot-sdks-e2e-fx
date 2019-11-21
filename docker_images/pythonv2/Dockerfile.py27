@@ -1,4 +1,4 @@
-fro mpython:2.7.16-alpine3.9
+from python:2.7.16-alpine3.9
 
 RUN apk add \
     git \
