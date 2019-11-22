@@ -4,12 +4,6 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 root_dir=$(cd "${script_dir}/.." && pwd)
 source "$script_dir/../scripts/colorecho.sh"
 
-node_root=$1
-if [ ! -d $1/edge-e2e/wrapper ]; then
-    colorecho $_red "Error: $1 is not the root to the node tree.  Please specify the node root as the first parameter"
-    exit 1
-fi
-
 colorecho $_red "WARNING: This script overwrites code.  If you have anything checked out, it might be destroyed by this script."
 colorecho $_red "Do you wish to run this anyway?"
 select yn in "Yes" "No"; do
@@ -29,8 +23,8 @@ rm -r swagger_generated/node
 [ $? -eq 0 ] || { echo "generate.sh failed"; exit 1; }
 
 colorecho $_yellow "cleaning out old wrappers"
-cd ${node_root}/edge-e2e/wrapper/nodejs-server-server
-[ $? -eq 0 ] || { echo "cd ${root_dir}/edge-e2e/wrapper/nodejs-server-server failed"; exit 1; }
+cd ${root_dir}/docker_images/node/wrapper/
+[ $? -eq 0 ] || { echo "cd ${root_dir}/docker-images/node/wrapper/ failed"; exit 1; }
 
 for f in *; do
     if [ "$f" != "glue" ] && [ "$f" != "node_modules" ]; then
