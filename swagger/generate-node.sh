@@ -6,7 +6,7 @@ source "$script_dir/../scripts/colorecho.sh"
 
 node_root=$1
 if [ ! -d $1/edge-e2e/wrapper ]; then
-    colorecho $_red "Error: $1 is not the root to the node tree.  Please specify the node root as the first parameter
+    colorecho $_red "Error: $1 is not the root to the node tree.  Please specify the node root as the first parameter"
     exit 1
 fi
 
@@ -33,7 +33,7 @@ cd ${node_root}/edge-e2e/wrapper/nodejs-server-server
 [ $? -eq 0 ] || { echo "cd ${root_dir}/edge-e2e/wrapper/nodejs-server-server failed"; exit 1; }
 
 for f in *; do
-    if [ "$f" -ne "glue" ] && [ "$f" -ne "node_modules" ]; do
+    if [ "$f" != "glue" ] && [ "$f" != "node_modules" ]; then
         if [ -d $f ]; then
             colorecho $_yellow "--removing directory $f"
             rm -r $f
@@ -47,7 +47,7 @@ for f in *; do
 done
 
 colorecho $_yellow "copying generated files"
-cp -r ${script_dir}/generated/node/* .
+cp -r ${script_dir}/swagger_generated/node/* .
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
 
 colorecho $_green "SUCCESS!"
