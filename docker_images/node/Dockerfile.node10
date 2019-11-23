@@ -2,7 +2,6 @@ FROM node:10.15.3-stretch-slim
 
 RUN apt update \
   && apt install --fix-missing -y \
-    rsync \
     vim.tiny \
     git \
   && apt clean
@@ -17,20 +16,22 @@ env DEBUG=rhea*,azure*
 EXPOSE 9229
 EXPOSE 8080
 
-# rev1: switch to lerna hoist.  This echo also forces all clients to refetch and rebuild master
-RUN echo rev1 > /rev.txt
+# copy wrapper first.  This changes rarely.
+workdir /src/wrapper
+copy ./wrapper .
 
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
-WORKDIR /sdk
+WORKDIR /src/sdk
 RUN git clone https://github.com/$HORTON_REPO .
-
 COPY ./prebuild.sh /
+COPY ./fixLerna.js /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
+WORKDIR /src/sdk
 RUN git pull 
 RUN git checkout $HORTON_COMMIT_SHA
 
@@ -42,4 +43,4 @@ RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 COPY ./rebuild.sh /
 RUN /rebuild.sh
 
-ENTRYPOINT ["/usr/local/bin/node", "/sdk/edge-e2e/wrapper/nodejs-server-server/index.js"]
+ENTRYPOINT ["/usr/local/bin/node", "/src/wrapper/index.js"]
