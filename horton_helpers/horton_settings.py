@@ -56,6 +56,10 @@ class HortonSettings:
         self.load()
 
     def _clear_settings(self):
+        self.horton = HortonSettingsObject()
+        self.horton.name = "horton"
+        self.horton.image = None
+
         self.iothub = HortonSettingsObject()
         self.iothub.name = "iothub"
         self.iothub.connection_string = None
@@ -89,6 +93,7 @@ class HortonSettings:
             self.leaf_device,
             self.test_device,
             self.net_control,
+            self.horton,
         ]
 
     def load(self):
