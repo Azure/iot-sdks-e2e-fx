@@ -27,6 +27,7 @@ RUN git clone https://github.com/$HORTON_REPO .
 COPY ./prebuild.sh /
 COPY ./fixLerna.js /
 RUN /prebuild.sh
+RUN git checkout *package-lock.json
 
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME
