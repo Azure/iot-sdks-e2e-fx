@@ -7,6 +7,7 @@ var Client = require('azure-iot-device').Client;
 var debug = require('debug')('azure-iot-e2e:node')
 var glueUtils = require('./glueUtils');
 var NamedObjectCache = require('./NamedObjectCache');
+var internalGlue = require('./internalGlue')
 
 /**
  * cache of objects.  Used to return object by name to the caller.
@@ -53,9 +54,7 @@ exports.device_Connect = function(transportType,connectionString,caCertificate) 
  * no response value expected for this operation
  **/
 exports.device_Connect2 = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Connect2(objectCache, connectionId);
 }
 
 
@@ -108,20 +107,7 @@ exports.device_Destroy = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_Disconnect = function(connectionId) {
-  debug(`device_Disconnect called with ${connectionId}`);
-  return glueUtils.makePromise('device_Disconnect', function(callback) {
-    var client = objectCache.removeObject(connectionId);
-    if (!client) {
-      debug(`${connectionId} already closed.`);
-      callback();
-    } else {
-      debug('calling client.close');
-      client.close(function(err) {
-        glueUtils.debugFunctionResult('client.close', err);
-        callback(err);
-      });
-    }
-  });
+    return internalGlue.internal_Disconnect(objectCache, connectionId);
 }
 
 
@@ -132,9 +118,7 @@ exports.device_Disconnect = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_Disconnect2 = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Disconnect(objectCache, connectionId);
 }
 
 
@@ -158,14 +142,7 @@ exports.device_EnableC2dMessages = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_EnableMethods = function(connectionId) {
-  debug(`device_EnableMethods called with ${connectionId}`);
-  return glueUtils.makePromise('device_EnableMethods', function(callback) {
-    var client = objectCache.getObject(connectionId)
-    client._enableMethods(function(err) {
-      glueUtils.debugFunctionResult('client._enableMethods', err);
-      callback(err);
-    });
-  });
+  return internalGlue.internal_EnableMethods(objectCache, connectionId);
 }
 
 
@@ -176,9 +153,7 @@ exports.device_EnableMethods = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_EnableTwin = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_EnableTwin(objectCache, connectionId);
 }
 
 
@@ -189,9 +164,7 @@ exports.device_EnableTwin = function(connectionId) {
  * returns String
  **/
 exports.device_GetConnectionStatus = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    resolve();
-  });
+  return internalGlue.internal_GetConnectionStatus(objectCache, connectionId);
 }
 
 
@@ -202,9 +175,7 @@ exports.device_GetConnectionStatus = function(connectionId) {
  * returns Object
  **/
 exports.device_GetTwin = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_GetTwin(objectCache, connectionId);
 }
 
 
@@ -216,9 +187,7 @@ exports.device_GetTwin = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_PatchTwin = function(connectionId,props) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_PatchTwin(objectCache, connectionId, props);
 }
 
 
@@ -230,9 +199,7 @@ exports.device_PatchTwin = function(connectionId,props) {
  * no response value expected for this operation
  **/
 exports.device_Reconnect = function(connectionId,forceRenewPassword) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Reconnect(objectCache, connectionId);
 }
 
 
@@ -246,30 +213,7 @@ exports.device_Reconnect = function(connectionId,forceRenewPassword) {
  * no response value expected for this operation
  **/
 exports.device_RoundtripMethodCall = function(connectionId,methodName,requestAndResponse) {
-  debug(`device_RoundtripMethodCall called with ${connectionId}, ${methodName}`);
-  debug(JSON.stringify(requestAndResponse, null, 2));
-  return glueUtils.makePromise('device_RoundtripMethodCall', function(callback) {
-    var client = objectCache.getObject(connectionId);
-    client.onDeviceMethod(methodName, function(request, response) {
-      debug(`function ${methodName} invoked from service`);
-      debug(JSON.stringify(request, null, 2));
-      if (JSON.stringify(request.payload) !== JSON.stringify(requestAndResponse.requestPayload.payload)) {
-        debug('payload expected:' + JSON.stringify(requestAndResponse.requestPayload.payload));
-        debug('payload received:' + JSON.stringify(request.payload));
-        callback(new Error('request payload did not arrive as expected'))
-      } else {
-        debug('payload received as expected');
-        response.send(requestAndResponse.statusCode, requestAndResponse.responsePayload, function(err) {
-          debug('response sent');
-          if (err) {
-            callback(err);
-          } else {
-            callback(null, requestAndResponse.responsePayload);
-          }
-        });
-      }
-    });
-  });
+  return internalGlue.internal_RoundtripMethodCall(objectCache, connectionId, methodName, requestAndResponse);
 }
 
 
@@ -281,9 +225,7 @@ exports.device_RoundtripMethodCall = function(connectionId,methodName,requestAnd
  * no response value expected for this operation
  **/
 exports.device_SendEvent = function(connectionId,eventBody) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_SendEvent(objectCache, eventBody);
 }
 
 
@@ -307,9 +249,7 @@ exports.device_WaitForC2dMessage = function(connectionId) {
  * returns String
  **/
 exports.device_WaitForConnectionStatusChange = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_WaitForConnectionStatusChange(objectCache, connectionId);
 }
 
 
@@ -320,8 +260,6 @@ exports.device_WaitForConnectionStatusChange = function(connectionId) {
  * returns Object
  **/
 exports.device_WaitForDesiredPropertiesPatch = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_WaitForDesiredPropertiesPatch(objectCache, connectionId);
 }
 

@@ -8,54 +8,12 @@ var Message = require('azure-iot-device').Message;
 var debug = require('debug')('azure-iot-e2e:node')
 var glueUtils = require('./glueUtils');
 var NamedObjectCache = require('./NamedObjectCache');
+var internalGlue = require('./internalGlue')
 
 /**
  * cache of objects.  Used to return object by name to the caller.
  */
 var objectCache = new NamedObjectCache();
-
-/**
- * Create an event handler which calls the callback for the second event only.  Used
- * like EventEmitter.Once(), only it returns the second event and then removes itself.
- * This is needed for 'properties.desired' events because the first event comes when
- * registering for the hander, but in many cases, we want the second event which is
- * an actual delta.
- *
- * @param {Object} object     EventEmitter object for the event that we're registering for
- * @param {string} eventName  Name of the event that we're registering for
- * @param {function} cb       Callback to call when the second event is received.
- */
-var callbackForSecondEventOnly = function(object, eventName, cb) {
-  var alreadyReceivedFirstEvent = false;
-  var handler = function(x) {
-    if (alreadyReceivedFirstEvent) {
-      object.removeListener(eventName, handler);
-      cb(x);
-    } else {
-      alreadyReceivedFirstEvent = true;
-    }
-  }
-  object.on(eventName, handler);
-}
-
-/**
- * Helper function which either creates a Twin or returns a Twin for the given connection
- * if it already exists.
- *
- * @param {string} connectionId   Connection to get the twin for
- * @param {function} callback     callback used to return the Twin object
- */
-var getModuleOrDeviceTwin = function(connectionId, callback) {
-  var client = objectCache.getObject(connectionId);
-  // cheat: use internal member.  We should really call getTwin the first time
-  // and cache the value in this code rather than relying on internal implementations.
-  if (client._twin) {
-    callback(null, client._twin);
-  } else {
-    client.getTwin(callback);
-  }
-}
-
 
 /**
  * Connect to the azure IoT Hub as a module
@@ -98,9 +56,7 @@ exports.module_Connect = function(transportType,connectionString,caCertificate) 
  * no response value expected for this operation
  **/
 exports.module_Connect2 = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Connect2(objectCache, connectionId)  
 }
 
 
@@ -185,9 +141,7 @@ exports.module_CreateFromX509 = function(transportType,x509) {
  * no response value expected for this operation
  **/
 exports.module_Destroy = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Destroy(objectCache, connectionId);
 }
 
 
@@ -198,20 +152,7 @@ exports.module_Destroy = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.module_Disconnect = function(connectionId) {
-  debug(`module_Disconnect called with ${connectionId}`);
-  return glueUtils.makePromise('module_Disconnect', function(callback) {
-    var client = objectCache.removeObject(connectionId);
-    if (!client) {
-      debug(`${connectionId} already closed.`);
-      callback();
-    } else {
-      debug('calling ModuleClient.close');
-      client.close(function(err) {
-        glueUtils.debugFunctionResult('client.close', err);
-        callback(err);
-      });
-    }
-  });
+  return internalGlue.internal_Disconnect(objectCache, connectionId);
 }
 
 
@@ -222,9 +163,7 @@ exports.module_Disconnect = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.module_Disconnect2 = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Disconnect2(objectCache, connectionId);
 }
 
 
@@ -251,14 +190,7 @@ exports.module_EnableInputMessages = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.module_EnableMethods = function(connectionId) {
-  debug(`module_EnableMethods called with ${connectionId}`);
-  return glueUtils.makePromise('module_EnableMethods', function(callback) {
-    var client = objectCache.getObject(connectionId)
-    client._enableMethods(function(err) {
-      glueUtils.debugFunctionResult('client._enableMethods', err);
-      callback(err);
-    });
-  });
+  return internalGlue.internal_EnableMethods(objectCache, connectionId);
 }
 
 
@@ -269,14 +201,7 @@ exports.module_EnableMethods = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.module_EnableTwin = function(connectionId) {
-  debug(`module_EnableTwin called with ${connectionId}`);
-  return glueUtils.makePromise('module_EnableTwin', function(callback) {
-    var client = objectCache.getObject(connectionId)
-    client.getTwin(function(err) {
-      glueUtils.debugFunctionResult('client.getTwin', err);
-      callback(err);
-    });
-  });
+  return internalGlue.internal_EnableTwin(objectCache, connectionId);
 }
 
 
@@ -287,9 +212,7 @@ exports.module_EnableTwin = function(connectionId) {
  * returns String
  **/
 exports.module_GetConnectionStatus = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_GetConnectionStatus(objectCache, connectionId);
 }
 
 
@@ -300,17 +223,7 @@ exports.module_GetConnectionStatus = function(connectionId) {
  * returns Object
  **/
 exports.module_GetTwin = function(connectionId) {
-  debug(`module_GetTwin called with ${connectionId}`);
-  return glueUtils.makePromise('module_GetTwin', function(callback) {
-    getModuleOrDeviceTwin(connectionId, function(err, twin) {
-      glueUtils.debugFunctionResult('getModuleOrDeviceTwin', err);
-      if (err) {
-        callback(err);
-      } else {
-        callback(null, {properties: JSON.parse(JSON.stringify(twin.properties))});
-      }
-    });
-  });
+  return internalGlue.internal_GetTwin(objectCache, connectionId);
 }
 
 
@@ -367,28 +280,7 @@ exports.module_InvokeModuleMethod = function(connectionId,deviceId,moduleId,meth
  * no response value expected for this operation
  **/
 exports.module_PatchTwin = function(connectionId,props) {
-  debug(`module_PatchTwin for ${connectionId} called with ${JSON.stringify(props)}`);
-  return glueUtils.makePromise('module_PatchTwin', function(callback) {
-    getModuleOrDeviceTwin(connectionId, function(err, twin) {
-      glueUtils.debugFunctionResult('getModuleOrDeviceTwin', err);
-      if (err) {
-        callback(err);
-      } else {
-        try {
-          twin.properties.reported.update(props, function(err) {
-            glueUtils.debugFunctionResult('twin.properties.reported.update', err);
-            if (err) {
-              callback(err);
-            } else {
-              callback();
-            }
-          });
-        } catch (e) {
-          callback(e);
-        }
-      }
-    });
-  });
+  return internalGlue.internal_PatchTwin(objectCache, connectionId, props);
 }
 
 
@@ -400,9 +292,7 @@ exports.module_PatchTwin = function(connectionId,props) {
  * no response value expected for this operation
  **/
 exports.module_Reconnect = function(connectionId,forceRenewPassword) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Reconnect(objectCache, connectionId);
 }
 
 
@@ -416,30 +306,7 @@ exports.module_Reconnect = function(connectionId,forceRenewPassword) {
  * no response value expected for this operation
  **/
 exports.module_RoundtripMethodCall = function(connectionId,methodName,requestAndResponse) {
-  debug(`module_RoundtripMethodCall called with ${connectionId}, ${methodName}`);
-  debug(JSON.stringify(requestAndResponse, null, 2));
-  return glueUtils.makePromise('module_RoundtripMethodCall', function(callback) {
-    var client = objectCache.getObject(connectionId);
-    client.onMethod(methodName, function(request, response) {
-      debug(`function ${methodName} invoked from service`);
-      debug(JSON.stringify(request, null, 2));
-      if (JSON.stringify(request.payload) !== JSON.stringify(requestAndResponse.requestPayload.payload)) {
-        debug('payload expected:' + JSON.stringify(requestAndResponse.requestPayload.payload));
-        debug('payload received:' + JSON.stringify(request.payload));
-        callback(new Error('request payload did not arrive as expected'))
-      } else {
-        debug('payload received as expected');
-        response.send(requestAndResponse.statusCode, requestAndResponse.responsePayload, function(err) {
-          debug('response sent');
-          if (err) {
-            callback(err);
-          } else {
-            callback(null, requestAndResponse.responsePayload);
-          }
-        });
-      }
-    });
-  });
+  return internalGlue.internal_RoundtripMethodCall(objectCache, connectionId, methodName, requestAndResponse);
 }
 
 
@@ -451,15 +318,7 @@ exports.module_RoundtripMethodCall = function(connectionId,methodName,requestAnd
  * no response value expected for this operation
  **/
 exports.module_SendEvent = function(connectionId,eventBody) {
-  debug(`module_SendEvent called with ${connectionId}`);
-  debug(eventBody);
-  return glueUtils.makePromise('module_SendEvent', function(callback) {
-    var client = objectCache.getObject(connectionId)
-    client.sendEvent(new Message(eventBody), function(err) {
-      glueUtils.debugFunctionResult('client.sendEvent', err);
-      callback(err);
-    })
-  });
+  return internalGlue.internal_SendEvent(objectCache, connectionId, eventBody);
 }
 
 
@@ -491,9 +350,7 @@ exports.module_SendOutputEvent = function(connectionId,outputName,eventBody) {
  * returns String
  **/
 exports.module_WaitForConnectionStatusChange = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+    return internalGlue.internal_WaitForConnectionStatusChange(objectCache, connectionId);
 }
 
 
@@ -504,18 +361,7 @@ exports.module_WaitForConnectionStatusChange = function(connectionId) {
  * returns Object
  **/
 exports.module_WaitForDesiredPropertiesPatch = function(connectionId) {
-  debug(`module_WaitForDesiredPropertiesPatch called with ${connectionId}`);
-  return glueUtils.makePromise('module_WaitForDesiredPropertiesPatch', function(callback) {
-    getModuleOrDeviceTwin(connectionId, function(err, twin) {
-      if (err) {
-        callback(err);
-      } else {
-        callbackForSecondEventOnly(twin, 'properties.desired', function(delta) {
-          callback(null, delta);
-        });
-      }
-    });
-  });
+    return internalGlue.internal_WaitForDesiredPropertiesPatch(objectCache, connectionId);
 }
 
 
