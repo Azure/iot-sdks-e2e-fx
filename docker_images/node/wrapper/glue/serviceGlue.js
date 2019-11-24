@@ -7,6 +7,7 @@ var debug = require('debug')('azure-iot-e2e:node')
 var glueUtils = require('./glueUtils');
 var NamedObjectCache = require('./NamedObjectCache');
 var ServiceClient = require('azure-iothub').Client;
+var Message = require('azure-iot-device').Message;
 
 /**
  * cache of objects.  Used to return object by name to the caller.
@@ -112,14 +113,13 @@ exports.service_InvokeModuleMethod = function(connectionId,deviceId,moduleId,met
  * eventBody Object 
  * no response value expected for this operation
  **/
-exports.service_SendC2d = function(connectionId, deviceId, eventBody) {
-  debug(`service_SendC2d called with ${connectionId}, ${deviceId}, ${moduleId}`);
-  debug(JSON.stringify(methodInvokeParameters));
-  return glueUtils.makePromise('service_InvokeModuleMethod', function(callback) {
+exports.service_SendC2d = function(connectionId,deviceId,eventBody) {
+  debug(`service_SendC2d called with ${connectionId}, ${deviceId}`);
+  return glueUtils.makePromise('service_SendC2d', function(callback) {
     var client = objectCache.getObject(connectionId);
-    debug(`calling ServiceClient.invokeDeviceMethod`);
-    client.invokeDeviceMethod(deviceId, moduleId, methodInvokeParameters, function(err, result) {
-      glueUtils.debugFunctionResult('ServiceClient.invokeDeviceMethod', err);
+    debug(`calling ServiceClient.send`);
+    client.send(deviceId, new Message(eventBody), function(err, result) {
+      glueUtils.debugFunctionResult('ServiceClient.send', err);
       callback(err, result);
     });
   });
