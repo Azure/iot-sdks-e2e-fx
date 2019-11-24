@@ -1,4 +1,6 @@
 'use strict';
+// Added in merge
+/*jshint esversion: 6 */
 
 
 /**

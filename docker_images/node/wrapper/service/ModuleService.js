@@ -1,4 +1,6 @@
 'use strict';
+// Added in merge
+/*jshint esversion: 6 */
 
 
 /**
@@ -410,3 +412,13 @@ exports.module_WaitForInputMessage = function(connectionId,inputName) {
   });
 }
 
+// Added in merge
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+//
+// When updating this file, make sure the code below ends up in the new file.  This is how we
+// avoid changing the codegen code.  The real implementations are in the *Glue.js files, and we leave the
+// codegen stubs in here.  We replace all the codegen implementations with our new implementations
+// and then make sure we've replaced them all before exporting.
+//
+// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+module.exports = require('../glue/glueUtils').replaceExports(module.exports, '../glue/moduleGlue.js')
