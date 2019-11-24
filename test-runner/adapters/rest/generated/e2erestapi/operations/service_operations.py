@@ -253,11 +253,13 @@ class ServiceOperations(object):
     invoke_device_method.metadata = {'url': '/service/{connectionId}/deviceMethod/{deviceId}'}
 
     def send_c2d(
-            self, connection_id, event_body, custom_headers=None, raw=False, **operation_config):
+            self, connection_id, device_id, event_body, custom_headers=None, raw=False, **operation_config):
         """Send a c2d message.
 
         :param connection_id: Id for the connection
         :type connection_id: str
+        :param device_id:
+        :type device_id: str
         :param event_body:
         :type event_body: object
         :param dict custom_headers: headers that will be added to the request
@@ -273,7 +275,8 @@ class ServiceOperations(object):
         # Construct URL
         url = self.send_c2d.metadata['url']
         path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'deviceId': self._serialize.url("device_id", device_id, 'str')
         }
         url = self._client.format_url(url, **path_format_arguments)
 
@@ -300,4 +303,4 @@ class ServiceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    send_c2d.metadata = {'url': '/service/{connectionId}/sendC2d'}
+    send_c2d.metadata = {'url': '/service/{connectionId}/sendC2d/{deviceId}'}
