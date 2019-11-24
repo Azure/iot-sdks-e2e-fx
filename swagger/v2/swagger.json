@@ -146,7 +146,7 @@
     "/service/{connectionId}/deviceMethod/{deviceId}": {
       "$ref": "service.json#/deviceMethod"
     },
-    "/service/{connectionId}/sendC2d": {
+    "/service/{connectionId}/sendC2d/{deviceId}": {
       "$ref": "service.json#/sendC2d"
     },
     "/device/connect/{transportType}": {
@@ -212,7 +212,7 @@
     "/net/reconnect": {
       "$ref": "net.json#/reconnect"
     },
-    "/net/disconnectAfterC2D/{disconnectType}": {
+    "/net/disconnectAfterC2d/{disconnectType}": {
       "$ref": "net.json#/disconnectAfterC2d"
     },
     "/net/disconnectAfterD2c/{disconnectType}": {
