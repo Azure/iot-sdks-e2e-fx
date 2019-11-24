@@ -15,6 +15,8 @@ testMod_host_port = 8099
 def deploy_for_iotedge(testMod_image):
     utilities.remove_old_instances()
 
+    settings.horton.image = testMod_image
+
     settings.iotedge.hostname = utilities.get_computer_name()
     device_id_base = utilities.get_random_device_name()
 
@@ -53,6 +55,8 @@ def deploy_for_iotedge(testMod_image):
 def deploy_for_iothub(testMod_image):
     utilities.remove_old_instances()
 
+    settings.horton.image = testMod_image
+
     device_id_base = utilities.get_random_device_name()
 
     host = connection_string_to_sas_token(settings.iothub.connection_string)["host"]
@@ -86,16 +90,26 @@ def deploy_for_iothub(testMod_image):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="deploy containers for testing")
     parser.add_argument("deployment_type", type=str, choices=["iothub", "iotedge"])
-    parser.add_argument(
-        "--image", help="docker image to deploy", type=str, required=True
-    )
+    parser.add_argument("--image", help="docker image to deploy", type=str)
 
     args = parser.parse_args()
+    image = None
+    if args.image:
+        image = args.image
+        print("Using new image: {}".format(image))
+    elif settings.horton.image:
+        image = settings.horton.image
+        print("Using previous image: {}".format(image))
+    else:
+        print("No previous image.  You need to specify an image")
+        parser.usage()
+        exit(1)
+
     utilities.get_language_from_image_name(
-        args.image
+        image
     )  # validate image name before continuing
 
     if args.deployment_type == "iothub":
-        deploy_for_iothub(args.image)
+        deploy_for_iothub(image)
     elif args.deployment_type == "iotedge":
-        deploy_for_iotedge(args.image)
+        deploy_for_iotedge(image)
