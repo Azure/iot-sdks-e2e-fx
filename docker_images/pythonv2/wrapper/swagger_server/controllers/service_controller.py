@@ -67,13 +67,15 @@ def service_invoke_module_method(connectionId, deviceId, moduleId, methodInvokeP
     return 'do some magic!'
 
 
-def service_send_c2d(connectionId, eventBody):  # noqa: E501
+def service_send_c2d(connectionId, deviceId, eventBody):  # noqa: E501
     """Send a c2d message
 
      # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
+    :param deviceId: 
+    :type deviceId: str
     :param eventBody: 
     :type eventBody: 
 
