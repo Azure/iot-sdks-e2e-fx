@@ -374,3 +374,10 @@ class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).service
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
+
+    @emulate_async
+    @log_entry_and_exit
+    def send_c2d(self, device_id, event_body):
+        self.rest_endpoint.send_c2d(
+            self.connection_id, device_id, event_body, timeout=adapter_config.default_api_timeout
+        )

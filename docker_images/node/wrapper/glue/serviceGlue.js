@@ -112,9 +112,16 @@ exports.service_InvokeModuleMethod = function(connectionId,deviceId,moduleId,met
  * eventBody Object 
  * no response value expected for this operation
  **/
-exports.service_SendC2d = function(connectionId,eventBody) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+exports.service_SendC2d = function(connectionId, deviceId, eventBody) {
+  debug(`service_SendC2d called with ${connectionId}, ${deviceId}, ${moduleId}`);
+  debug(JSON.stringify(methodInvokeParameters));
+  return glueUtils.makePromise('service_InvokeModuleMethod', function(callback) {
+    var client = objectCache.getObject(connectionId);
+    debug(`calling ServiceClient.invokeDeviceMethod`);
+    client.invokeDeviceMethod(deviceId, moduleId, methodInvokeParameters, function(err, result) {
+      glueUtils.debugFunctionResult('ServiceClient.invokeDeviceMethod', err);
+      callback(err, result);
+    });
   });
 }
 

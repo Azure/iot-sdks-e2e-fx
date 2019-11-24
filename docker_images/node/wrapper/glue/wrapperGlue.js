@@ -73,12 +73,13 @@ exports.wrapper_Cleanup = function() {
 exports.wrapper_GetCapabilities = function() {
   return new Promise(function(resolve, reject) {
     debug("returning capabilities");
-    resolve(JSON.stringify({
+    var caps = {
       'flags': {
-        'v2_connect_group': True,
+        'v2_connect_group': true
       },
-      'skip_list': ['invokesModuleMethodCalls', 'invokesDeviceMethodCalls'],
-    }));
+      'skip_list': ['invokesModuleMethodCalls', 'invokesDeviceMethodCalls']
+    };
+    resolve(caps);
   });
 }
 
