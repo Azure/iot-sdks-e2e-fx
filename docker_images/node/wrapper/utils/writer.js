@@ -1,7 +1,3 @@
-// Added in merge
-'use strict';
-/*jshint esversion: 6 */
-
 var ResponsePayload = function(code, payload) {
   this.code = code;
   this.payload = payload;

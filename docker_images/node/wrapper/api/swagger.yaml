@@ -915,7 +915,7 @@ paths:
           schema:
             type: "object"
       x-swagger-router-controller: "Service"
-  /service/{connectionId}/sendC2d:
+  /service/{connectionId}/sendC2d/{deviceId}:
     put:
       tags:
       - "service"
@@ -927,6 +927,10 @@ paths:
       - name: "connectionId"
         in: "path"
         description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "deviceId"
+        in: "path"
         required: true
         type: "string"
       - in: "body"
@@ -1413,7 +1417,7 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "Net"
-  /net/disconnectAfterC2D/{disconnectType}:
+  /net/disconnectAfterC2d/{disconnectType}:
     put:
       tags:
       - "net"

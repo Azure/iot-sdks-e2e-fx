@@ -1,6 +1,4 @@
 'use strict';
-// Added in merge
-/*jshint esversion: 6 */
 
 
 /**
@@ -310,15 +308,4 @@ exports.device_WaitForDesiredPropertiesPatch = function(connectionId) {
     }
   });
 }
-
-// Added in merge 
-//
-// When updating this file, make sure the code below ends up in the new file.  This is how we
-// avoid changing the codegen code.  The real implementations are in the *Glue.js files, and we leave the
-// codegen stubs in here.  We replace all the codegen implementations with our new implementations
-// and then make sure we've replaced them all before exporting.
-//
-// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-module.exports = require('../glue/glueUtils').replaceExports(module.exports, '../glue/deviceGlue.js')
-
 
