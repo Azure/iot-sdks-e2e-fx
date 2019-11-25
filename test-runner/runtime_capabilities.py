@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 import adapters
-from msrest.exceptions import HttpOperationError
+from msrest.exceptions import HttpOperationError, ClientRequestError
 from horton_settings import settings
 
 hardcoded_skip_list = {
@@ -45,7 +45,7 @@ def collect_capabilities():
             )
             try:
                 caps = horton_object.wrapper_api.get_capabilities_sync()
-            except HttpOperationError:
+            except (HttpOperationError, ClientRequestError):
                 caps = None
 
             horton_object.capabilities = HortonCapabilities()
