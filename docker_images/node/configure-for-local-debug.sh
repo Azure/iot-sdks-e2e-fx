@@ -30,3 +30,4 @@ lerna bootstrap --scope iot-sdk-device-client-rest-api --include-filtered-depend
 lerna run build --scope iot-sdk-device-client-rest-api --include-filtered-dependencies
 [ $? -eq 0 ] || { echo "lerna run build failed"; exit 1; }
 
+echo "success"

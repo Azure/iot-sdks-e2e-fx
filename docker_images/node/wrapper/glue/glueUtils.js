@@ -23,7 +23,9 @@ var returnFailure = function(reject, err, functionName) {
   if (functionName) {
     errorText = 'failure from ' + functionName + ': ';
   }
-  if (err.responseBody) {
+  if (!err) {
+      errorText = "unspecified failure";
+  } else if (err.responseBody) {
     errorText += err.responseBody;
   } else {
     errorText += err.message;
