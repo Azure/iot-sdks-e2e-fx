@@ -72,7 +72,13 @@ exports.wrapper_Cleanup = function() {
  **/
 exports.wrapper_GetCapabilities = function() {
   return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+    debug("returning capabilities");
+    var caps = {
+      'flags': {
+      },
+      'skip_list': ['invokesModuleMethodCalls', 'invokesDeviceMethodCalls']
+    };
+    resolve(caps);
   });
 }
 

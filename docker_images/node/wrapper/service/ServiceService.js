@@ -86,10 +86,11 @@ exports.service_InvokeModuleMethod = function(connectionId,deviceId,moduleId,met
  * Send a c2d message
  *
  * connectionId String Id for the connection
+ * deviceId String 
  * eventBody Object 
  * no response value expected for this operation
  **/
-exports.service_SendC2d = function(connectionId,eventBody) {
+exports.service_SendC2d = function(connectionId,deviceId,eventBody) {
   return new Promise(function(resolve, reject) {
     resolve();
   });

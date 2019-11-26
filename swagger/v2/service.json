@@ -138,6 +138,9 @@
           "$ref": "parameters.json#/connectionId"
         },
         {
+          "$ref": "parameters.json#/deviceId"
+        },
+        {
           "$ref": "parameters.json#/eventBody"
         }
       ],

@@ -129,8 +129,13 @@ exports.device_Disconnect2 = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_EnableC2dMessages = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+  debug(`device_EnableC2dMessages called with ${connectionId}`);
+  return glueUtils.makePromise('device_EnableC2dMessages', function(callback) {
+    var client = objectCache.getObject(connectionId)
+    client._enableC2D(function(err) {
+      glueUtils.debugFunctionResult('client._enableC2D', err);
+      callback(err);
+    });
   });
 }
 

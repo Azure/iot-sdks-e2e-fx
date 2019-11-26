@@ -54,8 +54,9 @@ module.exports.service_InvokeModuleMethod = function service_InvokeModuleMethod 
 
 module.exports.service_SendC2d = function service_SendC2d (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
+  var deviceId = req.swagger.params['deviceId'].value;
   var eventBody = req.swagger.params['eventBody'].value;
-  Service.service_SendC2d(connectionId,eventBody)
+  Service.service_SendC2d(connectionId,deviceId,eventBody)
     .then(function (response) {
       utils.writeJson(res, response);
     })

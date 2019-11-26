@@ -204,7 +204,7 @@ class NetOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect_after_c2d.metadata = {'url': '/net/disconnectAfterC2D/{disconnectType}'}
+    disconnect_after_c2d.metadata = {'url': '/net/disconnectAfterC2d/{disconnectType}'}
 
     def disconnect_after_d2c(
             self, disconnect_type, custom_headers=None, raw=False, **operation_config):

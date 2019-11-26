@@ -196,4 +196,9 @@ class AbstractRegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin):
 
 @six.add_metaclass(abc.ABCMeta)
 class AbstractServiceApi(ServiceConnectDisconnect, InvokeMethods):
-    pass
+
+    @abc.abstractmethod
+    def send_c2d(self, device_id, message):
+        pass
+
+
