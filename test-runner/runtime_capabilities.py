@@ -16,7 +16,7 @@ hardcoded_skip_list = {
     "java": ["module_under_test_has_device_wrapper", "supportsTwin"],
 }
 
-language_has_full_device_client = ("pythonv2", "node")
+language_has_full_device_client = ("pythonv2",)
 language_has_leaf_device_client = ("node",)
 language_has_service_client = ("node", "csharp", "javs", "c")
 
