@@ -73,8 +73,6 @@ jobs:
     env:
       CommitToPass: $(CommitToPass)
 
-    condition: and(succeeded(), eq(variables['buildImage'],'yes'))
-
   - powershell: $(Horton.FrameworkRoot)/scripts/install-pyscript-reqs.ps1
     displayName: "pip install requirements.txt"
     condition: and(succeeded(), eq(variables['buildImage'],'yes'))
