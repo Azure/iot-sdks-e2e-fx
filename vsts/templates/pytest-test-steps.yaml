@@ -7,11 +7,6 @@ parameters:
   log_folder_name: ''
 
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
-    architecture: 'x64'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
   workingDirectory: $(Horton.FrameworkRoot)
