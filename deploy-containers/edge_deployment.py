@@ -20,9 +20,14 @@ testMod_host_port = 8099
 
 
 def add_edge_modules(testMod_image):
-    friendMod_image = (
-        os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/default-friend-module:latest"
-    )
+    if utilities.is_pi():
+        friendMod_image = (
+            os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/default-friend-module:arm"
+        )
+    else:
+        friendMod_image = (
+            os.environ["IOTHUB_E2E_REPO_ADDRESS"] + "/default-friend-module:amd64"
+        )
 
     settings.friend_module.host_port = friendMod_host_port
     settings.friend_module.device_id = settings.iotedge.device_id

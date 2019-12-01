@@ -4,10 +4,6 @@
 script_dir=$(cd "$(dirname "$0")" && pwd)
 source "$script_dir/../colorecho.sh"
 
-if [ $(lsb_release -is) != "Ubuntu" ]; then
-  colorecho $_red "ERROR: This script only works on Ubunto distros"
-  exit 1
-fi
 
 colorecho $_yellow "Checking for Microsoft APT repo registration"
 if [ -f /etc/apt/sources.list.d/microsoft-prod.list ]; then 
@@ -16,14 +12,30 @@ if [ -f /etc/apt/sources.list.d/microsoft-prod.list ]; then
 fi
 
 # Download the Microsoft repository GPG keys
-wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
-[ $? -eq 0 ] || { colorecho $_red "wget failed"; exit 1; }
+if [ $(lsb_release -is) == "Ubuntu" ]; then
+    curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/multiarch/prod.list > ./microsoft-prod.list
+    [ $? -eq 0 ] || { colorecho $_red "curl failed"; exit 1; }
+elif [ $(lsb_release -is) == "Raspbian" ]; then
+    curl https://packages.microsoft.com/config/debian/stretch/multiarch/prod.list > ./microsoft-prod.list
+    [ $? -eq 0 ] || { colorecho $_red "curl failed"; exit 1; }
+else
+  colorecho $_red "ERROR: This script only works on Ubunto and Raspbian distros"
+  exit 1
+fi
 
 # Register the Microsoft repository GPG keys
-sudo dpkg -i packages-microsoft-prod.deb
-[ $? -eq 0 ] || { colorecho $_red "dpkg failed"; exit 1; }
+sudo cp ./microsoft-prod.list /etc/apt/sources.list.d/
+[ $? -eq 0 ] || { colorecho $_red "sudo cp microsoft-prod.list failed"; exit 1; }
 
-rm packages-microsoft-prod.deb
+rm microsoft-prod.list
+
+curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+[ $? -eq 0 ] || { colorecho $_red "curl microsoft.asc failed"; exit 1; }
+
+sudo cp ./microsoft.gpg /etc/apt/trusted.gpg.d/
+[ $? -eq 0 ] || { colorecho $_red "cp microsoft.gpg failed"; exit 1; }
+
+rm microsoft.gpg
 
 # Update the list of products
 sudo apt-get update
