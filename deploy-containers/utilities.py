@@ -13,6 +13,9 @@ from horton_settings import settings
 def is_windows():
     return ("OS" in os.environ) and (os.environ["OS"] == "Windows_NT")
 
+def is_pi():
+    return (not is_windows()) and (run_shell_command("uname -m")[0] == "armv7l")
+
 
 def sudo_prefix():
     if is_windows():
