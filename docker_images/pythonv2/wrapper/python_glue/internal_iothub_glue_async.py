@@ -205,6 +205,14 @@ class InputsAndOutputs(object):
         logger.info("send confirmation received")
 
 
+class InvokeMethods(object):
+    def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
+        pass
+
+    def invoke_device_method(self, device_id, method_invoke_parameters):
+        pass
+
+
 class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin):
     def __init__(self):
         self.client = None
@@ -222,6 +230,7 @@ class InternalModuleGlueAsync(
     Twin,
     Telemetry,
     InputsAndOutputs,
+    InvokeMethods,
 ):
     def __init__(self):
         self.client = None

@@ -202,6 +202,14 @@ class InputsAndOutputs(object):
         logger.info("send confirmation received")
 
 
+class InvokeMethods(object):
+    def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
+        pass
+
+    def invoke_device_method(self, device_id, method_invoke_parameters):
+        pass
+
+
 class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry):
     def __init__(self):
         self.client_class = IoTHubDeviceClient
@@ -225,6 +233,7 @@ class InternalModuleGlueSync(
     Twin,
     Telemetry,
     InputsAndOutputs,
+    InvokeMethods,
 ):
     def __init__(self):
         self.client_class = IoTHubModuleClient
