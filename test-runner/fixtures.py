@@ -72,7 +72,7 @@ def registry(logger):
 
 @pytest.fixture
 def friend(logger):
-    friend = connections.connect_friend_module_client()
+    friend = connections.get_module_client(settings.friend_module)
     yield friend
     logger(separator.format("friend module"))
     try:
@@ -83,7 +83,7 @@ def friend(logger):
 
 @pytest.fixture
 def test_module(logger):
-    test_module = connections.connect_test_module_client()
+    test_module = connections.get_module_client(settings.test_module)
     yield test_module
     logger(separator.format("test module"))
     try:
@@ -94,7 +94,7 @@ def test_module(logger):
 
 @pytest.fixture
 def leaf_device(logger):
-    leaf_device = connections.connect_leaf_device_client()
+    leaf_device = connections.get_device_client(settings.leaf_device)
     yield leaf_device
     logger(separator.format("leaf device"))
     try:
@@ -105,7 +105,7 @@ def leaf_device(logger):
 
 @pytest.fixture
 def test_device(logger):
-    test_device = connections.connect_test_device_client()
+    test_device = connections.get_device_client(settings.test_device)
     yield test_device
     logger(separator.format("device"))
     try:
@@ -123,12 +123,6 @@ def service(logger):
         service.disconnect_sync()
     except Exception as e:
         logger("exception disconnecting service: {}".format(e))
-
-
-@pytest.fixture
-def test_module_wrapper_api():
-    # BKTODO change the pattern to use the right name and right api
-    return settings.test_module.wrapper_api
 
 
 @pytest.fixture

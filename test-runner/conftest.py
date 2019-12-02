@@ -28,7 +28,6 @@ from fixtures import (
     service,
     test_device,
     test_module,
-    test_module_wrapper_api,
     test_payload,
     sample_reported_props,
     sample_desired_props,

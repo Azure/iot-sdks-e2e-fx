@@ -17,6 +17,7 @@ class DroppedConnectionTestsBase(object):
     @pytest.mark.it("Shows if the client is connected or disconnected")
     async def test_connection_status(self, client):
 
+        await client.connect2()
         assert await client.get_connection_status() == "connected"
 
         await client.disconnect2()
@@ -29,6 +30,9 @@ class DroppedConnectionTestsBase(object):
     async def test_client_dropped_connection(
         self, client, net_control, drop_mechanism, logger, test_module_transport
     ):
+        await client.connect2()
+        assert await client.get_connection_status() == "connected"
+
         await self.start_dropping(
             net_control=net_control,
             logger=logger,
