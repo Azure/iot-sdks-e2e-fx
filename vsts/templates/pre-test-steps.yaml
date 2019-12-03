@@ -27,16 +27,19 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - script: |
-    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} &&
-    docker pull ${{ parameters.image_testMod }}
+    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+  displayName: 'docker login'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+
+- script: |
+    docker pull ${{ parameters.image_testMod }} || docker pull ${{ parameters.image_testMod }}
   displayName: 'pre-cache test image'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: |
-    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} &&
-    docker pull ${{ parameters.image_edgeAgent }} &&
-    docker pull ${{ parameters.image_edgeHub }} &&
-    docker pull ${{ parameters.image_friendmod }} 
+    ( docker pull ${{ parameters.image_edgeAgent }} || docker pull ${{ parameters.image_edgeAgent }} ) &&
+    ( docker pull ${{ parameters.image_edgeHub }} || docker pull ${{ parameters.image_edgeHub }} ) &&
+    ( docker pull ${{ parameters.image_friendmod }} || docker pull ${{ parameters.image_friendmod }} )
   displayName: 'pre-cache edge images'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
