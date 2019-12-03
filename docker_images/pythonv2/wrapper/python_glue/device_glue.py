@@ -34,17 +34,17 @@ class DeviceGlue:
     def create_from_connection_string(self, transport_type, connection_string, cert):
         internal = InternalDeviceGlue()
         internal.create_from_connection_string(transport_type, connection_string, cert)
-        return self._return_connect_response(internal)
+        return self._finish_connection(internal)
 
     def create_from_x509(self, transport_type, x509):
         internal = InternalDeviceGlue()
         internal.create_from_x509(transport_type, x509)
-        return self._return_connect_response(internal)
+        return self._finish_connection(internal)
 
     def create_from_environment(self, transport_type):
         internal = InternalDeviceGlue()
         internal.create_from_environment(transport_type)
-        return self._return_connect_response(internal)
+        return self._finish_connection(internal)
 
     def connect2(self, connection_id):
         self.object_map[connection_id].connect2()
