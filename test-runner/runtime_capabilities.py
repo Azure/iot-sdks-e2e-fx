@@ -31,34 +31,38 @@ class HortonCapabilities(object):
         self.net_connect_app = False
 
 
-def collect_capabilities():
+def collect_capabilities(horton_object):
+    if horton_object.device_id:
+        horton_object.wrapper_api = adapters.create_adapter(
+            horton_object.adapter_address, "wrapper"
+        )
+        try:
+            caps = horton_object.wrapper_api.get_capabilities_sync()
+        except (HttpOperationError, ClientRequestError):
+            caps = None
+
+        horton_object.capabilities = HortonCapabilities()
+        if caps:
+            flags = caps["flags"]
+            for flag_name in flags:
+                setattr(horton_object.capabilities, flag_name, flags[flag_name])
+            horton_object.skip_list = list(caps["skip_list"])
+        else:
+            horton_object.skip_list = hardcoded_skip_list[horton_object.language]
+
+        for flag_name in dir(horton_object.capabilities):
+            value = getattr(horton_object.capabilities, flag_name)
+            if not callable(value):
+                if not value:
+                    horton_object.skip_list.append(flag_name)
+
+
+def collect_all_capabilities():
     # BKTODO: add an under_test flag to settings and make _objects public so we can iterate
     for horton_object in (
+        settings.leaf_device,
         settings.test_module,
         settings.friend_module,
         settings.test_device,
-        settings.leaf_device,
     ):
-        if horton_object.device_id:
-            horton_object.wrapper_api = adapters.create_adapter(
-                horton_object.adapter_address, "wrapper"
-            )
-            try:
-                caps = horton_object.wrapper_api.get_capabilities_sync()
-            except (HttpOperationError, ClientRequestError):
-                caps = None
-
-            horton_object.capabilities = HortonCapabilities()
-            if caps:
-                flags = caps["flags"]
-                for flag_name in flags:
-                    setattr(horton_object.capabilities, flag_name, flags[flag_name])
-                horton_object.skip_list = list(caps["skip_list"])
-            else:
-                horton_object.skip_list = hardcoded_skip_list[horton_object.language]
-
-            for flag_name in dir(horton_object.capabilities):
-                value = getattr(horton_object.capabilities, flag_name)
-                if not callable(value):
-                    if not value:
-                        horton_object.skip_list.append(flag_name)
+        collect_capabilities(horton_object)
