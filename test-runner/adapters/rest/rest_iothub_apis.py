@@ -54,7 +54,7 @@ class Connect(object):
             # give edgeHub a chance to disconnect MessagingServiceClient from IoTHub.  It does this lazily after the module disconnects from edgeHub
             time.sleep(2)
 
-    @log_entry_and_exit
+    @log_entry_and_exit(print_args=False)
     def create_from_connection_string_sync(
         self, transport, connection_string, ca_certificate
     ):
@@ -66,7 +66,7 @@ class Connect(object):
         )
         self.connection_id = result.connection_id
 
-    @log_entry_and_exit
+    @log_entry_and_exit(print_args=False)
     def create_from_x509_sync(self, transport, x509):
         result = self.rest_endpoint.create_from_x509(
             transport, x509, timeout=adapter_config.default_api_timeout
@@ -379,5 +379,8 @@ class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
     @log_entry_and_exit
     def send_c2d(self, device_id, event_body):
         self.rest_endpoint.send_c2d(
-            self.connection_id, device_id, event_body, timeout=adapter_config.default_api_timeout
+            self.connection_id,
+            device_id,
+            event_body,
+            timeout=adapter_config.default_api_timeout,
         )

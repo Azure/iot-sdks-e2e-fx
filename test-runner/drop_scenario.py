@@ -93,9 +93,12 @@ class NetworkGlitchClientConnected(DropScenarioBaseClass):
 
     @pytest.fixture
     def before_api_call(
-        self, drop_mechanism, net_control, logger, test_module_transport
+        self, client, drop_mechanism, net_control, logger, test_module_transport
     ):
         async def func():
+            await client.connect2()
+            assert await client.get_connection_status() == "connected"
+
             await self.start_dropping(
                 net_control=net_control,
                 logger=logger,
@@ -131,6 +134,9 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
         self, client, drop_mechanism, net_control, logger, test_module_transport
     ):
         async def func():
+            await client.connect2()
+            assert await client.get_connection_status() == "connected"
+
             await self.start_dropping(
                 net_control=net_control,
                 logger=logger,
@@ -159,6 +165,7 @@ class NetworkDroppedClientDisconnected(DropScenarioBaseClass):
     ):
         async def func():
             await client.disconnect2()
+            assert await client.get_connection_status() == "disconnected"
             await self.start_dropping(
                 net_control=net_control,
                 logger=logger,

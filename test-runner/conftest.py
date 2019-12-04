@@ -28,7 +28,6 @@ from fixtures import (
     service,
     test_device,
     test_module,
-    test_module_wrapper_api,
     test_payload,
     sample_reported_props,
     sample_desired_props,
@@ -220,6 +219,9 @@ def adjust_surfaces_for_missing_implementations():
         settings.leaf_device.adapter_address = settings.friend_module.adapter_address
         settings.leaf_device.container_port = settings.friend_module.container_port
         settings.leaf_device.host_port = settings.friend_module.host_port
+        settings.leaf_device.language = settings.friend_module.language
+        # adapter has changed.  recollect capabilities.
+        runtime_capabilities.collect_capabilities(settings.leaf_device)
 
     if (
         settings.test_module.language
@@ -284,7 +286,7 @@ def pytest_collection_modifyitems(config, items):
     if config.getoption("--direct-python"):
         set_python_direct()
     set_logger()
-    runtime_capabilities.collect_capabilities()
+    runtime_capabilities.collect_all_capabilities()
     if config.getoption("--async"):
         set_async()
     add_service_settings()

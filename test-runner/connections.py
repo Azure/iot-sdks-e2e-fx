@@ -6,9 +6,9 @@ import base64
 from horton_settings import settings
 
 
-def get_ca_cert(object):
+def get_ca_cert(settings_object):
     if (
-        object.connection_type == "connection_string_with_edge_gateway"
+        settings_object.connection_type == "connection_string_with_edge_gateway"
         and settings.iotedge.ca_cert_base64
     ):
         return {
@@ -18,46 +18,57 @@ def get_ca_cert(object):
         return {}
 
 
-def connect_test_module_client():
+def get_module_client(settings_object):
     """
-    connect the module client for the code-under-test and return the client object
+    get a module client for the given settings object
     """
-    client = adapters.create_adapter(
-        settings.test_module.adapter_address, "module_client"
-    )
+    client = adapters.create_adapter(settings_object.adapter_address, "module_client")
 
-    client.device_id = settings.test_module.device_id
-    client.module_id = settings.test_module.module_id
+    client.device_id = settings_object.device_id
+    client.module_id = settings_object.module_id
+    client.capabilities = settings_object.capabilities
 
-    if settings.test_module.connection_type == "environment":
-        client.connect_from_environment_sync(settings.test_module.transport)
+    if settings_object.capabilities.v2_connect_group:
+        if settings_object.connection_type == "environment":
+            client.create_from_environment_sync(settings_object.transport)
+        else:
+            client.create_from_connection_string_sync(
+                settings_object.transport,
+                settings_object.connection_string,
+                get_ca_cert(settings_object),
+            )
     else:
-        client.connect_sync(
-            settings.test_module.transport,
-            settings.test_module.connection_string,
-            get_ca_cert(settings.test_module),
-        )
+        if settings_object.connection_type == "environment":
+            client.connect_from_environment_sync(settings_object.transport)
+        else:
+            client.connect_sync(
+                settings_object.transport,
+                settings_object.connection_string,
+                get_ca_cert(settings_object),
+            )
     return client
 
 
-def connect_friend_module_client():
+def get_device_client(settings_object):
     """
-    connect the module client for the friend module and return the client object
+    get a device client for the given settings object
     """
-    client = adapters.create_adapter(
-        settings.friend_module.adapter_address, "module_client"
-    )
+    client = adapters.create_adapter(settings_object.adapter_address, "device_client")
 
-    client.device_id = settings.friend_module.device_id
-    client.module_id = settings.friend_module.module_id
+    client.device_id = settings_object.device_id
+    client.capabilities = settings_object.capabilities
 
-    if settings.friend_module.connection_type == "environment":
-        client.connect_from_environment_sync(settings.friend_module.transport)
+    if settings_object.capabilities.v2_connect_group:
+        client.create_from_connection_string_sync(
+            settings_object.transport,
+            settings_object.connection_string,
+            get_ca_cert(settings_object),
+        )
     else:
         client.connect_sync(
-            settings.friend_module.transport,
-            settings.friend_module.connection_string,
-            get_ca_cert(settings.friend_module),
+            settings_object.transport,
+            settings_object.connection_string,
+            get_ca_cert(settings_object),
         )
     return client
 
@@ -77,40 +88,6 @@ def connect_service_client():
     """
     client = adapters.create_adapter(settings.service.adapter_address, "service")
     client.connect_sync(settings.service.connection_string)
-    return client
-
-
-def connect_leaf_device_client():
-    """
-    connect the device client for the leaf device and return the client object
-    """
-    client = adapters.create_adapter(
-        settings.leaf_device.adapter_address, "device_client"
-    )
-
-    client.device_id = settings.leaf_device.device_id
-
-    client.connect_sync(
-        settings.leaf_device.transport,
-        settings.leaf_device.connection_string,
-        get_ca_cert(settings.leaf_device),
-    )
-    return client
-
-
-def connect_test_device_client():
-    """
-    connect the device client for the test device and return the client object
-    """
-    client = adapters.create_adapter(
-        settings.test_device.adapter_address, "device_client"
-    )
-
-    client.device_id = settings.test_device.device_id
-
-    client.connect_sync(
-        settings.test_device.transport, settings.test_device.connection_string, {}
-    )
     return client
 
 
