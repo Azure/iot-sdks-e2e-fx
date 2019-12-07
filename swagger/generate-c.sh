@@ -26,22 +26,12 @@ colorecho $_yellow "cleaning out old wrappers"
 cd ${root_dir}/docker_images/c/wrapper/
 [ $? -eq 0 ] || { echo "cd ${root_dir}/docker-images/c/wrapper/ failed"; exit 1; }
 
-for f in *; do
-    if [ "$f" != "glue" ] && [ "$f" != "CMakeLists.txt" ]; then
-        if [ -d $f ]; then
-            colorecho $_yellow "--removing directory $f"
-            rm -r $f
-            [ $? -eq 0 ] || { echo "rm -r $f failed"; exit 1; }
-        else
-            colorecho $_yellow "--removing file $f"
-            rm $f
-            [ $? -eq 0 ] || { echo "rm $f failed"; exit 1; }
-        fi
-    fi
-done
+rm generated/*
+[ $? -eq 0 ] || { echo "rm generated/* failed"; exit 1; }
 
 colorecho $_yellow "copying generated files"
-cp -r ${script_dir}/swagger_generated/c/* .
+
+cp -r ${script_dir}/swagger_generated/c/api/* generated/
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
 
 colorecho $_green "SUCCESS!"

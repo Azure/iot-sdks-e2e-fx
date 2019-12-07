@@ -11,13 +11,13 @@
  */
 
 /*
- * WrapperApi.h
+ * NetApi.h
  *
  * 
  */
 
-#ifndef WrapperApi_H_
-#define WrapperApi_H_
+#ifndef NetApi_H_
+#define NetApi_H_
 
 
 #include <memory>
@@ -25,7 +25,6 @@
 #include <corvusoft/restbed/resource.hpp>
 #include <corvusoft/restbed/service.hpp>
 
-#include "Object.h"
 #include <string>
 
 namespace io {
@@ -35,83 +34,83 @@ namespace api {
 
 using namespace io::swagger::server::model;
 
-class  WrapperApi: public restbed::Service
+class  NetApi: public restbed::Service
 {
 public:
-	WrapperApi();
-	~WrapperApi();
+	NetApi();
+	~NetApi();
 	void startService(int const& port);
 	void stopService();
 };
 
 
 /// <summary>
-/// verify that the clients have cleaned themselves up completely
+/// Simulate a network disconnection
 /// </summary>
 /// <remarks>
 /// 
 /// </remarks>
-class  WrapperApiWrapperCleanupResource: public restbed::Resource
+class  NetApiNetDisconnectDisconnectTypeResource: public restbed::Resource
 {
 public:
-	WrapperApiWrapperCleanupResource();
-    virtual ~WrapperApiWrapperCleanupResource();
+	NetApiNetDisconnectDisconnectTypeResource();
+    virtual ~NetApiNetDisconnectDisconnectTypeResource();
     void PUT_method_handler(const std::shared_ptr<restbed::Session> session);
 };
 
 /// <summary>
-/// Get capabilities for this test wrapper
+/// Simulate a disconnect after the next C2D transfer
 /// </summary>
 /// <remarks>
 /// 
 /// </remarks>
-class  WrapperApiWrapperCapabilitiesResource: public restbed::Resource
+class  NetApiNetDisconnectAfterC2dDisconnectTypeResource: public restbed::Resource
 {
 public:
-	WrapperApiWrapperCapabilitiesResource();
-    virtual ~WrapperApiWrapperCapabilitiesResource();
-    void GET_method_handler(const std::shared_ptr<restbed::Session> session);
-};
-
-/// <summary>
-/// log a message to output
-/// </summary>
-/// <remarks>
-/// 
-/// </remarks>
-class  WrapperApiWrapperMessageResource: public restbed::Resource
-{
-public:
-	WrapperApiWrapperMessageResource();
-    virtual ~WrapperApiWrapperMessageResource();
+	NetApiNetDisconnectAfterC2dDisconnectTypeResource();
+    virtual ~NetApiNetDisconnectAfterC2dDisconnectTypeResource();
     void PUT_method_handler(const std::shared_ptr<restbed::Session> session);
 };
 
 /// <summary>
-/// send an arbitrary command
+/// Simulate a disconnect after the next D2C transfer
 /// </summary>
 /// <remarks>
 /// 
 /// </remarks>
-class  WrapperApiWrapperCommandResource: public restbed::Resource
+class  NetApiNetDisconnectAfterD2cDisconnectTypeResource: public restbed::Resource
 {
 public:
-	WrapperApiWrapperCommandResource();
-    virtual ~WrapperApiWrapperCommandResource();
+	NetApiNetDisconnectAfterD2cDisconnectTypeResource();
+    virtual ~NetApiNetDisconnectAfterD2cDisconnectTypeResource();
     void PUT_method_handler(const std::shared_ptr<restbed::Session> session);
 };
 
 /// <summary>
-/// set flags for the wrapper to use
+/// Reconnect the network after a simulated network disconnection
 /// </summary>
 /// <remarks>
 /// 
 /// </remarks>
-class  WrapperApiWrapperFlagsResource: public restbed::Resource
+class  NetApiNetReconnectResource: public restbed::Resource
 {
 public:
-	WrapperApiWrapperFlagsResource();
-    virtual ~WrapperApiWrapperFlagsResource();
+	NetApiNetReconnectResource();
+    virtual ~NetApiNetReconnectResource();
+    void PUT_method_handler(const std::shared_ptr<restbed::Session> session);
+};
+
+/// <summary>
+/// Set destination for net disconnect ops
+/// </summary>
+/// <remarks>
+/// 
+/// </remarks>
+class  NetApiNetSetDestinationIpTransportTypeResource: public restbed::Resource
+{
+public:
+	NetApiNetSetDestinationIpTransportTypeResource();
+    virtual ~NetApiNetSetDestinationIpTransportTypeResource();
     void PUT_method_handler(const std::shared_ptr<restbed::Session> session);
 };
 
@@ -121,5 +120,5 @@ public:
 }
 }
 
-#endif /* WrapperApi_H_ */
+#endif /* NetApi_H_ */
 
