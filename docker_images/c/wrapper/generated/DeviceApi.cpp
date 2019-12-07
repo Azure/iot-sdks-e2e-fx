@@ -18,12 +18,17 @@
 
 #include "DeviceApi.h"
 
+// Added 2 lines in merge 
+#include "DeviceGlue.h"
+DeviceGlue device_glue;
+
 namespace io {
 namespace swagger {
 namespace server {
 namespace api {
 
-using namespace io::swagger::server::model;
+// removed namespace in merge
+// using namespace io::swagger::server::model;
 
 DeviceApi::DeviceApi() {
 	std::shared_ptr<DeviceApiDeviceConnectTransportTypeResource> spDeviceApiDeviceConnectTransportTypeResource = std::make_shared<DeviceApiDeviceConnectTransportTypeResource>();
