@@ -23,15 +23,20 @@ rm -r swagger_generated/c
 [ $? -eq 0 ] || { echo "generate.sh failed"; exit 1; }
 
 colorecho $_yellow "cleaning out old wrappers"
-cd ${root_dir}/docker_images/c/wrapper/
-[ $? -eq 0 ] || { echo "cd ${root_dir}/docker-images/c/wrapper/ failed"; exit 1; }
+cd ${root_dir}/docker_images/c/wrapper/generated
+[ $? -eq 0 ] || { echo "cd ${root_dir}/docker-images/c/wrapper/generated failed"; exit 1; }
 
-rm generated/*
+rm *
 [ $? -eq 0 ] || { echo "rm generated/* failed"; exit 1; }
 
 colorecho $_yellow "copying generated files"
 
-cp -r ${script_dir}/swagger_generated/c/api/* generated/
+cp -r ${script_dir}/swagger_generated/c/api/* .
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
+
+for f in *; do 
+    perl -p -i -e 's/[ \t]+$//' ${f}
+    [ $? -eq 0 ] || { echo "perl ${f}"; exit 1; }
+done
 
 colorecho $_green "SUCCESS!"
