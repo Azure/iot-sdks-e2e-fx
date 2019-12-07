@@ -141,6 +141,8 @@ void DeviceApiDeviceConnectTransportTypeResource::PUT_method_handler(const std::
 			/**
 			 * Process the received information here
 			 */
+			// Added 1 line in merge
+			std::string ret = device_glue.Connect(transportType.c_str(), connectionString, requestBody);
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });
@@ -353,6 +355,8 @@ void DeviceApiDeviceConnectionIdDisconnectResource::PUT_method_handler(const std
 			/**
 			 * Process the received information here
 			 */
+			# added 1 line in merge
+			device_glue.Disconnect(connectionId);
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });
@@ -464,6 +468,8 @@ void DeviceApiDeviceConnectionIdEnableMethodsResource::PUT_method_handler(const 
 			/**
 			 * Process the received information here
 			 */
+			// Added 1 line in merge
+			device_glue.EnableMethods(connectionId);
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });
@@ -697,6 +703,8 @@ void DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource::PUT_metho
 			/**
 			 * Process the received information here
 			 */
+			// added 1 line in merge
+			device_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });
