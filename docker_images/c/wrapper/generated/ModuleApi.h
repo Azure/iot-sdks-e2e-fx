@@ -25,20 +25,23 @@
 #include <corvusoft/restbed/resource.hpp>
 #include <corvusoft/restbed/service.hpp>
 
-#include "Certificate.h"
-#include "ConnectResponse.h"
-#include "Object.h"
-#include "RoundtripMethodCallBody.h"
-#include <string>
+// Removed 5 lines in merge
+//#include "Certificate.h"
+//#include "ConnectResponse.h"
+//#include "Object.h"
+//#include "RoundtripMethodCallBody.h"
+//#include <string>
 
 namespace io {
 namespace swagger {
 namespace server {
 namespace api {
 
-using namespace io::swagger::server::model;
+// removed namespace in merge
+// using namespace io::swagger::server::model;
 
-class  ModuleApi: public restbed::Service
+// Made virtual in merge
+class  ModuleApi: public virtual restbed::Service
 {
 public:
 	ModuleApi();

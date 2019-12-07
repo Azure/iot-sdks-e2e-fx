@@ -15,15 +15,23 @@
 #include <corvusoft/restbed/string.hpp>
 #include <corvusoft/restbed/settings.hpp>
 #include <corvusoft/restbed/request.hpp>
+// added 2 lines in merge
+#include <iostream>
+#include <thread>
 
 #include "ModuleApi.h"
+
+// Added 2 lines in merge
+#include "ModuleGlue.h"
+ModuleGlue module_glue;
 
 namespace io {
 namespace swagger {
 namespace server {
 namespace api {
 
-using namespace io::swagger::server::model;
+// Removed namespace in merge
+// using namespace io::swagger::server::model;
 
 ModuleApi::ModuleApi() {
 	std::shared_ptr<ModuleApiModuleConnectTransportTypeResource> spModuleApiModuleConnectTransportTypeResource = std::make_shared<ModuleApiModuleConnectTransportTypeResource>();
@@ -103,6 +111,8 @@ void ModuleApi::startService(int const& port) {
 	std::shared_ptr<restbed::Settings> settings = std::make_shared<restbed::Settings>();
 	settings->set_port(port);
 	settings->set_root("");
+	// Added 1 line in merge
+	settings->set_worker_limit(10);
 
 	this->start(settings);
 }
@@ -144,6 +154,9 @@ void ModuleApiModuleConnectTransportTypeResource::PUT_method_handler(const std::
 			// Getting the query params
 			const std::string connectionString = request->get_query_parameter("connectionString", "");
 
+			// added 1 line in merge
+			std::string result = module_glue.Connect(transportType.c_str(), connectionString, requestBody);
+
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -153,7 +166,8 @@ void ModuleApiModuleConnectTransportTypeResource::PUT_method_handler(const std::
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -218,6 +232,8 @@ void ModuleApiModuleConnectFromEnvironmentTransportTypeResource::PUT_method_hand
 			// Getting the path params
 			const std::string transportType = request->get_path_parameter("transportType", "");
 
+			// Added 1 line in merge
+			std::string result = module_glue.ConnectFromEnvironment(transportType.c_str());
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -228,7 +244,8 @@ void ModuleApiModuleConnectFromEnvironmentTransportTypeResource::PUT_method_hand
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// Changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -269,7 +286,6 @@ void ModuleApiModuleCreateFromConnectionstringTransportTypeResource::PUT_method_
 			// Getting the query params
 			const std::string connectionString = request->get_query_parameter("connectionString", "");
 
-
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
@@ -278,7 +294,8 @@ void ModuleApiModuleCreateFromConnectionstringTransportTypeResource::PUT_method_
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// Changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -430,6 +447,9 @@ void ModuleApiModuleConnectionIdDisconnectResource::PUT_method_handler(const std
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 
+			// added 1 line in merge
+			module_glue.Disconnect(connectionId);
+
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -504,6 +524,8 @@ void ModuleApiModuleConnectionIdEnableInputMessagesResource::PUT_method_handler(
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 
+			// added 1 line in merge
+			module_glue.EnableInputMessages(connectionId);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -540,6 +562,8 @@ void ModuleApiModuleConnectionIdEnableMethodsResource::PUT_method_handler(const 
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
+			// Added 1 line in merge
+			module_glue.EnableMethods(connectionId);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -577,6 +601,9 @@ void ModuleApiModuleConnectionIdEnableTwinResource::PUT_method_handler(const std
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
+
+			// added 1 line in merge
+			module_glue.EnableTwin(connectionId);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -654,7 +681,8 @@ void ModuleApiModuleConnectionIdTwinResource::GET_method_handler(const std::shar
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
-
+			// Added 1 line in merge
+			std::string result = module_glue.GetTwin(connectionId);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -664,7 +692,8 @@ void ModuleApiModuleConnectionIdTwinResource::GET_method_handler(const std::shar
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// Changed on parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -685,6 +714,8 @@ void ModuleApiModuleConnectionIdTwinResource::PATCH_method_handler(const std::sh
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
+			// Added 1 line in merge
+			module_glue.SendTwinPatch(connectionId, requestBody);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -734,6 +765,9 @@ void ModuleApiModuleConnectionIdDeviceMethodDeviceIdResource::PUT_method_handler
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 			const std::string deviceId = request->get_path_parameter("deviceId", "");
 
+			// Added 1 line in merge
+			std::string result = module_glue.InvokeDeviceMethod(connectionId, deviceId, requestBody);
+
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -744,6 +778,7 @@ void ModuleApiModuleConnectionIdDeviceMethodDeviceIdResource::PUT_method_handler
 			 */
 
 			if (status_code == 200) {
+				// Changed 1 parameter in merge
 				session->close(200, "OK", { {"Connection", "close"} });
 				return;
 			}
@@ -785,6 +820,8 @@ void ModuleApiModuleConnectionIdModuleMethodDeviceIdModuleIdResource::PUT_method
 			const std::string deviceId = request->get_path_parameter("deviceId", "");
 			const std::string moduleId = request->get_path_parameter("moduleId", "");
 
+			// Added 1 line in merge
+			std::string result = module_glue.InvokeModuleMethod(connectionId, deviceId, moduleId, requestBody);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -795,7 +832,8 @@ void ModuleApiModuleConnectionIdModuleMethodDeviceIdModuleIdResource::PUT_method
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -879,6 +917,9 @@ void ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource::PUT_metho
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
+			// added 1 line in merge
+			module_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
+
 			/**
 			 * Process the received information here
 			 */
@@ -923,7 +964,8 @@ void ModuleApiModuleConnectionIdEventResource::PUT_method_handler(const std::sha
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
-
+			// Added 1 line in merge
+			module_glue.SendEvent(connectionId, requestBody);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -973,7 +1015,8 @@ void ModuleApiModuleConnectionIdOutputEventOutputNameResource::PUT_method_handle
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 			const std::string outputName = request->get_path_parameter("outputName", "");
 
-
+			// added 1 line in merge
+			module_glue.SendOutputEvent(connectionId, outputName, requestBody);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -1048,6 +1091,8 @@ void ModuleApiModuleConnectionIdTwinDesiredPropPatchResource::GET_method_handler
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
+			// added 1 line in merge
+			std::string result = module_glue.WaitForDesiredPropertyPatch(connectionId);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -1058,7 +1103,8 @@ void ModuleApiModuleConnectionIdTwinDesiredPropPatchResource::GET_method_handler
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				# Changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -1086,7 +1132,8 @@ void ModuleApiModuleConnectionIdInputMessageInputNameResource::GET_method_handle
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 			const std::string inputName = request->get_path_parameter("inputName", "");
 
-
+			// Added 1 line in merge
+			std::string result = module_glue.WaitForInputMessage(connectionId, inputName);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -1096,7 +1143,8 @@ void ModuleApiModuleConnectionIdInputMessageInputNameResource::GET_method_handle
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// Changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 

@@ -25,8 +25,9 @@
 #include <corvusoft/restbed/resource.hpp>
 #include <corvusoft/restbed/service.hpp>
 
-#include "ConnectResponse.h"
-#include "Object.h"
+// removed 2 lines in merge
+// #include "ConnectResponse.h"
+// #include "Object.h"
 #include <string>
 
 namespace io {
@@ -34,9 +35,11 @@ namespace swagger {
 namespace server {
 namespace api {
 
-using namespace io::swagger::server::model;
+// removed namespace in merge
+// using namespace io::swagger::server::model;
 
-class  RegistryApi: public restbed::Service
+// Made virtual in merge
+class  RegistryApi: public virtual restbed::Service
 {
 public:
 	RegistryApi();

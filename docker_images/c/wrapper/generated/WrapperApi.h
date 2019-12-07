@@ -25,17 +25,20 @@
 #include <corvusoft/restbed/resource.hpp>
 #include <corvusoft/restbed/service.hpp>
 
-#include "Object.h"
-#include <string>
+// Removed 2 lines in merge
+// #include "Object.h"
+// #include <string>
 
 namespace io {
 namespace swagger {
 namespace server {
 namespace api {
 
-using namespace io::swagger::server::model;
+// removed namespace in merge
+// using namespace io::swagger::server::model;
 
-class  WrapperApi: public restbed::Service
+// Made virtual in merge
+class  WrapperApi: public virtual restbed::Service
 {
 public:
 	WrapperApi();

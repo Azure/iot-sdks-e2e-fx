@@ -18,12 +18,18 @@
 
 #include "RegistryApi.h"
 
+// added 3 lines in merge
+#include "RegistryGlue.h"
+using namespace std;
+RegistryGlue registry_glue;
+
 namespace io {
 namespace swagger {
 namespace server {
 namespace api {
 
-using namespace io::swagger::server::model;
+// removed namespace in merge
+// using namespace io::swagger::server::model;
 
 RegistryApi::RegistryApi() {
 	std::shared_ptr<RegistryApiRegistryConnectResource> spRegistryApiRegistryConnectResource = std::make_shared<RegistryApiRegistryConnectResource>();
@@ -74,6 +80,8 @@ void RegistryApiRegistryConnectResource::PUT_method_handler(const std::shared_pt
 			// Getting the query params
 			const std::string connectionString = request->get_query_parameter("connectionString", "");
 
+			// added 1 line in merge
+			std::string response = registry_glue.Connect(connectionString);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -83,7 +91,8 @@ void RegistryApiRegistryConnectResource::PUT_method_handler(const std::shared_pt
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// Changed 1 parameter in merge
+				session->close(200, response, { {"Connection", "close"} });
 				return;
 			}
 
@@ -110,6 +119,8 @@ void RegistryApiRegistryConnectionIdDisconnectResource::PUT_method_handler(const
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
+			// added 1 line in merge
+			registry_glue.Disconnect(connectionId);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -225,7 +236,8 @@ void RegistryApiRegistryConnectionIdModuleTwinDeviceIdModuleIdResource::GET_meth
 			const std::string deviceId = request->get_path_parameter("deviceId", "");
 			const std::string moduleId = request->get_path_parameter("moduleId", "");
 
-
+			// added 1 line in merge
+			string result = registry_glue.GetModuleTwin(connectionId, deviceId, moduleId);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -235,7 +247,8 @@ void RegistryApiRegistryConnectionIdModuleTwinDeviceIdModuleIdResource::GET_meth
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -257,8 +270,8 @@ void RegistryApiRegistryConnectionIdModuleTwinDeviceIdModuleIdResource::PATCH_me
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 			const std::string deviceId = request->get_path_parameter("deviceId", "");
 			const std::string moduleId = request->get_path_parameter("moduleId", "");
-
-
+			// added 1 line in merge
+			registry_glue.PatchModuleTwin(connectionId, deviceId, moduleId, requestBody);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;

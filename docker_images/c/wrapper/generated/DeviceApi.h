@@ -25,10 +25,11 @@
 #include <corvusoft/restbed/resource.hpp>
 #include <corvusoft/restbed/service.hpp>
 
-#include "Certificate.h"
-#include "ConnectResponse.h"
-#include "Object.h"
-#include "RoundtripMethodCallBody.h"
+// Removed 4 lines in merge
+// #include "Certificate.h"
+// #include "ConnectResponse.h"
+// #include "Object.h"
+// #include "RoundtripMethodCallBody.h"
 #include <string>
 
 namespace io {
@@ -36,9 +37,11 @@ namespace swagger {
 namespace server {
 namespace api {
 
+// removed namespace in merge
 using namespace io::swagger::server::model;
 
-class  DeviceApi: public restbed::Service
+// made virtual in merge
+class  DeviceApi: public virtual restbed::Service
 {
 public:
 	DeviceApi();

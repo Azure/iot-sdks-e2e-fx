@@ -18,12 +18,17 @@
 
 #include "WrapperApi.h"
 
+// added 2 lines in merge
+#include "WrapperGlue.h"
+WrapperGlue wrapper_glue;
+
 namespace io {
 namespace swagger {
 namespace server {
 namespace api {
 
-using namespace io::swagger::server::model;
+// removed namespace in merge
+// using namespace io::swagger::server::model;
 
 WrapperApi::WrapperApi() {
 	std::shared_ptr<WrapperApiWrapperCleanupResource> spWrapperApiWrapperCleanupResource = std::make_shared<WrapperApiWrapperCleanupResource>();
@@ -163,6 +168,8 @@ void WrapperApiWrapperMessageResource::PUT_method_handler(const std::shared_ptr<
 			/**
 			 * Process the received information here
 			 */
+			// Added 1 line in merge
+			wrapper_glue.PrintMessage(requestBody.c_str());
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });
