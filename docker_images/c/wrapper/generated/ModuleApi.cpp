@@ -157,7 +157,6 @@ void ModuleApiModuleConnectTransportTypeResource::PUT_method_handler(const std::
 			// added 1 line in merge
 			std::string result = module_glue.Connect(transportType.c_str(), connectionString, requestBody);
 
-
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
@@ -286,6 +285,7 @@ void ModuleApiModuleCreateFromConnectionstringTransportTypeResource::PUT_method_
 			// Getting the query params
 			const std::string connectionString = request->get_query_parameter("connectionString", "");
 
+
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
@@ -294,8 +294,7 @@ void ModuleApiModuleCreateFromConnectionstringTransportTypeResource::PUT_method_
 			 */
 
 			if (status_code == 200) {
-				// Changed 1 parameter in merge
-				session->close(200, result, { {"Connection", "close"} });
+				session->close(200, "OK", { {"Connection", "close"} });
 				return;
 			}
 
@@ -450,7 +449,6 @@ void ModuleApiModuleConnectionIdDisconnectResource::PUT_method_handler(const std
 			// added 1 line in merge
 			module_glue.Disconnect(connectionId);
 
-
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
@@ -600,7 +598,6 @@ void ModuleApiModuleConnectionIdEnableTwinResource::PUT_method_handler(const std
 
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
-
 
 			// added 1 line in merge
 			module_glue.EnableTwin(connectionId);
@@ -769,7 +766,6 @@ void ModuleApiModuleConnectionIdDeviceMethodDeviceIdResource::PUT_method_handler
 			std::string result = module_glue.InvokeDeviceMethod(connectionId, deviceId, requestBody);
 
 
-
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
@@ -779,7 +775,7 @@ void ModuleApiModuleConnectionIdDeviceMethodDeviceIdResource::PUT_method_handler
 
 			if (status_code == 200) {
 				// Changed 1 parameter in merge
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -912,13 +908,12 @@ void ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource::PUT_metho
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 			const std::string methodName = request->get_path_parameter("methodName", "");
 
+			// added 1 line in merge
+			module_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
-
-			// added 1 line in merge
-			module_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
 
 			/**
 			 * Process the received information here

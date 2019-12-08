@@ -38,7 +38,7 @@ namespace server {
 namespace api {
 
 // removed namespace in merge
-using namespace io::swagger::server::model;
+// using namespace io::swagger::server::model;
 
 // made virtual in merge
 class  DeviceApi: public virtual restbed::Service

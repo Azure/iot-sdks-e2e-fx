@@ -85,7 +85,6 @@ void ServiceApiServiceConnectResource::PUT_method_handler(const std::shared_ptr<
 			// 1 line added in merge
 			std::string result = service_glue.Connect(connectionString);
 
-
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
@@ -94,7 +93,8 @@ void ServiceApiServiceConnectResource::PUT_method_handler(const std::shared_ptr<
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// Changed 1 parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -238,7 +238,6 @@ void ServiceApiServiceConnectionIdModuleMethodDeviceIdModuleIdResource::PUT_meth
 			 */
 
 			if (status_code == 200) {
-
 				// chaneged one parameter in merge
 				session->close(200, result, { {"Connection", "close"} });
 				return;

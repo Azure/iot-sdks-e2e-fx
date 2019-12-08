@@ -134,6 +134,8 @@ void DeviceApiDeviceConnectTransportTypeResource::PUT_method_handler(const std::
 			// Getting the query params
 			const std::string connectionString = request->get_query_parameter("connectionString", "");
 
+			// Added 1 line in merge
+			std::string result = device_glue.Connect(transportType.c_str(), connectionString, requestBody);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -141,11 +143,10 @@ void DeviceApiDeviceConnectTransportTypeResource::PUT_method_handler(const std::
 			/**
 			 * Process the received information here
 			 */
-			// Added 1 line in merge
-			std::string ret = device_glue.Connect(transportType.c_str(), connectionString, requestBody);
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				// changed 1 parameter in merge
+				session->close(200, result, { {="Connection", "close"} });
 				return;
 			}
 
@@ -348,6 +349,8 @@ void DeviceApiDeviceConnectionIdDisconnectResource::PUT_method_handler(const std
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 
+			# added 1 line in merge
+			device_glue.Disconnect(connectionId);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -355,8 +358,6 @@ void DeviceApiDeviceConnectionIdDisconnectResource::PUT_method_handler(const std
 			/**
 			 * Process the received information here
 			 */
-			# added 1 line in merge
-			device_glue.Disconnect(connectionId);
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });
@@ -461,6 +462,8 @@ void DeviceApiDeviceConnectionIdEnableMethodsResource::PUT_method_handler(const 
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 
+			// Added 1 line in merge
+			device_glue.EnableMethods(connectionId);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -468,8 +471,6 @@ void DeviceApiDeviceConnectionIdEnableMethodsResource::PUT_method_handler(const 
 			/**
 			 * Process the received information here
 			 */
-			// Added 1 line in merge
-			device_glue.EnableMethods(connectionId);
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });
@@ -696,6 +697,8 @@ void DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource::PUT_metho
 			const std::string methodName = request->get_path_parameter("methodName", "");
 
 
+			// added 1 line in merge
+			device_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -703,8 +706,6 @@ void DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource::PUT_metho
 			/**
 			 * Process the received information here
 			 */
-			// added 1 line in merge
-			device_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
 
 			if (status_code == 200) {
 				session->close(200, "OK", { {"Connection", "close"} });

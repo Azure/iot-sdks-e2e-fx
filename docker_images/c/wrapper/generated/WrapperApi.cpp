@@ -17,7 +17,6 @@
 #include <corvusoft/restbed/request.hpp>
 
 #include "WrapperApi.h"
-
 // added 2 lines in merge
 #include "WrapperGlue.h"
 WrapperGlue wrapper_glue;
