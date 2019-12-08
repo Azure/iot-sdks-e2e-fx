@@ -1,5 +1,5 @@
 /*
- * IoT SDK Device & Client REST API
+ * Azure IOT End-to-End Test Wrapper Rest Api
  *
  * REST API definition for End-to-end testing of the Azure IoT SDKs.  All SDK APIs that are tested by our E2E tests need to be defined in this file.  This file takes some liberties with the API definitions.  In particular, response schemas are undefined, and error responses are also undefined.
  *

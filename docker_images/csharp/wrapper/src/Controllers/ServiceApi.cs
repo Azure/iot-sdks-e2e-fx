@@ -1,5 +1,5 @@
 /*
- * IoT SDK Device & Client REST API
+ * Azure IOT End-to-End Test Wrapper Rest Api
  *
  * REST API definition for End-to-end testing of the Azure IoT SDKs.  All SDK APIs that are tested by our E2E tests need to be defined in this file.  This file takes some liberties with the API definitions.  In particular, response schemas are undefined, and error responses are also undefined.
  *
@@ -30,45 +30,31 @@ namespace IO.Swagger.Controllers
     /// 
     /// </summary>
     public class ServiceApiController : Controller
-    {
-        static internal ServiceGlue service_glue = new ServiceGlue();
-
+    { 
         /// <summary>
         /// Connect to service
         /// </summary>
         /// <remarks>Connect to the Azure IoTHub service.  More specifically, the SDK saves the connection string that is passed in for future use.</remarks>
-        /// <param name="connectionString">Service connection string</param>
+        /// <param name="connectionString">connection string</param>
         /// <response code="200">OK</response>
         [HttpPut]
         [Route("/service/connect")]
         [ValidateModelState]
-        [SwaggerOperation("ServiceConnectPut")]
+        [SwaggerOperation("ServiceConnect")]
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
-        public virtual IActionResult ServiceConnectPut([FromQuery][Required()]string connectionString)
-        {
-            Task<ConnectResponse> t = service_glue.ConnectAsync(connectionString);
-            t.Wait();
-            return new ObjectResult(t.Result);
-        }
+        public virtual IActionResult ServiceConnect([FromQuery][Required()]string connectionString)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
 
-        /// <summary>
-        /// call the given method on the given device
-        /// </summary>
-
-        /// <param name="connectionId">Id for the connection</param>
-        /// <param name="deviceId"></param>
-        /// <param name="methodInvokeParameters"></param>
-        /// <response code="200">OK</response>
-        [HttpPut]
-        [Route("/service/{connectionId}/deviceMethod/{deviceId}")]
-        [ValidateModelState]
-        [SwaggerOperation("ServiceConnectionIdDeviceMethodDeviceIdPut")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ServiceConnectionIdDeviceMethodDeviceIdPut([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
-        {
-            Task<object> t = service_glue.InvokeDeviceMethodAsync(connectionId, deviceId, methodInvokeParameters);
-            t.Wait();
-            return new ObjectResult(t.Result);
+            string exampleJson = null;
+            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -80,17 +66,48 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("/service/{connectionId}/disconnect/")]
         [ValidateModelState]
-        [SwaggerOperation("ServiceConnectionIdDisconnectPut")]
-        public virtual IActionResult ServiceConnectionIdDisconnectPut([FromRoute][Required]string connectionId)
-        {
-            service_glue.DisconnectAsync(connectionId).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("ServiceDisconnect")]
+        public virtual IActionResult ServiceDisconnect([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// call the given method on the given device
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="deviceId"></param>
+        /// <param name="methodInvokeParameters"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/service/{connectionId}/deviceMethod/{deviceId}")]
+        [ValidateModelState]
+        [SwaggerOperation("ServiceInvokeDeviceMethod")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        public virtual IActionResult ServiceInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
         /// call the given method on the given module
         /// </summary>
-
+        
         /// <param name="connectionId">Id for the connection</param>
         /// <param name="deviceId"></param>
         /// <param name="moduleId"></param>
@@ -99,13 +116,42 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("/service/{connectionId}/moduleMethod/{deviceId}/{moduleId}")]
         [ValidateModelState]
-        [SwaggerOperation("ServiceConnectionIdModuleMethodDeviceIdModuleIdPut")]
+        [SwaggerOperation("ServiceInvokeModuleMethod")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ServiceConnectionIdModuleMethodDeviceIdModuleIdPut([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
-        {
-            Task<object> t = service_glue.InvokeModuleMethodAsync(connectionId, deviceId, moduleId, methodInvokeParameters);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult ServiceInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// Send a c2d message
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="deviceId"></param>
+        /// <param name="eventBody"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/service/{connectionId}/sendC2d/{deviceId}")]
+        [ValidateModelState]
+        [SwaggerOperation("ServiceSendC2d")]
+        public virtual IActionResult ServiceSendC2d([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object eventBody)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * IoT SDK Device & Client REST API
+ * Azure IOT End-to-End Test Wrapper Rest Api
  *
  * REST API definition for End-to-end testing of the Azure IoT SDKs.  All SDK APIs that are tested by our E2E tests need to be defined in this file.  This file takes some liberties with the API definitions.  In particular, response schemas are undefined, and error responses are also undefined.
  *
@@ -66,8 +66,8 @@ namespace IO.Swagger
                     c.SwaggerDoc("1.0.0", new Info
                     {
                         Version = "1.0.0",
-                        Title = "IoT SDK Device & Client REST API",
-                        Description = "IoT SDK Device & Client REST API (ASP.NET Core 2.0)",
+                        Title = "Azure IOT End-to-End Test Wrapper Rest Api",
+                        Description = "Azure IOT End-to-End Test Wrapper Rest Api (ASP.NET Core 2.0)",
                         Contact = new Contact()
                         {
                            Name = "Swagger Codegen Contributors",
@@ -102,10 +102,10 @@ namespace IO.Swagger
                 .UseSwaggerUI(c =>
                 {
                     //TODO: Either use the SwaggerGen generated Swagger contract (generated from C# classes)
-                    c.SwaggerEndpoint("/swagger/1.0.0/swagger.json", "IoT SDK Device & Client REST API");
+                    c.SwaggerEndpoint("/swagger/1.0.0/swagger.json", "Azure IOT End-to-End Test Wrapper Rest Api");
 
                     //TODO: Or alternatively use the original Swagger contract that's included in the static files
-                    // c.SwaggerEndpoint("/swagger-original.json", "IoT SDK Device & Client REST API Original");
+                    // c.SwaggerEndpoint("/swagger-original.json", "Azure IOT End-to-End Test Wrapper Rest Api Original");
                 });
 
             if (env.IsDevelopment())

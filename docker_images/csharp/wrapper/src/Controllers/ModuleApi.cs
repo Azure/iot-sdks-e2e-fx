@@ -1,5 +1,5 @@
 /*
- * IoT SDK Device & Client REST API
+ * Azure IOT End-to-End Test Wrapper Rest Api
  *
  * REST API definition for End-to-end testing of the Azure IoT SDKs.  All SDK APIs that are tested by our E2E tests need to be defined in this file.  This file takes some liberties with the API definitions.  In particular, response schemas are undefined, and error responses are also undefined.
  *
@@ -30,8 +30,53 @@ namespace IO.Swagger.Controllers
     /// 
     /// </summary>
     public class ModuleApiController : Controller
-    {
-        static internal ModuleGlue module_glue = new ModuleGlue();
+    { 
+        /// <summary>
+        /// Connect to the azure IoT Hub as a module
+        /// </summary>
+        
+        /// <param name="transportType">Transport to use</param>
+        /// <param name="connectionString">connection string</param>
+        /// <param name="caCertificate"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/connect/{transportType}")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleConnect")]
+        [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
+        public virtual IActionResult ModuleConnect([FromRoute][Required]string transportType, [FromQuery][Required()]string connectionString, [FromBody]Certificate caCertificate)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// Connect the module
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/{connectionId}/connect2")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleConnect2")]
+        public virtual IActionResult ModuleConnect2([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Connect to the azure IoT Hub as a module using the environment variables
@@ -42,69 +87,159 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("/module/connectFromEnvironment/{transportType}")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectFromEnvironmentTransportTypePut")]
+        [SwaggerOperation("ModuleConnectFromEnvironment")]
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
-        public virtual IActionResult ModuleConnectFromEnvironmentTransportTypePut([FromRoute][Required]string transportType)
-        {
-            Task<ConnectResponse> t = module_glue.ConnectFromEnvironmentAsync(transportType);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult ModuleConnectFromEnvironment([FromRoute][Required]string transportType)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
-        /// Connect to the azure IoT Hub as a module
+        /// Create a module client from a connection string
         /// </summary>
-
+        
         /// <param name="transportType">Transport to use</param>
         /// <param name="connectionString">connection string</param>
         /// <param name="caCertificate"></param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/module/connect/{transportType}")]
+        [Route("/module/createFromConnectionstring/{transportType}")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectTransportTypePut")]
+        [SwaggerOperation("ModuleCreateFromConnectionString")]
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
-        public virtual IActionResult ModuleConnectTransportTypePut([FromRoute][Required]string transportType, [FromQuery][Required()]string connectionString, [FromBody]Certificate caCertificate)
-        {
-            Task<ConnectResponse> t = module_glue.ConnectAsync(transportType, connectionString, caCertificate);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult ModuleCreateFromConnectionString([FromRoute][Required]string transportType, [FromQuery][Required()]string connectionString, [FromBody]Certificate caCertificate)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
-        /// call the given method on the given device
+        /// Create a module client using the EdgeHub environment
         /// </summary>
-
-        /// <param name="connectionId">Id for the connection</param>
-        /// <param name="deviceId"></param>
-        /// <param name="methodInvokeParameters"></param>
+        
+        /// <param name="transportType">Transport to use</param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/module/{connectionId}/deviceMethod/{deviceId}")]
+        [Route("/module/createFromEnvironment/{transportType}")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdDeviceMethodDeviceIdPut")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ModuleConnectionIdDeviceMethodDeviceIdPut([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
-        {
-            Task<Object> t = module_glue.InvokeDeviceMethodAsync(connectionId, deviceId, methodInvokeParameters);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        [SwaggerOperation("ModuleCreateFromEnvironment")]
+        [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
+        public virtual IActionResult ModuleCreateFromEnvironment([FromRoute][Required]string transportType)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// Create a module client from X509 credentials
+        /// </summary>
+        
+        /// <param name="transportType">Transport to use</param>
+        /// <param name="x509"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/createFromX509/{transportType}")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleCreateFromX509")]
+        [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
+        public virtual IActionResult ModuleCreateFromX509([FromRoute][Required]string transportType, [FromBody]Object x509)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// Disonnect and destroy the module client
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/{connectionId}/destroy")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleDestroy")]
+        public virtual IActionResult ModuleDestroy([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
         /// Disconnect the module
         /// </summary>
-        /// <remarks>Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection</remarks>
+        
         /// <param name="connectionId">Id for the connection</param>
         /// <response code="200">OK</response>
         [HttpPut]
         [Route("/module/{connectionId}/disconnect")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdDisconnectPut")]
-        public virtual IActionResult ModuleConnectionIdDisconnectPut([FromRoute][Required]string connectionId)
-        {
-            module_glue.DisconnectAsync(connectionId).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("ModuleDisconnect")]
+        public virtual IActionResult ModuleDisconnect([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Disonnect the module
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/{connectionId}/disconnect2")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleDisconnect2")]
+        public virtual IActionResult ModuleDisconnect2([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -116,79 +251,132 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("/module/{connectionId}/enableInputMessages")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdEnableInputMessagesPut")]
-        public virtual IActionResult ModuleConnectionIdEnableInputMessagesPut([FromRoute][Required]string connectionId)
-        {
-            module_glue.EnableInputMessagesAsync(connectionId).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("ModuleEnableInputMessages")]
+        public virtual IActionResult ModuleEnableInputMessages([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
         /// Enable methods
         /// </summary>
-
+        
         /// <param name="connectionId">Id for the connection</param>
         /// <response code="200">OK</response>
         [HttpPut]
         [Route("/module/{connectionId}/enableMethods")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdEnableMethodsPut")]
-        public virtual IActionResult ModuleConnectionIdEnableMethodsPut([FromRoute][Required]string connectionId)
-        {
-            module_glue.EnableMethodsAsync(connectionId).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("ModuleEnableMethods")]
+        public virtual IActionResult ModuleEnableMethods([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
         /// Enable module twins
         /// </summary>
-
+        
         /// <param name="connectionId">Id for the connection</param>
         /// <response code="200">OK</response>
         [HttpPut]
         [Route("/module/{connectionId}/enableTwin")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdEnableTwinPut")]
-        public virtual IActionResult ModuleConnectionIdEnableTwinPut([FromRoute][Required]string connectionId)
-        {
-            module_glue.EnableTwinAsync(connectionId).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("ModuleEnableTwin")]
+        public virtual IActionResult ModuleEnableTwin([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Send an event
-        /// </summary>
-
-        /// <param name="connectionId">Id for the connection</param>
-        /// <param name="eventBody"></param>
-        /// <response code="200">OK</response>
-        [HttpPut]
-        [Route("/module/{connectionId}/event")]
-        [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdEventPut")]
-        public virtual IActionResult ModuleConnectionIdEventPut([FromRoute][Required]string connectionId, [FromBody]string eventBody)
-        {
-            module_glue.SendEventAsync(connectionId, eventBody).Wait();
-            return StatusCode(200);
-        }
-
-        /// <summary>
-        /// Wait for a message on a module input
+        /// get the current connection status
         /// </summary>
         
         /// <param name="connectionId">Id for the connection</param>
-        /// <param name="inputName"></param>
         /// <response code="200">OK</response>
         [HttpGet]
-        [Route("/module/{connectionId}/inputMessage/{inputName}")]
+        [Route("/module/{connectionId}/connectionStatus")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdInputMessageInputNameGet")]
+        [SwaggerOperation("ModuleGetConnectionStatus")]
         [SwaggerResponse(statusCode: 200, type: typeof(string), description: "OK")]
-        public virtual IActionResult ModuleConnectionIdInputMessageInputNameGet([FromRoute][Required]string connectionId, [FromRoute][Required]string inputName)
-        {
-            Task<object> t = module_glue.WaitForInputMessageAsync(connectionId, inputName);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult ModuleGetConnectionStatus([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(string));
+
+            string exampleJson = null;
+            exampleJson = "";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<string>(exampleJson)
+            : default(string);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// Get the device twin
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <response code="200">OK</response>
+        [HttpGet]
+        [Route("/module/{connectionId}/twin")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleGetTwin")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        public virtual IActionResult ModuleGetTwin([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// call the given method on the given device
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="deviceId"></param>
+        /// <param name="methodInvokeParameters"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/{connectionId}/deviceMethod/{deviceId}")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleInvokeDeviceMethod")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        public virtual IActionResult ModuleInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -203,31 +391,61 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("/module/{connectionId}/moduleMethod/{deviceId}/{moduleId}")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdModuleMethodDeviceIdModuleIdPut")]
+        [SwaggerOperation("ModuleInvokeModuleMethod")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ModuleConnectionIdModuleMethodDeviceIdModuleIdPut([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
-        {
-            Task<object> t = module_glue.InvokeModuleMethodAsync(connectionId, deviceId, moduleId, methodInvokeParameters);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult ModuleInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
-        /// Send an event to a module output
+        /// Updates the device twin
         /// </summary>
-
+        
         /// <param name="connectionId">Id for the connection</param>
-        /// <param name="outputName"></param>
-        /// <param name="eventBody"></param>
+        /// <param name="props"></param>
+        /// <response code="200">OK</response>
+        [HttpPatch]
+        [Route("/module/{connectionId}/twin")]
+        [ValidateModelState]
+        [SwaggerOperation("ModulePatchTwin")]
+        public virtual IActionResult ModulePatchTwin([FromRoute][Required]string connectionId, [FromBody]Object props)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Reconnect the module
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="forceRenewPassword">True to force SAS renewal</param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/module/{connectionId}/outputEvent/{outputName}")]
+        [Route("/module/{connectionId}/reconnect")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdOutputEventOutputNamePut")]
-        public virtual IActionResult ModuleConnectionIdOutputEventOutputNamePut([FromRoute][Required]string connectionId, [FromRoute][Required]string outputName, [FromBody]string eventBody)
-        {
-            module_glue.SendOutputEventAsync(connectionId, outputName, eventBody).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("ModuleReconnect")]
+        public virtual IActionResult ModuleReconnect([FromRoute][Required]string connectionId, [FromQuery]bool? forceRenewPassword)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -241,65 +459,134 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("/module/{connectionId}/roundtripMethodCall/{methodName}")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdRoundtripMethodCallMethodNamePut")]
-        public virtual IActionResult ModuleConnectionIdRoundtripMethodCallMethodNamePut([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]RoundtripMethodCallBody requestAndResponse)
-        {
-            Task<object> t = module_glue.RoundtripMethodCallAsync(connectionId, methodName, requestAndResponse); 
-            t.Wait();
-            return new ObjectResult(t.Result);
+        [SwaggerOperation("ModuleRoundtripMethodCall")]
+        public virtual IActionResult ModuleRoundtripMethodCall([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]RoundtripMethodCallBody requestAndResponse)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Send an event
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="eventBody"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/{connectionId}/event")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleSendEvent")]
+        public virtual IActionResult ModuleSendEvent([FromRoute][Required]string connectionId, [FromBody]Object eventBody)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Send an event to a module output
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="outputName"></param>
+        /// <param name="eventBody"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/{connectionId}/outputEvent/{outputName}")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleSendOutputEvent")]
+        public virtual IActionResult ModuleSendOutputEvent([FromRoute][Required]string connectionId, [FromRoute][Required]string outputName, [FromBody]Object eventBody)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// wait for the current connection status to change and return the changed status
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <response code="200">OK</response>
+        [HttpGet]
+        [Route("/module/{connectionId}/connectionStatusChange")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleWaitForConnectionStatusChange")]
+        [SwaggerResponse(statusCode: 200, type: typeof(string), description: "OK")]
+        public virtual IActionResult ModuleWaitForConnectionStatusChange([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(string));
+
+            string exampleJson = null;
+            exampleJson = "";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<string>(exampleJson)
+            : default(string);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
         /// Wait for the next desired property patch
         /// </summary>
-
+        
         /// <param name="connectionId">Id for the connection</param>
         /// <response code="200">OK</response>
         [HttpGet]
         [Route("/module/{connectionId}/twinDesiredPropPatch")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdTwinDesiredPropPatchGet")]
+        [SwaggerOperation("ModuleWaitForDesiredPropertiesPatch")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ModuleConnectionIdTwinDesiredPropPatchGet([FromRoute][Required]string connectionId)
-        {
-            Task<object> t = module_glue.WaitForDesiredPropertyPatchAsync(connectionId);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult ModuleWaitForDesiredPropertiesPatch([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
-        /// Get the device twin
+        /// Wait for a message on a module input
         /// </summary>
-
+        
         /// <param name="connectionId">Id for the connection</param>
+        /// <param name="inputName"></param>
         /// <response code="200">OK</response>
         [HttpGet]
-        [Route("/module/{connectionId}/twin")]
+        [Route("/module/{connectionId}/inputMessage/{inputName}")]
         [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdTwinGet")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ModuleConnectionIdTwinGet([FromRoute][Required]string connectionId)
-        {
-            Task<object> t = module_glue.GetTwinAsync(connectionId);
-            t.Wait();
-            return new ObjectResult(t.Result);
-        }
+        [SwaggerOperation("ModuleWaitForInputMessage")]
+        [SwaggerResponse(statusCode: 200, type: typeof(string), description: "OK")]
+        public virtual IActionResult ModuleWaitForInputMessage([FromRoute][Required]string connectionId, [FromRoute][Required]string inputName)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(string));
 
-        /// <summary>
-        /// Updates the device twin
-        /// </summary>
-
-        /// <param name="connectionId">Id for the connection</param>
-        /// <param name="props"></param>
-        /// <response code="200">OK</response>
-        [HttpPatch]
-        [Route("/module/{connectionId}/twin")]
-        [ValidateModelState]
-        [SwaggerOperation("ModuleConnectionIdTwinPatch")]
-        public virtual IActionResult ModuleConnectionIdTwinPatch([FromRoute][Required]string connectionId, [FromBody]Object props)
-        {
-            module_glue.SendTwinPatchAsync(connectionId, props).Wait();
-            return StatusCode(200);
+            string exampleJson = null;
+            exampleJson = "";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<string>(exampleJson)
+            : default(string);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
     }
 }

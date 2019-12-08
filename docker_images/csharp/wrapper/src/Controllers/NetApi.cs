@@ -29,18 +29,19 @@ namespace IO.Swagger.Controllers
     /// <summary>
     /// 
     /// </summary>
-    public class WrapperApiController : Controller
+    public class NetApiController : Controller
     { 
         /// <summary>
-        /// verify that the clients have cleaned themselves up completely
+        /// Simulate a network disconnection
         /// </summary>
         
+        /// <param name="disconnectType">disconnect method for dropped connection tests</param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/wrapper/cleanup")]
+        [Route("/net/disconnect/{disconnectType}")]
         [ValidateModelState]
-        [SwaggerOperation("WrapperCleanup")]
-        public virtual IActionResult WrapperCleanup()
+        [SwaggerOperation("NetDisconnect")]
+        public virtual IActionResult NetDisconnect([FromRoute][Required]string disconnectType)
         { 
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);
@@ -50,41 +51,16 @@ namespace IO.Swagger.Controllers
         }
 
         /// <summary>
-        /// Get capabilities for this test wrapper
+        /// Simulate a disconnect after the next C2D transfer
         /// </summary>
         
-        /// <response code="200">OK</response>
-        [HttpGet]
-        [Route("/wrapper/capabilities")]
-        [ValidateModelState]
-        [SwaggerOperation("WrapperGetCapabilities")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult WrapperGetCapabilities()
-        { 
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
-
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
-
-        /// <summary>
-        /// log a message to output
-        /// </summary>
-        
-        /// <param name="msg"></param>
+        /// <param name="disconnectType">disconnect method for dropped connection tests</param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/wrapper/message")]
+        [Route("/net/disconnectAfterC2d/{disconnectType}")]
         [ValidateModelState]
-        [SwaggerOperation("WrapperLogMessage")]
-        public virtual IActionResult WrapperLogMessage([FromBody]Object msg)
+        [SwaggerOperation("NetDisconnectAfterC2d")]
+        public virtual IActionResult NetDisconnectAfterC2d([FromRoute][Required]string disconnectType)
         { 
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);
@@ -94,16 +70,16 @@ namespace IO.Swagger.Controllers
         }
 
         /// <summary>
-        /// send an arbitrary command
+        /// Simulate a disconnect after the next D2C transfer
         /// </summary>
         
-        /// <param name="cmd">command string</param>
+        /// <param name="disconnectType">disconnect method for dropped connection tests</param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/wrapper/command")]
+        [Route("/net/disconnectAfterD2c/{disconnectType}")]
         [ValidateModelState]
-        [SwaggerOperation("WrapperSendCommand")]
-        public virtual IActionResult WrapperSendCommand([FromQuery][Required()]string cmd)
+        [SwaggerOperation("NetDisconnectAfterD2c")]
+        public virtual IActionResult NetDisconnectAfterD2c([FromRoute][Required]string disconnectType)
         { 
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);
@@ -113,16 +89,35 @@ namespace IO.Swagger.Controllers
         }
 
         /// <summary>
-        /// set flags for the wrapper to use
+        /// Reconnect the network after a simulated network disconnection
         /// </summary>
         
-        /// <param name="flags"></param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/wrapper/flags")]
+        [Route("/net/reconnect")]
         [ValidateModelState]
-        [SwaggerOperation("WrapperSetFlags")]
-        public virtual IActionResult WrapperSetFlags([FromBody]Object flags)
+        [SwaggerOperation("NetReconnect")]
+        public virtual IActionResult NetReconnect()
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Set destination for net disconnect ops
+        /// </summary>
+        
+        /// <param name="ip"></param>
+        /// <param name="transportType">Transport to use</param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/net/setDestination/{ip}/{transportType}")]
+        [ValidateModelState]
+        [SwaggerOperation("NetSetDestination")]
+        public virtual IActionResult NetSetDestination([FromRoute][Required]string ip, [FromRoute][Required]string transportType)
         { 
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);

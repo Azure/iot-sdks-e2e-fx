@@ -1,5 +1,5 @@
 /*
- * IoT SDK Device & Client REST API
+ * Azure IOT End-to-End Test Wrapper Rest Api
  *
  * REST API definition for End-to-end testing of the Azure IoT SDKs.  All SDK APIs that are tested by our E2E tests need to be defined in this file.  This file takes some liberties with the API definitions.  In particular, response schemas are undefined, and error responses are also undefined.
  *
@@ -30,25 +30,31 @@ namespace IO.Swagger.Controllers
     /// 
     /// </summary>
     public class RegistryApiController : Controller
-    {
-        static internal RegistryGlue registry_glue = new RegistryGlue();
-
+    { 
         /// <summary>
         /// Connect to registry
         /// </summary>
         /// <remarks>Connect to the Azure IoTHub registry.  More specifically, the SDK saves the connection string that is passed in for future use.</remarks>
-        /// <param name="connectionString">Service connection string</param>
+        /// <param name="connectionString">connection string</param>
         /// <response code="200">OK</response>
         [HttpPut]
         [Route("/registry/connect")]
         [ValidateModelState]
-        [SwaggerOperation("RegistryConnectPut")]
+        [SwaggerOperation("RegistryConnect")]
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
-        public virtual IActionResult RegistryConnectPut([FromQuery][Required()]string connectionString)
-        {
-            Task<ConnectResponse> t = registry_glue.ConnectAsync(connectionString);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult RegistryConnect([FromQuery][Required()]string connectionString)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -60,11 +66,41 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("/registry/{connectionId}/disconnect/")]
         [ValidateModelState]
-        [SwaggerOperation("RegistryConnectionIdDisconnectPut")]
-        public virtual IActionResult RegistryConnectionIdDisconnectPut([FromRoute][Required]string connectionId)
-        {
-            registry_glue.DisconnectAsync(connectionId).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("RegistryDisconnect")]
+        public virtual IActionResult RegistryDisconnect([FromRoute][Required]string connectionId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// gets the device twin for the given deviceid
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="deviceId"></param>
+        /// <response code="200">OK</response>
+        [HttpGet]
+        [Route("/registry/{connectionId}/deviceTwin/{deviceId}")]
+        [ValidateModelState]
+        [SwaggerOperation("RegistryGetDeviceTwin")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        public virtual IActionResult RegistryGetDeviceTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -78,13 +114,42 @@ namespace IO.Swagger.Controllers
         [HttpGet]
         [Route("/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}")]
         [ValidateModelState]
-        [SwaggerOperation("RegistryConnectionIdModuleTwinDeviceIdModuleIdGet")]
+        [SwaggerOperation("RegistryGetModuleTwin")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult RegistryConnectionIdModuleTwinDeviceIdModuleIdGet([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId)
-        {
-            Task<object> t = registry_glue.GetModuleTwin(connectionId, deviceId, moduleId);
-            t.Wait();
-            return new ObjectResult(t.Result);
+        public virtual IActionResult RegistryGetModuleTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(Object));
+
+            string exampleJson = null;
+            exampleJson = "\"{}\"";
+            
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<Object>(exampleJson)
+            : default(Object);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// update the device twin for the given deviceId
+        /// </summary>
+        
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="deviceId"></param>
+        /// <param name="props"></param>
+        /// <response code="200">OK</response>
+        [HttpPatch]
+        [Route("/registry/{connectionId}/deviceTwin/{deviceId}")]
+        [ValidateModelState]
+        [SwaggerOperation("RegistryPatchDeviceTwin")]
+        public virtual IActionResult RegistryPatchDeviceTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object props)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -99,11 +164,14 @@ namespace IO.Swagger.Controllers
         [HttpPatch]
         [Route("/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}")]
         [ValidateModelState]
-        [SwaggerOperation("RegistryConnectionIdModuleTwinDeviceIdModuleIdPatch")]
-        public virtual IActionResult RegistryConnectionIdModuleTwinDeviceIdModuleIdPatch([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object props)
-        {
-            registry_glue.PatchModuleTwin(connectionId, deviceId, moduleId, props).Wait();
-            return StatusCode(200);
+        [SwaggerOperation("RegistryPatchModuleTwin")]
+        public virtual IActionResult RegistryPatchModuleTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object props)
+        { 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
     }
 }
