@@ -858,7 +858,7 @@ void ModuleApiModuleConnectionIdReconnectResource::PUT_method_handler(const std:
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 			// Getting the query params
-			const bool forceRenewPassword = request->get_query_parameter("forceRenewPassword", );
+			const bool forceRenewPassword = request->get_query_parameter("forceRenewPassword", false);
 
 
 			// Change the value of this variable to the appropriate response before sending the response

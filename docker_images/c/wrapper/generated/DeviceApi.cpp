@@ -146,7 +146,7 @@ void DeviceApiDeviceConnectTransportTypeResource::PUT_method_handler(const std::
 
 			if (status_code == 200) {
 				// changed 1 parameter in merge
-				session->close(200, result, { {="Connection", "close"} });
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 
@@ -646,7 +646,7 @@ void DeviceApiDeviceConnectionIdReconnectResource::PUT_method_handler(const std:
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 			// Getting the query params
-			const bool forceRenewPassword = request->get_query_parameter("forceRenewPassword", );
+			const bool forceRenewPassword = request->get_query_parameter("forceRenewPassword", false);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
