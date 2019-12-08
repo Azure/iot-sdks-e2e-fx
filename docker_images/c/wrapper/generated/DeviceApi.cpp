@@ -349,7 +349,7 @@ void DeviceApiDeviceConnectionIdDisconnectResource::PUT_method_handler(const std
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 
-			# added 1 line in merge
+			// added 1 line in merge
 			device_glue.Disconnect(connectionId);
 
 			// Change the value of this variable to the appropriate response before sending the response

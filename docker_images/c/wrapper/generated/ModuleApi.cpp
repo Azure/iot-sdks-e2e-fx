@@ -1098,7 +1098,7 @@ void ModuleApiModuleConnectionIdTwinDesiredPropPatchResource::GET_method_handler
 			 */
 
 			if (status_code == 200) {
-				# Changed 1 parameter in merge
+				// Changed 1 parameter in merge
 				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
