@@ -1,8 +1,6 @@
 parameters:
-  language: ''
   scenario: ''
   transport: ''
-  job_name: ''
   extra_args: ''
   log_folder_name: ''
 

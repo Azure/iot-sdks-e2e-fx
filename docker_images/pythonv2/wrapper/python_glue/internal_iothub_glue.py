@@ -204,11 +204,14 @@ class InputsAndOutputs(object):
 
 class InvokeMethods(object):
     def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
-        pass
-
+        logger.info("Invoking a method on the module.")
+        method_response = self.client.invoke_method(device_id=device_id, module_id=module_id, method_params=method_invoke_parameters)
+        logger.info("Method Invoked and response received.")
+         
     def invoke_device_method(self, device_id, method_invoke_parameters):
-        pass
-
+        logger.info("Invoking a method on the module.")
+        method_response = self.client.invoke_method(device_id=device_id, method_params=method_invoke_parameters)
+        logger.info("Method Invoked and response received.")
 
 class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry):
     def __init__(self):
