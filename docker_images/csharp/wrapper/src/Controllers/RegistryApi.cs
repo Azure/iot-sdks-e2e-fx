@@ -31,6 +31,9 @@ namespace IO.Swagger.Controllers
     /// </summary>
     public class RegistryApiController : Controller
     {
+        // Added 1 line in merge
+        static internal RegistryGlue registry_glue = new RegistryGlue();
+
         /// <summary>
         /// Connect to registry
         /// </summary>
@@ -44,17 +47,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
         public virtual IActionResult RegistryConnect([FromQuery][Required()]string connectionString)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(ConnectResponse));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
-            : default(ConnectResponse);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<ConnectResponse> t = registry_glue.ConnectAsync(connectionString);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -69,11 +65,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("RegistryDisconnect")]
         public virtual IActionResult RegistryDisconnect([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            registry_glue.DisconnectAsync(connectionId).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -118,17 +112,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
         public virtual IActionResult RegistryGetModuleTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
-
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // replaced impl in merge
+            Task<object> t = registry_glue.GetModuleTwin(connectionId, deviceId, moduleId);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -167,11 +154,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("RegistryPatchModuleTwin")]
         public virtual IActionResult RegistryPatchModuleTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object props)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // replaced impl in merge
+            registry_glue.PatchModuleTwin(connectionId, deviceId, moduleId, props).Wait();
+            return StatusCode(200);
         }
     }
 }

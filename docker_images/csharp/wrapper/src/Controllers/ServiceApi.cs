@@ -31,6 +31,9 @@ namespace IO.Swagger.Controllers
     /// </summary>
     public class ServiceApiController : Controller
     {
+        // Added 1 line in merge
+        static internal ServiceGlue service_glue = new ServiceGlue();
+
         /// <summary>
         /// Connect to service
         /// </summary>
@@ -44,17 +47,11 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
         public virtual IActionResult ServiceConnect([FromQuery][Required()]string connectionString)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(ConnectResponse));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
-            : default(ConnectResponse);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merrge
+            Task<ConnectResponse> t = service_glue.ConnectAsync(connectionString);
+            t.Wait();
+            return new ObjectResult(t.Result);
+        
         }
 
         /// <summary>
@@ -69,11 +66,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ServiceDisconnect")]
         public virtual IActionResult ServiceDisconnect([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // replced impl in merge
+            service_glue.DisconnectAsync(connectionId).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -91,17 +86,12 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
         public virtual IActionResult ServiceInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
+            // Replaced impl in merge
+            Task<object> t = service_glue.InvokeDeviceMethodAsync(connectionId, deviceId, methodInvokeParameters);
+            t.Wait();
+            return new ObjectResult(t.Result);
 
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
 
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -120,17 +110,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
         public virtual IActionResult ServiceInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
-
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<object> t = service_glue.InvokeModuleMethodAsync(connectionId, deviceId, moduleId, methodInvokeParameters);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>

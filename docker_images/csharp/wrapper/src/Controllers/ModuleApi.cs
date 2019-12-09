@@ -31,6 +31,9 @@ namespace IO.Swagger.Controllers
     /// </summary>
     public class ModuleApiController : Controller
     {
+        // Added 1 line in merge
+        static internal ModuleGlue module_glue = new ModuleGlue();
+
         /// <summary>
         /// Connect to the azure IoT Hub as a module
         /// </summary>
@@ -46,17 +49,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
         public virtual IActionResult ModuleConnect([FromRoute][Required]string transportType, [FromQuery][Required()]string connectionString, [FromBody]Certificate caCertificate)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(ConnectResponse));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
-            : default(ConnectResponse);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<ConnectResponse> t = module_glue.ConnectAsync(transportType, connectionString, caCertificate);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -91,17 +87,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
         public virtual IActionResult ModuleConnectFromEnvironment([FromRoute][Required]string transportType)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(ConnectResponse));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"connectionId\" : \"connectionId\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
-            : default(ConnectResponse);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // replaced impl in merge
+            Task<ConnectResponse> t = module_glue.ConnectFromEnvironmentAsync(transportType);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -216,11 +205,10 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModuleDisconnect")]
         public virtual IActionResult ModuleDisconnect([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+        
+            // Replaced impl in merge
+            module_glue.DisconnectAsync(connectionId).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -254,11 +242,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModuleEnableInputMessages")]
         public virtual IActionResult ModuleEnableInputMessages([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            module_glue.EnableInputMessagesAsync(connectionId).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -273,11 +259,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModuleEnableMethods")]
         public virtual IActionResult ModuleEnableMethods([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            module_glue.EnableMethodsAsync(connectionId).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -292,11 +276,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModuleEnableTwin")]
         public virtual IActionResult ModuleEnableTwin([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            module_glue.EnableTwinAsync(connectionId).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -338,17 +320,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
         public virtual IActionResult ModuleGetTwin([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
-
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<object> t = module_glue.GetTwinAsync(connectionId);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -366,17 +341,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
         public virtual IActionResult ModuleInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
-
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<Object> t = module_glue.InvokeDeviceMethodAsync(connectionId, deviceId, methodInvokeParameters);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -395,17 +363,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
         public virtual IActionResult ModuleInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
-
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<object> t = module_glue.InvokeModuleMethodAsync(connectionId, deviceId, moduleId, methodInvokeParameters);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -421,11 +382,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModulePatchTwin")]
         public virtual IActionResult ModulePatchTwin([FromRoute][Required]string connectionId, [FromBody]Object props)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            module_glue.SendTwinPatchAsync(connectionId, props).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -462,11 +421,10 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModuleRoundtripMethodCall")]
         public virtual IActionResult ModuleRoundtripMethodCall([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]RoundtripMethodCallBody requestAndResponse)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            Task<object> t = module_glue.RoundtripMethodCallAsync(connectionId, methodName, requestAndResponse);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -482,11 +440,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModuleSendEvent")]
         public virtual IActionResult ModuleSendEvent([FromRoute][Required]string connectionId, [FromBody]Object eventBody)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            module_glue.SendEventAsync(connectionId, eventBody).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -503,11 +459,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("ModuleSendOutputEvent")]
         public virtual IActionResult ModuleSendOutputEvent([FromRoute][Required]string connectionId, [FromRoute][Required]string outputName, [FromBody]Object eventBody)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
+            // Replaced impl in merge
+            module_glue.SendOutputEventAsync(connectionId, outputName, eventBody).Wait();
+            return StatusCode(200);
         }
 
         /// <summary>
@@ -549,17 +503,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
         public virtual IActionResult ModuleWaitForDesiredPropertiesPatch([FromRoute][Required]string connectionId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
-
-            string exampleJson = null;
-            exampleJson = "\"{}\"";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<object> t = module_glue.WaitForDesiredPropertyPatchAsync(connectionId);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
 
         /// <summary>
@@ -576,17 +523,10 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(string), description: "OK")]
         public virtual IActionResult ModuleWaitForInputMessage([FromRoute][Required]string connectionId, [FromRoute][Required]string inputName)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(string));
-
-            string exampleJson = null;
-            exampleJson = "";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<string>(exampleJson)
-            : default(string);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            // Replaced impl in merge
+            Task<object> t = module_glue.WaitForInputMessageAsync(connectionId, inputName);
+            t.Wait();
+            return new ObjectResult(t.Result);
         }
     }
 }
