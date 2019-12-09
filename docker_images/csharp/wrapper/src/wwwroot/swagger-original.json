@@ -3,7 +3,7 @@
   "info" : {
     "description" : "REST API definition for End-to-end testing of the Azure IoT SDKs.  All SDK APIs that are tested by our E2E tests need to be defined in this file.  This file takes some liberties with the API definitions.  In particular, response schemas are undefined, and error responses are also undefined.",
     "version" : "1.0.0",
-    "title" : "IoT SDK Device & Client REST API"
+    "title" : "Azure IOT End-to-End Test Wrapper Rest Api"
   },
   "tags" : [ {
     "name" : "wrapper",
@@ -18,27 +18,27 @@
     "name" : "service",
     "description" : "ServiceClient APIs"
   }, {
-    "name" : "eventhub",
-    "description" : "EventHub APIs"
-  }, {
     "name" : "registry",
     "description" : "registry APIs"
+  }, {
+    "name" : "net",
+    "description" : "network control APIs"
   } ],
   "schemes" : [ "https" ],
   "produces" : [ "application/json" ],
   "paths" : {
-    "/wrapper/configuration" : {
+    "/wrapper/capabilities" : {
       "get" : {
         "tags" : [ "wrapper" ],
-        "summary" : "gets configuration details on the current wrapper configuration",
+        "summary" : "Get capabilities for this test wrapper",
+        "operationId" : "Wrapper_GetCapabilities",
         "produces" : [ "application/json" ],
         "parameters" : [ ],
         "responses" : {
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
             }
           }
         }
@@ -48,29 +48,7 @@
       "put" : {
         "tags" : [ "wrapper" ],
         "summary" : "verify that the clients have cleaned themselves up completely",
-        "parameters" : [ ],
-        "responses" : {
-          "200" : {
-            "description" : "OK"
-          }
-        }
-      }
-    },
-    "/wrapper/session" : {
-      "get" : {
-        "tags" : [ "wrapper" ],
-        "summary" : "Terminate a wrapper, optionally returning the log",
-        "produces" : [ "application/json" ],
-        "parameters" : [ ],
-        "responses" : {
-          "200" : {
-            "description" : "OK"
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "wrapper" ],
-        "summary" : "Launch a wrapper, getting ready to test",
+        "operationId" : "Wrapper_Cleanup",
         "parameters" : [ ],
         "responses" : {
           "200" : {
@@ -83,6 +61,7 @@
       "put" : {
         "tags" : [ "wrapper" ],
         "summary" : "log a message to output",
+        "operationId" : "Wrapper_LogMessage",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -99,15 +78,56 @@
         }
       }
     },
+    "/wrapper/flags" : {
+      "put" : {
+        "tags" : [ "wrapper" ],
+        "summary" : "set flags for the wrapper to use",
+        "operationId" : "Wrapper_SetFlags",
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "flags",
+          "required" : true,
+          "schema" : {
+            "type" : "object"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/wrapper/command" : {
+      "put" : {
+        "tags" : [ "wrapper" ],
+        "summary" : "send an arbitrary command",
+        "operationId" : "Wrapper_SendCommand",
+        "parameters" : [ {
+          "name" : "cmd",
+          "in" : "query",
+          "description" : "command string",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
     "/registry/connect" : {
       "put" : {
         "tags" : [ "registry" ],
         "summary" : "Connect to registry",
         "description" : "Connect to the Azure IoTHub registry.  More specifically, the SDK saves the connection string that is passed in for future use.",
+        "operationId" : "Registry_Connect",
         "parameters" : [ {
           "name" : "connectionString",
           "in" : "query",
-          "description" : "Service connection string",
+          "description" : "connection string",
           "required" : true,
           "type" : "string"
         } ],
@@ -126,6 +146,7 @@
         "tags" : [ "registry" ],
         "summary" : "Disconnect from the registry",
         "description" : "Disconnects from the Azure IoTHub registry.  More specifically, closes all connections and cleans up all resources for the active connection",
+        "operationId" : "Registry_Disconnect",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -144,6 +165,7 @@
       "get" : {
         "tags" : [ "registry" ],
         "summary" : "gets the module twin for the given deviceid and moduleid",
+        "operationId" : "Registry_GetModuleTwin",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -166,8 +188,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
             }
           }
         }
@@ -175,6 +196,7 @@
       "patch" : {
         "tags" : [ "registry" ],
         "summary" : "update the module twin for the given deviceId and moduleId",
+        "operationId" : "Registry_PatchModuleTwin",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -207,10 +229,69 @@
         }
       }
     },
+    "/registry/{connectionId}/deviceTwin/{deviceId}" : {
+      "get" : {
+        "tags" : [ "registry" ],
+        "summary" : "gets the device twin for the given deviceid",
+        "operationId" : "Registry_GetDeviceTwin",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "deviceId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "type" : "object"
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "registry" ],
+        "summary" : "update the device twin for the given deviceId",
+        "operationId" : "Registry_PatchDeviceTwin",
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "deviceId",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "props",
+          "required" : true,
+          "schema" : {
+            "type" : "object"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
     "/module/connect/{transportType}" : {
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Connect to the azure IoT Hub as a module",
+        "operationId" : "Module_Connect",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "transportType",
@@ -243,10 +324,30 @@
         }
       }
     },
+    "/module/{connectionId}/disconnect" : {
+      "put" : {
+        "tags" : [ "module" ],
+        "summary" : "Disconnect the module",
+        "operationId" : "Module_Disconnect",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
     "/module/connectFromEnvironment/{transportType}" : {
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Connect to the azure IoT Hub as a module using the environment variables",
+        "operationId" : "Module_ConnectFromEnvironment",
         "parameters" : [ {
           "name" : "transportType",
           "in" : "path",
@@ -265,11 +366,164 @@
         }
       }
     },
-    "/module/{connectionId}/disconnect" : {
+    "/module/createFromConnectionstring/{transportType}" : {
       "put" : {
         "tags" : [ "module" ],
-        "summary" : "Disconnect the module",
-        "description" : "Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection",
+        "summary" : "Create a module client from a connection string",
+        "operationId" : "Module_CreateFromConnectionString",
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "transportType",
+          "in" : "path",
+          "description" : "Transport to use",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "amqp", "amqpws", "mqtt", "mqttws", "http" ]
+        }, {
+          "name" : "connectionString",
+          "in" : "query",
+          "description" : "connection string",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "caCertificate",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/certificate"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/connectResponse"
+            }
+          }
+        }
+      }
+    },
+    "/module/createFromEnvironment/{transportType}" : {
+      "put" : {
+        "tags" : [ "module" ],
+        "summary" : "Create a module client using the EdgeHub environment",
+        "operationId" : "Module_CreateFromEnvironment",
+        "parameters" : [ {
+          "name" : "transportType",
+          "in" : "path",
+          "description" : "Transport to use",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "amqp", "amqpws", "mqtt", "mqttws", "http" ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/connectResponse"
+            }
+          }
+        }
+      }
+    },
+    "/module/createFromX509/{transportType}" : {
+      "put" : {
+        "tags" : [ "module" ],
+        "summary" : "Create a module client from X509 credentials",
+        "operationId" : "Module_CreateFromX509",
+        "parameters" : [ {
+          "name" : "transportType",
+          "in" : "path",
+          "description" : "Transport to use",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "amqp", "amqpws", "mqtt", "mqttws", "http" ]
+        }, {
+          "in" : "body",
+          "name" : "X509",
+          "required" : true,
+          "schema" : {
+            "type" : "object"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/connectResponse"
+            }
+          }
+        }
+      }
+    },
+    "/module/{connectionId}/connect2" : {
+      "put" : {
+        "tags" : [ "module" ],
+        "summary" : "Connect the module",
+        "operationId" : "Module_Connect2",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/module/{connectionId}/reconnect" : {
+      "put" : {
+        "tags" : [ "module" ],
+        "summary" : "Reconnect the module",
+        "operationId" : "Module_Reconnect",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "forceRenewPassword",
+          "in" : "query",
+          "description" : "True to force SAS renewal",
+          "required" : false,
+          "type" : "boolean"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/module/{connectionId}/disconnect2" : {
+      "put" : {
+        "tags" : [ "module" ],
+        "summary" : "Disonnect the module",
+        "operationId" : "Module_Disconnect2",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/module/{connectionId}/destroy" : {
+      "put" : {
+        "tags" : [ "module" ],
+        "summary" : "Disonnect and destroy the module client",
+        "operationId" : "Module_Destroy",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -288,6 +542,7 @@
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Enable module twins",
+        "operationId" : "Module_EnableTwin",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -306,6 +561,7 @@
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Enable methods",
+        "operationId" : "Module_EnableMethods",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -324,6 +580,7 @@
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Enable input messages",
+        "operationId" : "Module_EnableInputMessages",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -342,6 +599,7 @@
       "get" : {
         "tags" : [ "module" ],
         "summary" : "Get the device twin",
+        "operationId" : "Module_GetTwin",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -354,8 +612,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
             }
           }
         }
@@ -363,6 +620,7 @@
       "patch" : {
         "tags" : [ "module" ],
         "summary" : "Updates the device twin",
+        "operationId" : "Module_PatchTwin",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -389,6 +647,7 @@
       "get" : {
         "tags" : [ "module" ],
         "summary" : "Wait for the next desired property patch",
+        "operationId" : "Module_WaitForDesiredPropertiesPatch",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -401,8 +660,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
             }
           }
         }
@@ -412,6 +670,7 @@
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Send an event",
+        "operationId" : "Module_SendEvent",
         "consumes" : [ "text/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -424,7 +683,7 @@
           "name" : "eventBody",
           "required" : true,
           "schema" : {
-            "type" : "string"
+            "type" : "object"
           }
         } ],
         "responses" : {
@@ -438,6 +697,7 @@
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Send an event to a module output",
+        "operationId" : "Module_SendOutputEvent",
         "consumes" : [ "text/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -455,7 +715,7 @@
           "name" : "eventBody",
           "required" : true,
           "schema" : {
-            "type" : "string"
+            "type" : "object"
           }
         } ],
         "responses" : {
@@ -469,6 +729,7 @@
       "get" : {
         "tags" : [ "module" ],
         "summary" : "Wait for a message on a module input",
+        "operationId" : "Module_WaitForInputMessage",
         "produces" : [ "text/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -497,6 +758,7 @@
         "tags" : [ "module" ],
         "summary" : "Wait for a method call, verify the request, and return the response.",
         "description" : "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
+        "operationId" : "Module_RoundtripMethodCall",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -530,6 +792,7 @@
       "put" : {
         "tags" : [ "module" ],
         "summary" : "call the given method on the given module",
+        "operationId" : "Module_InvokeModuleMethod",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -560,8 +823,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
             }
           }
         }
@@ -571,6 +833,7 @@
       "put" : {
         "tags" : [ "module" ],
         "summary" : "call the given method on the given device",
+        "operationId" : "Module_InvokeDeviceMethod",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -596,8 +859,53 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
+            }
+          }
+        }
+      }
+    },
+    "/module/{connectionId}/connectionStatus" : {
+      "get" : {
+        "tags" : [ "module" ],
+        "summary" : "get the current connection status",
+        "operationId" : "Module_GetConnectionStatus",
+        "produces" : [ "text/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "/module/{connectionId}/connectionStatusChange" : {
+      "get" : {
+        "tags" : [ "module" ],
+        "summary" : "wait for the current connection status to change and return the changed status",
+        "operationId" : "Module_WaitForConnectionStatusChange",
+        "produces" : [ "text/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "type" : "string"
             }
           }
         }
@@ -608,10 +916,11 @@
         "tags" : [ "service" ],
         "summary" : "Connect to service",
         "description" : "Connect to the Azure IoTHub service.  More specifically, the SDK saves the connection string that is passed in for future use.",
+        "operationId" : "Service_Connect",
         "parameters" : [ {
           "name" : "connectionString",
           "in" : "query",
-          "description" : "Service connection string",
+          "description" : "connection string",
           "required" : true,
           "type" : "string"
         } ],
@@ -630,6 +939,7 @@
         "tags" : [ "service" ],
         "summary" : "Disconnect from the service",
         "description" : "Disconnects from the Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection",
+        "operationId" : "Service_Disconnect",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -648,6 +958,7 @@
       "put" : {
         "tags" : [ "service" ],
         "summary" : "call the given method on the given module",
+        "operationId" : "Service_InvokeModuleMethod",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -678,8 +989,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
             }
           }
         }
@@ -689,6 +999,7 @@
       "put" : {
         "tags" : [ "service" ],
         "summary" : "call the given method on the given device",
+        "operationId" : "Service_InvokeDeviceMethod",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -714,77 +1025,18 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object",
-              "properties" : { }
+              "type" : "object"
             }
           }
         }
       }
     },
-    "/eventhub/connect" : {
+    "/service/{connectionId}/sendC2d/{deviceId}" : {
       "put" : {
-        "tags" : [ "eventhub" ],
-        "summary" : "Connect to eventhub",
-        "description" : "Connect to the Azure eventhub service.",
-        "parameters" : [ {
-          "name" : "connectionString",
-          "in" : "query",
-          "description" : "Service connection string",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "schema" : {
-              "$ref" : "#/definitions/connectResponse"
-            }
-          }
-        }
-      }
-    },
-    "/eventhub/{connectionId}/disconnect/" : {
-      "put" : {
-        "tags" : [ "eventhub" ],
-        "summary" : "Disconnect from the eventhub",
-        "description" : "Disconnects from the Azure eventhub service",
-        "parameters" : [ {
-          "name" : "connectionId",
-          "in" : "path",
-          "description" : "Id for the connection",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK"
-          }
-        }
-      }
-    },
-    "/eventhub/{connectionId}/enableTelemetry" : {
-      "put" : {
-        "tags" : [ "eventhub" ],
-        "summary" : "Enable telemetry",
-        "parameters" : [ {
-          "name" : "connectionId",
-          "in" : "path",
-          "description" : "Id for the connection",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK"
-          }
-        }
-      }
-    },
-    "/eventhub/{connectionId}/deviceTelemetry/{deviceId}" : {
-      "get" : {
-        "tags" : [ "eventhub" ],
-        "summary" : "wait for telemetry sent from a specific device",
-        "produces" : [ "text/json" ],
+        "tags" : [ "service" ],
+        "summary" : "Send a c2d message",
+        "operationId" : "Service_SendC2d",
+        "consumes" : [ "text/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -796,13 +1048,17 @@
           "in" : "path",
           "required" : true,
           "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "eventBody",
+          "required" : true,
+          "schema" : {
+            "type" : "object"
+          }
         } ],
         "responses" : {
           "200" : {
-            "description" : "OK",
-            "schema" : {
-              "type" : "string"
-            }
+            "description" : "OK"
           }
         }
       }
@@ -811,6 +1067,7 @@
       "put" : {
         "tags" : [ "device" ],
         "summary" : "Connect to the azure IoT Hub as a device",
+        "operationId" : "Device_Connect",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "transportType",
@@ -847,7 +1104,157 @@
       "put" : {
         "tags" : [ "device" ],
         "summary" : "Disconnect the device",
-        "description" : "Disconnects from Azure IoTHub service.  More specifically, closes all connections and cleans up all resources for the active connection",
+        "operationId" : "Device_Disconnect",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/createFromConnectionString/{transportType}" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Create a device client from a connection string",
+        "operationId" : "Device_CreateFromConnectionString",
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "transportType",
+          "in" : "path",
+          "description" : "Transport to use",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "amqp", "amqpws", "mqtt", "mqttws", "http" ]
+        }, {
+          "name" : "connectionString",
+          "in" : "query",
+          "description" : "connection string",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "caCertificate",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/certificate"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/connectResponse"
+            }
+          }
+        }
+      }
+    },
+    "/device/createFromX509/{transportType}" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Create a device client from X509 credentials",
+        "operationId" : "Device_CreateFromX509",
+        "consumes" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "transportType",
+          "in" : "path",
+          "description" : "Transport to use",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "amqp", "amqpws", "mqtt", "mqttws", "http" ]
+        }, {
+          "in" : "body",
+          "name" : "X509",
+          "required" : true,
+          "schema" : {
+            "type" : "object"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/connectResponse"
+            }
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/connect2" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Connect the device",
+        "operationId" : "Device_Connect2",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/reconnect" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Reconnect the device",
+        "operationId" : "Device_Reconnect",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "forceRenewPassword",
+          "in" : "query",
+          "description" : "True to force SAS renewal",
+          "required" : false,
+          "type" : "boolean"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/disconnect2" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Disconnect the device",
+        "operationId" : "Device_Disconnect2",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/destroy" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Disconnect and destroy the device client",
+        "operationId" : "Device_Destroy",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -866,6 +1273,7 @@
       "put" : {
         "tags" : [ "device" ],
         "summary" : "Enable methods",
+        "operationId" : "Device_EnableMethods",
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -880,10 +1288,13 @@
         }
       }
     },
-    "/device/{connectionId}/methodRequest/{methodName}" : {
-      "get" : {
+    "/device/{connectionId}/roundtripMethodCall/{methodName}" : {
+      "put" : {
         "tags" : [ "device" ],
-        "summary" : "Wait for a method call with the given name",
+        "summary" : "Wait for a method call, verify the request, and return the response.",
+        "description" : "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
+        "operationId" : "Device_RoundtripMethodCall",
+        "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -894,6 +1305,80 @@
         }, {
           "name" : "methodName",
           "in" : "path",
+          "description" : "name of the method to handle",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "requestAndResponse",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/roundtripMethodCallBody"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/enableC2dMessages" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Enable c2d messages",
+        "operationId" : "Device_EnableC2dMessages",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/event" : {
+      "put" : {
+        "tags" : [ "device" ],
+        "summary" : "Send an event",
+        "operationId" : "Device_SendEvent",
+        "consumes" : [ "text/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "eventBody",
+          "required" : true,
+          "schema" : {
+            "type" : "object"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/c2dMessage" : {
+      "get" : {
+        "tags" : [ "device" ],
+        "summary" : "Wait for a c2d message",
+        "operationId" : "Device_WaitForC2dMessage",
+        "produces" : [ "text/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
           "required" : true,
           "type" : "string"
         } ],
@@ -901,16 +1386,57 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "$ref" : "#/definitions/methodRequestResponse"
+              "type" : "string"
             }
           }
         }
       }
     },
-    "/device/{connectionId}/methodResponse/{responseId}/{statusCode}" : {
+    "/device/{connectionId}/enableTwin" : {
       "put" : {
         "tags" : [ "device" ],
-        "summary" : "Respond to the method call with the given name",
+        "summary" : "Enable device twins",
+        "operationId" : "Device_EnableTwin",
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/twin" : {
+      "get" : {
+        "tags" : [ "device" ],
+        "summary" : "Get the device twin",
+        "operationId" : "Device_GetTwin",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "type" : "object"
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "device" ],
+        "summary" : "Updates the device twin",
+        "operationId" : "Device_PatchTwin",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
@@ -919,22 +1445,179 @@
           "required" : true,
           "type" : "string"
         }, {
-          "name" : "responseId",
-          "in" : "path",
-          "required" : true,
-          "type" : "string"
-        }, {
-          "name" : "statusCode",
-          "in" : "path",
-          "required" : true,
-          "type" : "string"
-        }, {
           "in" : "body",
-          "name" : "responseBody",
+          "name" : "props",
           "required" : true,
           "schema" : {
             "type" : "object"
           }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/twinDesiredPropPatch" : {
+      "get" : {
+        "tags" : [ "device" ],
+        "summary" : "Wait for the next desired property patch",
+        "operationId" : "Device_WaitForDesiredPropertiesPatch",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "type" : "object"
+            }
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/connectionStatus" : {
+      "get" : {
+        "tags" : [ "device" ],
+        "summary" : "get the current connection status",
+        "operationId" : "Device_GetConnectionStatus",
+        "produces" : [ "text/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "/device/{connectionId}/connectionStatusChange" : {
+      "get" : {
+        "tags" : [ "device" ],
+        "summary" : "wait for the current connection status to change and return the changed status",
+        "operationId" : "Device_WaitForConnectionStatusChange",
+        "produces" : [ "text/json" ],
+        "parameters" : [ {
+          "name" : "connectionId",
+          "in" : "path",
+          "description" : "Id for the connection",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "/net/setDestination/{ip}/{transportType}" : {
+      "put" : {
+        "tags" : [ "net" ],
+        "summary" : "Set destination for net disconnect ops",
+        "operationId" : "Net_SetDestination",
+        "parameters" : [ {
+          "name" : "ip",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "transportType",
+          "in" : "path",
+          "description" : "Transport to use",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "amqp", "amqpws", "mqtt", "mqttws", "http" ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/net/disconnect/{disconnectType}" : {
+      "put" : {
+        "tags" : [ "net" ],
+        "summary" : "Simulate a network disconnection",
+        "operationId" : "Net_Disconnect",
+        "parameters" : [ {
+          "name" : "disconnectType",
+          "in" : "path",
+          "description" : "disconnect method for dropped connection tests",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "DROP", "REJECT" ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/net/reconnect" : {
+      "put" : {
+        "tags" : [ "net" ],
+        "summary" : "Reconnect the network after a simulated network disconnection",
+        "operationId" : "Net_Reconnect",
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/net/disconnectAfterC2d/{disconnectType}" : {
+      "put" : {
+        "tags" : [ "net" ],
+        "summary" : "Simulate a disconnect after the next C2D transfer",
+        "operationId" : "Net_DisconnectAfterC2d",
+        "parameters" : [ {
+          "name" : "disconnectType",
+          "in" : "path",
+          "description" : "disconnect method for dropped connection tests",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "DROP", "REJECT" ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/net/disconnectAfterD2c/{disconnectType}" : {
+      "put" : {
+        "tags" : [ "net" ],
+        "summary" : "Simulate a disconnect after the next D2C transfer",
+        "operationId" : "Net_DisconnectAfterD2c",
+        "parameters" : [ {
+          "name" : "disconnectType",
+          "in" : "path",
+          "description" : "disconnect method for dropped connection tests",
+          "required" : true,
+          "type" : "string",
+          "enum" : [ "DROP", "REJECT" ]
         } ],
         "responses" : {
           "200" : {
@@ -958,24 +1641,15 @@
         "connectionId" : "connectionId"
       }
     },
-    "methodRequestResponse" : {
+    "certificate" : {
       "type" : "object",
       "properties" : {
-        "requestPayload" : {
-          "type" : "object",
-          "description" : "payload for the request that arrived from the service",
-          "properties" : { }
-        },
-        "responseId" : {
+        "cert" : {
           "type" : "string",
-          "description" : "response ID to be used when responding to this method call"
+          "description" : "unique identifier for this connection"
         }
       },
-      "description" : "result of waiting on a method call",
-      "example" : {
-        "requestPayload" : "{}",
-        "responseId" : "responseId"
-      }
+      "description" : "certificate in the body of a message"
     },
     "roundtripMethodCallBody" : {
       "type" : "object",
@@ -996,16 +1670,6 @@
         }
       },
       "description" : "parameters and response for a sync method call"
-    },
-    "certificate" : {
-      "type" : "object",
-      "properties" : {
-        "cert" : {
-          "type" : "string",
-          "description" : "unique identifier for this connection"
-        }
-      },
-      "description" : "certificate in the body of a message"
     }
   }
 }

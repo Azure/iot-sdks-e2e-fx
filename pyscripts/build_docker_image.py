@@ -213,7 +213,7 @@ if not docker_tags.running_on_azure_pipelines():
     print(Fore.GREEN + "Done.  Deploy with the following command:")
     print(
         Fore.GREEN
-        + "./deploy-test-containers.sh --{} {}:{}".format(
-            tags.language, tags.docker_full_image_name, tags.image_tags[0]
+        + "python deploy.py iotedge --image {}:{}".format(
+            tags.docker_full_image_name, tags.image_tags[0]
         )
     )    
