@@ -45,6 +45,6 @@ def get_capabilities():
         "skip_list": []
     }
     if not getattr(IoTHubModuleClient, "invoke_method", None):
-        caps.skip_list.append('invokesDeviceMethod')
-        caps.skip_list.append('invokesModuleMethod')
+        caps["skip_list"].append('invokesDeviceMethod')
+        caps["skip_list"].append('invokesModuleMethod')
     return caps
