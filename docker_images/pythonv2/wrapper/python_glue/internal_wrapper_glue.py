@@ -3,6 +3,7 @@
 # full license information.
 import logging
 import subprocess
+from azure.iot.device import IoTHubModuleClient
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def set_flags(flags):
 
 
 def get_capabilities():
-    return {
+    caps = {
         "flags": {
             "supports_async": True,
             "security_messages": True,
@@ -41,3 +42,7 @@ def get_capabilities():
         },
         "skip_list": []
     }
+    if not getattr(IoTHubModuleClient, "invoke_method", None):
+        caps.skip_list.append('invokesDeviceMethod')
+        caps.skip_list.append('invokesModuleMethod')
+    return caps
