@@ -113,6 +113,8 @@ void WrapperApiWrapperCapabilitiesResource::GET_method_handler(const std::shared
 	const auto request = session->get_request();
 
 
+    // Added 1 line in merge
+    throw new std::runtime_error("Capabilities not supported yet");
 
 
 			// Change the value of this variable to the appropriate response before sending the response
