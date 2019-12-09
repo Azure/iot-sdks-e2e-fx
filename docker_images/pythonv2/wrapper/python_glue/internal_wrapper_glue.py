@@ -39,5 +39,5 @@ def get_capabilities():
             "dropped_connection_tests": True,
             "net_control_app": True,
         },
-        "skip_list": [  'callsSendOutputEvent', 'receivesInputMessages', 'receivesMethodCalls', 'supportsTwin' ]
+        "skip_list": []
     }
