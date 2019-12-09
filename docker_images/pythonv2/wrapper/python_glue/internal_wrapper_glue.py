@@ -31,6 +31,8 @@ def set_flags(flags):
 
 
 def get_capabilities():
+    # TODO: Once the method invoke is pulled into master for the python sdk, we should remove
+    # the logic for checking invoke_method on the moduleClient.
     caps = {
         "flags": {
             "supports_async": True,
