@@ -46,4 +46,13 @@ cp -r ${script_dir}/swagger_generated/csharp/src/IO.Swagger/* .
 rm IO.Swagger.csproj
 rm Dockerfile
 
+cd Controllers
+[ $? -eq 0 ] || { echo "cd Controllers failed"; exit 1; }
+
+for f in *; do
+    perl -p -i -e 's/[ \t]+$//' ${f}
+    [ $? -eq 0 ] || { echo "perl ${f}"; exit 1; }
+done
+
+
 colorecho $_green "SUCCESS!"
