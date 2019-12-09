@@ -441,7 +441,7 @@ namespace IO.Swagger.Controllers
         public virtual IActionResult ModuleSendEvent([FromRoute][Required]string connectionId, [FromBody]Object eventBody)
         {
             // Replaced impl in merge
-            module_glue.SendEventAsync(connectionId, eventBody).Wait();
+            module_glue.SendEventAsync(connectionId, (string)eventBody).Wait();
             return StatusCode(200);
         }
 
@@ -460,7 +460,7 @@ namespace IO.Swagger.Controllers
         public virtual IActionResult ModuleSendOutputEvent([FromRoute][Required]string connectionId, [FromRoute][Required]string outputName, [FromBody]Object eventBody)
         {
             // Replaced impl in merge
-            module_glue.SendOutputEventAsync(connectionId, outputName, eventBody).Wait();
+            module_glue.SendOutputEventAsync(connectionId, outputName, (string)eventBody).Wait();
             return StatusCode(200);
         }
 
