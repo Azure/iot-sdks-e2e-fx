@@ -34,6 +34,7 @@ colorecho $_yellow "copying generated files"
 cp -r ${script_dir}/swagger_generated/c/api/* .
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
 
+# remove trailing whitespace
 for f in *; do 
     perl -p -i -e 's/[ \t]+$//' ${f}
     [ $? -eq 0 ] || { echo "perl ${f}"; exit 1; }
