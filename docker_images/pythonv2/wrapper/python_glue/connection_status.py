@@ -60,6 +60,9 @@ class ConnectionStatus(object):
         # use deep knowledge of Paho internals to verify that it doesn't have any messages
         # left inflight.  Do this because we can't cancel PUBLISH, SUBSCRUBE, or UNSUBSCRIBE
         # messages and we're just assuming that they magically disappear on disconnect.
-        return (
-            self.client._iothub_pipeline._pipeline.transport._mqtt_client._inflight_messages
-        )
+        stage = self.client._iothub_pipeline._pipeline
+        while stage:
+            if getattr(stage, "transport", None):
+                return stage.transport._mqtt_client._inflight_messages
+            stage = stage.next
+        return -1
