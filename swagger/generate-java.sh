@@ -4,6 +4,14 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 root_dir=$(cd "${script_dir}/.." && pwd)
 source "$script_dir/../scripts/colorecho.sh"
 
+java_root=$1
+if [ ! -f $java_root/iot-e2e-tests/edge-e2e/pom.xml ]; then
+    colorecho $_red "ERROR: File ${java_root}/iot-e2e-tests/edge-e2e/pom.xml does not exist"
+    echo usage: $0 [java-root]
+    echo e.g.: $0 ~/repos/java
+    exit 1
+fi
+
 colorecho $_red "WARNING: This script overwrites code.  If you have anything checked out, it might be destroyed by this script."
 colorecho $_red "Do you wish to run this anyway?"
 select yn in "Yes" "No"; do
@@ -16,22 +24,20 @@ done
 cd ${root_dir}/swagger
 [ $? -eq 0 ] || { echo "cd swagger failed"; exit 1; }
 
-rm -r swagger_generated/csharp
+rm -r swagger_generated/java
 # OK to fail
 
-./generate.sh csharp
+./generate.sh java
 [ $? -eq 0 ] || { echo "generate.sh failed"; exit 1; }
 
 colorecho $_yellow "cleaning out old wrappers"
-cd ${root_dir}/docker_images/csharp/wrapper/src
-[ $? -eq 0 ] || { echo "cd ${root_dir}/docker-images/csharp/wrapper/src failed"; exit 1; }
+
+cd ${java_root}/iot-e2e-tests/edge-e2e/
+[ $? -eq 0 ] || { echo "cd ${java_root}/iot-e2e-tests/edge-e2e/ failed"; exit 1; }
 
 for f in $(find . -type f); do
-    if [[ "$f" =~ Glue.cs$ ]] || 
-       [[ "$f" =~ \.gitignore$ ]] ||
-       [[ "$f" =~ ConsoleEventListener.cs ]] ||
-       [[ "$f" =~ edge-e2e.csproj ]] ||
-       [[ "$f" =~ edge-e2e.sln ]]; then
+    if [[ "$f" =~ Glue.java$ ]] ||
+       [[ "$f" =~ Main.java$ ]]; then
         colorecho $_green "skipping $f"
     else
         colorecho $_yellow "removing $f"
@@ -40,19 +46,22 @@ for f in $(find . -type f); do
 done
 
 colorecho $_yellow "copying generated files"
-cp -r ${script_dir}/swagger_generated/csharp/src/IO.Swagger/* .
+cp -r ${script_dir}/swagger_generated/java/* .
 [ $? -eq 0 ] || { echo "cp failed"; exit 1; }
 
-rm IO.Swagger.csproj
-rm Dockerfile
-
-cd Controllers
-[ $? -eq 0 ] || { echo "cd Controllers failed"; exit 1; }
-
 # remove trailing whitespace
-for f in *; do
+for f in $(find . -type f); do
     perl -p -i -e 's/[ \t]+$//' ${f}
     [ $? -eq 0 ] || { echo "perl ${f}"; exit 1; }
+done
+
+# Copy API over impl, the impl will need to be merged but the glue won't
+cd src/main/java/io/swagger/server/api/verticle
+[ $? -eq 0 ] || { echo "cd src/main/java/io/swagger/server/api/verticle failed"; exit 1; }
+
+for f in Module Device Service Registry Wrapper Net; do
+    cp ${f}Api.java ${f}ApiImpl.java
+    [ $? -eq 0 ] || { echo "${f}Api.java ${f}ApiImpl.java failed"; exit 1; }
 done
 
 

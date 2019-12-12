@@ -38,4 +38,7 @@ COPY ./patchfile /
 RUN git reset HEAD && git checkout && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
+COPY ./rebuild.sh /
+RUN /rebuild.sh
+
 ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
