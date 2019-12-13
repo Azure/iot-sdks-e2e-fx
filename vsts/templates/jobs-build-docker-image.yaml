@@ -13,7 +13,6 @@ jobs:
 - job: 'build_${{ parameters.job_tag }}_container'
   pool:
     name: $(Horton.Pool)
-    vmimage: $(Horton.VmImage)
 
   steps:
 
