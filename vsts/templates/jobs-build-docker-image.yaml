@@ -12,7 +12,7 @@ parameters:
 jobs:
 - job: 'build_${{ parameters.job_tag }}_container'
   pool:
-    name: $(Horton.Pool)
+    name: Horton_Tests
 
   steps:
 
