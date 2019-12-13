@@ -8,7 +8,8 @@ jobs:
 
 - job: "test"
   pool:
-      vmImage: 'Ubuntu 16.04'
+    name: $(Horton.Pool)
+    vmimage: $(Horton.VmImage)
   dependsOn:
     - "build_linux_container"
   continueOnError: true

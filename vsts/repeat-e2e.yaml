@@ -1,6 +1,8 @@
 name: $(BuildID)_$(Horton.Language)_$(Horton.Commit)_$(BuildDefinitionName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
+  Horton.Pool: 'Azure Pipelines'
+  Horton.VmImage: 'Ubuntu 16.04'
 
 jobs:
 - template: templates/jobs-build-docker-image.yaml
@@ -12,7 +14,8 @@ jobs:
 
 - job: 'run_tests'
   pool:
-      vmImage: 'Ubuntu 16.04'
+    name: $(Horton.Pool)
+    vmimage: $(Horton.VmImage)
   dependsOn:
     - 'build_linux_container'
   steps:

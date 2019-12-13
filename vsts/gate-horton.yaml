@@ -1,6 +1,8 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
+  Horton.Pool: 'Azure Pipelines'
+  Horton.VmImage: 'Ubuntu 16.04'
 
 jobs:
 
@@ -65,7 +67,8 @@ jobs:
 
 - job: "test"
   pool:
-      vmImage: 'Ubuntu 16.04'
+    name: $(Horton.Pool)
+    vmimage: $(Horton.VmImage)
   dependsOn:
     - "build_node_container"
     - "build_c_container"

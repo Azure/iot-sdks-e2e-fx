@@ -12,7 +12,8 @@ parameters:
 jobs:
 - job: 'build_${{ parameters.job_tag }}_container'
   pool:
-      vmImage: 'Ubuntu 16.04'
+    name: $(Horton.Pool)
+    vmimage: $(Horton.VmImage)
 
   steps:
 

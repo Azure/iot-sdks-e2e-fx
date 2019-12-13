@@ -50,7 +50,8 @@ jobs:
 
 - job: "test"
   pool:
-      vmImage: 'Ubuntu 16.04'
+    name: $(Horton.Pool)
+    vmimage: $(Horton.VmImage)
   dependsOn:
     - "build_py27_container"
     - "build_py34_container"
