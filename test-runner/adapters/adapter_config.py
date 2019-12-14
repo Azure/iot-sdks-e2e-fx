@@ -9,4 +9,7 @@ default_api_timeout = 120
 print_message_timeout = 2
 
 # function that adapters can use to log messages to the output stream
-logger = None
+def default_logger(str):
+    print(str)
+
+logger = default_logger
