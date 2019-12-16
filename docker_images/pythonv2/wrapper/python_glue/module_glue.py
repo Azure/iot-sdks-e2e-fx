@@ -86,12 +86,12 @@ class ModuleGlue:
     def invoke_module_method(
         self, connection_id, device_id, module_id, method_invoke_parameters
     ):
-        self.object_map[connection_id].invoke_module_method(
+        return self.object_map[connection_id].invoke_module_method(
             device_id, module_id, method_invoke_parameters
         )
 
     def invoke_device_method(self, connection_id, device_id, method_invoke_parameters):
-        self.object_map[connection_id].invoke_device_method(
+        return self.object_map[connection_id].invoke_device_method(
             device_id, method_invoke_parameters
         )
 
