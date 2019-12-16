@@ -43,7 +43,7 @@ class Connect(ConnectionStatus):
 
         if "GatewayHostName" in connection_string:
             self.client = self.client_class.create_from_connection_string(
-                connection_string, ca_cert=cert, **kwargs
+                connection_string, server_verification_cert=cert, **kwargs
             )
         else:
             self.client = self.client_class.create_from_connection_string(
