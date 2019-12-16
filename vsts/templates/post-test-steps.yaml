@@ -11,6 +11,8 @@ steps:
 - task: PublishTestResults@2
   displayName: 'Publish Test Results **/TEST-*.xml'
   condition: and(always(), ne(variables['skipTest'],'yes'))
+  inputs:
+    testRunTitle: ${{ parameters.log_folder_name }}
 
 - task: CopyFiles@2
   displayName: 'Copy result files to artifact staging'
