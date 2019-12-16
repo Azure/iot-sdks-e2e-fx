@@ -210,11 +210,13 @@ class InvokeMethods(object):
         logger.info("Invoking a method on the module.")
         method_response = async_helper.run_coroutine_sync(self.client.invoke_method(device_id=device_id, module_id=module_id, method_params=method_invoke_parameters))
         logger.info("Method Invoked and response received.")
+        return method_response
 
     def invoke_device_method(self, device_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
         method_response = async_helper.run_coroutine_sync(self.client.invoke_method(device_id=device_id, method_params=method_invoke_parameters))
         logger.info("Method Invoked and response received.")
+        return method_response
 
 class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin):
     def __init__(self):
