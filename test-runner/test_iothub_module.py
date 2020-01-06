@@ -7,6 +7,7 @@ from timeouts import timeouts
 import dropped_connection_tests
 import drop_scenario
 from base_client_tests import BaseClientTests
+from method_tests import ReceiveMethodCallFromServiceTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
 
@@ -23,7 +24,11 @@ class IoTHubModuleClient(object):
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.timeout(timeouts.generic_test_timeout)
 class TestIotHubModuleClient(
-    IoTHubModuleClient, BaseClientTests, TelemetryTests, TwinTests
+    IoTHubModuleClient,
+    BaseClientTests,
+    TelemetryTests,
+    TwinTests,
+    ReceiveMethodCallFromServiceTests,
 ):
     pass
 
