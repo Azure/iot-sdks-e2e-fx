@@ -36,7 +36,8 @@ cd ${java_root}/iot-e2e-tests/edge-e2e/
 [ $? -eq 0 ] || { echo "cd ${java_root}/iot-e2e-tests/edge-e2e/ failed"; exit 1; }
 
 for f in $(find . -type f); do
-    if [[ "$f" =~ Glue.java$ ]] ||
+    if [[ "$f" =~ \/glue\/ ]] ||
+       [[ "$f" =~ ApiImpl.java$ ]] ||
        [[ "$f" =~ Main.java$ ]]; then
         colorecho $_green "skipping $f"
     else
@@ -53,15 +54,6 @@ cp -r ${script_dir}/swagger_generated/java/* .
 for f in $(find . -type f); do
     perl -p -i -e 's/[ \t]+$//' ${f}
     [ $? -eq 0 ] || { echo "perl ${f}"; exit 1; }
-done
-
-# Copy API over impl, the impl will need to be merged but the glue won't
-cd src/main/java/io/swagger/server/api/verticle
-[ $? -eq 0 ] || { echo "cd src/main/java/io/swagger/server/api/verticle failed"; exit 1; }
-
-for f in Module Device Service Registry Wrapper Net; do
-    cp ${f}Api.java ${f}ApiImpl.java
-    [ $? -eq 0 ] || { echo "${f}Api.java ${f}ApiImpl.java failed"; exit 1; }
 done
 
 

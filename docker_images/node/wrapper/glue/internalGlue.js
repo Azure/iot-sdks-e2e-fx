@@ -176,7 +176,7 @@ exports.internal_GetTwin = function(objectCache, connectionId) {
       if (err) {
         callback(err);
       } else {
-        callback(null, {properties: JSON.parse(JSON.stringify(twin.properties))});
+        callback(null, JSON.parse(JSON.stringify(twin.properties)));
       }
     });
   });
@@ -187,7 +187,7 @@ exports.internal_GetTwin = function(objectCache, connectionId) {
  * Updates the twin
  *
  * connectionId String Id for the connection
- * props Object 
+ * props Object
  * no response value expected for this operation
  **/
 exports.internal_PatchTwin = function(objectCache, connectionId,props) {
@@ -199,7 +199,7 @@ exports.internal_PatchTwin = function(objectCache, connectionId,props) {
         callback(err);
       } else {
         try {
-          twin.properties.reported.update(props, function(err) {
+          twin.properties.reported.update(props["reported"], function(err) {
             glueUtils.debugFunctionResult('twin.properties.reported.update', err);
             if (err) {
               callback(err);
@@ -236,11 +236,11 @@ exports.internal_Reconnect = function(objectCache, connectionId,forceRenewPasswo
  *
  * connectionId String Id for the connection
  * methodName String name of the method to handle
- * requestAndResponse RoundtripMethodCallBody 
+ * requestAndResponse RoundtripMethodCallBody
  * no response value expected for this operation
  **/
-exports.internal_RoundtripMethodCall = function(objectCache, connectionId,methodName,requestAndResponse) {
-  debug(`internal_RoundtripMethodCall called with ${connectionId}, ${methodName}`);
+exports.internal_WaitForMethodAndReturnResponse = function(objectCache, connectionId,methodName,requestAndResponse) {
+  debug(`internal_WaitForMethodAndReturnResponse called with ${connectionId}, ${methodName}`);
   debug(JSON.stringify(requestAndResponse, null, 2));
   return glueUtils.makePromise('internal_RoundtripMethodCall', function(callback) {
     var client = objectCache.getObject(connectionId);
@@ -248,7 +248,9 @@ exports.internal_RoundtripMethodCall = function(objectCache, connectionId,method
     onMethod.bind(client)(methodName, function(request, response) {
       debug(`function ${methodName} invoked from service`);
       debug(JSON.stringify(request, null, 2));
-      if (JSON.stringify(request.payload) !== JSON.stringify(requestAndResponse.requestPayload.payload)) {
+      // Java stringifies the payload.  This is why we have the second comparison.
+      if ((JSON.stringify(request.payload) !== JSON.stringify(requestAndResponse.requestPayload.payload)) &&
+          (request.payload !== JSON.stringify(requestAndResponse.requestPayload.payload))) {
         debug('payload expected:' + JSON.stringify(requestAndResponse.requestPayload.payload));
         debug('payload received:' + JSON.stringify(request.payload));
         callback(new Error('request payload did not arrive as expected'))
@@ -272,7 +274,7 @@ exports.internal_RoundtripMethodCall = function(objectCache, connectionId,method
  * Send an event
  *
  * connectionId String Id for the connection
- * eventBody Object 
+ * eventBody Object
  * no response value expected for this operation
  **/
 exports.internal_SendEvent = function(objectCache, connectionId,eventBody) {
@@ -280,7 +282,7 @@ exports.internal_SendEvent = function(objectCache, connectionId,eventBody) {
   debug(eventBody);
   return glueUtils.makePromise('internal_SendEvent', function(callback) {
     var client = objectCache.getObject(connectionId)
-    client.sendEvent(new Message(eventBody), function(err) {
+    client.sendEvent(new Message(JSON.stringify(eventBody.body)), function(err) {
       glueUtils.debugFunctionResult('client.sendEvent', err);
       callback(err);
     })
@@ -315,7 +317,7 @@ exports.internal_WaitForDesiredPropertiesPatch = function(objectCache, connectio
         callback(err);
       } else {
         callbackForSecondEventOnly(twin, 'properties.desired', function(delta) {
-          callback(null, delta);
+          callback(null, {'desired': delta});
         });
       }
     });

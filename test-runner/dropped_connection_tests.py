@@ -5,7 +5,6 @@ import pytest
 import asyncio
 import datetime
 from twin_tests import wait_for_reported_properties_update
-from sample_content import next_random_string
 from horton_settings import settings
 
 
@@ -77,8 +76,10 @@ class DroppedConnectionTestsTelemetry(object):
 class DroppedConnectionTestsC2d(object):
     @pytest.mark.it("Can reliably reveive c2d (1st-time possible subscribe)")
     async def test_dropped_c2d_1st_call(
-        self, client, service, before_api_call, after_api_call, test_string, logger
+        self, client, service, before_api_call, after_api_call, sample_payload, logger
     ):
+        payload = sample_payload()
+
         await client.enable_c2d()
 
         await before_api_call()
@@ -88,40 +89,40 @@ class DroppedConnectionTestsC2d(object):
         await asyncio.sleep(30)  # long time necessary to let subscribe happen
         logger("transport connected.  Sending C2D")
 
-        await service.send_c2d(client.device_id, test_string)
+        await service.send_c2d(client.device_id, payload)
 
         logger("C2D sent.  Waiting for response")
 
         received_message = await test_input_future
-        assert received_message == test_string
+        assert received_message == payload
 
     @pytest.mark.it("Can reliably reveive c2d (2nd-time)")
     async def test_dropped_c2d_2nd_call(
-        self, client, service, before_api_call, after_api_call, logger
+        self, client, service, before_api_call, after_api_call, logger, sample_payload
     ):
 
         # 1st call
-        test_string = next_random_string("dropped-c2d")
+        payload = sample_payload()
 
         await client.enable_c2d()
 
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
-        await service.send_c2d(client.device_id, test_string)
+        await service.send_c2d(client.device_id, payload)
         received_message = await test_input_future
-        assert received_message == test_string
+        assert received_message == payload
 
         # 2nd call
-        test_string = next_random_string("dropped-c2d")
+        payload = sample_payload()
 
         await before_api_call()
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
         await after_api_call()
 
-        await service.send_c2d(client.device_id, test_string)
+        await service.send_c2d(client.device_id, payload)
 
         logger("Awaiting input")
         received_message = await test_input_future
-        assert received_message == test_string
+        assert received_message == payload
 
 
 class DroppedConnectionTestsTwin(object):

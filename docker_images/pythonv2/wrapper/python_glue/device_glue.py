@@ -2,6 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from swagger_server.models.connect_response import ConnectResponse
+from swagger_server.models.event_body import EventBody
 from internal_iothub_glue import InternalDeviceGlue
 import json
 import logging
@@ -31,9 +32,13 @@ class DeviceGlue:
             internal.disconnect()
             del self.object_map[connection_id]
 
-    def create_from_connection_string(self, transport_type, connection_string, cert):
+    def create_from_connection_string(
+        self, transport_type, connection_string, ca_certificate
+    ):
         internal = InternalDeviceGlue()
-        internal.create_from_connection_string(transport_type, connection_string, cert)
+        internal.create_from_connection_string(
+            transport_type, connection_string, ca_certificate.cert
+        )
         return self._finish_connection(internal)
 
     def create_from_x509(self, transport_type, x509):
@@ -73,7 +78,7 @@ class DeviceGlue:
 
     def wait_for_c2d_message(self, connection_id):
         response = self.object_map[connection_id].wait_for_c2d_message()
-        return json.dumps(response)
+        return EventBody.from_dict(response)
 
     def roundtrip_method_call(self, connection_id, method_name, request_and_response):
         self.object_map[connection_id].roundtrip_method_call(

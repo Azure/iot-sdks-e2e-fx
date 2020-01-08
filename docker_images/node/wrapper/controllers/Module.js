@@ -191,8 +191,8 @@ module.exports.module_InvokeModuleMethod = function module_InvokeModuleMethod (r
 
 module.exports.module_PatchTwin = function module_PatchTwin (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
-  var props = req.swagger.params['props'].value;
-  Module.module_PatchTwin(connectionId,props)
+  var twin = req.swagger.params['twin'].value;
+  Module.module_PatchTwin(connectionId,twin)
     .then(function (response) {
       utils.writeJson(res, response);
     })
@@ -205,19 +205,6 @@ module.exports.module_Reconnect = function module_Reconnect (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
   var forceRenewPassword = req.swagger.params['forceRenewPassword'].value;
   Module.module_Reconnect(connectionId,forceRenewPassword)
-    .then(function (response) {
-      utils.writeJson(res, response);
-    })
-    .catch(function (response) {
-      utils.writeJson(res, response);
-    });
-};
-
-module.exports.module_RoundtripMethodCall = function module_RoundtripMethodCall (req, res, next) {
-  var connectionId = req.swagger.params['connectionId'].value;
-  var methodName = req.swagger.params['methodName'].value;
-  var requestAndResponse = req.swagger.params['requestAndResponse'].value;
-  Module.module_RoundtripMethodCall(connectionId,methodName,requestAndResponse)
     .then(function (response) {
       utils.writeJson(res, response);
     })
@@ -277,6 +264,19 @@ module.exports.module_WaitForInputMessage = function module_WaitForInputMessage 
   var connectionId = req.swagger.params['connectionId'].value;
   var inputName = req.swagger.params['inputName'].value;
   Module.module_WaitForInputMessage(connectionId,inputName)
+    .then(function (response) {
+      utils.writeJson(res, response);
+    })
+    .catch(function (response) {
+      utils.writeJson(res, response);
+    });
+};
+
+module.exports.module_WaitForMethodAndReturnResponse = function module_WaitForMethodAndReturnResponse (req, res, next) {
+  var connectionId = req.swagger.params['connectionId'].value;
+  var methodName = req.swagger.params['methodName'].value;
+  var requestAndResponse = req.swagger.params['requestAndResponse'].value;
+  Module.module_WaitForMethodAndReturnResponse(connectionId,methodName,requestAndResponse)
     .then(function (response) {
       utils.writeJson(res, response);
     })

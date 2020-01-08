@@ -84,7 +84,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("ServiceInvokeDeviceMethod")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ServiceInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
+        public virtual IActionResult ServiceInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]MethodInvoke methodInvokeParameters)
         {
             // Replaced impl in merge
             Task<object> t = service_glue.InvokeDeviceMethodAsync(connectionId, deviceId, methodInvokeParameters);
@@ -108,7 +108,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("ServiceInvokeModuleMethod")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ServiceInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
+        public virtual IActionResult ServiceInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]MethodInvoke methodInvokeParameters)
         {
             // Replaced impl in merge
             Task<object> t = service_glue.InvokeModuleMethodAsync(connectionId, deviceId, moduleId, methodInvokeParameters);
@@ -128,7 +128,7 @@ namespace IO.Swagger.Controllers
         [Route("/service/{connectionId}/sendC2d/{deviceId}")]
         [ValidateModelState]
         [SwaggerOperation("ServiceSendC2d")]
-        public virtual IActionResult ServiceSendC2d([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object eventBody)
+        public virtual IActionResult ServiceSendC2d([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]EventBody eventBody)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);

@@ -3,7 +3,7 @@
 # full license information.
 import logging
 import convert
-import internal_wrapper_glue
+import internal_control_glue
 import heap_check
 from connection_status import ConnectionStatus
 from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodResponse
@@ -148,17 +148,18 @@ class Twin(object):
         logger.info("Waiting for desired property patch")
         patch = self.client.receive_twin_desired_properties_patch()
         logger.info("patch received")
-        return patch
+        logger.info(patch)
+        return {"desired": patch}
 
     def get_twin(self):
         logger.info("getting twin")
         twin = self.client.get_twin()
         logger.info("done getting twin")
-        return {"properties": twin}
+        return twin
 
     def send_twin_patch(self, props):
         logger.info("setting reported property patch")
-        self.client.patch_twin_reported_properties(props)
+        self.client.patch_twin_reported_properties(props.to_dict()["reported"])
         logger.info("done setting reported properties")
 
 
@@ -192,7 +193,12 @@ class InputsAndOutputs(object):
         logger.info("Waiting for input message")
         message = self.client.receive_message_on_input(input_name)
         logger.info("Message received")
-        return convert.incoming_message_to_test_script_object(message)
+        logger.info(message)
+        converted = convert.incoming_message_to_test_script_object(message)
+        logger.info("---")
+        logger.info(converted)
+        logger.info("---")
+        return converted
 
     def send_output_event(self, output_name, event_body):
         logger.info("sending output event")
@@ -205,15 +211,22 @@ class InputsAndOutputs(object):
 class InvokeMethods(object):
     def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
-        method_response = self.client.invoke_method(device_id=device_id, module_id=module_id, method_params=method_invoke_parameters)
+        method_response = self.client.invoke_method(
+            device_id=device_id,
+            module_id=module_id,
+            method_params=method_invoke_parameters,
+        )
         logger.info("Method Invoked and response received.")
         return method_response
 
     def invoke_device_method(self, device_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
-        method_response = self.client.invoke_method(device_id=device_id, method_params=method_invoke_parameters)
+        method_response = self.client.invoke_method(
+            device_id=device_id, method_params=method_invoke_parameters
+        )
         logger.info("Method Invoked and response received.")
         return method_response
+
 
 class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry):
     def __init__(self):
@@ -222,7 +235,7 @@ class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry):
 
 
 def InternalDeviceGlue():
-    if internal_wrapper_glue.do_async:
+    if internal_control_glue.do_async:
         logger.info("Creating InternalDeviceGlueAsync")
         return InternalDeviceGlueAsync()
     else:
@@ -246,7 +259,7 @@ class InternalModuleGlueSync(
 
 
 def InternalModuleGlue():
-    if internal_wrapper_glue.do_async:
+    if internal_control_glue.do_async:
         logger.info("Creating InternalModuleGlueAsync")
         return InternalModuleGlueAsync()
     else:

@@ -3,7 +3,7 @@
 # full license information.
 
 from .direct_iothub_apis import ModuleApi, DeviceApi, client_object_list
-from .direct_wrapper_api import WrapperApi
+from .direct_control_api import ControlApi
 
 
 def cleanup_test_objects():

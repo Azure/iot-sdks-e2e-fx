@@ -11,31 +11,15 @@ import asyncio
 wait_time_for_desired_property_updates = 5
 
 
-def get_patch_received(patch_received):
-    """
-    Helper function to take in recieved patch and extract the value of foo without returning error.
-    If the patch_received is not of the correct format foo_val will be set as a blank string and returned.
-    """
-    if "properties" in patch_received:
-        foo_val = patch_received["properties"]["desired"]["foo"]
-    elif "desired" in patch_received:
-        foo_val = patch_received["desired"]["foo"]
-    elif "foo" in patch_received:
-        foo_val = patch_received["foo"]
-    else:
-        foo_val = -1
-    return foo_val
-
-
-async def patch_desired_props(registry, client, props):
+async def patch_desired_props(registry, client, twin):
     if getattr(client, "module_id", None):
-        await registry.patch_module_twin(client.device_id, client.module_id, props)
+        await registry.patch_module_twin(client.device_id, client.module_id, twin)
     else:
-        await registry.patch_device_twin(client.device_id, props)
+        await registry.patch_device_twin(client.device_id, twin)
 
 
 async def wait_for_reported_properties_update(
-    *, reported_properties_sent, client, registry, logger
+    *, properties_sent, client, registry, logger
 ):
     """
     Helper function which uses the registry to wait for reported properties
@@ -49,15 +33,15 @@ async def wait_for_reported_properties_update(
         else:
             twin_received = await registry.get_device_twin(client.device_id)
 
-        reported_properties_received = twin_received["properties"]["reported"]
+        reported_properties_received = twin_received["reported"]
         if "$version" in reported_properties_received:
             del reported_properties_received["$version"]
         if "$metadata" in reported_properties_received:
             del reported_properties_received["$metadata"]
-        logger("expected:" + str(reported_properties_sent))
+        logger("expected:" + str(properties_sent["reported"]))
         logger("received:" + str(reported_properties_received))
 
-        if reported_properties_sent == reported_properties_received:
+        if properties_sent["reported"] == reported_properties_received:
             # test passed
             return
         else:
@@ -71,16 +55,12 @@ async def wait_for_desired_properties_patch(*, client, expected_twin, logger):
         patch_received = await client.wait_for_desired_property_patch()
         logger(
             "desired properties sent:     "
-            + str(expected_twin["properties"]["desired"]["foo"])
+            + str(expected_twin["desired"]["foo"])
         )
 
-        foo_val = get_patch_received(patch_received)
-        if foo_val == -1:
-            logger("patch received of invalid format!")
-            assert 0
-        logger("desired properties recieved: " + str(foo_val))
+        logger("desired properties received: " + str(patch_received["desired"]["foo"]))
 
-        if expected_twin["properties"]["desired"]["foo"] == foo_val:
+        if expected_twin["desired"]["foo"] == patch_received["desired"]["foo"]:
             logger("success")
             return
         else:
@@ -123,8 +103,8 @@ class TwinTests(object):
             logger("twin sent:    " + str(twin_sent))
             logger("twin received:" + str(twin_received))
             if (
-                twin_sent["properties"]["desired"]["foo"]
-                == twin_received["properties"]["desired"]["foo"]
+                twin_sent["desired"]["foo"]
+                == twin_received["desired"]["foo"]
             ):
                 # test passed
                 return
@@ -192,13 +172,13 @@ class TwinTests(object):
     async def test_twin_reported_props(
         self, client, logger, registry, sample_reported_props
     ):
-        reported_properties_sent = sample_reported_props()
+        properties_sent = sample_reported_props()
 
         await client.enable_twin()
-        await client.patch_twin(reported_properties_sent)
+        await client.patch_twin(properties_sent)
 
         await wait_for_reported_properties_update(
-            reported_properties_sent=reported_properties_sent,
+            properties_sent=properties_sent,
             client=client,
             registry=registry,
             logger=logger,
@@ -214,12 +194,12 @@ class TwinTests(object):
         await client.enable_twin()
 
         for _ in range(0, 5):
-            reported_properties_sent = sample_reported_props()
+            properties_sent = sample_reported_props()
 
-            await client.patch_twin(reported_properties_sent)
+            await client.patch_twin(properties_sent)
 
             await wait_for_reported_properties_update(
-                reported_properties_sent=reported_properties_sent,
+                properties_sent=properties_sent,
                 client=client,
                 registry=registry,
                 logger=logger,

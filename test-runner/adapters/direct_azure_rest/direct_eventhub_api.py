@@ -130,7 +130,7 @@ class EventHubApi:
                         "EventHubApi: received event: {}".format(batch[0].body_as_str())
                     )
                     received = batch[0].body_as_json()
-                    if expected:
+                    if expected is not None:
                         if json_is_same(expected, received):
                             adapter_config.logger(
                                 "EventHubApi: message received as expected"

@@ -7,10 +7,7 @@ from timeouts import timeouts
 from base_client_tests import BaseClientTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
-from method_tests import (
-    ReceiveMethodCallFromServiceTests,
-    ReceiveMethodCallFromModuleTests,
-)
+from method_tests import ReceiveMethodCallFromServiceTests
 from c2d_tests import C2dTests
 import dropped_connection_tests
 import drop_scenario

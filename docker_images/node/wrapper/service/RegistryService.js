@@ -44,12 +44,15 @@ exports.registry_Disconnect = function(connectionId) {
  *
  * connectionId String Id for the connection
  * deviceId String 
- * returns Object
+ * returns twin
  **/
 exports.registry_GetDeviceTwin = function(connectionId,deviceId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
-    examples['application/json'] = "{}";
+    examples['application/json'] = {
+  "desired" : "{}",
+  "reported" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -65,12 +68,15 @@ exports.registry_GetDeviceTwin = function(connectionId,deviceId) {
  * connectionId String Id for the connection
  * deviceId String 
  * moduleId String 
- * returns Object
+ * returns twin
  **/
 exports.registry_GetModuleTwin = function(connectionId,deviceId,moduleId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
-    examples['application/json'] = "{}";
+    examples['application/json'] = {
+  "desired" : "{}",
+  "reported" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -85,10 +91,10 @@ exports.registry_GetModuleTwin = function(connectionId,deviceId,moduleId) {
  *
  * connectionId String Id for the connection
  * deviceId String 
- * props Object 
+ * twin Twin 
  * no response value expected for this operation
  **/
-exports.registry_PatchDeviceTwin = function(connectionId,deviceId,props) {
+exports.registry_PatchDeviceTwin = function(connectionId,deviceId,twin) {
   return new Promise(function(resolve, reject) {
     resolve();
   });
@@ -101,10 +107,10 @@ exports.registry_PatchDeviceTwin = function(connectionId,deviceId,props) {
  * connectionId String Id for the connection
  * deviceId String 
  * moduleId String 
- * props Object 
+ * twin Twin 
  * no response value expected for this operation
  **/
-exports.registry_PatchModuleTwin = function(connectionId,deviceId,moduleId,props) {
+exports.registry_PatchModuleTwin = function(connectionId,deviceId,moduleId,twin) {
   return new Promise(function(resolve, reject) {
     resolve();
   });
@@ -120,3 +126,4 @@ exports.registry_PatchModuleTwin = function(connectionId,deviceId,moduleId,props
 //
 // WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 module.exports = require('../glue/glueUtils').replaceExports(module.exports, '../glue/registryGlue.js')
+

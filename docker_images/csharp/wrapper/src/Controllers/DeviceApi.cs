@@ -264,7 +264,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(string));
 
             string exampleJson = null;
-            exampleJson = "";
+            exampleJson = "\"\"";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<string>(exampleJson)
@@ -283,18 +283,18 @@ namespace IO.Swagger.Controllers
         [Route("/device/{connectionId}/twin")]
         [ValidateModelState]
         [SwaggerOperation("DeviceGetTwin")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Twin), description: "OK")]
         public virtual IActionResult DeviceGetTwin([FromRoute][Required]string connectionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
+            // return StatusCode(200, default(Twin));
 
             string exampleJson = null;
-            exampleJson = "\"{}\"";
+            exampleJson = "{\n  \"desired\" : \"{}\",\n  \"reported\" : \"{}\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
+            ? JsonConvert.DeserializeObject<Twin>(exampleJson)
+            : default(Twin);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -304,13 +304,13 @@ namespace IO.Swagger.Controllers
         /// </summary>
 
         /// <param name="connectionId">Id for the connection</param>
-        /// <param name="props"></param>
+        /// <param name="twin"></param>
         /// <response code="200">OK</response>
         [HttpPatch]
         [Route("/device/{connectionId}/twin")]
         [ValidateModelState]
         [SwaggerOperation("DevicePatchTwin")]
-        public virtual IActionResult DevicePatchTwin([FromRoute][Required]string connectionId, [FromBody]Object props)
+        public virtual IActionResult DevicePatchTwin([FromRoute][Required]string connectionId, [FromBody]Twin twin)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);
@@ -340,27 +340,6 @@ namespace IO.Swagger.Controllers
         }
 
         /// <summary>
-        /// Wait for a method call, verify the request, and return the response.
-        /// </summary>
-        /// <remarks>This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)</remarks>
-        /// <param name="connectionId">Id for the connection</param>
-        /// <param name="methodName">name of the method to handle</param>
-        /// <param name="requestAndResponse"></param>
-        /// <response code="200">OK</response>
-        [HttpPut]
-        [Route("/device/{connectionId}/roundtripMethodCall/{methodName}")]
-        [ValidateModelState]
-        [SwaggerOperation("DeviceRoundtripMethodCall")]
-        public virtual IActionResult DeviceRoundtripMethodCall([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]RoundtripMethodCallBody requestAndResponse)
-        {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Send an event
         /// </summary>
 
@@ -371,7 +350,7 @@ namespace IO.Swagger.Controllers
         [Route("/device/{connectionId}/event")]
         [ValidateModelState]
         [SwaggerOperation("DeviceSendEvent")]
-        public virtual IActionResult DeviceSendEvent([FromRoute][Required]string connectionId, [FromBody]Object eventBody)
+        public virtual IActionResult DeviceSendEvent([FromRoute][Required]string connectionId, [FromBody]EventBody eventBody)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);
@@ -390,18 +369,18 @@ namespace IO.Swagger.Controllers
         [Route("/device/{connectionId}/c2dMessage")]
         [ValidateModelState]
         [SwaggerOperation("DeviceWaitForC2dMessage")]
-        [SwaggerResponse(statusCode: 200, type: typeof(string), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(EventBody), description: "OK")]
         public virtual IActionResult DeviceWaitForC2dMessage([FromRoute][Required]string connectionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(string));
+            // return StatusCode(200, default(EventBody));
 
             string exampleJson = null;
-            exampleJson = "";
+            exampleJson = "{\n  \"horton_flags\" : \"{}\",\n  \"attributes\" : \"{}\",\n  \"body\" : \"{}\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<string>(exampleJson)
-            : default(string);
+            ? JsonConvert.DeserializeObject<EventBody>(exampleJson)
+            : default(EventBody);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -423,7 +402,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(string));
 
             string exampleJson = null;
-            exampleJson = "";
+            exampleJson = "\"\"";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<string>(exampleJson)
@@ -442,20 +421,41 @@ namespace IO.Swagger.Controllers
         [Route("/device/{connectionId}/twinDesiredPropPatch")]
         [ValidateModelState]
         [SwaggerOperation("DeviceWaitForDesiredPropertiesPatch")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Twin), description: "OK")]
         public virtual IActionResult DeviceWaitForDesiredPropertiesPatch([FromRoute][Required]string connectionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
+            // return StatusCode(200, default(Twin));
 
             string exampleJson = null;
-            exampleJson = "\"{}\"";
+            exampleJson = "{\n  \"desired\" : \"{}\",\n  \"reported\" : \"{}\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
+            ? JsonConvert.DeserializeObject<Twin>(exampleJson)
+            : default(Twin);
             //TODO: Change the data returned
             return new ObjectResult(example);
+        }
+
+        /// <summary>
+        /// Wait for a method call, verify the request, and return the response.
+        /// </summary>
+        /// <remarks>This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)</remarks>
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="methodName">name of the method to handle</param>
+        /// <param name="requestAndResponse"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/device/{connectionId}/waitForMethodAndReturnResponse/{methodName}")]
+        [ValidateModelState]
+        [SwaggerOperation("DeviceWaitForMethodAndReturnResponse")]
+        public virtual IActionResult DeviceWaitForMethodAndReturnResponse([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]MethodRequestAndResponse requestAndResponse)
+        {
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
     }
 }

@@ -6,8 +6,8 @@
     "title" : "Azure IOT End-to-End Test Wrapper Rest Api"
   },
   "tags" : [ {
-    "name" : "wrapper",
-    "description" : "APIs that transcend the individual SDKs"
+    "name" : "control",
+    "description" : "Control APIs that aren't tied to any specific SDK"
   }, {
     "name" : "module",
     "description" : "ModuleClient APIs"
@@ -27,11 +27,11 @@
   "schemes" : [ "https" ],
   "produces" : [ "application/json" ],
   "paths" : {
-    "/wrapper/capabilities" : {
+    "/control/capabilities" : {
       "get" : {
-        "tags" : [ "wrapper" ],
-        "summary" : "Get capabilities for this test wrapper",
-        "operationId" : "Wrapper_GetCapabilities",
+        "tags" : [ "control" ],
+        "summary" : "Get capabilities for the objects in this server",
+        "operationId" : "Control_GetCapabilities",
         "produces" : [ "application/json" ],
         "parameters" : [ ],
         "responses" : {
@@ -44,11 +44,11 @@
         }
       }
     },
-    "/wrapper/cleanup" : {
+    "/control/cleanup" : {
       "put" : {
-        "tags" : [ "wrapper" ],
+        "tags" : [ "control" ],
         "summary" : "verify that the clients have cleaned themselves up completely",
-        "operationId" : "Wrapper_Cleanup",
+        "operationId" : "Control_Cleanup",
         "parameters" : [ ],
         "responses" : {
           "200" : {
@@ -57,18 +57,18 @@
         }
       }
     },
-    "/wrapper/message" : {
+    "/control/message" : {
       "put" : {
-        "tags" : [ "wrapper" ],
+        "tags" : [ "control" ],
         "summary" : "log a message to output",
-        "operationId" : "Wrapper_LogMessage",
+        "operationId" : "Control_LogMessage",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
-          "name" : "msg",
+          "name" : "logMessage",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/logMessage"
           }
         } ],
         "responses" : {
@@ -78,11 +78,11 @@
         }
       }
     },
-    "/wrapper/flags" : {
+    "/control/flags" : {
       "put" : {
-        "tags" : [ "wrapper" ],
-        "summary" : "set flags for the wrapper to use",
-        "operationId" : "Wrapper_SetFlags",
+        "tags" : [ "control" ],
+        "summary" : "set flags for the objects in this server to use",
+        "operationId" : "Control_SetFlags",
         "consumes" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -99,11 +99,11 @@
         }
       }
     },
-    "/wrapper/command" : {
+    "/control/command" : {
       "put" : {
-        "tags" : [ "wrapper" ],
+        "tags" : [ "control" ],
         "summary" : "send an arbitrary command",
-        "operationId" : "Wrapper_SendCommand",
+        "operationId" : "Control_SendCommand",
         "parameters" : [ {
           "name" : "cmd",
           "in" : "query",
@@ -188,7 +188,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object"
+              "$ref" : "#/definitions/twin"
             }
           }
         }
@@ -216,10 +216,10 @@
           "type" : "string"
         }, {
           "in" : "body",
-          "name" : "props",
+          "name" : "twin",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/twin"
           }
         } ],
         "responses" : {
@@ -251,7 +251,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object"
+              "$ref" : "#/definitions/twin"
             }
           }
         }
@@ -274,10 +274,10 @@
           "type" : "string"
         }, {
           "in" : "body",
-          "name" : "props",
+          "name" : "twin",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/twin"
           }
         } ],
         "responses" : {
@@ -612,7 +612,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object"
+              "$ref" : "#/definitions/twin"
             }
           }
         }
@@ -630,10 +630,10 @@
           "type" : "string"
         }, {
           "in" : "body",
-          "name" : "props",
+          "name" : "twin",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/twin"
           }
         } ],
         "responses" : {
@@ -660,7 +660,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object"
+              "$ref" : "#/definitions/twin"
             }
           }
         }
@@ -671,7 +671,7 @@
         "tags" : [ "module" ],
         "summary" : "Send an event",
         "operationId" : "Module_SendEvent",
-        "consumes" : [ "text/json" ],
+        "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -683,7 +683,7 @@
           "name" : "eventBody",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/eventBody"
           }
         } ],
         "responses" : {
@@ -698,7 +698,7 @@
         "tags" : [ "module" ],
         "summary" : "Send an event to a module output",
         "operationId" : "Module_SendOutputEvent",
-        "consumes" : [ "text/json" ],
+        "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -715,7 +715,7 @@
           "name" : "eventBody",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/eventBody"
           }
         } ],
         "responses" : {
@@ -730,7 +730,7 @@
         "tags" : [ "module" ],
         "summary" : "Wait for a message on a module input",
         "operationId" : "Module_WaitForInputMessage",
-        "produces" : [ "text/json" ],
+        "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -747,18 +747,18 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "string"
+              "$ref" : "#/definitions/eventBody"
             }
           }
         }
       }
     },
-    "/module/{connectionId}/roundtripMethodCall/{methodName}" : {
+    "/module/{connectionId}/waitForMethodAndReturnResponse/{methodName}" : {
       "put" : {
         "tags" : [ "module" ],
         "summary" : "Wait for a method call, verify the request, and return the response.",
         "description" : "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
-        "operationId" : "Module_RoundtripMethodCall",
+        "operationId" : "Module_WaitForMethodAndReturnResponse",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -778,7 +778,7 @@
           "name" : "requestAndResponse",
           "required" : true,
           "schema" : {
-            "$ref" : "#/definitions/roundtripMethodCallBody"
+            "$ref" : "#/definitions/methodRequestAndResponse"
           }
         } ],
         "responses" : {
@@ -816,7 +816,7 @@
           "name" : "methodInvokeParameters",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/methodInvoke"
           }
         } ],
         "responses" : {
@@ -852,7 +852,7 @@
           "name" : "methodInvokeParameters",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/methodInvoke"
           }
         } ],
         "responses" : {
@@ -870,7 +870,7 @@
         "tags" : [ "module" ],
         "summary" : "get the current connection status",
         "operationId" : "Module_GetConnectionStatus",
-        "produces" : [ "text/json" ],
+        "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -893,7 +893,7 @@
         "tags" : [ "module" ],
         "summary" : "wait for the current connection status to change and return the changed status",
         "operationId" : "Module_WaitForConnectionStatusChange",
-        "produces" : [ "text/json" ],
+        "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -982,7 +982,7 @@
           "name" : "methodInvokeParameters",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/methodInvoke"
           }
         } ],
         "responses" : {
@@ -1018,7 +1018,7 @@
           "name" : "methodInvokeParameters",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/methodInvoke"
           }
         } ],
         "responses" : {
@@ -1036,7 +1036,7 @@
         "tags" : [ "service" ],
         "summary" : "Send a c2d message",
         "operationId" : "Service_SendC2d",
-        "consumes" : [ "text/json" ],
+        "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -1053,7 +1053,7 @@
           "name" : "eventBody",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/eventBody"
           }
         } ],
         "responses" : {
@@ -1288,12 +1288,12 @@
         }
       }
     },
-    "/device/{connectionId}/roundtripMethodCall/{methodName}" : {
+    "/device/{connectionId}/waitForMethodAndReturnResponse/{methodName}" : {
       "put" : {
         "tags" : [ "device" ],
         "summary" : "Wait for a method call, verify the request, and return the response.",
         "description" : "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
-        "operationId" : "Device_RoundtripMethodCall",
+        "operationId" : "Device_WaitForMethodAndReturnResponse",
         "consumes" : [ "application/json" ],
         "produces" : [ "application/json" ],
         "parameters" : [ {
@@ -1313,7 +1313,7 @@
           "name" : "requestAndResponse",
           "required" : true,
           "schema" : {
-            "$ref" : "#/definitions/roundtripMethodCallBody"
+            "$ref" : "#/definitions/methodRequestAndResponse"
           }
         } ],
         "responses" : {
@@ -1347,7 +1347,7 @@
         "tags" : [ "device" ],
         "summary" : "Send an event",
         "operationId" : "Device_SendEvent",
-        "consumes" : [ "text/json" ],
+        "consumes" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -1359,7 +1359,7 @@
           "name" : "eventBody",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/eventBody"
           }
         } ],
         "responses" : {
@@ -1374,7 +1374,7 @@
         "tags" : [ "device" ],
         "summary" : "Wait for a c2d message",
         "operationId" : "Device_WaitForC2dMessage",
-        "produces" : [ "text/json" ],
+        "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -1386,7 +1386,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "string"
+              "$ref" : "#/definitions/eventBody"
             }
           }
         }
@@ -1428,7 +1428,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object"
+              "$ref" : "#/definitions/twin"
             }
           }
         }
@@ -1446,10 +1446,10 @@
           "type" : "string"
         }, {
           "in" : "body",
-          "name" : "props",
+          "name" : "twin",
           "required" : true,
           "schema" : {
-            "type" : "object"
+            "$ref" : "#/definitions/twin"
           }
         } ],
         "responses" : {
@@ -1476,7 +1476,7 @@
           "200" : {
             "description" : "OK",
             "schema" : {
-              "type" : "object"
+              "$ref" : "#/definitions/twin"
             }
           }
         }
@@ -1487,7 +1487,7 @@
         "tags" : [ "device" ],
         "summary" : "get the current connection status",
         "operationId" : "Device_GetConnectionStatus",
-        "produces" : [ "text/json" ],
+        "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -1510,7 +1510,7 @@
         "tags" : [ "device" ],
         "summary" : "wait for the current connection status to change and return the changed status",
         "operationId" : "Device_WaitForConnectionStatusChange",
-        "produces" : [ "text/json" ],
+        "produces" : [ "application/json" ],
         "parameters" : [ {
           "name" : "connectionId",
           "in" : "path",
@@ -1628,6 +1628,16 @@
     }
   },
   "definitions" : {
+    "logMessage" : {
+      "type" : "object",
+      "properties" : {
+        "message" : {
+          "type" : "string",
+          "description" : "text of message"
+        }
+      },
+      "description" : "message from the test script to output to the log"
+    },
     "connectResponse" : {
       "type" : "object",
       "properties" : {
@@ -1641,6 +1651,26 @@
         "connectionId" : "connectionId"
       }
     },
+    "twin" : {
+      "type" : "object",
+      "properties" : {
+        "desired" : {
+          "type" : "object",
+          "description" : "desired properties",
+          "properties" : { }
+        },
+        "reported" : {
+          "type" : "object",
+          "description" : "reported properties",
+          "properties" : { }
+        }
+      },
+      "description" : "device twin or module twin",
+      "example" : {
+        "desired" : "{}",
+        "reported" : "{}"
+      }
+    },
     "certificate" : {
       "type" : "object",
       "properties" : {
@@ -1651,7 +1681,33 @@
       },
       "description" : "certificate in the body of a message"
     },
-    "roundtripMethodCallBody" : {
+    "eventBody" : {
+      "type" : "object",
+      "properties" : {
+        "body" : {
+          "type" : "object",
+          "description" : "payload to send to the method",
+          "properties" : { }
+        },
+        "horton_flags" : {
+          "type" : "object",
+          "description" : "flags used by horton",
+          "properties" : { }
+        },
+        "attributes" : {
+          "type" : "object",
+          "description" : "Message attributes",
+          "properties" : { }
+        }
+      },
+      "description" : "body for an invoming or outgoing event or message",
+      "example" : {
+        "horton_flags" : "{}",
+        "attributes" : "{}",
+        "body" : "{}"
+      }
+    },
+    "methodRequestAndResponse" : {
       "type" : "object",
       "properties" : {
         "requestPayload" : {
@@ -1670,6 +1726,29 @@
         }
       },
       "description" : "parameters and response for a sync method call"
+    },
+    "methodInvoke" : {
+      "type" : "object",
+      "properties" : {
+        "methodName" : {
+          "type" : "string",
+          "description" : "name of method to invoke"
+        },
+        "payload" : {
+          "type" : "object",
+          "description" : "payload to send to the method",
+          "properties" : { }
+        },
+        "responseTimeoutInSeconds" : {
+          "type" : "integer",
+          "description" : "number of seconds to wait for a response"
+        },
+        "connectTimeoutInSeconds" : {
+          "type" : "integer",
+          "description" : "number of seconds to wait for the module to connect"
+        }
+      },
+      "description" : "parameters used to invoke a method"
     }
   }
 }

@@ -143,18 +143,18 @@ class Twin(object):
             self.client.receive_twin_desired_properties_patch()
         )
         logger.info("patch received")
-        return patch
+        return {"desired": patch}
 
     def get_twin(self):
         logger.info("getting twin")
         twin = async_helper.run_coroutine_sync(self.client.get_twin())
         logger.info("done getting twin")
-        return {"properties": twin}
+        return twin
 
     def send_twin_patch(self, props):
         logger.info("setting reported property patch")
         async_helper.run_coroutine_sync(
-            self.client.patch_twin_reported_properties(props)
+            self.client.patch_twin_reported_properties(props.to_dict()["reported"])
         )
         logger.info("done setting reported properties")
 
@@ -208,15 +208,26 @@ class InputsAndOutputs(object):
 class InvokeMethods(object):
     def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
-        method_response = async_helper.run_coroutine_sync(self.client.invoke_method(device_id=device_id, module_id=module_id, method_params=method_invoke_parameters))
+        method_response = async_helper.run_coroutine_sync(
+            self.client.invoke_method(
+                device_id=device_id,
+                module_id=module_id,
+                method_params=method_invoke_parameters,
+            )
+        )
         logger.info("Method Invoked and response received.")
         return method_response
 
     def invoke_device_method(self, device_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
-        method_response = async_helper.run_coroutine_sync(self.client.invoke_method(device_id=device_id, method_params=method_invoke_parameters))
+        method_response = async_helper.run_coroutine_sync(
+            self.client.invoke_method(
+                device_id=device_id, method_params=method_invoke_parameters
+            )
+        )
         logger.info("Method Invoked and response received.")
         return method_response
+
 
 class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin):
     def __init__(self):

@@ -142,8 +142,8 @@ module.exports.device_GetTwin = function device_GetTwin (req, res, next) {
 
 module.exports.device_PatchTwin = function device_PatchTwin (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
-  var props = req.swagger.params['props'].value;
-  Device.device_PatchTwin(connectionId,props)
+  var twin = req.swagger.params['twin'].value;
+  Device.device_PatchTwin(connectionId,twin)
     .then(function (response) {
       utils.writeJson(res, response);
     })
@@ -156,19 +156,6 @@ module.exports.device_Reconnect = function device_Reconnect (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
   var forceRenewPassword = req.swagger.params['forceRenewPassword'].value;
   Device.device_Reconnect(connectionId,forceRenewPassword)
-    .then(function (response) {
-      utils.writeJson(res, response);
-    })
-    .catch(function (response) {
-      utils.writeJson(res, response);
-    });
-};
-
-module.exports.device_RoundtripMethodCall = function device_RoundtripMethodCall (req, res, next) {
-  var connectionId = req.swagger.params['connectionId'].value;
-  var methodName = req.swagger.params['methodName'].value;
-  var requestAndResponse = req.swagger.params['requestAndResponse'].value;
-  Device.device_RoundtripMethodCall(connectionId,methodName,requestAndResponse)
     .then(function (response) {
       utils.writeJson(res, response);
     })
@@ -214,6 +201,19 @@ module.exports.device_WaitForConnectionStatusChange = function device_WaitForCon
 module.exports.device_WaitForDesiredPropertiesPatch = function device_WaitForDesiredPropertiesPatch (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
   Device.device_WaitForDesiredPropertiesPatch(connectionId)
+    .then(function (response) {
+      utils.writeJson(res, response);
+    })
+    .catch(function (response) {
+      utils.writeJson(res, response);
+    });
+};
+
+module.exports.device_WaitForMethodAndReturnResponse = function device_WaitForMethodAndReturnResponse (req, res, next) {
+  var connectionId = req.swagger.params['connectionId'].value;
+  var methodName = req.swagger.params['methodName'].value;
+  var requestAndResponse = req.swagger.params['requestAndResponse'].value;
+  Device.device_WaitForMethodAndReturnResponse(connectionId,methodName,requestAndResponse)
     .then(function (response) {
       utils.writeJson(res, response);
     })

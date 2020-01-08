@@ -298,7 +298,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(string));
 
             string exampleJson = null;
-            exampleJson = "";
+            exampleJson = "\"\"";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<string>(exampleJson)
@@ -317,11 +317,11 @@ namespace IO.Swagger.Controllers
         [Route("/module/{connectionId}/twin")]
         [ValidateModelState]
         [SwaggerOperation("ModuleGetTwin")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Twin), description: "OK")]
         public virtual IActionResult ModuleGetTwin([FromRoute][Required]string connectionId)
         {
             // Replaced impl in merge
-            Task<object> t = module_glue.GetTwinAsync(connectionId);
+            Task<Models.Twin> t = module_glue.GetTwinAsync(connectionId);
             t.Wait();
             return new ObjectResult(t.Result);
         }
@@ -339,7 +339,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("ModuleInvokeDeviceMethod")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ModuleInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object methodInvokeParameters)
+        public virtual IActionResult ModuleInvokeDeviceMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]MethodInvoke methodInvokeParameters)
         {
             // Replaced impl in merge
             Task<Object> t = module_glue.InvokeDeviceMethodAsync(connectionId, deviceId, methodInvokeParameters);
@@ -361,7 +361,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("ModuleInvokeModuleMethod")]
         [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
-        public virtual IActionResult ModuleInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object methodInvokeParameters)
+        public virtual IActionResult ModuleInvokeModuleMethod([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]MethodInvoke methodInvokeParameters)
         {
             // Replaced impl in merge
             Task<object> t = module_glue.InvokeModuleMethodAsync(connectionId, deviceId, moduleId, methodInvokeParameters);
@@ -374,16 +374,16 @@ namespace IO.Swagger.Controllers
         /// </summary>
 
         /// <param name="connectionId">Id for the connection</param>
-        /// <param name="props"></param>
+        /// <param name="twin"></param>
         /// <response code="200">OK</response>
         [HttpPatch]
         [Route("/module/{connectionId}/twin")]
         [ValidateModelState]
         [SwaggerOperation("ModulePatchTwin")]
-        public virtual IActionResult ModulePatchTwin([FromRoute][Required]string connectionId, [FromBody]Object props)
+        public virtual IActionResult ModulePatchTwin([FromRoute][Required]string connectionId, [FromBody]Twin twin)
         {
             // Replaced impl in merge
-            module_glue.SendTwinPatchAsync(connectionId, props).Wait();
+            module_glue.SendTwinPatchAsync(connectionId, twin).Wait();
             return StatusCode(200);
         }
 
@@ -408,26 +408,6 @@ namespace IO.Swagger.Controllers
         }
 
         /// <summary>
-        /// Wait for a method call, verify the request, and return the response.
-        /// </summary>
-        /// <remarks>This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)</remarks>
-        /// <param name="connectionId">Id for the connection</param>
-        /// <param name="methodName">name of the method to handle</param>
-        /// <param name="requestAndResponse"></param>
-        /// <response code="200">OK</response>
-        [HttpPut]
-        [Route("/module/{connectionId}/roundtripMethodCall/{methodName}")]
-        [ValidateModelState]
-        [SwaggerOperation("ModuleRoundtripMethodCall")]
-        public virtual IActionResult ModuleRoundtripMethodCall([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]RoundtripMethodCallBody requestAndResponse)
-        {
-            // Replaced impl in merge
-            Task<object> t = module_glue.RoundtripMethodCallAsync(connectionId, methodName, requestAndResponse);
-            t.Wait();
-            return new ObjectResult(t.Result);
-        }
-
-        /// <summary>
         /// Send an event
         /// </summary>
 
@@ -438,10 +418,10 @@ namespace IO.Swagger.Controllers
         [Route("/module/{connectionId}/event")]
         [ValidateModelState]
         [SwaggerOperation("ModuleSendEvent")]
-        public virtual IActionResult ModuleSendEvent([FromRoute][Required]string connectionId, [FromBody]Object eventBody)
+        public virtual IActionResult ModuleSendEvent([FromRoute][Required]string connectionId, [FromBody]EventBody eventBody)
         {
             // Replaced impl in merge
-            module_glue.SendEventAsync(connectionId, (string)eventBody).Wait();
+            module_glue.SendEventAsync(connectionId, eventBody).Wait();
             return StatusCode(200);
         }
 
@@ -457,10 +437,10 @@ namespace IO.Swagger.Controllers
         [Route("/module/{connectionId}/outputEvent/{outputName}")]
         [ValidateModelState]
         [SwaggerOperation("ModuleSendOutputEvent")]
-        public virtual IActionResult ModuleSendOutputEvent([FromRoute][Required]string connectionId, [FromRoute][Required]string outputName, [FromBody]Object eventBody)
+        public virtual IActionResult ModuleSendOutputEvent([FromRoute][Required]string connectionId, [FromRoute][Required]string outputName, [FromBody]EventBody eventBody)
         {
             // Replaced impl in merge
-            module_glue.SendOutputEventAsync(connectionId, outputName, (string)eventBody).Wait();
+            module_glue.SendOutputEventAsync(connectionId, outputName, eventBody).Wait();
             return StatusCode(200);
         }
 
@@ -481,7 +461,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(string));
 
             string exampleJson = null;
-            exampleJson = "";
+            exampleJson = "\"\"";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<string>(exampleJson)
@@ -500,11 +480,11 @@ namespace IO.Swagger.Controllers
         [Route("/module/{connectionId}/twinDesiredPropPatch")]
         [ValidateModelState]
         [SwaggerOperation("ModuleWaitForDesiredPropertiesPatch")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Twin), description: "OK")]
         public virtual IActionResult ModuleWaitForDesiredPropertiesPatch([FromRoute][Required]string connectionId)
         {
             // Replaced impl in merge
-            Task<object> t = module_glue.WaitForDesiredPropertyPatchAsync(connectionId);
+            Task<Models.Twin> t = module_glue.WaitForDesiredPropertyPatchAsync(connectionId);
             t.Wait();
             return new ObjectResult(t.Result);
         }
@@ -520,11 +500,31 @@ namespace IO.Swagger.Controllers
         [Route("/module/{connectionId}/inputMessage/{inputName}")]
         [ValidateModelState]
         [SwaggerOperation("ModuleWaitForInputMessage")]
-        [SwaggerResponse(statusCode: 200, type: typeof(string), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(EventBody), description: "OK")]
         public virtual IActionResult ModuleWaitForInputMessage([FromRoute][Required]string connectionId, [FromRoute][Required]string inputName)
         {
             // Replaced impl in merge
-            Task<object> t = module_glue.WaitForInputMessageAsync(connectionId, inputName);
+            Task<Models.EventBody> t = module_glue.WaitForInputMessageAsync(connectionId, inputName);
+            t.Wait();
+            return new ObjectResult(t.Result);
+        }
+
+        /// <summary>
+        /// Wait for a method call, verify the request, and return the response.
+        /// </summary>
+        /// <remarks>This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)</remarks>
+        /// <param name="connectionId">Id for the connection</param>
+        /// <param name="methodName">name of the method to handle</param>
+        /// <param name="requestAndResponse"></param>
+        /// <response code="200">OK</response>
+        [HttpPut]
+        [Route("/module/{connectionId}/waitForMethodAndReturnResponse/{methodName}")]
+        [ValidateModelState]
+        [SwaggerOperation("ModuleWaitForMethodAndReturnResponse")]
+        public virtual IActionResult ModuleWaitForMethodAndReturnResponse([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]MethodRequestAndResponse requestAndResponse)
+        {
+            // Replaced impl in merge
+            Task<object> t = module_glue.RoundtripMethodCallAsync(connectionId, methodName, requestAndResponse);
             t.Wait();
             return new ObjectResult(t.Result);
         }

@@ -25,10 +25,12 @@
 #include <corvusoft/restbed/resource.hpp>
 #include <corvusoft/restbed/service.hpp>
 
-// Removed 2 lines in merge
+// removed 5 lines in merge
 // #include "ConnectResponse.h"
+// #include "EventBody.h"
+// #include "MethodInvoke.h"
 // #include "Object.h"
-#include <string>
+// #include <string>
 
 namespace io {
 namespace swagger {

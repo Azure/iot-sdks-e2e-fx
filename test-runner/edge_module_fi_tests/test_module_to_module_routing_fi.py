@@ -29,7 +29,8 @@ receive_timeout = 60
 
 
 @pytest.mark.callsSendOutputEvent
-async def test_module_to_friend_routing(test_string):
+async def test_module_to_friend_routing(sample_payload):
+    payload = sample_payload()
     test_client = connections.connect_test_module_client()
     friend_client = connections.connect_friend_module_client()
     await friend_client.enable_input_messages()
@@ -38,10 +39,10 @@ async def test_module_to_friend_routing(test_string):
         friend_client.wait_for_input_event(test_to_friend_input)
     )
 
-    await test_client.send_output_event(test_to_friend_output, test_string)
+    await test_client.send_output_event(test_to_friend_output, payload)
 
     received_message = await friend_input_future
-    assert received_message == test_string
+    assert received_message == payload
 
     friend_client.disconnect_sync()
     test_client.disconnect_sync()
@@ -49,7 +50,8 @@ async def test_module_to_friend_routing(test_string):
 
 @pytest.mark.testgroup_edgehub_fault_injection
 @pytest.mark.receivesInputMessages
-async def test_friend_to_module_routing_fi(test_string):
+async def test_friend_to_module_routing_fi(sample_payload):
+    payload = sample_payload()
 
     test_client = connections.connect_test_module_client()
     await test_client.enable_input_messages()
@@ -59,10 +61,10 @@ async def test_friend_to_module_routing_fi(test_string):
         test_client.wait_for_input_event(friend_to_test_input)
     )
 
-    await friend_client.send_output_event(friend_to_test_output, test_string)
+    await friend_client.send_output_event(friend_to_test_output, payload)
 
     received_message = await test_input_future
-    assert received_message == test_string
+    assert received_message == payload
 
     friend_client.disconnect_sync()
     test_client.disconnect_sync()

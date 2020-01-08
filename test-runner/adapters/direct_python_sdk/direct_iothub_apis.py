@@ -122,7 +122,7 @@ class HandleMethods(object):
         self.glue.enable_methods()
 
     @emulate_async
-    def roundtrip_method_call(
+    def wait_for_method_and_return_response(
         self, method_name, status_code, request_payload, response_payload
     ):
         class RequestAndResponse(object):
@@ -132,7 +132,7 @@ class HandleMethods(object):
         request_and_response.request_payload = request_payload
         request_and_response.response_payload = response_payload
         request_and_response.status_code = status_code
-        return self.glue.roundtrip_method_call(method_name, request_and_response)
+        return self.glue.wait_for_method_and_return_response(method_name, request_and_response)
 
 
 class InvokeMethods(object):

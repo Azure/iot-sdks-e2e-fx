@@ -16,6 +16,7 @@ def deploy_for_iotedge(testMod_image):
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
+    settings.horton.language = utilities.get_language_from_image_name(testMod_image)
 
     settings.iotedge.hostname = utilities.get_computer_name()
     device_id_base = utilities.get_random_device_name()
@@ -56,6 +57,7 @@ def deploy_for_iothub(testMod_image):
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
+    settings.horton.language = utilities.get_language_from_image_name(testMod_image)
 
     device_id_base = utilities.get_random_device_name()
 

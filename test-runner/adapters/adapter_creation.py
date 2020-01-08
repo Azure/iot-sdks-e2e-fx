@@ -45,7 +45,7 @@ def create_direct_python_adapter(api_surface):
     elif api_surface == "device_client":
         return direct_python_sdk.DeviceApi()
     elif api_surface == "wrapper":
-        return direct_python_sdk.WrapperApi()
+        return direct_python_sdk.ControlApi()
     else:
         raise ValueError("direct_python adapter for {} invalid".format(api_surface))
 
@@ -67,7 +67,7 @@ def create_rest_adapter(adapter_address, api_surface):
     elif api_surface == "device_client":
         return rest.DeviceApi(adapter_address)
     elif api_surface == "wrapper":
-        return rest.WrapperApi(adapter_address)
+        return rest.ControlApi(adapter_address)
     elif api_surface == "service":
         return rest.ServiceApi(adapter_address)
     elif api_surface == "registry":

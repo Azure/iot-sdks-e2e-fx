@@ -5,6 +5,7 @@ import time
 from .generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_api import (
     AzureIOTEndToEndTestWrapperRestApi,
 )
+from .generated.e2erestapi.models import MethodInvoke, EventBody
 from .. import adapter_config
 from .rest_decorators import log_entry_and_exit
 from ..decorators import emulate_async
@@ -141,7 +142,7 @@ class Twin(object):
     def get_twin(self):
         return self.rest_endpoint.get_twin(
             self.connection_id, timeout=adapter_config.default_api_timeout
-        )
+        ).as_dict()
 
     @emulate_async
     @log_entry_and_exit
@@ -155,7 +156,7 @@ class Twin(object):
     def wait_for_desired_property_patch(self):
         return self.rest_endpoint.wait_for_desired_properties_patch(
             self.connection_id, timeout=adapter_config.default_api_timeout
-        )
+        ).as_dict()
 
 
 class HandleMethods(object):
@@ -167,14 +168,14 @@ class HandleMethods(object):
         )
 
     """
-    roundtrip_method_call
+    wait_for_method_and_return_response
     Description: This is a poorly named method. It is essentially create a
     method callback and then wait for a method call.
     """
 
     @emulate_async
     @log_entry_and_exit
-    def roundtrip_method_call(
+    def wait_for_method_and_return_response(
         self, method_name, status_code, request_payload, response_payload
     ):
         request_and_response = {
@@ -182,7 +183,7 @@ class HandleMethods(object):
             "responsePayload": response_payload,
             "statusCode": status_code,
         }
-        return self.rest_endpoint.roundtrip_method_call(
+        return self.rest_endpoint.wait_for_method_and_return_response(
             self.connection_id,
             method_name,
             request_and_response,
@@ -195,7 +196,9 @@ class Telemetry(object):
     @log_entry_and_exit
     def send_event(self, body):
         self.rest_endpoint.send_event(
-            self.connection_id, body, timeout=adapter_config.default_api_timeout
+            self.connection_id,
+            EventBody(body=body),
+            timeout=adapter_config.default_api_timeout,
         )
 
 
@@ -206,7 +209,7 @@ class InputsAndOutputs(object):
         self.rest_endpoint.send_output_event(
             self.connection_id,
             output_name,
-            body,
+            EventBody(body=body),
             timeout=adapter_config.default_api_timeout,
         )
 
@@ -229,21 +232,41 @@ class InvokeMethods(object):
     @emulate_async
     @log_entry_and_exit
     def call_module_method(self, device_id, module_id, method_invoke_parameters):
+        method_invoke = MethodInvoke(
+            method_name=method_invoke_parameters["methodName"],
+            payload=method_invoke_parameters["payload"],
+            response_timeout_in_seconds=method_invoke_parameters[
+                "responseTimeoutInSeconds"
+            ],
+            connect_timeout_in_seconds=method_invoke_parameters[
+                "connectTimeoutInSeconds"
+            ],
+        )
         return self.rest_endpoint.invoke_module_method(
             self.connection_id,
             device_id,
             module_id,
-            method_invoke_parameters,
+            method_invoke,
             timeout=adapter_config.default_api_timeout,
         )
 
     @emulate_async
     @log_entry_and_exit
     def call_device_method(self, device_id, method_invoke_parameters):
+        method_invoke = MethodInvoke(
+            method_name=method_invoke_parameters["methodName"],
+            payload=method_invoke_parameters["payload"],
+            response_timeout_in_seconds=method_invoke_parameters[
+                "responseTimeoutInSeconds"
+            ],
+            connect_timeout_in_seconds=method_invoke_parameters[
+                "connectTimeoutInSeconds"
+            ],
+        )
         return self.rest_endpoint.invoke_device_method(
             self.connection_id,
             device_id,
-            method_invoke_parameters,
+            method_invoke,
             timeout=adapter_config.default_api_timeout,
         )
 
@@ -289,7 +312,7 @@ class ServiceSideOfTwin(object):
             device_id,
             module_id,
             timeout=adapter_config.default_api_timeout,
-        )
+        ).as_dict()
 
     @emulate_async
     @log_entry_and_exit
@@ -307,7 +330,7 @@ class ServiceSideOfTwin(object):
     def get_device_twin(self, device_id):
         return self.rest_endpoint.get_device_twin(
             self.connection_id, device_id, timeout=adapter_config.default_api_timeout
-        )
+        ).as_dict()
 
     @emulate_async
     @log_entry_and_exit
@@ -324,10 +347,10 @@ class DeviceApi(
     Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, AbstractDeviceApi
 ):
     def __init__(self, hostname):
-        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+        self.control_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
             hostname
-        ).wrapper
-        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
+        ).control
+        self.control_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).device
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
@@ -345,10 +368,10 @@ class ModuleApi(
     AbstractModuleApi,
 ):
     def __init__(self, hostname):
-        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+        self.control_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
             hostname
-        ).wrapper
-        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
+        ).control
+        self.control_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).module
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
@@ -356,10 +379,10 @@ class ModuleApi(
 
 class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryApi):
     def __init__(self, hostname):
-        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+        self.control_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
             hostname
-        ).wrapper
-        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
+        ).control
+        self.control_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).registry
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""
@@ -367,10 +390,10 @@ class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryA
 
 class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
     def __init__(self, hostname):
-        self.wrapper_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
+        self.control_rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(
             hostname
-        ).wrapper
-        self.wrapper_rest_endpoint.config.retry_policy.retries = 0
+        ).control
+        self.control_rest_endpoint.config.retry_policy.retries = 0
         self.rest_endpoint = AzureIOTEndToEndTestWrapperRestApi(hostname).service
         self.rest_endpoint.config.retry_policy.retries = 0
         self.connection_id = ""

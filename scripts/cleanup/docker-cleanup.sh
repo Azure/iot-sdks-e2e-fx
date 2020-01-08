@@ -12,10 +12,10 @@ sudo docker rm $(docker ps -a -f status=exited -q)
 echo "removing containers that were created but never used"
 sudo docker rm $(docker ps -a -f status=created -q)
 
-echo "removing dangling images"
-sudo docker rmi $(docker images -q -f dangling=true)
+echo "removing all unused images"
+sudo docker rmi -f $(docker images -q)
 
 echo "starting registry again"
-${script_dir}/setup-registry.sh
+${script_dir}/../setup/setup-registry.sh
 [ $? -eq 0 ] || { echo "setup-registry failed"; exit 1; }
 

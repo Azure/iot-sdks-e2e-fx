@@ -4,9 +4,9 @@
 import pytest
 import connections
 import adapters
+import json
 from adapters import adapter_config
-from utilities import random_string
-from sample_content import next_random_string
+from utilities import random_string, next_random_string
 from horton_settings import settings
 
 # BKTODO: replace test content fixtures with generator fixtures
@@ -14,28 +14,18 @@ from horton_settings import settings
 
 
 @pytest.fixture
-def test_string():
-    return random_string("String1")
+def test_payload(sample_payload):
+    return sample_payload()
 
 
 @pytest.fixture
-def test_string_2():
-    return random_string("String2")
+def test_object_stringified():
+    return '{ "message": "' + next_random_string("tos") + '" }'
 
 
 @pytest.fixture
-def test_payload(test_string):
-    return '{ "message": "' + test_string + '" }'
-
-
-@pytest.fixture
-def test_object_stringified(test_string):
-    return '{ "message": "' + test_string + '" }'
-
-
-@pytest.fixture
-def test_object_stringified_2(test_string_2):
-    return '{ "message": "' + test_string_2 + '" }'
+def test_object_stringified_2():
+    return '{ "message": "' + next_random_string("tos2") + '" }'
 
 
 @pytest.fixture(scope="session")
@@ -127,21 +117,46 @@ def service(logger):
 
 @pytest.fixture
 def sample_reported_props():
-    return lambda: {"foo": next_random_string("reported props")}
+    return lambda: {"reported": {"foo": next_random_string("reported props")}}
 
 
 @pytest.fixture
 def sample_desired_props():
-    return lambda: {
-        "properties": {"desired": {"foo": next_random_string("desired props")}}
-    }
+    return lambda: {"desired": {"foo": next_random_string("desired props")}}
+
+
+zero_size_payload = {}
+minimum_payload = {"a": {}}
+
+
+def make_payload(size):
+    wrapper_overhead = len(json.dumps(minimum_payload))
+    if size == 0:
+        return zero_size_payload
+    elif size <= wrapper_overhead:
+        return minimum_payload
+    else:
+        return {"payload": random_string(length=size - wrapper_overhead - 7)}
 
 
 @pytest.fixture
 def sample_payload():
-    return lambda: next_random_string("payload")
+    return lambda: {"payload": next_random_string("payload")}
 
 
 @pytest.fixture
 def net_control():
     return settings.net_control.api
+
+
+@pytest.fixture(
+    scope="function",
+    params=[
+        pytest.param({}, id="empty object"),
+        pytest.param(make_payload(1), id="smallest object"),
+        pytest.param(make_payload(20), id="small object"),
+        pytest.param(make_payload(65535), id="64K object"),
+    ],
+)
+def telemetry_payload(request):
+    return request.param

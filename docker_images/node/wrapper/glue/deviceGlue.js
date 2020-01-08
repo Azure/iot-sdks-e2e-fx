@@ -217,8 +217,8 @@ exports.device_Reconnect = function(connectionId,forceRenewPassword) {
  * requestAndResponse RoundtripMethodCallBody 
  * no response value expected for this operation
  **/
-exports.device_RoundtripMethodCall = function(connectionId,methodName,requestAndResponse) {
-  return internalGlue.internal_RoundtripMethodCall(objectCache, connectionId, methodName, requestAndResponse);
+exports.device_WaitForMethodAndReturnResponse = function(connectionId,methodName,requestAndResponse) {
+  return internalGlue.internal_WaitForMethodAndReturnResponse(objectCache, connectionId, methodName, requestAndResponse);
 }
 
 

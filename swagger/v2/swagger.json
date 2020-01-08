@@ -13,8 +13,8 @@
   ],
   "tags": [
     {
-      "name": "wrapper",
-      "description": "APIs that transcend the individual SDKs"
+      "name": "control",
+      "description": "Control APIs that aren't tied to any specific SDK"
     },
     {
       "name": "module",
@@ -38,20 +38,20 @@
     }
   ],
   "paths": {
-    "/wrapper/capabilities": {
-      "$ref": "wrapper.json#/capabilities"
+    "/control/capabilities": {
+      "$ref": "control.json#/capabilities"
     },
-    "/wrapper/cleanup": {
-      "$ref": "wrapper.json#/cleanup"
+    "/control/cleanup": {
+      "$ref": "control.json#/cleanup"
     },
-    "/wrapper/message": {
-      "$ref": "wrapper.json#/message"
+    "/control/message": {
+      "$ref": "control.json#/message"
     },
-    "/wrapper/flags": {
-      "$ref": "wrapper.json#/flags"
+    "/control/flags": {
+      "$ref": "control.json#/flags"
     },
-    "/wrapper/command": {
-      "$ref": "wrapper.json#/command"
+    "/control/command": {
+      "$ref": "control.json#/command"
     },
     "/registry/connect": {
       "$ref": "registry.json#/connect"
@@ -119,8 +119,8 @@
     "/module/{connectionId}/inputMessage/{inputName}": {
       "$ref": "module.json#/inputMessage"
     },
-    "/module/{connectionId}/roundtripMethodCall/{methodName}": {
-      "$ref": "module.json#/roundtripMethodCall"
+    "/module/{connectionId}/waitForMethodAndReturnResponse/{methodName}": {
+      "$ref": "module.json#/waitForMethodAndReturnResponse"
     },
     "/module/{connectionId}/moduleMethod/{deviceId}/{moduleId}": {
       "$ref": "module.json#/moduleMethod"
@@ -176,8 +176,8 @@
     "/device/{connectionId}/enableMethods": {
       "$ref": "device.json#/enableMethods"
     },
-    "/device/{connectionId}/roundtripMethodCall/{methodName}": {
-      "$ref": "device.json#/roundtripMethodCall"
+    "/device/{connectionId}/waitForMethodAndReturnResponse/{methodName}": {
+      "$ref": "device.json#/waitForMethodAndReturnResponse"
     },
     "/device/{connectionId}/enableC2dMessages": {
       "$ref": "device.json#/enableC2dMessages"

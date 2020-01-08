@@ -9,7 +9,7 @@ from msrest.service_client import ServiceClient
 from msrest import Configuration, Serializer, Deserializer
 from .version import VERSION
 from msrest.exceptions import HttpOperationError
-from .operations.wrapper_operations import WrapperOperations
+from .operations.control_operations import ControlOperations
 from .operations.registry_operations import RegistryOperations
 from .operations.module_operations import ModuleOperations
 from .operations.service_operations import ServiceOperations
@@ -43,8 +43,8 @@ class AzureIOTEndToEndTestWrapperRestApi(object):
     :ivar config: Configuration for client.
     :vartype config: AzureIOTEndToEndTestWrapperRestApiConfiguration
 
-    :ivar wrapper: Wrapper operations
-    :vartype wrapper: e2erestapi.operations.WrapperOperations
+    :ivar control: Control operations
+    :vartype control: e2erestapi.operations.ControlOperations
     :ivar registry: Registry operations
     :vartype registry: e2erestapi.operations.RegistryOperations
     :ivar module: Module operations
@@ -70,7 +70,7 @@ class AzureIOTEndToEndTestWrapperRestApi(object):
         self._serialize = Serializer(client_models)
         self._deserialize = Deserializer(client_models)
 
-        self.wrapper = WrapperOperations(
+        self.control = ControlOperations(
             self._client, self.config, self._serialize, self._deserialize)
         self.registry = RegistryOperations(
             self._client, self.config, self._serialize, self._deserialize)

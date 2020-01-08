@@ -65,8 +65,8 @@ exports.service_Disconnect = function(connectionId) {
  * call the given method on the given device
  *
  * connectionId String Id for the connection
- * deviceId String 
- * methodInvokeParameters Object 
+ * deviceId String
+ * methodInvokeParameters Object
  * returns Object
  **/
 exports.service_InvokeDeviceMethod = function(connectionId,deviceId,methodInvokeParameters) {
@@ -87,9 +87,9 @@ exports.service_InvokeDeviceMethod = function(connectionId,deviceId,methodInvoke
  * call the given method on the given module
  *
  * connectionId String Id for the connection
- * deviceId String 
- * moduleId String 
- * methodInvokeParameters Object 
+ * deviceId String
+ * moduleId String
+ * methodInvokeParameters Object
  * returns Object
  **/
 exports.service_InvokeModuleMethod = function(connectionId,deviceId,moduleId,methodInvokeParameters) {
@@ -110,7 +110,7 @@ exports.service_InvokeModuleMethod = function(connectionId,deviceId,moduleId,met
  * Send a c2d message
  *
  * connectionId String Id for the connection
- * eventBody Object 
+ * eventBody Object
  * no response value expected for this operation
  **/
 exports.service_SendC2d = function(connectionId,deviceId,eventBody) {
@@ -118,7 +118,7 @@ exports.service_SendC2d = function(connectionId,deviceId,eventBody) {
   return glueUtils.makePromise('service_SendC2d', function(callback) {
     var client = objectCache.getObject(connectionId);
     debug(`calling ServiceClient.send`);
-    client.send(deviceId, new Message(eventBody), function(err, result) {
+    client.send(deviceId, new Message(eventBody.body), function(err, result) {
       glueUtils.debugFunctionResult('ServiceClient.send', err);
       callback(err, result);
     });

@@ -5,12 +5,20 @@
 # regenerated.
 # --------------------------------------------------------------------------
 
+from .log_message import LogMessage
 from .connect_response import ConnectResponse
+from .twin import Twin
 from .certificate import Certificate
-from .roundtrip_method_call_body import RoundtripMethodCallBody
+from .event_body import EventBody
+from .method_request_and_response import MethodRequestAndResponse
+from .method_invoke import MethodInvoke
 
 __all__ = [
+    'LogMessage',
     'ConnectResponse',
+    'Twin',
     'Certificate',
-    'RoundtripMethodCallBody',
+    'EventBody',
+    'MethodRequestAndResponse',
+    'MethodInvoke',
 ]

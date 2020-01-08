@@ -3,7 +3,10 @@ import six
 
 from swagger_server.models.certificate import Certificate  # noqa: E501
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
-from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
+from swagger_server.models.event_body import EventBody  # noqa: E501
+from swagger_server.models.method_invoke import MethodInvoke  # noqa: E501
+from swagger_server.models.method_request_and_response import MethodRequestAndResponse  # noqa: E501
+from swagger_server.models.twin import Twin  # noqa: E501
 from swagger_server import util
 
 # added 3 lines in merge
@@ -219,7 +222,7 @@ def module_get_twin(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: Twin
     """
     # changed from return 'do some magic!'
     return module_glue.get_twin(connectionId)
@@ -235,7 +238,7 @@ def module_invoke_device_method(connectionId, deviceId, methodInvokeParameters):
     :param deviceId: 
     :type deviceId: str
     :param methodInvokeParameters: 
-    :type methodInvokeParameters: 
+    :type methodInvokeParameters: dict | bytes
 
     :rtype: object
     """
@@ -255,7 +258,7 @@ def module_invoke_module_method(connectionId, deviceId, moduleId, methodInvokePa
     :param moduleId: 
     :type moduleId: str
     :param methodInvokeParameters: 
-    :type methodInvokeParameters: 
+    :type methodInvokeParameters: dict | bytes
 
     :rtype: object
     """
@@ -265,20 +268,22 @@ def module_invoke_module_method(connectionId, deviceId, moduleId, methodInvokePa
     )
 
 
-def module_patch_twin(connectionId, props):  # noqa: E501
+def module_patch_twin(connectionId, twin):  # noqa: E501
     """Updates the device twin
 
      # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param props: 
-    :type props: 
+    :param twin: 
+    :type twin: dict | bytes
 
     :rtype: None
     """
+    if connexion.request.is_json:
+        twin = Twin.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return module_glue.send_twin_patch(connectionId, props)
+    return module_glue.send_twin_patch(connectionId, twin)
 
 
 def module_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
@@ -297,26 +302,6 @@ def module_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
     module_glue.reconnect(forceRenewPassword)
 
 
-def module_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
-    """Wait for a method call, verify the request, and return the response.
-
-    This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call) # noqa: E501
-
-    :param connectionId: Id for the connection
-    :type connectionId: str
-    :param methodName: name of the method to handle
-    :type methodName: str
-    :param requestAndResponse: 
-    :type requestAndResponse: dict | bytes
-
-    :rtype: None
-    """
-    if connexion.request.is_json:
-        requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    return module_glue.roundtrip_method_call(connectionId, methodName, requestAndResponse)
-
-
 def module_send_event(connectionId, eventBody):  # noqa: E501
     """Send an event
 
@@ -325,10 +310,12 @@ def module_send_event(connectionId, eventBody):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
     :param eventBody: 
-    :type eventBody: 
+    :type eventBody: dict | bytes
 
     :rtype: None
     """
+    if connexion.request.is_json:
+        eventBody = EventBody.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
     module_glue.send_event(connectionId, eventBody)
 
@@ -343,10 +330,12 @@ def module_send_output_event(connectionId, outputName, eventBody):  # noqa: E501
     :param outputName: 
     :type outputName: str
     :param eventBody: 
-    :type eventBody: 
+    :type eventBody: dict | bytes
 
     :rtype: None
     """
+    if connexion.request.is_json:
+        eventBody = EventBody.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
     module_glue.send_output_event(connectionId, outputName, eventBody)
 
@@ -373,7 +362,7 @@ def module_wait_for_desired_properties_patch(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: Twin
     """
     # changed from return 'do some magic!'
     return module_glue.wait_for_desired_property_patch(connectionId)
@@ -389,7 +378,27 @@ def module_wait_for_input_message(connectionId, inputName):  # noqa: E501
     :param inputName: 
     :type inputName: str
 
-    :rtype: str
+    :rtype: EventBody
     """
     # changed from return 'do some magic!'
     return module_glue.wait_for_input_message(connectionId, inputName)
+
+
+def module_wait_for_method_and_return_response(connectionId, methodName, requestAndResponse):  # noqa: E501
+    """Wait for a method call, verify the request, and return the response.
+
+    This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call) # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param methodName: name of the method to handle
+    :type methodName: str
+    :param requestAndResponse: 
+    :type requestAndResponse: dict | bytes
+
+    :rtype: None
+    """
+    if connexion.request.is_json:
+        requestAndResponse = MethodRequestAndResponse.from_dict(connexion.request.get_json())  # noqa: E501
+    # changed from return 'do some magic!'
+    return module_glue.roundtrip_method_call(connectionId, methodName, requestAndResponse)

@@ -19,7 +19,6 @@
 #include "iothubtransportmqtt_websockets.h"
 #include "iothub.h"
 #include "parson.h"
-
 #include "GlueUtils.h"
 #include "InternalGlue.h"
 
@@ -255,11 +254,14 @@ void twinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsigned char *pa
     {
         // the device twin update is a total twin update
         response->current_complete = string(reinterpret_cast<const char *>(payLoad), size);
+        cout << "complete twin:" << response->current_complete << endl;
     }
     else if (update_state == DEVICE_TWIN_UPDATE_PARTIAL)
     {
         // the device twin update is a patch, so we should only patch
         response->current_complete = add_patch_to_twin(response->current_complete, response->latest_payload);
+        cout << "latest payload:" << response->latest_payload << endl;
+        cout << "complete twin: " << response->current_complete << endl;
         response->cvp.notify_one();
     }
     response->cv.notify_one();
@@ -301,6 +303,11 @@ void sendEventCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userConte
     cv->notify_one();
 }
 
+IOTHUB_MESSAGE_HANDLE stringToMessage(string eventBody)
+{
+    return IoTHubMessage_CreateFromString(getJsonSubObject(eventBody, "body").c_str());
+}
+
 void InternalGlue::SendEvent(string connectionId, string eventBody)
 {
     cout << "InternalGlue::SendEvent for " << connectionId << endl;
@@ -314,7 +321,7 @@ void InternalGlue::SendEvent(string connectionId, string eventBody)
     mutex m;
     condition_variable cv;
 
-    IOTHUB_MESSAGE_HANDLE message = IoTHubMessage_CreateFromString(eventBody.c_str());
+    IOTHUB_MESSAGE_HANDLE message = stringToMessage(eventBody);
     cout << "calling IoTHubClient_SendEventAsync" << endl;
     IOTHUB_CLIENT_RESULT ret = IoTHubModuleClient_SendEventAsync(client, message, sendEventCallback, &cv);
     ThrowIfFailed(ret, "IoTHubModuleClient_SendEventAsync");
@@ -340,7 +347,8 @@ void InternalGlue::SendOutputEvent(string connectionId, string outputName, strin
     mutex m;
     condition_variable cv;
 
-    IOTHUB_MESSAGE_HANDLE message = IoTHubMessage_CreateFromString(eventBody.c_str());
+    IOTHUB_MESSAGE_HANDLE message = stringToMessage(eventBody);
+
     cout << "calling IoTHubClient_SendEventAsync" << endl;
     IOTHUB_CLIENT_RESULT ret = IoTHubModuleClient_SendEventToOutputAsync(client, message, outputName.c_str(), sendEventCallback, &cv);
     ThrowIfFailed(ret, "IoTHubModuleClient_SendEventToOutputAsync");
@@ -414,7 +422,7 @@ string InternalGlue::WaitForInputMessage(string connectionId, string inputName)
     ret = IoTHubModuleClient_SetInputMessageCallback(client, inputName.c_str(), NULL, NULL);
     ThrowIfFailed(ret, "IoTHubModuleClient_SetInputMessageCallback(NULL)");
 
-    return resp.response_string;
+    return addJsonWrapperObject(resp.response_string, "body");
 }
 
 int moduleMethodCallback(const char *method_name, const unsigned char *payload, const size_t size, unsigned char **response, size_t *response_size, void *userContextCallback)
@@ -478,11 +486,11 @@ void parseMethodRequestAndResponse(string requestAndResponse, string *expectedRe
     json_value_free(root_value); //implicitly frees root_object as well
 }
 
-void InternalGlue::RoundTripMethodCall(string connectionId, string methodName, string requestAndResponse)
+void InternalGlue::WaitForMethodAndReturnResponse(string connectionId, string methodName, string requestAndResponse)
 {
     IOTHUB_CLIENT_RESULT ret;
 
-    cout << "InternalGlue::RoundTripMethodCall for " << connectionId << " and " << methodName << endl;
+    cout << "InternalGlue::WaitForMethodAndReturnResponse for " << connectionId << " and " << methodName << endl;
     IOTHUB_MODULE_CLIENT_HANDLE client = (IOTHUB_MODULE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
@@ -514,14 +522,14 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result, IOT
     (void)reason;
     (void)user_context;
     // DOES NOT TAKE INTO ACCOUNT NETWORK OUTAGES
-    std::time_t timetime = std::time(nullptr);
+    ::time_t timetime = ::time(nullptr);
     if (result == IOTHUB_CLIENT_CONNECTION_AUTHENTICATED)
     {
-        cout << std::asctime(std::localtime(&timetime)) << "the module client (" << user_context << ") is connected to edgehub / iothub" << endl;
+        cout << ::asctime(::localtime(&timetime)) << "the module client (" << user_context << ") is connected to edgehub / iothub" << endl;
     }
     else
     {
-        cout << std::asctime(std::localtime(&timetime)) << "the module client (" << user_context << ") has been disconnected" << endl;
+        cout << ::asctime(::localtime(&timetime)) << "the module client (" << user_context << ") has been disconnected" << endl;
     }
 }
 
@@ -624,7 +632,7 @@ string InternalGlue::WaitForDesiredPropertyPatch(string connectionId)
     }
     cout << "Twin patch response received" << endl;
 
-    return resp->latest_payload;
+    return addJsonWrapperObject(resp->latest_payload, "desired");
 }
 
 string InternalGlue::GetTwin(string connectionId)
@@ -642,11 +650,7 @@ string InternalGlue::GetTwin(string connectionId)
         throw new runtime_error("no twin callback struct");
     }
 
-    /* The C SDK's version of get (for now) doesn't actually give the full twin, just the properties.
-    Here we wrap those properties within a twin structure*/
-    string full_twin = "{ \"properties\": " + resp->current_complete + "}";
-
-    return full_twin;
+    return resp->current_complete;
 }
 
 void reportedStateCallback(int status_code, void *userContextCallback)
@@ -668,10 +672,9 @@ void InternalGlue::SendTwinPatch(string connectionId, string props)
 
     mutex m;
     condition_variable cv;
-    const unsigned char *reportedState = (const unsigned char *)props.c_str();
-    size_t reportedStateSize = props.length();
+    string reported = getJsonSubObject(props, "reported");
 
-    IOTHUB_CLIENT_RESULT res = IoTHubModuleClient_SendReportedState(client, reportedState, reportedStateSize, reportedStateCallback, &cv);
+    IOTHUB_CLIENT_RESULT res = IoTHubModuleClient_SendReportedState(client, (const unsigned char *)reported.c_str(), reported.length(), reportedStateCallback, &cv);
     ThrowIfFailed(res, "IoTHubModuleClient_SendReportedState");
 
     cout << "waiting for send reported state confirmation" << endl;

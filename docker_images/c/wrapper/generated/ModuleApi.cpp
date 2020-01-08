@@ -85,9 +85,6 @@ ModuleApi::ModuleApi() {
 	std::shared_ptr<ModuleApiModuleConnectionIdReconnectResource> spModuleApiModuleConnectionIdReconnectResource = std::make_shared<ModuleApiModuleConnectionIdReconnectResource>();
 	this->publish(spModuleApiModuleConnectionIdReconnectResource);
 
-	std::shared_ptr<ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource> spModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource = std::make_shared<ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource>();
-	this->publish(spModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource);
-
 	std::shared_ptr<ModuleApiModuleConnectionIdEventResource> spModuleApiModuleConnectionIdEventResource = std::make_shared<ModuleApiModuleConnectionIdEventResource>();
 	this->publish(spModuleApiModuleConnectionIdEventResource);
 
@@ -102,6 +99,9 @@ ModuleApi::ModuleApi() {
 
 	std::shared_ptr<ModuleApiModuleConnectionIdInputMessageInputNameResource> spModuleApiModuleConnectionIdInputMessageInputNameResource = std::make_shared<ModuleApiModuleConnectionIdInputMessageInputNameResource>();
 	this->publish(spModuleApiModuleConnectionIdInputMessageInputNameResource);
+
+	std::shared_ptr<ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource> spModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource = std::make_shared<ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource>();
+	this->publish(spModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource);
 
 }
 
@@ -858,6 +858,7 @@ void ModuleApiModuleConnectionIdReconnectResource::PUT_method_handler(const std:
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 			// Getting the query params
+			// parameter added in merge
 			const bool forceRenewPassword = request->get_query_parameter("forceRenewPassword", false);
 
 
@@ -873,58 +874,6 @@ void ModuleApiModuleConnectionIdReconnectResource::PUT_method_handler(const std:
 				return;
 			}
 
-}
-
-
-
-ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource::ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource()
-{
-	this->set_path("/module/{connectionId: .*}/roundtripMethodCall/{methodName: .*}/");
-	this->set_method_handler("PUT",
-		std::bind(&ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource::PUT_method_handler, this,
-			std::placeholders::_1));
-}
-
-ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource::~ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource()
-{
-}
-
-void ModuleApiModuleConnectionIdRoundtripMethodCallMethodNameResource::PUT_method_handler(const std::shared_ptr<restbed::Session> session) {
-
-	const auto request = session->get_request();
-	// Body params are present, therefore we have to fetch them
-	int content_length = request->get_header("Content-Length", 0);
-	session->fetch(content_length,
-		[ this ]( const std::shared_ptr<restbed::Session> session, const restbed::Bytes & body )
-		{
-
-			const auto request = session->get_request();
-			std::string requestBody = restbed::String::format("%.*s\n", ( int ) body.size( ), body.data( ));
-			/**
-			 * Get body params or form params here from the requestBody string
-			 */
-
-			// Getting the path params
-			const std::string connectionId = request->get_path_parameter("connectionId", "");
-			const std::string methodName = request->get_path_parameter("methodName", "");
-
-			// added 1 line in merge
-			module_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
-
-
-			// Change the value of this variable to the appropriate response before sending the response
-			int status_code = 200;
-
-			/**
-			 * Process the received information here
-			 */
-
-			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
-				return;
-			}
-
-		});
 }
 
 
@@ -951,7 +900,9 @@ void ModuleApiModuleConnectionIdEventResource::PUT_method_handler(const std::sha
 		{
 
 			const auto request = session->get_request();
-			std::string requestBody = restbed::String::format("%.*s\n", ( int ) body.size( ), body.data( ));
+            // replaced 1 line in merge
+			std::string requestBody((const char *) body.data(), body.size());
+
 			/**
 			 * Get body params or form params here from the requestBody string
 			 */
@@ -1001,7 +952,8 @@ void ModuleApiModuleConnectionIdOutputEventOutputNameResource::PUT_method_handle
 		{
 
 			const auto request = session->get_request();
-			std::string requestBody = restbed::String::format("%.*s\n", ( int ) body.size( ), body.data( ));
+            // replaced 1 line in merge
+			std::string requestBody((const char *) body.data(), body.size());
 			/**
 			 * Get body params or form params here from the requestBody string
 			 */
@@ -1143,6 +1095,58 @@ void ModuleApiModuleConnectionIdInputMessageInputNameResource::GET_method_handle
 				return;
 			}
 
+}
+
+
+
+ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource::ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource()
+{
+	this->set_path("/module/{connectionId: .*}/waitForMethodAndReturnResponse/{methodName: .*}/");
+	this->set_method_handler("PUT",
+		std::bind(&ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource::PUT_method_handler, this,
+			std::placeholders::_1));
+}
+
+ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource::~ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource()
+{
+}
+
+void ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource::PUT_method_handler(const std::shared_ptr<restbed::Session> session) {
+
+	const auto request = session->get_request();
+	// Body params are present, therefore we have to fetch them
+	int content_length = request->get_header("Content-Length", 0);
+	session->fetch(content_length,
+		[ this ]( const std::shared_ptr<restbed::Session> session, const restbed::Bytes & body )
+		{
+
+			const auto request = session->get_request();
+			std::string requestBody = restbed::String::format("%.*s\n", ( int ) body.size( ), body.data( ));
+			/**
+			 * Get body params or form params here from the requestBody string
+			 */
+
+			// Getting the path params
+			const std::string connectionId = request->get_path_parameter("connectionId", "");
+			const std::string methodName = request->get_path_parameter("methodName", "");
+
+
+			// added 1 line in merge
+			module_glue.WaitForMethodAndReturnResponse(connectionId, methodName, requestBody);
+
+			// Change the value of this variable to the appropriate response before sending the response
+			int status_code = 200;
+
+			/**
+			 * Process the received information here
+			 */
+
+			if (status_code == 200) {
+				session->close(200, "OK", { {"Connection", "close"} });
+				return;
+			}
+
+		});
 }
 
 

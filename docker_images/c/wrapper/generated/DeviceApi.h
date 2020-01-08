@@ -25,12 +25,14 @@
 #include <corvusoft/restbed/resource.hpp>
 #include <corvusoft/restbed/service.hpp>
 
-// Removed 4 lines in merge
+// Removed includes during merge
 // #include "Certificate.h"
 // #include "ConnectResponse.h"
+// #include "EventBody.h"
+// #include "MethodRequestAndResponse.h"
 // #include "Object.h"
-// #include "RoundtripMethodCallBody.h"
-#include <string>
+// #include "Twin.h"
+// #include <string>
 
 namespace io {
 namespace swagger {
@@ -235,20 +237,6 @@ public:
 };
 
 /// <summary>
-/// Wait for a method call, verify the request, and return the response.
-/// </summary>
-/// <remarks>
-/// This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)
-/// </remarks>
-class  DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource: public restbed::Resource
-{
-public:
-	DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource();
-    virtual ~DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource();
-    void PUT_method_handler(const std::shared_ptr<restbed::Session> session);
-};
-
-/// <summary>
 /// Send an event
 /// </summary>
 /// <remarks>
@@ -302,6 +290,20 @@ public:
 	DeviceApiDeviceConnectionIdTwinDesiredPropPatchResource();
     virtual ~DeviceApiDeviceConnectionIdTwinDesiredPropPatchResource();
     void GET_method_handler(const std::shared_ptr<restbed::Session> session);
+};
+
+/// <summary>
+/// Wait for a method call, verify the request, and return the response.
+/// </summary>
+/// <remarks>
+/// This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)
+/// </remarks>
+class  DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource: public restbed::Resource
+{
+public:
+	DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource();
+    virtual ~DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource();
+    void PUT_method_handler(const std::shared_ptr<restbed::Session> session);
 };
 
 

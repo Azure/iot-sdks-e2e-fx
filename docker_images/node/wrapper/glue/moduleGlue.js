@@ -56,7 +56,7 @@ exports.module_Connect = function(transportType,connectionString,caCertificate) 
  * no response value expected for this operation
  **/
 exports.module_Connect2 = function(connectionId) {
-  return internalGlue.internal_Connect2(objectCache, connectionId)  
+  return internalGlue.internal_Connect2(objectCache, connectionId)
 }
 
 
@@ -124,7 +124,7 @@ exports.module_CreateFromEnvironment = function(transportType) {
  * Create a module client from X509 credentials
  *
  * transportType String Transport to use
- * x509 Object 
+ * x509 Object
  * returns connectResponse
  **/
 exports.module_CreateFromX509 = function(transportType,x509) {
@@ -231,8 +231,8 @@ exports.module_GetTwin = function(connectionId) {
  * call the given method on the given device
  *
  * connectionId String Id for the connection
- * deviceId String 
- * methodInvokeParameters Object 
+ * deviceId String
+ * methodInvokeParameters Object
  * returns Object
  **/
 exports.module_InvokeDeviceMethod = function(connectionId,deviceId,methodInvokeParameters) {
@@ -253,9 +253,9 @@ exports.module_InvokeDeviceMethod = function(connectionId,deviceId,methodInvokeP
  * call the given method on the given module
  *
  * connectionId String Id for the connection
- * deviceId String 
- * moduleId String 
- * methodInvokeParameters Object 
+ * deviceId String
+ * moduleId String
+ * methodInvokeParameters Object
  * returns Object
  **/
 exports.module_InvokeModuleMethod = function(connectionId,deviceId,moduleId,methodInvokeParameters) {
@@ -276,7 +276,7 @@ exports.module_InvokeModuleMethod = function(connectionId,deviceId,moduleId,meth
  * Updates the device twin
  *
  * connectionId String Id for the connection
- * props Object 
+ * props Object
  * no response value expected for this operation
  **/
 exports.module_PatchTwin = function(connectionId,props) {
@@ -302,11 +302,11 @@ exports.module_Reconnect = function(connectionId,forceRenewPassword) {
  *
  * connectionId String Id for the connection
  * methodName String name of the method to handle
- * requestAndResponse RoundtripMethodCallBody 
+ * requestAndResponse RoundtripMethodCallBody
  * no response value expected for this operation
  **/
-exports.module_RoundtripMethodCall = function(connectionId,methodName,requestAndResponse) {
-  return internalGlue.internal_RoundtripMethodCall(objectCache, connectionId, methodName, requestAndResponse);
+exports.module_WaitForMethodAndReturnResponse = function(connectionId,methodName,requestAndResponse) {
+  return internalGlue.internal_WaitForMethodAndReturnResponse(objectCache, connectionId, methodName, requestAndResponse);
 }
 
 
@@ -314,7 +314,7 @@ exports.module_RoundtripMethodCall = function(connectionId,methodName,requestAnd
  * Send an event
  *
  * connectionId String Id for the connection
- * eventBody Object 
+ * eventBody Object
  * no response value expected for this operation
  **/
 exports.module_SendEvent = function(connectionId,eventBody) {
@@ -326,8 +326,8 @@ exports.module_SendEvent = function(connectionId,eventBody) {
  * Send an event to a module output
  *
  * connectionId String Id for the connection
- * outputName String 
- * eventBody Object 
+ * outputName String
+ * eventBody Object
  * no response value expected for this operation
  **/
 exports.module_SendOutputEvent = function(connectionId,outputName,eventBody) {
@@ -335,7 +335,7 @@ exports.module_SendOutputEvent = function(connectionId,outputName,eventBody) {
   debug(eventBody);
   return glueUtils.makePromise('module_SendOutputEvent', function(callback) {
     var client = objectCache.getObject(connectionId)
-    client.sendOutputEvent(outputName, new Message(eventBody), function(err, result) {
+    client.sendOutputEvent(outputName, new Message(JSON.stringify(eventBody.body)), function(err, result) {
       glueUtils.debugFunctionResult('client.sendOutputEvent', err);
       callback(err, result);
     });
@@ -369,7 +369,7 @@ exports.module_WaitForDesiredPropertiesPatch = function(connectionId) {
  * Wait for a message on a module input
  *
  * connectionId String Id for the connection
- * inputName String 
+ * inputName String
  * returns String
  **/
 exports.module_WaitForInputMessage = function(connectionId,inputName) {
@@ -382,14 +382,14 @@ exports.module_WaitForInputMessage = function(connectionId,inputName) {
           glueUtils.debugFunctionResult('client.complete', err);
           callback(null, {
             inputName: receivedInputName,
-            msg: msg.getBytes().toString('ascii')
+            msg: {body: JSON.parse(msg.getBytes().toString('ascii'))}
           });
         });
       } else if (receivedInputName === inputName) {
         client.removeListener('inputMessage', handler);
         client.complete(msg, function(err) {
           glueUtils.debugFunctionResult('client.complete', err);
-          callback(null, msg.getBytes().toString('ascii'));
+          callback(null, {body: JSON.parse(msg.getBytes().toString('ascii'))});
         });
       }
     };
