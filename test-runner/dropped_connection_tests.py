@@ -147,7 +147,7 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            reported_properties_sent=props,
+            properties_sent=props,
             client=client,
             registry=registry,
             logger=logger,
@@ -172,7 +172,7 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            reported_properties_sent=props,
+            properties_sent=props,
             client=client,
             registry=registry,
             logger=logger,
@@ -187,7 +187,7 @@ class DroppedConnectionTestsTwin(object):
         await after_api_call()
 
         twin = await get_twin_future
-        assert twin["properties"]["desired"]["$version"]
+        assert twin["desired"]["$version"]
 
     @pytest.mark.it("Can reliably get the twin (2nd call)")
     async def test_twin_dropped_get_twin_2nd_call(
@@ -200,7 +200,7 @@ class DroppedConnectionTestsTwin(object):
         await after_api_call()
 
         twin = await get_twin_future
-        assert twin["properties"]["desired"]["$version"]
+        assert twin["desired"]["$version"]
 
     @pytest.mark.it(
         "Can reliably receive a desired property patch (1st call - possible subscribe)"
