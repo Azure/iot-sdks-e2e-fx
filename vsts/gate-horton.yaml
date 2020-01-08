@@ -89,6 +89,7 @@ jobs:
       py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
       py34_mqtt_edgehub_module:                     { suite: py34_mqtt_edgehub_module }
       py34_mqtt_iothub_module_and_device:           { suite: py34_mqtt_iothub_module_and_device }
+      py37_mqtt_iothub_module_quick_drop:           { suite: py37_mqtt_iothub_module_quick_drop }
       py38_mqtt_iothub_module_and_device_async:     { suite: py38_mqtt_iothub_module_and_device_async }
       py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
 
