@@ -31,6 +31,7 @@ from fixtures import (
     sample_payload,
     net_control,
     telemetry_payload,
+    test_payload,
 )
 from log_fixtures import (
     pytest_runtest_makereport,
