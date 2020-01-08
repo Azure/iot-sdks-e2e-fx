@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
+import json
 import time
 from .generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_api import (
     AzureIOTEndToEndTestWrapperRestApi,
@@ -275,16 +276,24 @@ class ConnectionStatus(object):
     @emulate_async
     @log_entry_and_exit
     def get_connection_status(self):
-        return self.rest_endpoint.get_connection_status(
+        status = self.rest_endpoint.get_connection_status(
             self.connection_id, timeout=adapter_config.default_api_timeout
         )
+        try:
+            return json.loads(status)
+        except ValueError:
+            return status
 
     @emulate_async
     @log_entry_and_exit
     def wait_for_connection_status_change(self):
-        return self.rest_endpoint.wait_for_connection_status_change(
+        status = self.rest_endpoint.wait_for_connection_status_change(
             self.connection_id, timeout=adapter_config.default_api_timeout
         )
+        try:
+            return json.loads(status)
+        except ValueError:
+            return status
 
 
 class C2d(object):
