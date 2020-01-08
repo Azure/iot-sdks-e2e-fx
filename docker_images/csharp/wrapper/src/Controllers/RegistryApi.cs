@@ -81,18 +81,18 @@ namespace IO.Swagger.Controllers
         [Route("/registry/{connectionId}/deviceTwin/{deviceId}")]
         [ValidateModelState]
         [SwaggerOperation("RegistryGetDeviceTwin")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Twin), description: "OK")]
         public virtual IActionResult RegistryGetDeviceTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Object));
+            // return StatusCode(200, default(Twin));
 
             string exampleJson = null;
-            exampleJson = "\"{}\"";
+            exampleJson = "{\n  \"desired\" : \"{}\",\n  \"reported\" : \"{}\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Object>(exampleJson)
-            : default(Object);
+            ? JsonConvert.DeserializeObject<Twin>(exampleJson)
+            : default(Twin);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -109,11 +109,11 @@ namespace IO.Swagger.Controllers
         [Route("/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}")]
         [ValidateModelState]
         [SwaggerOperation("RegistryGetModuleTwin")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Object), description: "OK")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Twin), description: "OK")]
         public virtual IActionResult RegistryGetModuleTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId)
         {
             // replaced impl in merge
-            Task<object> t = registry_glue.GetModuleTwin(connectionId, deviceId, moduleId);
+            Task<Models.Twin> t = registry_glue.GetModuleTwin(connectionId, deviceId, moduleId);
             t.Wait();
             return new ObjectResult(t.Result);
         }
@@ -124,13 +124,13 @@ namespace IO.Swagger.Controllers
 
         /// <param name="connectionId">Id for the connection</param>
         /// <param name="deviceId"></param>
-        /// <param name="props"></param>
+        /// <param name="twin"></param>
         /// <response code="200">OK</response>
         [HttpPatch]
         [Route("/registry/{connectionId}/deviceTwin/{deviceId}")]
         [ValidateModelState]
         [SwaggerOperation("RegistryPatchDeviceTwin")]
-        public virtual IActionResult RegistryPatchDeviceTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Object props)
+        public virtual IActionResult RegistryPatchDeviceTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromBody]Twin twin)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200);
@@ -146,16 +146,16 @@ namespace IO.Swagger.Controllers
         /// <param name="connectionId">Id for the connection</param>
         /// <param name="deviceId"></param>
         /// <param name="moduleId"></param>
-        /// <param name="props"></param>
+        /// <param name="twin"></param>
         /// <response code="200">OK</response>
         [HttpPatch]
         [Route("/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}")]
         [ValidateModelState]
         [SwaggerOperation("RegistryPatchModuleTwin")]
-        public virtual IActionResult RegistryPatchModuleTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Object props)
+        public virtual IActionResult RegistryPatchModuleTwin([FromRoute][Required]string connectionId, [FromRoute][Required]string deviceId, [FromRoute][Required]string moduleId, [FromBody]Twin twin)
         {
             // replaced impl in merge
-            registry_glue.PatchModuleTwin(connectionId, deviceId, moduleId, props).Wait();
+            registry_glue.PatchModuleTwin(connectionId, deviceId, moduleId, twin).Wait();
             return StatusCode(200);
         }
     }

@@ -67,7 +67,7 @@
     "in": "body",
     "required": true,
     "schema": {
-      "type": "object"
+      "$ref": "definitions.json#/methodInvoke"
     }
   },
   "methodName": {
@@ -94,7 +94,7 @@
     "in": "body",
     "required": true,
     "schema": {
-      "type": "object"
+      "$ref": "definitions.json#/eventBody"
     }
   },
   "disconnectType": {
@@ -107,5 +107,21 @@
       "DROP",
       "REJECT"
     ]
-  }
+  },
+  "logMessage": {
+    "name": "logMessage",
+    "in": "body",
+    "required": true,
+    "schema": {
+      "$ref": "definitions.json#/logMessage"
+    }
+  },
+  "twin": {
+    "name": "twin",
+    "in": "body",
+    "required": true,
+    "schema": {
+      "$ref": "definitions.json#/twin"
+    }
+  } 
 }

@@ -4,7 +4,6 @@
 
 import pytest
 import asyncio
-from models import HubEvent
 import sample_content
 import utilities
 
@@ -28,16 +27,17 @@ class InputOutputTests(object):
 
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can connect, enable input messages, and disconnect")
-    async def test_module_client_connect_enable_input_messages_disconnect(self, client):
+    async def test_inputoutput_connect_enable_input_messages_disconnect(self, client):
         await client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
         await asyncio.sleep(2)
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
-    async def test_module_to_friend_routing(
-        self, client, friend, test_string, input_name_from_test_client, logger
+    async def test_inputoutput_module_to_friend_routing(
+        self, client, friend, sample_payload, input_name_from_test_client, logger
     ):
+        payload = sample_payload()
 
         await friend.enable_input_messages()
         logger("messages enabled")
@@ -48,42 +48,19 @@ class InputOutputTests(object):
         await asyncio.sleep(sleep_time_for_listener_start)
         logger("friend future created")
 
-        await client.send_output_event(output_name_to_friend, test_string)
+        await client.send_output_event(output_name_to_friend, payload)
         logger("message sent")
 
         received_message = await friend_input_future
         logger("received message")
-        assert received_message == test_string
-
-    @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.new_message_format
-    @pytest.mark.callsSendOutputEvent
-    @pytest.mark.it(
-        "Can send an output message which gets routed to another module using new Horton HubEvent"
-    )
-    async def test_module_to_friend_routing_hubevent(
-        self, client, friend, input_name_from_test_client, body
-    ):
-        await friend.enable_input_messages()
-
-        friend_input_future = asyncio.ensure_future(
-            friend.wait_for_input_event(input_name_from_test_client)
-        )
-        await asyncio.sleep(sleep_time_for_listener_start)
-
-        sent_message = HubEvent(body)
-        await client.send_output_event(
-            output_name_to_friend, sent_message.convert_to_json()
-        )
-
-        received_message = await friend_input_future
-        assert utilities.json_is_same(received_message, sent_message.body)
+        assert received_message.body == payload
 
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can receive an input message which is routed from another module")
-    async def test_friend_to_module_routing(
-        self, client, friend, test_string, output_name_to_test_client
+    async def test_inputoutput_friend_to_module_routing(
+        self, client, friend, sample_payload, output_name_to_test_client
     ):
+        payload = sample_payload()
 
         await client.enable_input_messages()
 
@@ -92,25 +69,26 @@ class InputOutputTests(object):
         )
         await asyncio.sleep(sleep_time_for_listener_start)
 
-        await friend.send_output_event(output_name_to_test_client, test_string)
+        await friend.send_output_event(output_name_to_test_client, payload)
 
         received_message = await test_input_future
-        assert received_message == test_string
+        assert received_message.body == payload
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.receivesInputMessages
     @pytest.mark.it(
         "Can send a message that gets routed to a friend and then receive a message in reply"
     )
-    async def test_module_test_to_friend_and_back(
+    async def test_inputoutput_module_test_to_friend_and_back(
         self,
         client,
         friend,
-        test_string,
-        test_string_2,
+        sample_payload,
         input_name_from_test_client,
         output_name_to_test_client,
     ):
+        payload = sample_payload()
+        payload_2 = sample_payload()
 
         await client.enable_input_messages()
         await friend.enable_input_messages()
@@ -123,49 +101,30 @@ class InputOutputTests(object):
         )
         await asyncio.sleep(sleep_time_for_listener_start)
 
-        await client.send_output_event(output_name_to_friend, test_string)
+        await client.send_output_event(output_name_to_friend, payload)
 
         midpoint_message = await friend_input_future
-        assert midpoint_message == test_string
+        assert midpoint_message.body == payload
 
-        await friend.send_output_event(output_name_to_test_client, test_string_2)
+        await friend.send_output_event(output_name_to_test_client, payload_2)
 
         received_message = await test_input_future
-        assert received_message == test_string_2
+        assert received_message.body == payload_2
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send a message that gets routed to eventhub")
-    async def test_module_output_routed_upstream(
-        self, client, eventhub, test_object_stringified
+    async def test_inputoutput_module_output_routed_upstream(
+        self, client, eventhub, sample_payload
     ):
+        payload = sample_payload()
+
         # start listening before we send
         await eventhub.connect()
         received_message_future = asyncio.ensure_future(
-            eventhub.wait_for_next_event(
-                client.device_id, expected=test_object_stringified
-            )
+            eventhub.wait_for_next_event(client.device_id, expected=payload)
         )
 
-        await client.send_output_event(telemetry_output_name, test_object_stringified)
+        await client.send_output_event(telemetry_output_name, payload)
 
         received_message = await received_message_future
-        assert received_message is not None, "Message not received"
-
-    @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.new_message_format
-    @pytest.mark.callsSendOutputEvent
-    @pytest.mark.it(
-        "Can send a message that gets routed to eventhub using the new Horton HubEvent"
-    )
-    async def test_module_output_routed_upstream_hubevent(self, client, eventhub, body):
-        await eventhub.connect()
-
-        sent_message = HubEvent(body)
-        await client.send_output_event(
-            telemetry_output_name, sent_message.convert_to_json()
-        )
-
-        received_message = await eventhub.wait_for_next_event(
-            client.device_id, expected=sent_message.body
-        )
         assert received_message is not None, "Message not received"

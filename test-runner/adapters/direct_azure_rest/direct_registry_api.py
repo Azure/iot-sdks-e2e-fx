@@ -40,20 +40,22 @@ class RegistryApi(AbstractRegistryApi):
     def get_module_twin(self, device_id, module_id):
         return self.service.get_module_twin(
             device_id, module_id, custom_headers=self.headers()
-        ).as_dict()
+        ).as_dict()["properties"]
 
     @emulate_async
     def patch_module_twin(self, device_id, module_id, patch):
-        twin = models.Twin.from_dict(patch)
+        twin = models.Twin.from_dict({"properties": patch})
         self.service.update_module_twin(
             device_id, module_id, twin, custom_headers=self.headers()
         )
 
     @emulate_async
     def get_device_twin(self, device_id):
-        return self.service.get_twin(device_id, custom_headers=self.headers()).as_dict()
+        return self.service.get_twin(
+            device_id, custom_headers=self.headers()
+        ).as_dict()["properties"]
 
     @emulate_async
     def patch_device_twin(self, device_id, patch):
-        twin = models.Twin.from_dict(patch)
+        twin = models.Twin.from_dict({"properties": patch})
         self.service.update_twin(device_id, twin, custom_headers=self.headers())

@@ -1,0 +1,108 @@
+{
+  "capabilities": {
+    "get": {
+      "tags": [
+        "control"
+      ],
+      "summary": "Get capabilities for the objects in this server",
+      "operationId": "Control_GetCapabilities",
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "OK",
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "cleanup": {
+    "put": {
+      "tags": [
+        "control"
+      ],
+      "summary": "verify that the clients have cleaned themselves up completely",
+      "operationId": "Control_Cleanup",
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "message": {
+    "put": {
+      "tags": [
+        "control"
+      ],
+      "summary": "log a message to output",
+      "operationId": "Control_LogMessage",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "$ref": "parameters.json#/logMessage"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "flags": {
+    "put": {
+      "tags": [
+        "control"
+      ],
+      "summary": "set flags for the objects in this server to use",
+      "operationId": "Control_SetFlags",
+      "consumes": [
+        "application/json"
+      ],
+      "parameters": [
+        {
+          "name": "flags",
+          "in": "body",
+          "required": true,
+          "schema": {
+            "type": "object"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  },
+  "command": {
+    "put": {
+      "tags": [
+        "control"
+      ],
+      "summary": "send an arbitrary command",
+      "operationId": "Control_SendCommand",
+      "parameters": [
+          {
+            "name": "cmd",
+            "in": "query",
+            "description": "command string",
+            "required": true,
+            "type": "string"
+          }
+      ],
+      "responses": {
+        "200": {
+          "description": "OK"
+        }
+      }
+    }
+  }
+}

@@ -693,8 +693,8 @@ class ModuleOperations(object):
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: object or ClientRawResponse if raw=true
-        :rtype: object or ~msrest.pipeline.ClientRawResponse
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
@@ -724,7 +724,7 @@ class ModuleOperations(object):
         deserialized = None
 
         if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
+            deserialized = self._deserialize('Twin', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
@@ -734,13 +734,13 @@ class ModuleOperations(object):
     get_twin.metadata = {'url': '/module/{connectionId}/twin'}
 
     def patch_twin(
-            self, connection_id, props, custom_headers=None, raw=False, **operation_config):
+            self, connection_id, twin, custom_headers=None, raw=False, **operation_config):
         """Updates the device twin.
 
         :param connection_id: Id for the connection
         :type connection_id: str
-        :param props:
-        :type props: object
+        :param twin:
+        :type twin: ~e2erestapi.models.Twin
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -768,7 +768,7 @@ class ModuleOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(props, 'object')
+        body_content = self._serialize.body(twin, 'Twin')
 
         # Construct and send request
         request = self._client.patch(url, query_parameters)
@@ -794,8 +794,8 @@ class ModuleOperations(object):
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: object or ClientRawResponse if raw=true
-        :rtype: object or ~msrest.pipeline.ClientRawResponse
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
@@ -825,7 +825,7 @@ class ModuleOperations(object):
         deserialized = None
 
         if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
+            deserialized = self._deserialize('Twin', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
@@ -841,7 +841,7 @@ class ModuleOperations(object):
         :param connection_id: Id for the connection
         :type connection_id: str
         :param event_body:
-        :type event_body: object
+        :type event_body: ~e2erestapi.models.EventBody
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -864,12 +864,12 @@ class ModuleOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'text/json'
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(event_body, 'object')
+        body_content = self._serialize.body(event_body, 'EventBody')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)
@@ -893,7 +893,7 @@ class ModuleOperations(object):
         :param output_name:
         :type output_name: str
         :param event_body:
-        :type event_body: object
+        :type event_body: ~e2erestapi.models.EventBody
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -917,12 +917,12 @@ class ModuleOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'text/json'
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(event_body, 'object')
+        body_content = self._serialize.body(event_body, 'EventBody')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)
@@ -950,8 +950,9 @@ class ModuleOperations(object):
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: str or ClientRawResponse if raw=true
-        :rtype: str or ~msrest.pipeline.ClientRawResponse
+        :return: EventBody or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.EventBody or
+         ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
@@ -982,7 +983,7 @@ class ModuleOperations(object):
         deserialized = None
 
         if response.status_code == 200:
-            deserialized = self._deserialize('str', response)
+            deserialized = self._deserialize('EventBody', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
@@ -991,7 +992,7 @@ class ModuleOperations(object):
         return deserialized
     wait_for_input_message.metadata = {'url': '/module/{connectionId}/inputMessage/{inputName}'}
 
-    def roundtrip_method_call(
+    def wait_for_method_and_return_response(
             self, connection_id, method_name, request_and_response, custom_headers=None, raw=False, **operation_config):
         """Wait for a method call, verify the request, and return the response.
 
@@ -1008,7 +1009,8 @@ class ModuleOperations(object):
         :param method_name: name of the method to handle
         :type method_name: str
         :param request_and_response:
-        :type request_and_response: ~e2erestapi.models.RoundtripMethodCallBody
+        :type request_and_response:
+         ~e2erestapi.models.MethodRequestAndResponse
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -1020,7 +1022,7 @@ class ModuleOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.roundtrip_method_call.metadata['url']
+        url = self.wait_for_method_and_return_response.metadata['url']
         path_format_arguments = {
             'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
             'methodName': self._serialize.url("method_name", method_name, 'str')
@@ -1037,7 +1039,7 @@ class ModuleOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(request_and_response, 'RoundtripMethodCallBody')
+        body_content = self._serialize.body(request_and_response, 'MethodRequestAndResponse')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)
@@ -1050,7 +1052,7 @@ class ModuleOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    roundtrip_method_call.metadata = {'url': '/module/{connectionId}/roundtripMethodCall/{methodName}'}
+    wait_for_method_and_return_response.metadata = {'url': '/module/{connectionId}/waitForMethodAndReturnResponse/{methodName}'}
 
     def invoke_module_method(
             self, connection_id, device_id, module_id, method_invoke_parameters, custom_headers=None, raw=False, **operation_config):
@@ -1063,7 +1065,7 @@ class ModuleOperations(object):
         :param module_id:
         :type module_id: str
         :param method_invoke_parameters:
-        :type method_invoke_parameters: object
+        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -1093,7 +1095,7 @@ class ModuleOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(method_invoke_parameters, 'object')
+        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)
@@ -1124,7 +1126,7 @@ class ModuleOperations(object):
         :param device_id:
         :type device_id: str
         :param method_invoke_parameters:
-        :type method_invoke_parameters: object
+        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -1153,7 +1155,7 @@ class ModuleOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(method_invoke_parameters, 'object')
+        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)

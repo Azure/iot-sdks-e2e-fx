@@ -59,6 +59,8 @@ class HortonSettings:
         self.horton = HortonSettingsObject()
         self.horton.name = "horton"
         self.horton.image = None
+        self.horton.language = None
+        self.horton.transport = None
 
         self.iothub = HortonSettingsObject()
         self.iothub.name = "iothub"

@@ -52,7 +52,7 @@ async def do_module_method_call(
     # start listening for method calls on the destination side
     adapter_config.logger("starting to listen from destination module")
     receiver_future = asyncio.ensure_future(
-        destination_module.roundtrip_method_call(
+        destination_module.wait_for_method_and_return_response(
             method_name, status_code, method_invoke_parameters, method_response_body
         )
     )

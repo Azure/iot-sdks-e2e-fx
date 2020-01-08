@@ -214,14 +214,14 @@
       }
     }
   },
-  "roundtripMethodCall": {
+  "waitForMethodAndReturnResponse": {
     "put": {
       "tags": [
         "device"
       ],
       "summary": "Wait for a method call, verify the request, and return the response.",
       "description": "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
-      "operationId": "Device_RoundtripMethodCall",
+      "operationId": "Device_WaitForMethodAndReturnResponse",
       "consumes": [
         "application/json"
       ],
@@ -240,7 +240,7 @@
           "in": "body",
           "required": true,
           "schema": {
-            "$ref": "definitions.json#/roundtripMethodCallBody"
+            "$ref": "definitions.json#/methodRequestAndResponse"
           }
         }
       ],
@@ -259,7 +259,7 @@
       "summary": "Send an event",
       "operationId": "Device_SendEvent",
       "consumes": [
-        "text/json"
+        "application/json"
       ],
       "parameters": [
         {
@@ -303,7 +303,7 @@
       "summary": "Wait for a c2d message",
       "operationId": "Device_WaitForC2dMessage",
       "produces": [
-        "text/json"
+        "application/json"
       ],
       "parameters": [
         {
@@ -314,7 +314,7 @@
         "200": {
           "description": "OK",
           "schema": {
-            "type": "string"
+            "$ref": "definitions.json#/eventBody"
           }
         }
       }
@@ -358,7 +358,7 @@
         "200": {
           "description": "OK",
           "schema": {
-            "type": "object"
+            "$ref": "definitions.json#/twin"
           }
         }
       }
@@ -377,12 +377,7 @@
           "$ref": "parameters.json#/connectionId"
         },
         {
-          "name": "props",
-          "in": "body",
-          "required": true,
-          "schema": {
-            "type": "object"
-          }
+          "$ref": "parameters.json#/twin"
         }
       ],
       "responses": {
@@ -411,7 +406,7 @@
         "200": {
           "description": "OK",
           "schema": {
-            "type": "object"
+            "$ref": "definitions.json#/twin"
           }
         }
       }
@@ -425,7 +420,7 @@
       "summary": "get the current connection status",
       "operationId": "Device_GetConnectionStatus",
       "produces": [
-        "text/json"
+        "application/json"
       ],
       "parameters": [
         {
@@ -450,7 +445,7 @@
       "summary": "wait for the current connection status to change and return the changed status",
       "operationId": "Device_WaitForConnectionStatusChange",
       "produces": [
-        "text/json"
+        "application/json"
       ],
       "parameters": [
         {

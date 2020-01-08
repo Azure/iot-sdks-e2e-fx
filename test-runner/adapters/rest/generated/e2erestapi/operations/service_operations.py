@@ -140,7 +140,7 @@ class ServiceOperations(object):
         :param module_id:
         :type module_id: str
         :param method_invoke_parameters:
-        :type method_invoke_parameters: object
+        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -170,7 +170,7 @@ class ServiceOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(method_invoke_parameters, 'object')
+        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)
@@ -201,7 +201,7 @@ class ServiceOperations(object):
         :param device_id:
         :type device_id: str
         :param method_invoke_parameters:
-        :type method_invoke_parameters: object
+        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -230,7 +230,7 @@ class ServiceOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(method_invoke_parameters, 'object')
+        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)
@@ -261,7 +261,7 @@ class ServiceOperations(object):
         :param device_id:
         :type device_id: str
         :param event_body:
-        :type event_body: object
+        :type event_body: ~e2erestapi.models.EventBody
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -285,12 +285,12 @@ class ServiceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'text/json'
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(event_body, 'object')
+        body_content = self._serialize.body(event_body, 'EventBody')
 
         # Construct and send request
         request = self._client.put(url, query_parameters)

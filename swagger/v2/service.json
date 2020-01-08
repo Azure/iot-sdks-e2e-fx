@@ -66,12 +66,7 @@
           "$ref": "parameters.json#/moduleId"
         },
         {
-          "name": "methodInvokeParameters",
-          "in": "body",
-          "required": true,
-          "schema": {
-            "type": "object"
-          }
+          "$ref": "parameters.json#/methodInvokeParameters"
         }
       ],
       "responses": {
@@ -105,12 +100,7 @@
           "$ref": "parameters.json#/deviceId"
         },
         {
-          "name": "methodInvokeParameters",
-          "in": "body",
-          "required": true,
-          "schema": {
-            "type": "object"
-          }
+          "$ref": "parameters.json#/methodInvokeParameters"
         }
       ],
       "responses": {
@@ -131,7 +121,7 @@
       "summary": "Send a c2d message",
       "operationId": "Service_SendC2d",
       "consumes": [
-        "text/json"
+        "application/json"
       ],
       "parameters": [
         {

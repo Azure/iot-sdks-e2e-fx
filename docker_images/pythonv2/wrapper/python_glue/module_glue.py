@@ -2,6 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 from swagger_server.models.connect_response import ConnectResponse
+from swagger_server.models.event_body import EventBody
 from internal_iothub_glue import InternalModuleGlue
 import json
 import logging
@@ -36,9 +37,13 @@ class ModuleGlue:
             internal.disconnect()
             del self.object_map[connection_id]
 
-    def create_from_connection_string(self, transport_type, connection_string, cert):
+    def create_from_connection_string(
+        self, transport_type, connection_string, ca_certificate
+    ):
         internal = InternalModuleGlue()
-        internal.create_from_connection_string(transport_type, connection_string, cert)
+        internal.create_from_connection_string(
+            transport_type, connection_string, ca_certificate.cert
+        )
         return self._return_connect_response(internal)
 
     def create_from_x509(self, transport_type, x509):
@@ -81,7 +86,7 @@ class ModuleGlue:
 
     def wait_for_input_message(self, connection_id, input_name):
         response = self.object_map[connection_id].wait_for_input_message(input_name)
-        return json.dumps(response)
+        return EventBody.from_dict(response)
 
     def invoke_module_method(
         self, connection_id, device_id, module_id, method_invoke_parameters

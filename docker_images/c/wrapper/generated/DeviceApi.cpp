@@ -70,9 +70,6 @@ DeviceApi::DeviceApi() {
 	std::shared_ptr<DeviceApiDeviceConnectionIdReconnectResource> spDeviceApiDeviceConnectionIdReconnectResource = std::make_shared<DeviceApiDeviceConnectionIdReconnectResource>();
 	this->publish(spDeviceApiDeviceConnectionIdReconnectResource);
 
-	std::shared_ptr<DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource> spDeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource = std::make_shared<DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource>();
-	this->publish(spDeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource);
-
 	std::shared_ptr<DeviceApiDeviceConnectionIdEventResource> spDeviceApiDeviceConnectionIdEventResource = std::make_shared<DeviceApiDeviceConnectionIdEventResource>();
 	this->publish(spDeviceApiDeviceConnectionIdEventResource);
 
@@ -84,6 +81,9 @@ DeviceApi::DeviceApi() {
 
 	std::shared_ptr<DeviceApiDeviceConnectionIdTwinDesiredPropPatchResource> spDeviceApiDeviceConnectionIdTwinDesiredPropPatchResource = std::make_shared<DeviceApiDeviceConnectionIdTwinDesiredPropPatchResource>();
 	this->publish(spDeviceApiDeviceConnectionIdTwinDesiredPropPatchResource);
+
+	std::shared_ptr<DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource> spDeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource = std::make_shared<DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource>();
+	this->publish(spDeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource);
 
 }
 
@@ -646,6 +646,7 @@ void DeviceApiDeviceConnectionIdReconnectResource::PUT_method_handler(const std:
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
 			// Getting the query params
+			//  Added parameter in merge
 			const bool forceRenewPassword = request->get_query_parameter("forceRenewPassword", false);
 
 
@@ -661,58 +662,6 @@ void DeviceApiDeviceConnectionIdReconnectResource::PUT_method_handler(const std:
 				return;
 			}
 
-}
-
-
-
-DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource::DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource()
-{
-	this->set_path("/device/{connectionId: .*}/roundtripMethodCall/{methodName: .*}/");
-	this->set_method_handler("PUT",
-		std::bind(&DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource::PUT_method_handler, this,
-			std::placeholders::_1));
-}
-
-DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource::~DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource()
-{
-}
-
-void DeviceApiDeviceConnectionIdRoundtripMethodCallMethodNameResource::PUT_method_handler(const std::shared_ptr<restbed::Session> session) {
-
-	const auto request = session->get_request();
-	// Body params are present, therefore we have to fetch them
-	int content_length = request->get_header("Content-Length", 0);
-	session->fetch(content_length,
-		[ this ]( const std::shared_ptr<restbed::Session> session, const restbed::Bytes & body )
-		{
-
-			const auto request = session->get_request();
-			std::string requestBody = restbed::String::format("%.*s\n", ( int ) body.size( ), body.data( ));
-			/**
-			 * Get body params or form params here from the requestBody string
-			 */
-
-			// Getting the path params
-			const std::string connectionId = request->get_path_parameter("connectionId", "");
-			const std::string methodName = request->get_path_parameter("methodName", "");
-
-
-			// added 1 line in merge
-			device_glue.RoundTripMethodCall(connectionId, methodName, requestBody);
-
-			// Change the value of this variable to the appropriate response before sending the response
-			int status_code = 200;
-
-			/**
-			 * Process the received information here
-			 */
-
-			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
-				return;
-			}
-
-		});
 }
 
 
@@ -873,6 +822,57 @@ void DeviceApiDeviceConnectionIdTwinDesiredPropPatchResource::GET_method_handler
 				return;
 			}
 
+}
+
+
+
+DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource::DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource()
+{
+	this->set_path("/device/{connectionId: .*}/waitForMethodAndReturnResponse/{methodName: .*}/");
+	this->set_method_handler("PUT",
+		std::bind(&DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource::PUT_method_handler, this,
+			std::placeholders::_1));
+}
+
+DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource::~DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource()
+{
+}
+
+void DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource::PUT_method_handler(const std::shared_ptr<restbed::Session> session) {
+
+	const auto request = session->get_request();
+	// Body params are present, therefore we have to fetch them
+	int content_length = request->get_header("Content-Length", 0);
+	session->fetch(content_length,
+		[ this ]( const std::shared_ptr<restbed::Session> session, const restbed::Bytes & body )
+		{
+
+			const auto request = session->get_request();
+			std::string requestBody = restbed::String::format("%.*s\n", ( int ) body.size( ), body.data( ));
+			/**
+			 * Get body params or form params here from the requestBody string
+			 */
+
+			// Getting the path params
+			const std::string connectionId = request->get_path_parameter("connectionId", "");
+			const std::string methodName = request->get_path_parameter("methodName", "");
+
+			// added 1 line in merge
+			device_glue.WaitForMethodAndReturnResponse(connectionId, methodName, requestBody);
+
+			// Change the value of this variable to the appropriate response before sending the response
+			int status_code = 200;
+
+			/**
+			 * Process the received information here
+			 */
+
+			if (status_code == 200) {
+				session->close(200, "OK", { {"Connection", "close"} });
+				return;
+			}
+
+		});
 }
 
 

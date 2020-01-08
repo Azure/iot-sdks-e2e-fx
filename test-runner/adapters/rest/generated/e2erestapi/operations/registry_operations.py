@@ -144,8 +144,8 @@ class RegistryOperations(object):
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: object or ClientRawResponse if raw=true
-        :rtype: object or ~msrest.pipeline.ClientRawResponse
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
@@ -177,7 +177,7 @@ class RegistryOperations(object):
         deserialized = None
 
         if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
+            deserialized = self._deserialize('Twin', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
@@ -187,7 +187,7 @@ class RegistryOperations(object):
     get_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}
 
     def patch_module_twin(
-            self, connection_id, device_id, module_id, props, custom_headers=None, raw=False, **operation_config):
+            self, connection_id, device_id, module_id, twin, custom_headers=None, raw=False, **operation_config):
         """update the module twin for the given deviceId and moduleId.
 
         :param connection_id: Id for the connection
@@ -196,8 +196,8 @@ class RegistryOperations(object):
         :type device_id: str
         :param module_id:
         :type module_id: str
-        :param props:
-        :type props: object
+        :param twin:
+        :type twin: ~e2erestapi.models.Twin
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -227,7 +227,7 @@ class RegistryOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(props, 'object')
+        body_content = self._serialize.body(twin, 'Twin')
 
         # Construct and send request
         request = self._client.patch(url, query_parameters)
@@ -255,8 +255,8 @@ class RegistryOperations(object):
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: object or ClientRawResponse if raw=true
-        :rtype: object or ~msrest.pipeline.ClientRawResponse
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
@@ -287,7 +287,7 @@ class RegistryOperations(object):
         deserialized = None
 
         if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
+            deserialized = self._deserialize('Twin', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
@@ -297,15 +297,15 @@ class RegistryOperations(object):
     get_device_twin.metadata = {'url': '/registry/{connectionId}/deviceTwin/{deviceId}'}
 
     def patch_device_twin(
-            self, connection_id, device_id, props, custom_headers=None, raw=False, **operation_config):
+            self, connection_id, device_id, twin, custom_headers=None, raw=False, **operation_config):
         """update the device twin for the given deviceId.
 
         :param connection_id: Id for the connection
         :type connection_id: str
         :param device_id:
         :type device_id: str
-        :param props:
-        :type props: object
+        :param twin:
+        :type twin: ~e2erestapi.models.Twin
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -334,7 +334,7 @@ class RegistryOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(props, 'object')
+        body_content = self._serialize.body(twin, 'Twin')
 
         # Construct and send request
         request = self._client.patch(url, query_parameters)

@@ -8,8 +8,8 @@ info:
   version: "1.0.0"
   title: "Azure IOT End-to-End Test Wrapper Rest Api"
 tags:
-- name: "wrapper"
-  description: "APIs that transcend the individual SDKs"
+- name: "control"
+  description: "Control APIs that aren't tied to any specific SDK"
 - name: "module"
   description: "ModuleClient APIs"
 - name: "device"
@@ -25,12 +25,12 @@ schemes:
 produces:
 - "application/json"
 paths:
-  /wrapper/capabilities:
+  /control/capabilities:
     get:
       tags:
-      - "wrapper"
-      summary: "Get capabilities for this test wrapper"
-      operationId: "wrapper_get_capabilities"
+      - "control"
+      summary: "Get capabilities for the objects in this server"
+      operationId: "control_get_capabilities"
       produces:
       - "application/json"
       parameters: []
@@ -39,42 +39,42 @@ paths:
           description: "OK"
           schema:
             type: "object"
-      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
-  /wrapper/cleanup:
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+  /control/cleanup:
     put:
       tags:
-      - "wrapper"
+      - "control"
       summary: "verify that the clients have cleaned themselves up completely"
-      operationId: "wrapper_cleanup"
+      operationId: "control_cleanup"
       parameters: []
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
-  /wrapper/message:
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+  /control/message:
     put:
       tags:
-      - "wrapper"
+      - "control"
       summary: "log a message to output"
-      operationId: "wrapper_log_message"
+      operationId: "control_log_message"
       consumes:
       - "application/json"
       parameters:
       - in: "body"
-        name: "msg"
+        name: "logMessage"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/logMessage"
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
-  /wrapper/flags:
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+  /control/flags:
     put:
       tags:
-      - "wrapper"
-      summary: "set flags for the wrapper to use"
-      operationId: "wrapper_set_flags"
+      - "control"
+      summary: "set flags for the objects in this server to use"
+      operationId: "control_set_flags"
       consumes:
       - "application/json"
       parameters:
@@ -86,13 +86,13 @@ paths:
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
-  /wrapper/command:
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
+  /control/command:
     put:
       tags:
-      - "wrapper"
+      - "control"
       summary: "send an arbitrary command"
-      operationId: "wrapper_send_command"
+      operationId: "control_send_command"
       parameters:
       - name: "cmd"
         in: "query"
@@ -102,7 +102,7 @@ paths:
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.wrapper_controller"
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
   /registry/connect:
     put:
       tags:
@@ -167,7 +167,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            $ref: "#/definitions/twin"
       x-swagger-router-controller: "swagger_server.controllers.registry_controller"
     patch:
       tags:
@@ -191,10 +191,10 @@ paths:
         required: true
         type: "string"
       - in: "body"
-        name: "props"
+        name: "twin"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/twin"
       responses:
         200:
           description: "OK"
@@ -221,7 +221,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            $ref: "#/definitions/twin"
       x-swagger-router-controller: "swagger_server.controllers.registry_controller"
     patch:
       tags:
@@ -241,10 +241,10 @@ paths:
         required: true
         type: "string"
       - in: "body"
-        name: "props"
+        name: "twin"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/twin"
       responses:
         200:
           description: "OK"
@@ -549,7 +549,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            $ref: "#/definitions/twin"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
     patch:
       tags:
@@ -565,10 +565,10 @@ paths:
         required: true
         type: "string"
       - in: "body"
-        name: "props"
+        name: "twin"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/twin"
       responses:
         200:
           description: "OK"
@@ -591,7 +591,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            $ref: "#/definitions/twin"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
   /module/{connectionId}/event:
     put:
@@ -600,7 +600,7 @@ paths:
       summary: "Send an event"
       operationId: "module_send_event"
       consumes:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -611,7 +611,7 @@ paths:
         name: "eventBody"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/eventBody"
       responses:
         200:
           description: "OK"
@@ -623,7 +623,7 @@ paths:
       summary: "Send an event to a module output"
       operationId: "module_send_output_event"
       consumes:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -638,7 +638,7 @@ paths:
         name: "eventBody"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/eventBody"
       responses:
         200:
           description: "OK"
@@ -650,7 +650,7 @@ paths:
       summary: "Wait for a message on a module input"
       operationId: "module_wait_for_input_message"
       produces:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -665,9 +665,9 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "string"
+            $ref: "#/definitions/eventBody"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
-  /module/{connectionId}/roundtripMethodCall/{methodName}:
+  /module/{connectionId}/waitForMethodAndReturnResponse/{methodName}:
     put:
       tags:
       - "module"
@@ -679,7 +679,7 @@ paths:
         \ our test code right now (because the method handlers for C, Java, and probably\
         \ Python all return the method response instead of supporting an async method\
         \ call)"
-      operationId: "module_roundtrip_method_call"
+      operationId: "module_wait_for_method_and_return_response"
       consumes:
       - "application/json"
       produces:
@@ -699,7 +699,7 @@ paths:
         name: "requestAndResponse"
         required: true
         schema:
-          $ref: "#/definitions/roundtripMethodCallBody"
+          $ref: "#/definitions/methodRequestAndResponse"
       responses:
         200:
           description: "OK"
@@ -732,7 +732,7 @@ paths:
         name: "methodInvokeParameters"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/methodInvoke"
       responses:
         200:
           description: "OK"
@@ -763,7 +763,7 @@ paths:
         name: "methodInvokeParameters"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/methodInvoke"
       responses:
         200:
           description: "OK"
@@ -777,7 +777,7 @@ paths:
       summary: "get the current connection status"
       operationId: "module_get_connection_status"
       produces:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -798,7 +798,7 @@ paths:
         \ status"
       operationId: "module_wait_for_connection_status_change"
       produces:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -877,7 +877,7 @@ paths:
         name: "methodInvokeParameters"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/methodInvoke"
       responses:
         200:
           description: "OK"
@@ -908,7 +908,7 @@ paths:
         name: "methodInvokeParameters"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/methodInvoke"
       responses:
         200:
           description: "OK"
@@ -922,7 +922,7 @@ paths:
       summary: "Send a c2d message"
       operationId: "service_send_c2d"
       consumes:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -937,7 +937,7 @@ paths:
         name: "eventBody"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/eventBody"
       responses:
         200:
           description: "OK"
@@ -1146,7 +1146,7 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
-  /device/{connectionId}/roundtripMethodCall/{methodName}:
+  /device/{connectionId}/waitForMethodAndReturnResponse/{methodName}:
     put:
       tags:
       - "device"
@@ -1158,7 +1158,7 @@ paths:
         \ our test code right now (because the method handlers for C, Java, and probably\
         \ Python all return the method response instead of supporting an async method\
         \ call)"
-      operationId: "device_roundtrip_method_call"
+      operationId: "device_wait_for_method_and_return_response"
       consumes:
       - "application/json"
       produces:
@@ -1178,7 +1178,7 @@ paths:
         name: "requestAndResponse"
         required: true
         schema:
-          $ref: "#/definitions/roundtripMethodCallBody"
+          $ref: "#/definitions/methodRequestAndResponse"
       responses:
         200:
           description: "OK"
@@ -1206,7 +1206,7 @@ paths:
       summary: "Send an event"
       operationId: "device_send_event"
       consumes:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -1217,7 +1217,7 @@ paths:
         name: "eventBody"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/eventBody"
       responses:
         200:
           description: "OK"
@@ -1229,7 +1229,7 @@ paths:
       summary: "Wait for a c2d message"
       operationId: "device_wait_for_c2d_message"
       produces:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -1240,7 +1240,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "string"
+            $ref: "#/definitions/eventBody"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
   /device/{connectionId}/enableTwin:
     put:
@@ -1276,7 +1276,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            $ref: "#/definitions/twin"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
     patch:
       tags:
@@ -1292,10 +1292,10 @@ paths:
         required: true
         type: "string"
       - in: "body"
-        name: "props"
+        name: "twin"
         required: true
         schema:
-          type: "object"
+          $ref: "#/definitions/twin"
       responses:
         200:
           description: "OK"
@@ -1318,7 +1318,7 @@ paths:
         200:
           description: "OK"
           schema:
-            type: "object"
+            $ref: "#/definitions/twin"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
   /device/{connectionId}/connectionStatus:
     get:
@@ -1327,7 +1327,7 @@ paths:
       summary: "get the current connection status"
       operationId: "device_get_connection_status"
       produces:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -1348,7 +1348,7 @@ paths:
         \ status"
       operationId: "device_wait_for_connection_status_change"
       produces:
-      - "text/json"
+      - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -1456,6 +1456,13 @@ paths:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.net_controller"
 definitions:
+  logMessage:
+    type: "object"
+    properties:
+      message:
+        type: "string"
+        description: "text of message"
+    description: "message from the test script to output to the log"
   connectResponse:
     type: "object"
     properties:
@@ -1465,6 +1472,21 @@ definitions:
     description: "result of a connection to a service, device, or module client"
     example:
       connectionId: "connectionId"
+  twin:
+    type: "object"
+    properties:
+      desired:
+        type: "object"
+        description: "desired properties"
+        properties: {}
+      reported:
+        type: "object"
+        description: "reported properties"
+        properties: {}
+    description: "device twin or module twin"
+    example:
+      desired: "{}"
+      reported: "{}"
   certificate:
     type: "object"
     properties:
@@ -1472,7 +1494,27 @@ definitions:
         type: "string"
         description: "unique identifier for this connection"
     description: "certificate in the body of a message"
-  roundtripMethodCallBody:
+  eventBody:
+    type: "object"
+    properties:
+      body:
+        type: "object"
+        description: "payload to send to the method"
+        properties: {}
+      horton_flags:
+        type: "object"
+        description: "flags used by horton"
+        properties: {}
+      attributes:
+        type: "object"
+        description: "Message attributes"
+        properties: {}
+    description: "body for an invoming or outgoing event or message"
+    example:
+      horton_flags: "{}"
+      attributes: "{}"
+      body: "{}"
+  methodRequestAndResponse:
     type: "object"
     properties:
       requestPayload:
@@ -1489,3 +1531,20 @@ definitions:
         type: "integer"
         description: "status code to return to the service"
     description: "parameters and response for a sync method call"
+  methodInvoke:
+    type: "object"
+    properties:
+      methodName:
+        type: "string"
+        description: "name of method to invoke"
+      payload:
+        type: "object"
+        description: "payload to send to the method"
+        properties: {}
+      responseTimeoutInSeconds:
+        type: "integer"
+        description: "number of seconds to wait for a response"
+      connectTimeoutInSeconds:
+        type: "integer"
+        description: "number of seconds to wait for the module to connect"
+    description: "parameters used to invoke a method"

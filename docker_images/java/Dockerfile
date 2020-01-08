@@ -38,6 +38,9 @@ COPY ./patchfile /
 RUN git reset HEAD && git checkout && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
+RUN rm -r /sdk/iot-e2e-tests/edge-e2e
+COPY ./wrapper /sdk/iot-e2e-tests/edge-e2e
+
 COPY ./rebuild.sh /
 RUN /rebuild.sh
 

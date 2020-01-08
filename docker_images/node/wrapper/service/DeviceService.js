@@ -171,6 +171,7 @@ exports.device_EnableTwin = function(connectionId) {
 exports.device_GetConnectionStatus = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
+    examples['application/json'] = "";
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -184,12 +185,15 @@ exports.device_GetConnectionStatus = function(connectionId) {
  * Get the device twin
  *
  * connectionId String Id for the connection
- * returns Object
+ * returns twin
  **/
 exports.device_GetTwin = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
-    examples['application/json'] = "{}";
+    examples['application/json'] = {
+  "desired" : "{}",
+  "reported" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -203,10 +207,10 @@ exports.device_GetTwin = function(connectionId) {
  * Updates the device twin
  *
  * connectionId String Id for the connection
- * props Object 
+ * twin Twin 
  * no response value expected for this operation
  **/
-exports.device_PatchTwin = function(connectionId,props) {
+exports.device_PatchTwin = function(connectionId,twin) {
   return new Promise(function(resolve, reject) {
     resolve();
   });
@@ -228,26 +232,10 @@ exports.device_Reconnect = function(connectionId,forceRenewPassword) {
 
 
 /**
- * Wait for a method call, verify the request, and return the response.
- * This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)
- *
- * connectionId String Id for the connection
- * methodName String name of the method to handle
- * requestAndResponse RoundtripMethodCallBody 
- * no response value expected for this operation
- **/
-exports.device_RoundtripMethodCall = function(connectionId,methodName,requestAndResponse) {
-  return new Promise(function(resolve, reject) {
-    resolve();
-  });
-}
-
-
-/**
  * Send an event
  *
  * connectionId String Id for the connection
- * eventBody Object 
+ * eventBody EventBody 
  * no response value expected for this operation
  **/
 exports.device_SendEvent = function(connectionId,eventBody) {
@@ -261,11 +249,16 @@ exports.device_SendEvent = function(connectionId,eventBody) {
  * Wait for a c2d message
  *
  * connectionId String Id for the connection
- * returns String
+ * returns eventBody
  **/
 exports.device_WaitForC2dMessage = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
+    examples['application/json'] = {
+  "horton_flags" : "{}",
+  "attributes" : "{}",
+  "body" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -284,6 +277,7 @@ exports.device_WaitForC2dMessage = function(connectionId) {
 exports.device_WaitForConnectionStatusChange = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
+    examples['application/json'] = "";
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -297,17 +291,36 @@ exports.device_WaitForConnectionStatusChange = function(connectionId) {
  * Wait for the next desired property patch
  *
  * connectionId String Id for the connection
- * returns Object
+ * returns twin
  **/
 exports.device_WaitForDesiredPropertiesPatch = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
-    examples['application/json'] = "{}";
+    examples['application/json'] = {
+  "desired" : "{}",
+  "reported" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
       resolve();
     }
+  });
+}
+
+
+/**
+ * Wait for a method call, verify the request, and return the response.
+ * This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)
+ *
+ * connectionId String Id for the connection
+ * methodName String name of the method to handle
+ * requestAndResponse MethodRequestAndResponse 
+ * no response value expected for this operation
+ **/
+exports.device_WaitForMethodAndReturnResponse = function(connectionId,methodName,requestAndResponse) {
+  return new Promise(function(resolve, reject) {
+    resolve();
   });
 }
 
@@ -320,5 +333,4 @@ exports.device_WaitForDesiredPropertiesPatch = function(connectionId) {
 //
 // WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 module.exports = require('../glue/glueUtils').replaceExports(module.exports, '../glue/deviceGlue.js')
-
 

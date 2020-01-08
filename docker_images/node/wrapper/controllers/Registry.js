@@ -53,8 +53,8 @@ module.exports.registry_GetModuleTwin = function registry_GetModuleTwin (req, re
 module.exports.registry_PatchDeviceTwin = function registry_PatchDeviceTwin (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
   var deviceId = req.swagger.params['deviceId'].value;
-  var props = req.swagger.params['props'].value;
-  Registry.registry_PatchDeviceTwin(connectionId,deviceId,props)
+  var twin = req.swagger.params['twin'].value;
+  Registry.registry_PatchDeviceTwin(connectionId,deviceId,twin)
     .then(function (response) {
       utils.writeJson(res, response);
     })
@@ -67,8 +67,8 @@ module.exports.registry_PatchModuleTwin = function registry_PatchModuleTwin (req
   var connectionId = req.swagger.params['connectionId'].value;
   var deviceId = req.swagger.params['deviceId'].value;
   var moduleId = req.swagger.params['moduleId'].value;
-  var props = req.swagger.params['props'].value;
-  Registry.registry_PatchModuleTwin(connectionId,deviceId,moduleId,props)
+  var twin = req.swagger.params['twin'].value;
+  Registry.registry_PatchModuleTwin(connectionId,deviceId,moduleId,twin)
     .then(function (response) {
       utils.writeJson(res, response);
     })

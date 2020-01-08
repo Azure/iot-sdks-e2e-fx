@@ -21,7 +21,7 @@ public:
     void SendEvent(std::string connectionId, std::string eventBody);
     void SendOutputEvent(std::string connectionId, std::string outputName, std::string eventBody);
     std::string WaitForInputMessage(std::string connectionId, std::string inputName);
-    void RoundTripMethodCall(std::string connectionId, std::string methodName, std::string requestAndResponse);
+    void WaitForMethodAndReturnResponse(std::string connectionId, std::string methodName, std::string requestAndResponse);
     std::string InvokeModuleMethod(std::string connectionId, std::string deviceId, std::string moduleId, std::string methodInvokeParameters);
     std::string InvokeDeviceMethod(std::string connectionId, std::string deviceId, std::string methodInvokeParameters);
     std::string WaitForDesiredPropertyPatch(std::string connectionId);

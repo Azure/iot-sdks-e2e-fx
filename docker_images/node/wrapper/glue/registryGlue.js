@@ -58,7 +58,7 @@ exports.registry_Disconnect = function(connectionId) {
  * gets the device twin for the given deviceid
  *
  * connectionId String Id for the connection
- * deviceId String 
+ * deviceId String
  * returns Object
  **/
 exports.registry_GetDeviceTwin = function(connectionId,deviceId) {
@@ -72,8 +72,8 @@ exports.registry_GetDeviceTwin = function(connectionId,deviceId) {
  * gets the module twin for the given deviceid and moduleid
  *
  * connectionId String Id for the connection
- * deviceId String 
- * moduleId String 
+ * deviceId String
+ * moduleId String
  * returns Object
  **/
 exports.registry_GetModuleTwin = function(connectionId,deviceId,moduleId) {
@@ -83,7 +83,7 @@ exports.registry_GetModuleTwin = function(connectionId,deviceId,moduleId) {
     debug(`calling Registry.getModuleTwin`);
     registry.getModuleTwin(deviceId, moduleId, function(err, result) {
       glueUtils.debugFunctionResult('registry.getModuleTwin', err);
-      callback(err, result);
+      callback(err, result["properties"]);
     });
   });
 }
@@ -93,13 +93,20 @@ exports.registry_GetModuleTwin = function(connectionId,deviceId,moduleId) {
  * update the device twin for the given deviceId
  *
  * connectionId String Id for the connection
- * deviceId String 
- * props Object 
+ * deviceId String
+ * props Object
  * no response value expected for this operation
  **/
-exports.registry_PatchDeviceTwin = function(connectionId,deviceId,props) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+exports.registry_PatchDeviceTwin = function(connectionId,deviceId,twin) {
+  debug(`registry_PatchDeviceTwin called with ${connectionId}, ${deviceId}`);
+  debug(twin);
+  return glueUtils.makePromise('registry_PatchDeviceTwin', function(callback) {
+    var registry = objectCache.getObject(connectionId);
+    debug(`calling Registry.updateDeviceTwin`);
+    registry.updateTwin(deviceId, { 'properties': twin }, '*', function(err, result) {
+      glueUtils.debugFunctionResult('registry.updateTwin', err);
+      callback(err, result);
+    });
   });
 }
 
@@ -108,21 +115,22 @@ exports.registry_PatchDeviceTwin = function(connectionId,deviceId,props) {
  * update the module twin for the given deviceId and moduleId
  *
  * connectionId String Id for the connection
- * deviceId String 
- * moduleId String 
- * props Object 
+ * deviceId String
+ * moduleId String
+ * props Object
  * no response value expected for this operation
  **/
-exports.registry_PatchModuleTwin = function(connectionId,deviceId,moduleId,props) {
+exports.registry_PatchModuleTwin = function(connectionId,deviceId,moduleId,twin) {
   debug(`registry_PatchModuleTwin called with ${connectionId}, ${deviceId}, ${moduleId}`);
-  debug(props);
+  debug(twin);
   return glueUtils.makePromise('registry_PatchModuleTwin', function(callback) {
     var registry = objectCache.getObject(connectionId);
     debug(`calling Registry.updateModuleTwin`);
-    registry.updateModuleTwin(deviceId, moduleId, props, '*', function(err, result) {
+    registry.updateModuleTwin(deviceId, moduleId, { 'properties': twin }, '*', function(err, result) {
       glueUtils.debugFunctionResult('registry.updateModuleTwin', err);
       callback(err, result);
     });
   });
 }
 
+  

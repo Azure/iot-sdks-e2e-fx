@@ -9,7 +9,7 @@
       }
     }
   },
-  "roundtripMethodCallBody": {
+  "methodRequestAndResponse": {
     "description": "parameters and response for a sync method call",
     "type": "object",
     "properties": {
@@ -34,6 +34,70 @@
       "connectionId": {
         "description": "unique identifier for this connection",
         "type": "string"
+      }
+    }
+  },
+  "methodInvoke": {
+    "description": "parameters used to invoke a method",
+    "type": "object",
+    "properties": {
+      "methodName": {
+        "description": "name of method to invoke",
+        "type": "string"
+      },
+      "payload": {
+        "description": "payload to send to the method",
+        "type": "object"
+      },
+      "responseTimeoutInSeconds": {
+        "description": "number of seconds to wait for a response",
+        "type": "integer"
+      },
+      "connectTimeoutInSeconds": {
+        "description": "number of seconds to wait for the module to connect",
+        "type": "integer"
+      }
+    }
+  },
+  "eventBody": {
+    "description": "body for an invoming or outgoing event or message",
+    "type": "object",
+    "properties": {
+      "body": {
+        "description": "payload to send to the method",
+        "type": "object"
+      },
+      "horton_flags": {
+        "description": "flags used by horton",
+        "type": "object"
+      },
+      "attributes": {
+        "description": "Message attributes",
+        "type": "object"
+      }
+    }
+  },
+  "logMessage": {
+    "description": "message from the test script to output to the log",
+    "type": "object",
+    "properties": {
+      "message": {
+        "description": "text of message",
+        "type": "string"
+      }
+    }
+  },
+  "twin": {
+    "description": "device twin or module twin",
+    "type": "object",
+    "properties": {
+      "desired": {
+        "description": "desired properties",
+        "type": "object"
+      },
+      "reported": {
+        "description": "reported properties",
+        "type": "object"
       }
     }
   }

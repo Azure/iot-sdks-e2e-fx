@@ -13,5 +13,6 @@
 */swagger_generated/
 pytestdebug.log
 *.swp
+*.swo
 _horton_settings.json
 

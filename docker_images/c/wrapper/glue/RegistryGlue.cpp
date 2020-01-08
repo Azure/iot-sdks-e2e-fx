@@ -5,6 +5,7 @@
 #include "RegistryGlue.h"
 #include "iothub_service_client_auth.h"
 #include "iothub_devicetwin.h"
+#include "GlueUtils.h"
 
 using namespace std;
 
@@ -95,8 +96,8 @@ string RegistryGlue::GetModuleTwin(string connectionId, string deviceId, string 
     }
     string result = deviceTwinJson;
     free(deviceTwinJson);
-    cout << "result: " << result << endl;
-    return result;
+    cout << "device twin: " << result << endl;
+    return getJsonSubObject(result, "properties");
 }
 
 void RegistryGlue::PatchModuleTwin(string connectionId, string deviceId, string moduleId, string patch)
@@ -110,9 +111,10 @@ void RegistryGlue::PatchModuleTwin(string connectionId, string deviceId, string 
         throw new runtime_error("client is not opened");
     }
 
+    string wrappedPatch = addJsonWrapperObject(patch, "properties");
     char* deviceTwinJson;
     cout << "calling IoTHubDeviceTwin_UpdateModuleTwin" << endl;
-    if ((deviceTwinJson = IoTHubDeviceTwin_UpdateModuleTwin(twin, deviceId.c_str(), moduleId.c_str(), patch.c_str())) == NULL)
+    if ((deviceTwinJson = IoTHubDeviceTwin_UpdateModuleTwin(twin, deviceId.c_str(), moduleId.c_str(), wrappedPatch.c_str())) == NULL)
     {
         throw new runtime_error("IoTHubDeviceTwin_UpdateModuleTwin failed");
     }

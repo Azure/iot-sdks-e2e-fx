@@ -20,6 +20,7 @@ var options = {
 var spec = fs.readFileSync(path.join(__dirname,'api/swagger.yaml'), 'utf8');
 var swaggerDoc = jsyaml.safeLoad(spec);
 
+// BEGIN code added in merge
 // Function to convert PascalCase to camelCase
 var toCamel = function(s) {
     return s.charAt(0).toLowerCase() + s.slice(1)
@@ -35,16 +36,7 @@ Object.keys(paths).forEach(function(path) {
     }
   });
 }); 
-
-// various yaml fixes to make things work.  
-console.assert(paths['/device/{connectionId}/event'].put.parameters[1].name === 'eventBody');
-paths['/device/{connectionId}/event'].put.parameters[1].schema.type = 'string'
-
-console.assert(paths['/module/{connectionId}/event'].put.parameters[1].name === 'eventBody');
-paths['/module/{connectionId}/event'].put.parameters[1].schema.type = 'string'
-
-console.assert(paths['/module/{connectionId}/outputEvent/{outputName}'].put.parameters[2].name === 'eventBody');
-paths['/module/{connectionId}/outputEvent/{outputName}'].put.parameters[2].schema.type = 'string'
+// END code added in merge
 
 // Initialize the Swagger middleware
 swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {

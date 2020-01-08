@@ -56,7 +56,7 @@ endif()
 
 set(generated_cpp_files
     generated/ModuleApi.cpp
-    generated/WrapperApi.cpp
+    generated/ControlApi.cpp
     generated/RegistryApi.cpp
     generated/ServiceApi.cpp
     generated/DeviceApi.cpp
@@ -64,7 +64,7 @@ set(generated_cpp_files
 
 set(generated_h_files
     generated/ModuleApi.h
-    generated/WrapperApi.h
+    generated/ControlApi.h
     generated/RegistryApi.h
     generated/ServiceApi.h
     generated/DeviceApi.h
@@ -75,7 +75,7 @@ set(glue_cpp_files
     glue/InternalGlue.cpp
     glue/DeviceGlue.cpp
     glue/ModuleGlue.cpp
-    glue/WrapperGlue.cpp
+    glue/ControlGlue.cpp
     glue/RegistryGlue.cpp
     glue/ServiceGlue.cpp
 )
@@ -85,7 +85,7 @@ set(glue_h_files
     glue/InternalGlue.h
     glue/DeviceGlue.h
     glue/ModuleGlue.h
-    glue/WrapperGlue.h
+    glue/ControlGlue.h
     glue/RegistryGlue.h
     glue/ServiceGlue.h
 )

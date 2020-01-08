@@ -31,6 +31,8 @@ def obj_to_dict(obj, object_name=None):
             return obj
     elif isinstance(obj, int) or isinstance(obj, bool):
         return obj
+    elif isinstance(obj, list):
+        return str([x for x in obj if not callable(x) and not str(x).startswith("__")])
     elif isinstance(obj, object):
         dict = {}
         for child_name in dir(obj):

@@ -213,6 +213,7 @@ exports.module_EnableTwin = function(connectionId) {
 exports.module_GetConnectionStatus = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
+    examples['application/json'] = "";
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -226,12 +227,15 @@ exports.module_GetConnectionStatus = function(connectionId) {
  * Get the device twin
  *
  * connectionId String Id for the connection
- * returns Object
+ * returns twin
  **/
 exports.module_GetTwin = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
-    examples['application/json'] = "{}";
+    examples['application/json'] = {
+  "desired" : "{}",
+  "reported" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -246,7 +250,7 @@ exports.module_GetTwin = function(connectionId) {
  *
  * connectionId String Id for the connection
  * deviceId String 
- * methodInvokeParameters Object 
+ * methodInvokeParameters MethodInvoke 
  * returns Object
  **/
 exports.module_InvokeDeviceMethod = function(connectionId,deviceId,methodInvokeParameters) {
@@ -268,7 +272,7 @@ exports.module_InvokeDeviceMethod = function(connectionId,deviceId,methodInvokeP
  * connectionId String Id for the connection
  * deviceId String 
  * moduleId String 
- * methodInvokeParameters Object 
+ * methodInvokeParameters MethodInvoke 
  * returns Object
  **/
 exports.module_InvokeModuleMethod = function(connectionId,deviceId,moduleId,methodInvokeParameters) {
@@ -288,10 +292,10 @@ exports.module_InvokeModuleMethod = function(connectionId,deviceId,moduleId,meth
  * Updates the device twin
  *
  * connectionId String Id for the connection
- * props Object 
+ * twin Twin 
  * no response value expected for this operation
  **/
-exports.module_PatchTwin = function(connectionId,props) {
+exports.module_PatchTwin = function(connectionId,twin) {
   return new Promise(function(resolve, reject) {
     resolve();
   });
@@ -313,26 +317,10 @@ exports.module_Reconnect = function(connectionId,forceRenewPassword) {
 
 
 /**
- * Wait for a method call, verify the request, and return the response.
- * This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)
- *
- * connectionId String Id for the connection
- * methodName String name of the method to handle
- * requestAndResponse RoundtripMethodCallBody 
- * no response value expected for this operation
- **/
-exports.module_RoundtripMethodCall = function(connectionId,methodName,requestAndResponse) {
-  return new Promise(function(resolve, reject) {
-    resolve();
-  });
-}
-
-
-/**
  * Send an event
  *
  * connectionId String Id for the connection
- * eventBody Object 
+ * eventBody EventBody 
  * no response value expected for this operation
  **/
 exports.module_SendEvent = function(connectionId,eventBody) {
@@ -347,7 +335,7 @@ exports.module_SendEvent = function(connectionId,eventBody) {
  *
  * connectionId String Id for the connection
  * outputName String 
- * eventBody Object 
+ * eventBody EventBody 
  * no response value expected for this operation
  **/
 exports.module_SendOutputEvent = function(connectionId,outputName,eventBody) {
@@ -366,6 +354,7 @@ exports.module_SendOutputEvent = function(connectionId,outputName,eventBody) {
 exports.module_WaitForConnectionStatusChange = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
+    examples['application/json'] = "";
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -379,12 +368,15 @@ exports.module_WaitForConnectionStatusChange = function(connectionId) {
  * Wait for the next desired property patch
  *
  * connectionId String Id for the connection
- * returns Object
+ * returns twin
  **/
 exports.module_WaitForDesiredPropertiesPatch = function(connectionId) {
   return new Promise(function(resolve, reject) {
     var examples = {};
-    examples['application/json'] = "{}";
+    examples['application/json'] = {
+  "desired" : "{}",
+  "reported" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
@@ -399,16 +391,37 @@ exports.module_WaitForDesiredPropertiesPatch = function(connectionId) {
  *
  * connectionId String Id for the connection
  * inputName String 
- * returns String
+ * returns eventBody
  **/
 exports.module_WaitForInputMessage = function(connectionId,inputName) {
   return new Promise(function(resolve, reject) {
     var examples = {};
+    examples['application/json'] = {
+  "horton_flags" : "{}",
+  "attributes" : "{}",
+  "body" : "{}"
+};
     if (Object.keys(examples).length > 0) {
       resolve(examples[Object.keys(examples)[0]]);
     } else {
       resolve();
     }
+  });
+}
+
+
+/**
+ * Wait for a method call, verify the request, and return the response.
+ * This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)
+ *
+ * connectionId String Id for the connection
+ * methodName String name of the method to handle
+ * requestAndResponse MethodRequestAndResponse 
+ * no response value expected for this operation
+ **/
+exports.module_WaitForMethodAndReturnResponse = function(connectionId,methodName,requestAndResponse) {
+  return new Promise(function(resolve, reject) {
+    resolve();
   });
 }
 
@@ -422,3 +435,4 @@ exports.module_WaitForInputMessage = function(connectionId,inputName) {
 //
 // WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 module.exports = require('../glue/glueUtils').replaceExports(module.exports, '../glue/moduleGlue.js')
+

@@ -90,7 +90,7 @@ class HandleMethods(object):
         pass
 
     @abc.abstractmethod
-    def roundtrip_method_call(
+    def wait_for_method_and_return_response(
         self, method_name, status_code, request_payload, response_payload
     ):
         pass

@@ -13,18 +13,16 @@ hardcoded_skip_list = {
         "invokesDeviceMethodCalls",
     ],
     "c": ["module_under_test_has_device_wrapper"],
-    "java": ["module_under_test_has_device_wrapper", "supportsTwin"],
 }
 
 language_has_full_device_client = ("pythonv2",)
 language_has_leaf_device_client = ("node",)
-language_has_service_client = ("node", "csharp", "javs", "c")
+language_has_service_client = ("node", "csharp", "java", "c")
 
 
 class HortonCapabilities(object):
     def __init__(self):
         self.supports_async = False
-        self.new_message_format = False
         self.security_messages = False
         self.v2_connect_group = False
         self.dropped_connection_tests = False

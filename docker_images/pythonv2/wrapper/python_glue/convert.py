@@ -3,55 +3,18 @@
 # full license information.
 import json
 import logging
-import six
+from azure.iot.device import Message
 
 logger = logging.getLogger(__name__)
 
 
-def new_test_script_message_object_to_outgoing_message(obj):
-    if obj["bodyType"] == "string":
-        return json.dumps(obj["body"])
-    elif obj["bodyType"] == "json":
-        return bytearray(json.dumps(obj["body"]), "utf-8")
-    else:
-        assert False
-
-
-def test_script_object_to_outgoing_message(body):
+def test_script_object_to_outgoing_message(payload):
     """
     Convert an object that we received from a test script into something that we
     can pass into the iothub sdk.
     """
 
-    # if we're starting with bytes, convert it into a string, and then try to
-    # deserialize it into an object.  This happens if we're calling into the
-    # glue over REST.  If, however, we're calling into the glue directly, then
-    # we skip this code.
-    if isinstance(body, bytes):
-        body = body.decode("utf-8")
-        try:
-            body = json.loads(body)
-        except ValueError:
-            pass
-
-    # at this point, we should have a dict or a string.
-    if isinstance(body, dict):
-        if "bodyType" in body:
-            # If we have a dict with a bodyType member, then it's a HubEvent object.
-            return new_test_script_message_object_to_outgoing_message(body)
-        else:
-            # dict without bodyType member, just stringify it.
-            return json.dumps(body)
-
-    elif isinstance(body, six.string_types):
-        # just a string.  stringify it to make sure it's valid JSON and pass it on.
-        return json.dumps(body)
-
-    else:
-        logger.error(
-            "Unable to convert body of type {} : {}".format(body.__class__, body)
-        )
-        assert False
+    return Message(bytearray(json.dumps(payload.body), "utf-8"))
 
 
 def incoming_message_to_test_script_object(message):
@@ -59,12 +22,7 @@ def incoming_message_to_test_script_object(message):
     convert an object that we receive from IoTHub or EdgeHub into an object that
     our test scripts can understand
     """
-    if isinstance(message.data, bytes):
-        data = message.data.decode("utf-8")
-        try:
-            data = json.loads(data)
-        except ValueError:
-            pass
-        return data
-    else:
-        return json.loads(message.data)
+    payload = message.data
+    if isinstance(payload, bytes):
+        payload = payload.decode("utf-8")
+    return {"body": json.loads(payload)}

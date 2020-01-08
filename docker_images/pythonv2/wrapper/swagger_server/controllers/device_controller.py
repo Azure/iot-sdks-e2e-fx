@@ -3,7 +3,9 @@ import six
 
 from swagger_server.models.certificate import Certificate  # noqa: E501
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
-from swagger_server.models.roundtrip_method_call_body import RoundtripMethodCallBody  # noqa: E501
+from swagger_server.models.event_body import EventBody  # noqa: E501
+from swagger_server.models.method_request_and_response import MethodRequestAndResponse  # noqa: E501
+from swagger_server.models.twin import Twin  # noqa: E501
 from swagger_server import util
 
 # Added 3 lines in merge
@@ -43,8 +45,7 @@ def device_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.connect2(connectionId)
+    return 'do some magic!'
 
 
 def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -189,26 +190,28 @@ def device_get_twin(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: Twin
     """
     # changed from return 'do some magic!'
     return device_glue.get_twin(connectionId)
 
 
-def device_patch_twin(connectionId, props):  # noqa: E501
+def device_patch_twin(connectionId, twin):  # noqa: E501
     """Updates the device twin
 
      # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param props: 
-    :type props: 
+    :param twin: 
+    :type twin: dict | bytes
 
     :rtype: None
     """
+    if connexion.request.is_json:
+        twin = Twin.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    device_glue.send_twin_patch(connectionId, props)
+    device_glue.send_twin_patch(connectionId, twin)
 
 
 def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
@@ -227,27 +230,6 @@ def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
     device_glue.reconnect(connectionId, forceRenewPassword)
 
 
-def device_roundtrip_method_call(connectionId, methodName, requestAndResponse):  # noqa: E501
-    """Wait for a method call, verify the request, and return the response.
-
-    This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call) # noqa: E501
-
-    :param connectionId: Id for the connection
-    :type connectionId: str
-    :param methodName: name of the method to handle
-    :type methodName: str
-    :param requestAndResponse: 
-    :type requestAndResponse: dict | bytes
-
-    :rtype: None
-    """
-    if connexion.request.is_json:
-        requestAndResponse = RoundtripMethodCallBody.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    return device_glue.roundtrip_method_call(
-        connectionId, methodName, requestAndResponse
-    )
-
 
 def device_send_event(connectionId, eventBody):  # noqa: E501
     """Send an event
@@ -257,10 +239,12 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
     :param eventBody: 
-    :type eventBody: 
+    :type eventBody: dict | bytes
 
     :rtype: None
     """
+    if connexion.request.is_json:
+        eventBody = EventBody.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
     device_glue.send_event(connectionId, eventBody)
 
@@ -273,7 +257,7 @@ def device_wait_for_c2d_message(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: str
+    :rtype: EventBody
     """
     # changed from return 'do some magic!'
     return device_glue.wait_for_c2d_message(connectionId)
@@ -301,7 +285,29 @@ def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
     :param connectionId: Id for the connection
     :type connectionId: str
 
-    :rtype: object
+    :rtype: Twin
     """
     # changed from return 'do some magic!'
     return device_glue.wait_for_desired_property_patch(connectionId)
+
+
+def device_wait_for_method_and_return_response(connectionId, methodName, requestAndResponse):  # noqa: E501
+    """Wait for a method call, verify the request, and return the response.
+
+    This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call) # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param methodName: name of the method to handle
+    :type methodName: str
+    :param requestAndResponse: 
+    :type requestAndResponse: dict | bytes
+
+    :rtype: None
+    """
+    if connexion.request.is_json:
+        requestAndResponse = MethodRequestAndResponse.from_dict(connexion.request.get_json())  # noqa: E501
+    # changed from return 'do some magic!'
+    return device_glue.roundtrip_method_call(
+        connectionId, methodName, requestAndResponse
+    )

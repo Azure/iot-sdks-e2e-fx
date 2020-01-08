@@ -44,7 +44,7 @@ exports.service_Disconnect = function(connectionId) {
  *
  * connectionId String Id for the connection
  * deviceId String 
- * methodInvokeParameters Object 
+ * methodInvokeParameters MethodInvoke 
  * returns Object
  **/
 exports.service_InvokeDeviceMethod = function(connectionId,deviceId,methodInvokeParameters) {
@@ -66,7 +66,7 @@ exports.service_InvokeDeviceMethod = function(connectionId,deviceId,methodInvoke
  * connectionId String Id for the connection
  * deviceId String 
  * moduleId String 
- * methodInvokeParameters Object 
+ * methodInvokeParameters MethodInvoke 
  * returns Object
  **/
 exports.service_InvokeModuleMethod = function(connectionId,deviceId,moduleId,methodInvokeParameters) {
@@ -87,7 +87,7 @@ exports.service_InvokeModuleMethod = function(connectionId,deviceId,moduleId,met
  *
  * connectionId String Id for the connection
  * deviceId String 
- * eventBody Object 
+ * eventBody EventBody 
  * no response value expected for this operation
  **/
 exports.service_SendC2d = function(connectionId,deviceId,eventBody) {
@@ -106,3 +106,4 @@ exports.service_SendC2d = function(connectionId,deviceId,eventBody) {
 //
 // WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 module.exports = require('../glue/glueUtils').replaceExports(module.exports, 'serviceGlue.js')
+

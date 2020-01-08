@@ -5,39 +5,29 @@
 import asyncio
 import pytest
 import json
-from models import HubEvent
-import sample_content
+from horton_settings import settings
 
 
 class TelemetryTests(object):
     @pytest.mark.it("Can send telemetry directly to IoTHub")
     async def test_send_telemetry_to_iothub(
-        self, client, eventhub, test_object_stringified
+        self, client, eventhub, telemetry_payload, logger, request
     ):
+        if (
+            len(str(telemetry_payload)) > 65500 
+            and settings.horton.transport == "amqpws"
+            and settings.horton.language == "java"
+        ):
+            pytest.skip("amqpws on Java can't do 64kb telemetry")
+
         await eventhub.connect()
 
-        await client.send_event(test_object_stringified)
+        logger('sending "{}"'.format(telemetry_payload))
+
+        await client.send_event(telemetry_payload)
 
         received_message = await eventhub.wait_for_next_event(
-            client.device_id, expected=test_object_stringified
-        )
-        assert received_message is not None, "Message not received"
-
-    @pytest.mark.parametrize("body", sample_content.telemetry_test_objects)
-    @pytest.mark.new_message_format
-    @pytest.mark.it(
-        "Can send telemetry directly to IoTHub using the new Horton HubEvent"
-    )
-    async def test_device_send_telemetry_using_new_message_format(
-        self, client, eventhub, body
-    ):
-        await eventhub.connect()
-
-        sent_message = HubEvent(body)
-        await client.send_event(sent_message.convert_to_json())
-
-        received_message = await eventhub.wait_for_next_event(
-            client.device_id, expected=sent_message.body
+            client.device_id, expected=telemetry_payload
         )
         assert received_message is not None, "Message not received"
 

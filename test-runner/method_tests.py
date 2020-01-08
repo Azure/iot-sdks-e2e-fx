@@ -15,7 +15,7 @@ time_for_method_to_fully_register = 5
 time_for_method_to_fully_register_service_call = 15
 
 method_name = "test_method"
-method_payload = '"Look at me, I\'ve got payload!"'
+method_payload = {"payloadData": "test-payload"}
 status_code = 221
 
 method_invoke_parameters = {
@@ -25,7 +25,7 @@ method_invoke_parameters = {
     "connectTimeoutInSeconds": 60,
 }
 
-method_response_body = {"response": "Look at me.  I'm a response!"}
+method_response_body = {"responseData": "test-response"}
 
 
 async def run_method_call_test(
@@ -38,7 +38,7 @@ async def run_method_call_test(
 
     # start listening for method calls on the destination side
     receiver_future = asyncio.ensure_future(
-        destination.roundtrip_method_call(
+        destination.wait_for_method_and_return_response(
             method_name, status_code, method_invoke_parameters, method_response_body
         )
     )

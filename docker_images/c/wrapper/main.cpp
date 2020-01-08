@@ -10,7 +10,7 @@
 #include <streambuf>
 #include <iostream>
 #include "ModuleApi.h"
-#include "WrapperApi.h"
+#include "ControlApi.h"
 #include "RegistryApi.h"
 #include "ServiceApi.h"
 #include "DeviceApi.h"
@@ -20,21 +20,21 @@ using namespace std;
 using namespace restbed;
 using namespace io::swagger::server::api;
 
-class MergedApi : public ModuleApi, public WrapperApi, public RegistryApi, public ServiceApi, public DeviceApi
+class MergedApi : public ModuleApi, public ControlApi, public RegistryApi, public ServiceApi, public DeviceApi
 {
 public:
     MergedApi()
     {
         ModuleApi *moduleApi = this;
-        WrapperApi *wrapperApi = this;
+        ControlApi *controlApi = this;
         RegistryApi *registryApi = this;
         ServiceApi *serviceApi = this;
         DeviceApi *deviceApi = this;
         // Any Api objects derived from restbed::Service need to be derived with a virtual base class as follows:
-        //   class  WrapperApi: public virtual restbed::Service
+        //   class  ControlApi: public virtual restbed::Service
         // This allows the MergedApi object to derive from all the Api objects and share a single restbed::Service instance.
         // These asserts verify that all of the Api objects share the same restbed::Service base instance.
-        assert((restbed::Service*)moduleApi == (restbed::Service*)wrapperApi);
+        assert((restbed::Service*)moduleApi == (restbed::Service*)controlApi);
         assert((restbed::Service*)moduleApi == (restbed::Service*)registryApi);
         assert((restbed::Service*)moduleApi == (restbed::Service*)serviceApi);
         assert((restbed::Service*)deviceApi == (restbed::Service*)serviceApi);

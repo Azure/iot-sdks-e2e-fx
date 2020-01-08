@@ -21,11 +21,3 @@ telemetry_test_objects = [
     pytest.param(string_64K, id="64k character string"),
     pytest.param(object_with_3_layers, id="object with 3 layers"),
 ]
-
-string_index = 0
-
-
-def next_random_string(prefix):
-    global string_index
-    string_index = string_index + 1
-    return random_string("{} {}".format(prefix, string_index))

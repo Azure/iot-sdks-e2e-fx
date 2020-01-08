@@ -2,6 +2,8 @@ import connexion
 import six
 
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
+from swagger_server.models.event_body import EventBody  # noqa: E501
+from swagger_server.models.method_invoke import MethodInvoke  # noqa: E501
 from swagger_server import util
 
 
@@ -41,10 +43,12 @@ def service_invoke_device_method(connectionId, deviceId, methodInvokeParameters)
     :param deviceId: 
     :type deviceId: str
     :param methodInvokeParameters: 
-    :type methodInvokeParameters: 
+    :type methodInvokeParameters: dict | bytes
 
     :rtype: object
     """
+    if connexion.request.is_json:
+        methodInvokeParameters = MethodInvoke.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 
@@ -60,10 +64,12 @@ def service_invoke_module_method(connectionId, deviceId, moduleId, methodInvokeP
     :param moduleId: 
     :type moduleId: str
     :param methodInvokeParameters: 
-    :type methodInvokeParameters: 
+    :type methodInvokeParameters: dict | bytes
 
     :rtype: object
     """
+    if connexion.request.is_json:
+        methodInvokeParameters = MethodInvoke.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 
@@ -77,8 +83,10 @@ def service_send_c2d(connectionId, deviceId, eventBody):  # noqa: E501
     :param deviceId: 
     :type deviceId: str
     :param eventBody: 
-    :type eventBody: 
+    :type eventBody: dict | bytes
 
     :rtype: None
     """
+    if connexion.request.is_json:
+        eventBody = EventBody.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'

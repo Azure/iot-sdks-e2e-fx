@@ -1,4 +1,4 @@
-# Copyright (c) Microsoft. All rights reserved.
+# http://localhost:8099, Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
@@ -16,8 +16,6 @@ import connections
 from distutils.version import LooseVersion
 from horton_settings import settings
 from fixtures import (
-    test_string,
-    test_string_2,
     test_object_stringified,
     test_object_stringified_2,
     logger,
@@ -28,11 +26,11 @@ from fixtures import (
     service,
     test_device,
     test_module,
-    test_payload,
     sample_reported_props,
     sample_desired_props,
     sample_payload,
     net_control,
+    telemetry_payload,
 )
 from log_fixtures import (
     pytest_runtest_makereport,
@@ -141,6 +139,7 @@ __tracebackhide__ = True
 def set_transport(transport):
     print("Using " + transport)
     settings.friend_module.transport = "mqtt"
+    settings.horton.transport = transport
     settings.test_module.transport = transport
     settings.leaf_device.transport = transport
     settings.test_device.transport = transport
@@ -160,9 +159,10 @@ def set_local():
                 settings.test_module.container_port
             )
 
-    settings.net_control.adapter_address = "http://localhost:{}".format(
-        settings.net_control.container_port
-    )
+    if settings.net_control.adapter_address:
+        settings.net_control.adapter_address = "http://localhost:{}".format(
+            settings.net_control.container_port
+        )
 
 
 def set_python_direct():
@@ -292,12 +292,18 @@ def pytest_collection_modifyitems(config, items):
     add_service_settings()
     adjust_surfaces_for_missing_implementations()
     only_include_scenario_tests(items, config.getoption("--scenario"))
-    skip_unsupported_tests(items)
 
     # make sure the network is connected before starting (this can happen with interrupted runs)
     if settings.test_module.capabilities.dropped_connection_tests:
-        settings.net_control.api = connections.get_net_control_api()
-        settings.net_control.api.reconnect_sync()
+        if not settings.net_control.adapter_address:
+            settings.test_module.capabilities.dropped_connection_tests = False
+            settings.test_module.capabilities.net_connect_app = False
+            settings.test_module.skip_list.append("dropped_connection_tests")
+        else:
+            settings.net_control.api = connections.get_net_control_api()
+            settings.net_control.api.reconnect_sync()
+
+    skip_unsupported_tests(items)
 
     if getattr(config, "_origargs", None):
         adapter_config.logger("HORTON: starting run: {}".format(config._origargs))
