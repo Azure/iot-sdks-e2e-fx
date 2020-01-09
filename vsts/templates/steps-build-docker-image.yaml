@@ -1,0 +1,156 @@
+parameters:
+  langauge: ''
+  repo: $(Horton.Repo)
+  commit: $(Horton.Commit)
+  forced_image: $(Horton.ForcedImage)
+  job_tag: 'linux'
+  variant: ''
+  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
+  repo_user: $(IOTHUB-E2E-REPO-USER)
+  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
+
+steps:
+- template: steps-ensure-e2e-fx-repo.yaml
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.7'
+
+- powershell: |
+    $BuildImage="yes"
+    if ($env:ForcedImage -ne "") {
+      $BuildImage="no"
+    }
+
+
+    $IsPr = "no"
+    $LanguageToPass=$env:Language
+    $RepoToPass=$env:Repo
+    $CommitToPass = $env:Commit
+    $VariantToPass = $env:Variant
+
+    if ($CommitToPass -like '$(Horton.Commit)') {
+        $CommitToPass="master"
+    }
+
+    if ($VariantToPass.StartsWith("$")) {
+        $VariantToPass=""
+    }
+
+    if ( $LanguageToPass.StartsWith("$") -or ($LanguageToPass -eq "") ) {
+        if ($VariantToPass -like "node6") {
+            $LanguageToPass="node"
+            $RepoToPass = "Azure/azure-iot-sdk-node"
+        } elseif ($VariantToPass -like "node8") {
+            $LanguageToPass="node"
+            $RepoToPass = "Azure/azure-iot-sdk-node"
+        } elseif ($VariantToPass -like "node10") {
+            $LanguageToPass="node"
+            $RepoToPass = "Azure/azure-iot-sdk-node"
+        } elseif ($VariantToPass -like "py27") {
+            $LanguageToPass="pythonv2"
+            $RepoToPass = "Azure/azure-iot-sdk-python"
+        } elseif ($VariantToPass -like "py34") {
+            $LanguageToPass="pythonv2"
+            $RepoToPass = "Azure/azure-iot-sdk-python"
+        } elseif ($VariantToPass -like "py35") {
+            $LanguageToPass="pythonv2"
+            $RepoToPass = "Azure/azure-iot-sdk-python"
+        } elseif ($VariantToPass -like "py36") {
+            $LanguageToPass="pythonv2"
+            $RepoToPass = "Azure/azure-iot-sdk-python"
+        } elseif ($VariantToPass -like "py37") {
+            $LanguageToPass="pythonv2"
+            $RepoToPass = "Azure/azure-iot-sdk-python"
+        } elseif ($VariantToPass -like "py38") {
+            $LanguageToPass="pythonv2"
+            $RepoToPass = "Azure/azure-iot-sdk-python"
+        }
+    }
+
+    if ($RepoToPass.StartsWith("$")) {
+        if ($LanguageToPass -like 'c') {
+            $RepoToPass="Azure/azure-iot-sdk-c"
+        } elseif ($LanguageToPass -like 'node') {
+            $RepoToPass="Azure/azure-iot-sdk-node"
+        } elseif ($LanguageToPass -like 'csharp') {
+            $RepoToPass="Azure/azure-iot-sdk-csharp"
+        } elseif ($LanguageToPass -like 'java') {
+            $RepoToPass="Azure/azure-iot-sdk-java"
+        } elseif ($LanguageToPass -like 'pythonv2') {
+            $RepoToPass="Azure/azure-iot-sdk-python"
+        }
+    }
+
+    if ($RepoToPass -like 'https://github.com/*') {
+      $RepoToPass=$RepoToPass.Substring('https://github.com/'.length)
+    }
+
+    if ("$env:SYSTEM_PULLREQUEST_TARGETBRANCH" -ne "") {
+      $CommitToPass = $env:SYSTEM_PULLREQUEST_TARGETBRANCH
+      $IsPr = "yes"
+    }
+
+    Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
+    Write-Host "##vso[task.setvariable variable=IsPr]${IsPr}"
+    Write-Host "##vso[task.setvariable variable=RepoToPass]${RepoToPass}"
+    Write-Host "##vso[task.setvariable variable=CommitToPass]${CommitToPass}"
+    Write-Host "##vso[task.setvariable variable=LanguageToPass]${LanguageToPass}"
+    Write-Host "##vso[task.setvariable variable=VariantToPass]${VariantToPass}"
+    Write-Host "BuildImage=${BuildImage}"
+    Write-Host "IsPr=${IsPr}"
+    Write-Host "RepoToPass=${RepoToPass}"
+    Write-Host "CommitToPass=${CommitToPass}"
+    Write-Host "LanguageToPass=${LanguageToPass}"
+    Write-Host "VariantToPass=${VariantToPass}"
+  displayName: Custom task execution logic
+  env:
+    Commit: ${{ parameters.commit }}
+    ForcedImage: ${{ parameters.forced_image }}
+    Repo: ${{ parameters.repo }}
+    Variant: ${{ parameters.variant }}
+    Language: ${{ parameters.language }}
+  ignoreLASTEXITCODE: false
+  errorActionPreference: Stop
+  failOnStderr: true
+
+- script: |
+    cd ${BUILD_SOURCESDIRECTORY} &&
+    echo "saving patch from ${CommitToPass} to HEAD" &&
+    git diff -p origin/${CommitToPass} --binary > ${AGENT_BUILDDIRECTORY}/patchfile &&
+    mkdir -p $(Build.ArtifactStagingDirectory)/${{ parameters.job_tag }} &&
+    cp ${AGENT_BUILDDIRECTORY}/patchfile $(Build.ArtifactStagingDirectory)/${{ parameters.job_tag }} &&
+    mv ${AGENT_BUILDDIRECTORY}/patchfile ${HORTON_FRAMEWORKROOT}/docker_images/$(LanguageToPass)
+  displayName: "create patch for pull request changes"
+  condition: and(
+      succeeded(), 
+      eq(variables['buildImage'],'yes'),
+      not(eq(variables['Horton.FrameworkRoot'], variables['Build.SourcesDirectory'])),
+      eq(variables['IsPr'],'yes')
+      )
+  env:
+    CommitToPass: $(CommitToPass)
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/'
+    ArtifactName: 'patch'
+  condition: and(
+      succeeded(), 
+      eq(variables['buildImage'],'yes'),
+      not(eq(variables['Horton.FrameworkRoot'], variables['Build.SourcesDirectory'])),
+      eq(variables['IsPr'],'yes')
+      )
+
+- powershell: $(Horton.FrameworkRoot)/scripts/install-pyscript-reqs.ps1
+  displayName: "pip install requirements.txt"
+  condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+
+- powershell: $(Horton.FrameworkRoot)/scripts/build-docker-image.ps1 $(LanguageToPass) $(RepoToPass) $(CommitToPass) $(VariantToPass)
+  displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
+  env: 
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+  condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+

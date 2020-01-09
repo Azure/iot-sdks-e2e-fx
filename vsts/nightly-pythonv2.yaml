@@ -3,71 +3,27 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
-    job_tag: py27
-    variant: py27
-    
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
-    job_tag: py34
-    variant: py34
-    
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
-    job_tag: py35
-    variant: py35
-    
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
-    job_tag: py36
-    variant: py36
-    
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
-    job_tag: py37
-    variant: py37
-    
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
-    job_tag: py38
-    variant: py38
-    
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  strategy:
+    matrix:
+      py38: { variant: py38 }
+      py37: { variant: py37 }
+      py36: { variant: py36 }
+      py35: { variant: py35 }
+      py34: { variant: py34 }
+      py27: { variant: py27 }
+  steps:
+  - template: templates/steps-build-docker-image.yaml
+    parameters:
+      variant: $(variant)
 
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-    - "build_py27_container"
-    - "build_py34_container"
-    - "build_py35_container"
-    - "build_py36_container"
-    - "build_py37_container"
-    - "build_py38_container"
+    - "build_linux_amd64"
   strategy:
     maxParallel: 20
     matrix:

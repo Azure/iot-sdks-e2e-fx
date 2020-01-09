@@ -1,16 +1,17 @@
 jobs:
-- template: jobs-build-docker-image.yaml
-  parameters:
-    language: java
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  steps:
+  - template: steps-build-docker-image.yaml
+    parameters:
+      language: java
 
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-    - "build_linux_container"
+    - "build_linux_amd64"
   strategy:
     matrix:
       java_mqtt_iothub_module:      { suite: java_mqtt_iothub_module }

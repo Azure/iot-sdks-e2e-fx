@@ -3,17 +3,19 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: csharp
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  steps:
+  - template: templates/steps-build-docker-image.yaml
+    parameters:
+      language: csharp
 
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-    - "build_linux_container"
+    - "build_linux_amd64"
   strategy:
     matrix:
       csharp_mqtt_iothub_module:    { suite: csharp_mqtt_iothub_module }

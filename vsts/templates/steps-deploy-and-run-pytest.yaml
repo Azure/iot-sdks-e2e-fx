@@ -1,5 +1,5 @@
 parameters:
-  forced_image: ''
+  forced_image: $(Horton.ForcedImage)
   suite: ''
   testcase: ''
   repeat_count: ''
@@ -194,14 +194,14 @@ steps:
 
 - template: steps-ensure-e2e-fx-repo.yaml
 
-- template: pre-test-steps.yaml
+- template: steps-pre-test.yaml
   parameters:
     language: $(language)
     test_image_tag: $(testImageTag)
     image_testMod: $(imageTestMod)
     deployment_type: $(deploymentType)
 
-- template: pytest-test-steps.yaml
+- template: steps-run-pytest.yaml
   parameters:
     language: $(language)
     transport: $(transport)
@@ -209,7 +209,7 @@ steps:
     log_folder_name: $(logFolderName)
     extra_args: $(testArgs)
 
-- template: post-test-steps.yaml
+- template: steps-post-test.yaml
   parameters:
     language: $(language)
     log_folder_name: $(logFolderName)
