@@ -110,7 +110,7 @@ class DroppedConnectionTestsC2d(object):
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
         await service.send_c2d(client.device_id, json.dumps(payload))
         received_message = await test_input_future
-        assert received_message == payload
+        assert received_message.body == payload
 
         # 2nd call
         payload = sample_payload()
