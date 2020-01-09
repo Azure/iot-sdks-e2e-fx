@@ -86,6 +86,7 @@ jobs:
       csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
       csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
       py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
+      py27_mqtt_edgehub_module_quick_drop:          { suite: py27_mqtt_edgehub_module_quick_drop }
       py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
       py35_mqtt_edgehub_module:                     { suite: py35_mqtt_edgehub_module }
       py35_mqtt_iothub_module_and_device:           { suite: py35_mqtt_iothub_module_and_device }

@@ -147,10 +147,7 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props,
-            client=client,
-            registry=registry,
-            logger=logger,
+            properties_sent=props, client=client, registry=registry, logger=logger
         )
 
     @pytest.mark.it("Can reliably update reported properties (2nd time)")
@@ -172,10 +169,7 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props,
-            client=client,
-            registry=registry,
-            logger=logger,
+            properties_sent=props, client=client, registry=registry, logger=logger
         )
 
     @pytest.mark.it("Can reliably get the twin (1st call - possible subscribe)")
@@ -246,7 +240,7 @@ class DroppedConnectionTestsInputOutput(object):
         await send_future
         received_message = await friend_input_future
         print("received message")
-        assert received_message == test_payload
+        assert received_message.body == test_payload
 
     @pytest.mark.it("Can reliably send 5 output events")
     async def test_dropped_send_output_5x(
