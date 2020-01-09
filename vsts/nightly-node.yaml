@@ -3,7 +3,6 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
-jobs:
 - job: "build_linux_amd64"
   pool:
     vmImage: 'Ubuntu 16.04'
