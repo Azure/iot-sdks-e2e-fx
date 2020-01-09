@@ -3,83 +3,36 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  strategy:
+    matrix:
+        node8:  { variant: node8 }
+        c:      { language: c }
+        java:   { language: java }
+        csharp: { language: csharp }
+        py27:   { variant: py27 }
+        py35:   { variant: py35 }
+        py38:   { variant: py38 }
 
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: node
-    repo: Azure/azure-iot-sdk-node
-    commit: master
-    job_tag: node
-    forced_image: $(Horton.ForcedImage)
+  steps:
+  - template: templates/steps-build-docker-image.yaml
+    parameters:
+      language: $(language)
+      variant: $(variant)
 
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: c
-    repo: Azure/azure-iot-sdk-c
-    commit: master
-    job_tag: c
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: java
-    repo: Azure/azure-iot-sdk-java
-    commit: master
-    job_tag: java
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: csharp
-    repo: Azure/azure-iot-sdk-csharp
-    commit: master
-    job_tag: csharp
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: Azure/azure-iot-sdk-python  
-    commit: master
-    job_tag: py27
-    forced_image: $(Horton.ForcedImage)
-    variant: py27
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: Azure/azure-iot-sdk-python  
-    commit: master
-    job_tag: py35
-    forced_image: $(Horton.ForcedImage)
-    variant: py35
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    repo: Azure/azure-iot-sdk-python  
-    commit: master
-    job_tag: py38
-    forced_image: $(Horton.ForcedImage)
-    variant: py38
-
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-    - "build_node_container"
-    - "build_c_container"
-    - "build_java_container"
-    - "build_csharp_container"
-    - "build_py27_container"
-    - "build_py35_container"
-    - "build_py38_container"
+    - "build_linux_amd64"
 
   strategy:
     matrix:
-      node_amqp_iothub_module:              { suite: node_amqp_iothub_module }
-      node_amqpws_edgehub_module:           { suite: node_amqpws_edgehub_module }
-      node_mqttws_edgehub_module:           { suite: node_mqttws_edgehub_module }
+      node8_amqp_iothub_module:              { suite: node8_amqp_iothub_module }
+      node8_amqpws_edgehub_module:           { suite: node8_amqpws_edgehub_module }
+      node8_mqttws_edgehub_module:           { suite: node8_mqttws_edgehub_module }
       c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
       c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
       java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
@@ -98,5 +51,4 @@ jobs:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
-      forced_image: $(Horton.ForcedImage)
 

@@ -1,26 +1,27 @@
 jobs:
-- template: jobs-build-docker-image.yaml
-  parameters:
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    forced_image: $(Horton.ForcedImage)
-    language: node
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  steps:
+  - template: steps-build-docker-image.yaml
+    parameters:
+      variant: node8
 
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_linux_container"
   strategy:
     matrix:
-      node_mqtt_iothub_module:      { suite: node_mqtt_iothub_module }
-      node_mqtt_edgehub_module:     { suite: node_mqtt_edgehub_module }
-      node_mqttws_iothub_module:    { suite: node_mqttws_iothub_module }
-      node_mqttws_edgehub_module:   { suite: node_mqttws_edgehub_module }
-      node_amqp_iothub_module:      { suite: node_amqp_iothub_module }
-      node_amqp_edgehub_module:     { suite: node_amqp_edgehub_module }
-      node_amqpws_iothub_module:    { suite: node_amqpws_iothub_module }
-      node_amqpws_edgehub_module:   { suite: node_amqpws_edgehub_module }
+      node8_mqtt_iothub_module:      { suite: node8_mqtt_iothub_module }
+      node8_mqtt_edgehub_module:     { suite: node8_mqtt_edgehub_module }
+      node8_mqttws_iothub_module:    { suite: node8_mqttws_iothub_module }
+      node8_mqttws_edgehub_module:   { suite: node8_mqttws_edgehub_module }
+      node8_amqp_iothub_module:      { suite: node8_amqp_iothub_module }
+      node8_amqp_edgehub_module:     { suite: node8_amqp_edgehub_module }
+      node8_amqpws_iothub_module:    { suite: node8_amqpws_iothub_module }
+      node8_amqpws_edgehub_module:   { suite: node8_amqpws_edgehub_module }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml
