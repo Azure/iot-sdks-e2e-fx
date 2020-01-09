@@ -3,35 +3,25 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: node
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    job_tag: node6
-    variant: node6
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: node
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    job_tag: node8
-    variant: node8
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: node
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
-    job_tag: node10
-    variant: node10
+jobs:
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  strategy:
+    matrix:
+      node6:  { variant: node6 }
+      node8:  { variant: node8 }
+      node10: { variant: node10 }
+  steps:
+  - template: templates/steps-build-docker-image.yaml
+    parameters:
+      variant: $(variant)
 
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-    - "build_node6_container"
-    - "build_node8_container"
-    - "build_node10_container"
+    - "build_linux_amd64"
   strategy:
     matrix:
       node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub_module }

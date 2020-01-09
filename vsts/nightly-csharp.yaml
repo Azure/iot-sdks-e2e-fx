@@ -3,7 +3,7 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
-- job: "build_linux_amd6:4"
+- job: "build_linux_amd64"
   pool:
     vmImage: 'Ubuntu 16.04'
   steps:
@@ -11,11 +11,11 @@ jobs:
     parameters:
       language: csharp
 
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-    - "build_linux_container"
+    - "build_linux_amd64"
   strategy:
     matrix:
       csharp_mqtt_iothub_module:    { suite: csharp_mqtt_iothub_module }
