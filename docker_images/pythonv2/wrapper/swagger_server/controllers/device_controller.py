@@ -45,7 +45,8 @@ def device_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.connect2(connectionId)
 
 
 def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501

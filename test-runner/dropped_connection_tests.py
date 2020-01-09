@@ -1,6 +1,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
+import json
 import pytest
 import asyncio
 import datetime
@@ -89,12 +90,12 @@ class DroppedConnectionTestsC2d(object):
         await asyncio.sleep(30)  # long time necessary to let subscribe happen
         logger("transport connected.  Sending C2D")
 
-        await service.send_c2d(client.device_id, payload)
+        await service.send_c2d(client.device_id, json.dumps(payload))
 
         logger("C2D sent.  Waiting for response")
 
         received_message = await test_input_future
-        assert received_message == payload
+        assert received_message.body == payload
 
     @pytest.mark.it("Can reliably reveive c2d (2nd-time)")
     async def test_dropped_c2d_2nd_call(
@@ -107,9 +108,9 @@ class DroppedConnectionTestsC2d(object):
         await client.enable_c2d()
 
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
-        await service.send_c2d(client.device_id, payload)
+        await service.send_c2d(client.device_id, json.dumps(payload))
         received_message = await test_input_future
-        assert received_message == payload
+        assert received_message.body == payload
 
         # 2nd call
         payload = sample_payload()
@@ -118,11 +119,11 @@ class DroppedConnectionTestsC2d(object):
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
         await after_api_call()
 
-        await service.send_c2d(client.device_id, payload)
+        await service.send_c2d(client.device_id, json.dumps(payload))
 
         logger("Awaiting input")
         received_message = await test_input_future
-        assert received_message == payload
+        assert received_message.body == payload
 
 
 class DroppedConnectionTestsTwin(object):
@@ -147,10 +148,7 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props,
-            client=client,
-            registry=registry,
-            logger=logger,
+            properties_sent=props, client=client, registry=registry, logger=logger
         )
 
     @pytest.mark.it("Can reliably update reported properties (2nd time)")
@@ -172,10 +170,7 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props,
-            client=client,
-            registry=registry,
-            logger=logger,
+            properties_sent=props, client=client, registry=registry, logger=logger
         )
 
     @pytest.mark.it("Can reliably get the twin (1st call - possible subscribe)")
@@ -246,7 +241,7 @@ class DroppedConnectionTestsInputOutput(object):
         await send_future
         received_message = await friend_input_future
         print("received message")
-        assert received_message == test_payload
+        assert received_message.body == test_payload
 
     @pytest.mark.it("Can reliably send 5 output events")
     async def test_dropped_send_output_5x(
