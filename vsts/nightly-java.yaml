@@ -3,11 +3,6 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: java
-    repo: $(Horton.Repo)
-    commit: $(Horton.Commit)
 
 - job: "test"
   pool:

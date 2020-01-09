@@ -3,118 +3,29 @@ variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
 jobs:
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  strategy:
+    matrix:
+        c:      { language: c }
+        java:   { language: java }
+        csharp: { language: csharp }
+        node6:  { variant: node6 }
+        node8:  { variant: node8 }
+        node10: { variant: node10 }
+        py27:   { variant: py27 }
+        py35:   { variant: py35 }
+        py36:   { variant: py36 }
+        py37:   { variant: py37 }
+        py38:   { variant: py38 }
 
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: node
-    variant: node10
-    repo: Azure/azure-iot-sdk-node
-    commit: master
-    job_tag: node10
-    forced_image: $(Horton.ForcedImage)
 
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: node
-    variant: node6
-    repo: Azure/azure-iot-sdk-node
-    commit: master
-    job_tag: node6
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: node
-    variant: node8
-    repo: Azure/azure-iot-sdk-node
-    commit: master
-    job_tag: node8
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: c
-    repo: Azure/azure-iot-sdk-c
-    commit: master
-    job_tag: c
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: java
-    repo: Azure/azure-iot-sdk-java
-    commit: master
-    job_tag: java
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: csharp
-    repo: Azure/azure-iot-sdk-csharp
-    commit: master
-    job_tag: csharp
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    variant: py27
-    repo: Azure/azure-iot-sdk-python
-    commit: master
-    job_tag: py27
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    variant: py35
-    repo: Azure/azure-iot-sdk-python
-    commit: master
-    job_tag: py35
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    variant: py36
-    repo: Azure/azure-iot-sdk-python
-    commit: master
-    job_tag: py36
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    variant: py37
-    repo: Azure/azure-iot-sdk-python
-    commit: master
-    job_tag: py37
-    forced_image: $(Horton.ForcedImage)
-
-- template: templates/jobs-build-docker-image.yaml
-  parameters:
-    language: pythonv2
-    variant: py38
-    repo: Azure/azure-iot-sdk-python
-    commit: master
-    job_tag: py38
-    forced_image: $(Horton.ForcedImage)
-
-- job: "test"
+- job: "test_linux_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-    - "build_node10_container"
-    - "build_node6_container"
-    - "build_node8_container"
-    - "build_c_container"
-    - "build_java_container"
-    - "build_csharp_container"
-    - "build_py27_container"
-    - "build_py35_container"
-    - "build_py36_container"
-    - "build_py37_container"
-    - "build_py38_container"
+    "build_linux_amd64"
 
   strategy:
     matrix:
