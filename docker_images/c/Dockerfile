@@ -2,7 +2,7 @@ FROM ubuntu:18.04
 
 RUN apt update \
   && apt install --fix-missing --no-install-recommends   -y \
-    gcc \
+    build-essential \
     vim.tiny \
     cmake \
     curl \
@@ -12,10 +12,9 @@ RUN apt update \
     pkg-config \
     git \
     gdbserver \
-    openssh-server \ 
-    ca-certificates
-
-  # &&  rm -rf /var/lib/apt/lists/*
+    openssh-server \
+    ca-certificates \
+  &&  rm -rf /var/lib/apt/lists/*
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
