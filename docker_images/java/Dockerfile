@@ -38,4 +38,4 @@ COPY ./wrapper /sdk/iot-e2e-tests/edge-e2e
 COPY ./rebuild.sh /
 RUN /rebuild.sh
 
-ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
+ENTRYPOINT ["/usr/local/openjdk-8/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
