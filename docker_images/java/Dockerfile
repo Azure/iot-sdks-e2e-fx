@@ -2,7 +2,7 @@ from maven:3.6.3-jdk-8-slim
 
 ENV MAVEN_CONFIG=/usr/share/maven/ref
 
-RUN apt install --fix-missing -y \
+RUN apt update && apt install --fix-missing -y \
   rsync \
   git \
   vim
