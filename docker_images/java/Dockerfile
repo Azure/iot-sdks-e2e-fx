@@ -1,10 +1,4 @@
-FROM maven:3.3-jdk-8
-
-# https://unix.stackexchange.com/questions/508724/failed-to-fetch-jessie-backports-repository
-RUN echo "deb [check-valid-until=no] http://cdn-fastly.deb.debian.org/debian jessie main" > /etc/apt/sources.list.d/jessie.list
-RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main" > /etc/apt/sources.list.d/jessie-backports.list
-RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-RUN apt-get -o Acquire::Check-Valid-Until=false update
+from maven:3.6.3-jdk-8-slim
 
 ENV MAVEN_CONFIG=/usr/share/maven/ref
 
