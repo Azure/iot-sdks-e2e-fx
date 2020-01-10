@@ -1,27 +1,24 @@
 FROM ubuntu:18.04
 
-# common to C and Python
 RUN apt update \
   && apt install --fix-missing --no-install-recommends   -y \
-    build-essential \
-    wget \
-    vim \
+    gcc \
+    vim.tiny \
     cmake \
     curl \
     libcurl4-openssl-dev \
     libssl-dev \
     uuid-dev \
     pkg-config \
-    git
+    git \
+    gdbserver \
+    openssh-server \ 
+    ca-certificates
+
+  # &&  rm -rf /var/lib/apt/lists/*
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
-
-# C only
-
-RUN apt install -y \
-    gdbserver \
-    openssh-server
 
 EXPOSE 8082
 EXPOSE 22
