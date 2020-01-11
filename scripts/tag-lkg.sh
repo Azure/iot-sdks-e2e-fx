@@ -5,7 +5,7 @@ language=$1
 tag=$2
 
 function usage {
-    echo "Usage: $0 [node | pythonv1 | c | csharp | java | pythonv2] [tag]"
+    echo "Usage: $0 [node | c | csharp | java | pythonv2] [tag]"
     echo "eg: $0 pythonv2 vsts-12345"
 }
 
@@ -15,7 +15,7 @@ if [ "$language" == "" ] || [ "$tag" == "" ]; then
 fi
 
 case "$language" in
-  node | pythonv1 | c | csharp | java | pythonv2)
+  node | c | csharp | java | pythonv2)
     echo "tagging ${language} ${tag} as LKG"
     ;;
   *)

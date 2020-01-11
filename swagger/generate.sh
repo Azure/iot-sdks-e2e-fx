@@ -8,15 +8,12 @@ function usage {
     echo "  $0 [lang]"
     echo "  example: $0 node"
     echo ""
-    echo "lang can be one of [node, csharp, c, java, pythonv1, pythonv2]"
+    echo "lang can be one of [node, csharp, c, java, pythonv2]"
     echo ""
 }
 
 language="$1"
 case $language in
-    pythonv1)
-        swagger_language=python-flask
-        ;;
     pythonv2)
         swagger_language=python-flask
         ;;

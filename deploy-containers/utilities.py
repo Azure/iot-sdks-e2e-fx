@@ -61,7 +61,6 @@ def get_random_device_name(extension=""):
 def get_cp_from_language(language):
     port_map = {
         "node": 8080,
-        "pythonv1": 8080,
         "c": 8082,
         "csharp": 80,
         "java": 8080,
@@ -73,7 +72,7 @@ def get_cp_from_language(language):
 def get_language_from_image_name(image):
     if "default-friend-module" in image:
         return "node"
-    languages = ["pythonv2", "pythonv1", "java", "csharp", "node", "c"]
+    languages = ["pythonv2", "java", "csharp", "node", "c"]
     for language in languages:
         if language + "-e2e" in image:
             return language
