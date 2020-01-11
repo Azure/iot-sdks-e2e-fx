@@ -13,7 +13,7 @@ from colorama import Fore
 colorama.init(autoreset=True)
 
 default_repo = "(Azure/azure-iot-sdk-BLAH)"
-all_languages = ["c", "csharp", "pythonv1", "pythonv2", "node", "java"]
+all_languages = ["c", "csharp", "pythonv2", "node", "java"]
 
 parser = argparse.ArgumentParser(description="build docker image for testing")
 parser.add_argument(
@@ -33,7 +33,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.repo == default_repo:
-    if args.language in ["pythonv1", "pythonv2"]:
+    if args.language == "pythonv2":
         args.repo = "Azure/azure-iot-sdk-python"
     else:
         args.repo = "Azure/azure-iot-sdk-" + args.language
@@ -216,4 +216,4 @@ if not docker_tags.running_on_azure_pipelines():
         + "python deploy.py iotedge --image {}:{}".format(
             tags.docker_full_image_name, tags.image_tags[0]
         )
-    )    
+    )

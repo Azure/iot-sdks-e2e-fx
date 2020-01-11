@@ -1,5 +1,0 @@
-name: $(BuildID)_pythonv1_$(Horton.Commit)_$(BuildDefinitionName)
-variables:
-  Horton.FrameworkRoot: $(Build.SourcesDirectory)
-jobs:
-- template: templates/jobs-gate-pythonv1.yaml
