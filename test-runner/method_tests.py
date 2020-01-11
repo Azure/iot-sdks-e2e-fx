@@ -51,16 +51,20 @@ async def run_method_call_test(
 
     # invoking the call from caller side
     if getattr(destination, "module_id", None):
-        response = await source.call_module_method(
+        sender_future = source.call_module_method(
             destination.device_id, destination.module_id, method_invoke_parameters
         )
     else:
-        response = await source.call_device_method(
+        sender_future = source.call_device_method(
             destination.device_id, method_invoke_parameters
         )
 
+    (response, _) = asyncio.gather(sender_future, receiver_future)
+
     logger("method call complete.  Response is:")
     logger(str(response))
+
+
 
     # wait for that response to arrive back at the source and verify that it's all good.
     assert response["status"] == status_code

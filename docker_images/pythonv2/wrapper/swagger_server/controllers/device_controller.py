@@ -24,7 +24,7 @@ def device_connect(transportType, connectionString, caCertificate=None):  # noqa
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate: 
+    :param caCertificate:
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
@@ -58,7 +58,7 @@ def device_create_from_connection_string(transportType, connectionString, caCert
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate: 
+    :param caCertificate:
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
@@ -76,8 +76,8 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
 
     :param transportType: Transport to use
     :type transportType: str
-    :param X509: 
-    :type X509: 
+    :param X509:
+    :type X509:
 
     :rtype: ConnectResponse
     """
@@ -204,7 +204,7 @@ def device_patch_twin(connectionId, twin):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param twin: 
+    :param twin:
     :type twin: dict | bytes
 
     :rtype: None
@@ -239,7 +239,7 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param eventBody: 
+    :param eventBody:
     :type eventBody: dict | bytes
 
     :rtype: None
@@ -301,7 +301,7 @@ def device_wait_for_method_and_return_response(connectionId, methodName, request
     :type connectionId: str
     :param methodName: name of the method to handle
     :type methodName: str
-    :param requestAndResponse: 
+    :param requestAndResponse:
     :type requestAndResponse: dict | bytes
 
     :rtype: None
@@ -309,6 +309,6 @@ def device_wait_for_method_and_return_response(connectionId, methodName, request
     if connexion.request.is_json:
         requestAndResponse = MethodRequestAndResponse.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return device_glue.roundtrip_method_call(
+    return device_glue.wait_for_method_and_return_response(
         connectionId, methodName, requestAndResponse
     )

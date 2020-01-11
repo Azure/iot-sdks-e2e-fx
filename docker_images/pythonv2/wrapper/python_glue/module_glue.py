@@ -100,8 +100,8 @@ class ModuleGlue:
             device_id, method_invoke_parameters
         )
 
-    def roundtrip_method_call(self, connection_id, method_name, request_and_response):
-        self.object_map[connection_id].roundtrip_method_call(
+    def wait_for_method_and_return_response(self, connection_id, method_name, request_and_response):
+        self.object_map[connection_id].wait_for_method_and_return_response(
             method_name, request_and_response
         )
 

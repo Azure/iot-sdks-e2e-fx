@@ -25,7 +25,7 @@ def module_connect(transportType, connectionString, caCertificate=None):  # noqa
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate: 
+    :param caCertificate:
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
@@ -73,7 +73,7 @@ def module_create_from_connection_string(transportType, connectionString, caCert
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate: 
+    :param caCertificate:
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
@@ -107,8 +107,8 @@ def module_create_from_x509(transportType, X509):  # noqa: E501
 
     :param transportType: Transport to use
     :type transportType: str
-    :param X509: 
-    :type X509: 
+    :param X509:
+    :type X509:
 
     :rtype: ConnectResponse
     """
@@ -235,9 +235,9 @@ def module_invoke_device_method(connectionId, deviceId, methodInvokeParameters):
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param deviceId: 
+    :param deviceId:
     :type deviceId: str
-    :param methodInvokeParameters: 
+    :param methodInvokeParameters:
     :type methodInvokeParameters: dict | bytes
 
     :rtype: object
@@ -253,11 +253,11 @@ def module_invoke_module_method(connectionId, deviceId, moduleId, methodInvokePa
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param deviceId: 
+    :param deviceId:
     :type deviceId: str
-    :param moduleId: 
+    :param moduleId:
     :type moduleId: str
-    :param methodInvokeParameters: 
+    :param methodInvokeParameters:
     :type methodInvokeParameters: dict | bytes
 
     :rtype: object
@@ -275,7 +275,7 @@ def module_patch_twin(connectionId, twin):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param twin: 
+    :param twin:
     :type twin: dict | bytes
 
     :rtype: None
@@ -309,7 +309,7 @@ def module_send_event(connectionId, eventBody):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param eventBody: 
+    :param eventBody:
     :type eventBody: dict | bytes
 
     :rtype: None
@@ -327,9 +327,9 @@ def module_send_output_event(connectionId, outputName, eventBody):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param outputName: 
+    :param outputName:
     :type outputName: str
-    :param eventBody: 
+    :param eventBody:
     :type eventBody: dict | bytes
 
     :rtype: None
@@ -375,7 +375,7 @@ def module_wait_for_input_message(connectionId, inputName):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param inputName: 
+    :param inputName:
     :type inputName: str
 
     :rtype: EventBody
@@ -393,7 +393,7 @@ def module_wait_for_method_and_return_response(connectionId, methodName, request
     :type connectionId: str
     :param methodName: name of the method to handle
     :type methodName: str
-    :param requestAndResponse: 
+    :param requestAndResponse:
     :type requestAndResponse: dict | bytes
 
     :rtype: None
@@ -401,4 +401,4 @@ def module_wait_for_method_and_return_response(connectionId, methodName, request
     if connexion.request.is_json:
         requestAndResponse = MethodRequestAndResponse.from_dict(connexion.request.get_json())  # noqa: E501
     # changed from return 'do some magic!'
-    return module_glue.roundtrip_method_call(connectionId, methodName, requestAndResponse)
+    return module_glue.wait_for_method_and_return_response(connectionId, methodName, requestAndResponse)
