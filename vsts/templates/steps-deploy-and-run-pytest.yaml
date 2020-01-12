@@ -120,7 +120,7 @@ steps:
 
     # add parameters if we're runnin a single case
     $TestArgs=""
-    if ( -not ($IsEmpty($env:TestCase)) ) {
+    if ( -not (IsEmpty($env:TestCase)) ) {
       $TestArgs=$TestArgs + " " + $env:TestCase
     }
     if ( -not (IsEmpty($env:RepeatCount)) ) {
