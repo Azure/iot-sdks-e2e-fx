@@ -157,9 +157,9 @@ class Twin(object):
         logger.info("done getting twin")
         return twin
 
-    def send_twin_patch(self, props):
+    def send_twin_patch(self, twin):
         logger.info("setting reported property patch")
-        self.client.patch_twin_reported_properties(props.to_dict()["reported"])
+        self.client.patch_twin_reported_properties(twin.reported)
         logger.info("done setting reported properties")
 
 
@@ -182,6 +182,7 @@ class Telemetry(object):
             convert.test_script_object_to_outgoing_message(event_body)
         )
         logger.info("send confirmation received")
+        
 
 
 class InputsAndOutputs(object):

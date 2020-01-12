@@ -59,7 +59,7 @@ async def run_method_call_test(
             destination.device_id, method_invoke_parameters
         )
 
-    (response, _) = asyncio.gather(sender_future, receiver_future)
+    (response, _) = await asyncio.gather(sender_future, receiver_future)
 
     logger("method call complete.  Response is:")
     logger(str(response))
