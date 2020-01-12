@@ -17,8 +17,10 @@ steps:
     versionSpec: '3.7'
 
 - powershell: |
+    function IsEmpty($s) { ( ($s -eq $null) -or ( $s -eq "" ) -or ( $s.StartsWith("$") ) ) } 
+
     $BuildImage="yes"
-    if ($env:ForcedImage -ne "") {
+    if ( -not (IsEmpty($env:ForcedImage)) ) {
       $BuildImage="no"
     }
 
@@ -33,11 +35,11 @@ steps:
         $CommitToPass="master"
     }
 
-    if ($VariantToPass.StartsWith("$")) {
+    if (IsEmpty($VariantToPass)) {
         $VariantToPass=""
     }
 
-    if ( $LanguageToPass.StartsWith("$") -or ($LanguageToPass -eq "") ) {
+    if (IsEmpty($LanguageToPass)) {
         if ($VariantToPass -like "node6") {
             $LanguageToPass="node"
             $RepoToPass = "Azure/azure-iot-sdk-node"
@@ -68,7 +70,7 @@ steps:
         }
     }
 
-    if ($RepoToPass.StartsWith("$")) {
+    if (IsEmpty($RepoToPass)) {
         if ($LanguageToPass -like 'c') {
             $RepoToPass="Azure/azure-iot-sdk-c"
         } elseif ($LanguageToPass -like 'node') {

@@ -6,6 +6,8 @@ parameters:
 
 steps:
 - powershell: |
+    function IsEmpty($s) { ( ($s -eq $null) -or ( $s -eq "" ) -or ( $s.StartsWith("$") ) ) } 
+
     $SkipTest="no"
 
     Write-Host "Configuring test suite=$env:Suite"
@@ -118,10 +120,10 @@ steps:
 
     # add parameters if we're runnin a single case
     $TestArgs=""
-    if ($env:TestCase -ne "") {
+    if ( -not $IsEmpty($env:TestCase) ) {
       $TestArgs=$TestArgs + " " + $env:TestCase
     }
-    if ($env:RepeatCount -ne "") {
+    if ( -not (IsEmpty($env:RepeatCount)) ) {
       $TestArgs=$TestArgs + " --count=" + $env:RepeatCount
     }
 
@@ -142,10 +144,10 @@ steps:
     }
 
     $TestImageTag=$env:DefaultImageTag
-    if ($Variant -ne "") {
-        $TestImageTag=$TestImageTag + "-" + $Variant
+    if ( -not (IsEmpty($Variant)) ) {
+      $TestImageTag=$TestImageTag + "-" + $Variant
     }
-    if ($env:ForcedImageTag -ne "") {
+    if ( -not (IsEmpty($env:ForcedImage)) ) {
       $TestImageTag=$env:ForcedImageTag
     }
     $ImageTestMod = $env:IOTHUB_E2E_REPO_ADDRESS + "/" + ${Language} + "-e2e-v3:" + ${TestImageTag}
