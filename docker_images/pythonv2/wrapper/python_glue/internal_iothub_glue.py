@@ -182,7 +182,6 @@ class Telemetry(object):
             convert.test_script_object_to_outgoing_message(event_body)
         )
         logger.info("send confirmation received")
-        
 
 
 class InputsAndOutputs(object):

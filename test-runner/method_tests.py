@@ -64,8 +64,6 @@ async def run_method_call_test(
     logger("method call complete.  Response is:")
     logger(str(response))
 
-
-
     # wait for that response to arrive back at the source and verify that it's all good.
     assert response["status"] == status_code
     # edge bug: the response that edge returns is stringified.  The same response that comes back from an iothub service call is not stringified

@@ -8,18 +8,21 @@ from ..decorators import emulate_async
 
 client_object_list = []
 
+
 # from EventBody
 class PythonDirectEventBody(object):
     def __init__(self):
-        self.body=None
-        self.horton_flags=None
-        self.attributes=None
+        self.body = None
+        self.horton_flags = None
+        self.attributes = None
+
 
 # from Twin
 class PythonDirectTwin(object):
     def __init__(self):
-        self.reported=None
-        self.desired=None
+        self.reported = None
+        self.desired = None
+
 
 class Connect(object):
     def connect_sync(self, transport, connection_string, ca_certificate):
@@ -104,7 +107,7 @@ class Telemetry(object):
     @emulate_async
     def send_event(self, body):
         obj = PythonDirectEventBody()
-        obj.body=body
+        obj.body = body
         self.glue.send_event(obj)
 
 
@@ -129,7 +132,7 @@ class InputsAndOutputs(object):
     @emulate_async
     def send_output_event(self, output_name, body):
         obj = PythonDirectEventBody()
-        obj.body=body
+        obj.body = body
         self.glue.send_output_event(output_name, obj)
 
     @emulate_async
@@ -156,7 +159,9 @@ class HandleMethods(object):
         request_and_response.request_payload = request_payload
         request_and_response.response_payload = response_payload
         request_and_response.status_code = status_code
-        return self.glue.wait_for_method_and_return_response(method_name, request_and_response)
+        return self.glue.wait_for_method_and_return_response(
+            method_name, request_and_response
+        )
 
 
 class InvokeMethods(object):
