@@ -9,6 +9,21 @@ from ..decorators import emulate_async
 client_object_list = []
 
 
+# from EventBody
+class PythonDirectEventBody(object):
+    def __init__(self):
+        self.body = None
+        self.horton_flags = None
+        self.attributes = None
+
+
+# from Twin
+class PythonDirectTwin(object):
+    def __init__(self):
+        self.reported = None
+        self.desired = None
+
+
 class Connect(object):
     def connect_sync(self, transport, connection_string, ca_certificate):
         client_object_list.append(self)
@@ -79,7 +94,9 @@ class Twin(object):
 
     @emulate_async
     def patch_twin(self, patch):
-        self.glue.send_twin_patch(patch)
+        twin = PythonDirectTwin()
+        twin.reported = patch["reported"]
+        self.glue.send_twin_patch(twin)
 
     @emulate_async
     def wait_for_desired_property_patch(self):
@@ -89,7 +106,9 @@ class Twin(object):
 class Telemetry(object):
     @emulate_async
     def send_event(self, body):
-        self.glue.send_event(body)
+        obj = PythonDirectEventBody()
+        obj.body = body
+        self.glue.send_event(obj)
 
 
 class C2d(object):
@@ -99,7 +118,10 @@ class C2d(object):
 
     @emulate_async
     def wait_for_c2d_message(self):
-        return self.glue.wait_for_c2d_message()
+        message = self.glue.wait_for_c2d_message()
+        obj = PythonDirectEventBody()
+        obj.body = message["body"]
+        return obj
 
 
 class InputsAndOutputs(object):
@@ -109,11 +131,16 @@ class InputsAndOutputs(object):
 
     @emulate_async
     def send_output_event(self, output_name, body):
-        self.glue.send_output_event(output_name, body)
+        obj = PythonDirectEventBody()
+        obj.body = body
+        self.glue.send_output_event(output_name, obj)
 
     @emulate_async
     def wait_for_input_event(self, input_name):
-        return self.glue.wait_for_input_message(input_name)
+        message = self.glue.wait_for_input_message(input_name)
+        obj = PythonDirectEventBody()
+        obj.body = message["body"]
+        return obj
 
 
 class HandleMethods(object):
@@ -132,7 +159,9 @@ class HandleMethods(object):
         request_and_response.request_payload = request_payload
         request_and_response.response_payload = response_payload
         request_and_response.status_code = status_code
-        return self.glue.wait_for_method_and_return_response(method_name, request_and_response)
+        return self.glue.wait_for_method_and_return_response(
+            method_name, request_and_response
+        )
 
 
 class InvokeMethods(object):

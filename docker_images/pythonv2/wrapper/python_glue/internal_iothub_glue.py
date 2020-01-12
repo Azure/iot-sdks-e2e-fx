@@ -105,7 +105,7 @@ class HandleMethods(object):
         # Unnecessary, methods are enabled implicity when method operations are initiated.
         pass
 
-    def roundtrip_method_call(self, methodName, requestAndResponse):
+    def wait_for_method_and_return_response(self, methodName, requestAndResponse):
         # receive method request
         logger.info("Waiting for method request")
         request = self.client.receive_method_request(methodName)
@@ -157,9 +157,9 @@ class Twin(object):
         logger.info("done getting twin")
         return twin
 
-    def send_twin_patch(self, props):
+    def send_twin_patch(self, twin):
         logger.info("setting reported property patch")
-        self.client.patch_twin_reported_properties(props.to_dict()["reported"])
+        self.client.patch_twin_reported_properties(twin.reported)
         logger.info("done setting reported properties")
 
 
