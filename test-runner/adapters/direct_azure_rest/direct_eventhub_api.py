@@ -5,6 +5,7 @@ import time
 import json
 import ast
 import random
+import weakref
 from azure.eventhub import EventHubClient
 from azure.eventhub.common import Offset
 from azure.eventhub.common import EventHubError
@@ -16,6 +17,7 @@ from ..decorators import emulate_async
 RECEIVE_CYCLE_TIME = 0.25
 
 object_list = []
+refs = []
 
 
 def json_is_same(a, b):
@@ -48,17 +50,19 @@ def get_retry_time(x):
 
 class EventHubApi:
     def __init__(self):
-        global object_list
         self.client = None
         self.receivers = []
         self.connection_string = None
-        object_list.append(self)
 
     def create_from_connection_string_sync(self, connection_string):
         self.connection_string = connection_string
 
     @emulate_async
     def connect(self, offset="@latest"):
+        global object_list
+        if self not in object_list:
+            object_list.append(self)
+
         started = False
         retry_iteration = 0
         while not started:
@@ -66,6 +70,7 @@ class EventHubApi:
             self.client = EventHubClient.from_iothub_connection_string(
                 self.connection_string
             )
+            refs.append(weakref.ref(self.client))
             adapter_config.logger("EventHubApi: enabling EventHub telemetry")
             # partition_ids = self.client.get_eventhub_info()["partition_ids"]
             partition_ids = [0, 1, 2, 3]
@@ -86,6 +91,9 @@ class EventHubApi:
                 started = True
             except EventHubError as e:
                 if e.message.startswith("ErrorCodes.ResourceLimitExceeded"):
+                    import pdb
+
+                    pdb.set_trace()
                     retry_iteration += 1
                     retry_time = get_retry_time(retry_iteration)
                     adapter_config.logger(

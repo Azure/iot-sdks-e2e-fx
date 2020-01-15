@@ -45,18 +45,17 @@ async def wait_for_reported_properties_update(
             # test passed
             return
         else:
-            logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
-            await asyncio.sleep(5)
+            logger("Twin does not match.  Sleeping for 2 seconds and retrying.")
+            await asyncio.sleep(2)
 
 
-async def wait_for_desired_properties_patch(*, client, expected_twin, logger):
-    mistakes_left = 1
+async def wait_for_desired_properties_patch(
+    *, client, expected_twin, logger, mistakes=1
+):
+    mistakes_left = mistakes
     while True:
         patch_received = await client.wait_for_desired_property_patch()
-        logger(
-            "desired properties sent:     "
-            + str(expected_twin["desired"]["foo"])
-        )
+        logger("desired properties sent:     " + str(expected_twin["desired"]["foo"]))
 
         logger("desired properties received: " + str(patch_received["desired"]["foo"]))
 
@@ -102,10 +101,7 @@ class TwinTests(object):
 
             logger("twin sent:    " + str(twin_sent))
             logger("twin received:" + str(twin_received))
-            if (
-                twin_sent["desired"]["foo"]
-                == twin_received["desired"]["foo"]
-            ):
+            if twin_sent["desired"]["foo"] == twin_received["desired"]["foo"]:
                 # test passed
                 return
             else:
@@ -130,10 +126,7 @@ class TwinTests(object):
 
                 logger("twin sent:    " + str(twin_sent))
                 logger("twin received:" + str(twin_received))
-                if (
-                    twin_sent["properties"]["desired"]["foo"]
-                    == twin_received["properties"]["desired"]["foo"]
-                ):
+                if twin_sent["desired"]["foo"] == twin_received["desired"]["foo"]:
                     break
                 else:
                     logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
