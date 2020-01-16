@@ -21,7 +21,7 @@ try:
 except SyntaxError:
     pass
 
-DEFAULT_KEEPALIVE = 8
+DEFAULT_KEEPALIVE = 60
 
 
 class Connect(ConnectionStatus):
@@ -49,8 +49,7 @@ class Connect(ConnectionStatus):
             self.client = self.client_class.create_from_connection_string(
                 connection_string, **kwargs
             )
-        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
-            mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
+        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
     def create_from_x509(self, transport_type, x509):
@@ -95,8 +94,7 @@ class ConnectFromEnvironment(object):
 
         self.client = self.client_class.create_from_edge_environment(**kwargs)
 
-        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
-            mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
+        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
 

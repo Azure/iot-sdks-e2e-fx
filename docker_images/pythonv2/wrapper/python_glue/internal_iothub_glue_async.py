@@ -13,7 +13,7 @@ from azure.iot.device.iothub.auth import base_renewable_token_authentication_pro
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_KEEPALIVE = 8
+DEFAULT_KEEPALIVE = 60
 
 
 class Connect(ConnectionStatus):
@@ -41,8 +41,7 @@ class Connect(ConnectionStatus):
             self.client = self.client_class.create_from_connection_string(
                 connection_string, **kwargs
             )
-        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
-            mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
+        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
     def create_from_x509(self, transport_type, x509):
@@ -86,8 +85,7 @@ class ConnectFromEnvironment(object):
             kwargs["websockets"] = True
 
         self.client = IoTHubModuleClient.create_from_edge_environment(**kwargs)
-        if getattr(mqtt_transport, "DEFAULT_KEEPALIVE", None):
-            mqtt_transport.DEFAULT_KEEPALIVE = 10
+        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
 
