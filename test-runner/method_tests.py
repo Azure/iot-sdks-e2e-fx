@@ -6,7 +6,7 @@ import pytest
 import json
 import multiprocessing
 import asyncio
-from utilities import next_random_string
+from utilities import next_integer, next_random_string
 
 # How long do we have to wait after a module registers to receive
 # method calls until we can actually call a method.
@@ -23,7 +23,7 @@ async def run_method_call_test(
     Helper function which invokes a method call on one module and responds to it from another module
     """
 
-    method_name = "test_method"
+    method_name = "test_method_{}".format(next_integer())
     method_payload = {"payloadData": next_random_string("method_payload")}
     status_code = 221
 

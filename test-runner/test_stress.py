@@ -10,6 +10,10 @@ from twin_tests import (
     wait_for_desired_properties_patch,
     wait_for_reported_properties_update,
 )
+from method_tests import (
+    run_method_call_test,
+    time_for_method_to_fully_register_service_call,
+)
 
 
 pytestmark = pytest.mark.asyncio
@@ -52,6 +56,10 @@ class TestStressEdgeHubModuleClient(object):
 
             await self.do_test_telemetry(
                 client=client, logger=logger, eventhub=eventhub, count=count
+            )
+
+            await self.do_test_handle_method_from_service(
+                client=client, logger=logger, service=service, count=count
             )
 
             if count <= 64:
@@ -207,4 +215,20 @@ class TestStressEdgeHubModuleClient(object):
                 client=client,
                 registry=registry,
                 logger=logger,
+            )
+
+    async def do_test_handle_method_from_service(
+        self, *, client, logger, service, count
+    ):
+
+        for i in range(0, count):
+            logger("method_from_service {}/{}".format(i + 1, count))
+
+            # BKTODO: pull enable_methods out of run_method_call_test
+
+            await run_method_call_test(
+                source=service,
+                destination=client,
+                logger=logger,
+                registration_sleep=time_for_method_to_fully_register_service_call,
             )
