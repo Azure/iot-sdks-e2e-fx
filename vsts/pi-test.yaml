@@ -5,7 +5,7 @@ variables:
 jobs:
 - job: "build_linux_arm"
   timeoutInMinutes: 120
-  pool: "Horton_Tests"
+  pool: "Horton_Raspi_Python"
   strategy:
     matrix:
       py37: { variant: py37 }
@@ -16,7 +16,7 @@ jobs:
       language: $(language)
 
 - job: "test_linux_arm"
-  pool: "Horton_Tests"
+  pool: "Horton_Raspi_Python"
   dependsOn:
     - "build_linux_arm"
   strategy:
