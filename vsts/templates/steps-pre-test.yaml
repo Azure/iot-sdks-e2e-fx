@@ -19,6 +19,7 @@ steps:
 - script: |
     pip install --upgrade pip &&
     pip install -r $(Horton.FrameworkRoot)/pyscripts/requirements.txt &&
+    pip install -r $(Horton.FrameworkRoot)/test-runner/requirements.txt &&
     pip install -e $(Horton.FrameworkRoot)/horton_helpers
   workingDirectory: $(Horton.FrameworkRoot)
   displayName: 'Install python libs'
