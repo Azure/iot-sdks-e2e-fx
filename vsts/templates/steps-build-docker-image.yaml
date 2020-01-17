@@ -151,6 +151,9 @@ steps:
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - script: |
+    echo XXXXXXXXXXXXXXXXXx
+    echo $PATH
+    echo XXXXXXXXXXXXXXXXXx
     which pip 
     which python
     pip install docker
