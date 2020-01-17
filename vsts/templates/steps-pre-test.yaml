@@ -16,7 +16,10 @@ steps:
     versionSpec: '3.7'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
+- script: |
+    pip install --upgrade pip &&
+    pip install $(Horton.FrameworkRoot)/pyscripts/requirements.txt &&
+    pip install -e $(Horton.FrameworkRoot)/horton_helpers
   workingDirectory: $(Horton.FrameworkRoot)
   displayName: 'Install python libs'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
@@ -67,7 +70,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 testMod ${{ parameters.image_testMod }}
-  displayName: 'Verify deploymet testMod'
+  displayName: 'Verify testMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: python ensure_container.py testMod

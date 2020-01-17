@@ -144,11 +144,14 @@ steps:
       eq(variables['IsPr'],'yes')
       )
 
-- powershell: $(Horton.FrameworkRoot)/scripts/install-pyscript-reqs.ps1
-  displayName: "pip install requirements.txt"
+- script: |
+    pip install --upgrade pip &&
+    pip install $(Horton.FrameworkRoot)/pyscripts/requirements.txt &&
+    pip install -e $(Horton.FrameworkRoot)/horton_helpers
+  displayName: 'Install python libs'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/build-docker-image.ps1 $(LanguageToPass) $(RepoToPass) $(CommitToPass) $(VariantToPass)
+- script: python $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
