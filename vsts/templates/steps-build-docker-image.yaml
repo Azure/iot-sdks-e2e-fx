@@ -146,7 +146,7 @@ steps:
 
 - script: |
     pip install --upgrade pip &&
-    pip install $(Horton.FrameworkRoot)/pyscripts/requirements.txt &&
+    pip install -r $(Horton.FrameworkRoot)/pyscripts/requirements.txt &&
     pip install -e $(Horton.FrameworkRoot)/horton_helpers
   displayName: 'Install python libs'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
