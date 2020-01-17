@@ -45,10 +45,12 @@ class TestStressEdgeHubModuleClient(object):
         eventhub,
         service,
         registry,
+        friend,
+        leaf_device,
         sample_desired_props,
         sample_reported_props,
     ):
-        count = 16
+        count = 1
 
         while count <= max_repeats:
             logger(dashes)
@@ -60,6 +62,14 @@ class TestStressEdgeHubModuleClient(object):
 
             await self.do_test_handle_method_from_service(
                 client=client, logger=logger, service=service, count=count
+            )
+
+            await self.do_test_handle_method_to_friend(
+                client=client, logger=logger, friend=friend, count=count
+            )
+
+            await self.do_test_handle_method_to_leaf_device(
+                client=client, logger=logger, leaf_device=leaf_device, count=count
             )
 
             if count <= 64:
@@ -231,4 +241,24 @@ class TestStressEdgeHubModuleClient(object):
                 destination=client,
                 logger=logger,
                 registration_sleep=time_for_method_to_fully_register_service_call,
+            )
+
+    async def do_test_handle_method_to_friend(self, *, client, logger, friend, count):
+
+        for i in range(0, count):
+            logger("method_to_friend {}/{}".format(i + 1, count))
+
+            await run_method_call_test(source=client, destination=friend, logger=logger)
+
+    async def do_test_handle_method_to_leaf_device(
+        self, *, client, logger, leaf_device, count
+    ):
+
+        for i in range(0, count):
+            logger("method_to_leaf_device {}/{}".format(i + 1, count))
+
+            # BKTODO: pull enable_methods out of run_method_call_test
+
+            await run_method_call_test(
+                source=client, destination=leaf_device, logger=logger
             )
