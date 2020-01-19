@@ -36,10 +36,14 @@ def assert_json_equality(a, b):
     assert json_is_same(a, b)
 
 
-string_index = 0
+_index = 0
+
+
+def next_integer():
+    global _index
+    _index = _index + 1
+    return _index
 
 
 def next_random_string(prefix):
-    global string_index
-    string_index = string_index + 1
-    return random_string("{} {}".format(prefix, string_index))
+    return random_string("{} {}".format(prefix, next_integer()))

@@ -6,6 +6,7 @@ import pytest
 import json
 import multiprocessing
 import asyncio
+from utilities import next_integer, next_random_string
 
 # How long do we have to wait after a module registers to receive
 # method calls until we can actually call a method.
@@ -14,19 +15,6 @@ time_for_method_to_fully_register = 5
 # when we're invoking from the service, we give it more time
 time_for_method_to_fully_register_service_call = 15
 
-method_name = "test_method"
-method_payload = {"payloadData": "test-payload"}
-status_code = 221
-
-method_invoke_parameters = {
-    "methodName": method_name,
-    "payload": method_payload,
-    "responseTimeoutInSeconds": 75,
-    "connectTimeoutInSeconds": 60,
-}
-
-method_response_body = {"responseData": "test-response"}
-
 
 async def run_method_call_test(
     logger, source, destination, registration_sleep=time_for_method_to_fully_register
@@ -34,6 +22,20 @@ async def run_method_call_test(
     """
     Helper function which invokes a method call on one module and responds to it from another module
     """
+
+    method_name = "test_method_{}".format(next_integer())
+    method_payload = {"payloadData": next_random_string("method_payload")}
+    status_code = 1000 + next_integer()
+
+    method_invoke_parameters = {
+        "methodName": method_name,
+        "payload": method_payload,
+        "responseTimeoutInSeconds": 75,
+        "connectTimeoutInSeconds": 60,
+    }
+
+    method_response_body = {"responseData": next_random_string("method_response")}
+
     await destination.enable_methods()
 
     # start listening for method calls on the destination side

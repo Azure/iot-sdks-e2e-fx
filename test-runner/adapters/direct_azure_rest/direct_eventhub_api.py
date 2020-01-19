@@ -48,17 +48,19 @@ def get_retry_time(x):
 
 class EventHubApi:
     def __init__(self):
-        global object_list
         self.client = None
         self.receivers = []
         self.connection_string = None
-        object_list.append(self)
 
     def create_from_connection_string_sync(self, connection_string):
         self.connection_string = connection_string
 
     @emulate_async
     def connect(self, offset="@latest"):
+        global object_list
+        if self not in object_list:
+            object_list.append(self)
+
         started = False
         retry_iteration = 0
         while not started:

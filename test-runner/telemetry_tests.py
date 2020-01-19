@@ -14,7 +14,7 @@ class TelemetryTests(object):
         self, client, eventhub, telemetry_payload, logger, request
     ):
         if (
-            len(str(telemetry_payload)) > 65500 
+            len(str(telemetry_payload)) > 65500
             and settings.horton.transport == "amqpws"
             and settings.horton.language == "java"
         ):
@@ -31,7 +31,6 @@ class TelemetryTests(object):
         )
         assert received_message is not None, "Message not received"
 
-    @pytest.mark.skip("#BKTODO: Only in python for now.")
     @pytest.mark.it("Can send 5 telemetry events directly to iothub")
     async def test_send_5_telemetry_events_to_iothub(
         self, client, eventhub, sample_payload, logger
@@ -40,7 +39,7 @@ class TelemetryTests(object):
         futures = []
 
         # start listening before we send
-        eventhub.connect_sync()
+        await eventhub.connect()
         received_message_future = asyncio.ensure_future(
             eventhub.wait_for_next_event(client.device_id)
         )
@@ -66,6 +65,7 @@ class TelemetryTests(object):
             else:
                 logger("Received unexpected message: {}".format(received_message))
 
-            received_message_future = asyncio.ensure_future(
-                eventhub.wait_for_next_event(client.device_id)
-            )
+            if len(payloads):
+                received_message_future = asyncio.ensure_future(
+                    eventhub.wait_for_next_event(client.device_id)
+                )
