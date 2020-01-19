@@ -60,6 +60,8 @@ class TestStressEdgeHubModuleClient(object):
                 client=client, logger=logger, eventhub=eventhub, count=count
             )
 
+            """
+
             await self.do_test_handle_method_from_service(
                 client=client, logger=logger, service=service, count=count
             )
@@ -96,7 +98,8 @@ class TestStressEdgeHubModuleClient(object):
                     registry=registry,
                     sample_reported_props=sample_reported_props,
                     count=count,
-                )
+               )
+            """
 
             count = count * 2
 
