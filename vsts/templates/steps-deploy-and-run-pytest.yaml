@@ -13,7 +13,7 @@ steps:
       if ($plat.StartsWith("armv7")) {
         "arm64"
       } else {
-        "amd64"
+        "x64"
       }
     }
 
