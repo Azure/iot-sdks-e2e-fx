@@ -168,12 +168,6 @@ steps:
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - script: |
-    echo XXXXXXXXXXXXXXXXXx
-    echo $PATH
-    echo XXXXXXXXXXXXXXXXXx
-    which pip 
-    which python
-    pip install docker
     python $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 
