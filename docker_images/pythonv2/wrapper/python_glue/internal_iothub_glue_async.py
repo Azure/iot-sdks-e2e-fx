@@ -13,7 +13,7 @@ from azure.iot.device.iothub.auth import base_renewable_token_authentication_pro
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_KEEPALIVE = 60
+DEFAULT_KEEPALIVE = 8
 
 
 class Connect(ConnectionStatus):

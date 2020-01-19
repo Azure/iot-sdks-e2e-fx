@@ -31,7 +31,6 @@ class TelemetryTests(object):
         )
         assert received_message is not None, "Message not received"
 
-    # @pytest.mark.skip("#BKTODO: Only in python for now.")
     @pytest.mark.it("Can send 5 telemetry events directly to iothub")
     async def test_send_5_telemetry_events_to_iothub(
         self, client, eventhub, sample_payload, logger

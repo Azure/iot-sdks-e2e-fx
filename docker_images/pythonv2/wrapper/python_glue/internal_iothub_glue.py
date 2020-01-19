@@ -21,7 +21,7 @@ try:
 except SyntaxError:
     pass
 
-DEFAULT_KEEPALIVE = 60
+DEFAULT_KEEPALIVE = 8
 
 
 class Connect(ConnectionStatus):
