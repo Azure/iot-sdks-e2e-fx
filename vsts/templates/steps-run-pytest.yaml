@@ -12,6 +12,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: |
+    rm -r $(Horton.FrameworkRoot)/results
     mkdir $(Horton.FrameworkRoot)/results &&
     cd $(Horton.FrameworkRoot)/test-runner &&
     python3 -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --junitxml=$(Build.SourcesDirectory)/results/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}

@@ -37,7 +37,7 @@ container_startup_time = 5
 
 for f in range(0, restart_attempts):
     try:
-        uri = "http://localhost:{}/wrapper/message".format(port)
+        uri = "http://localhost:{}/control/message".format(port)
         body = {"msg": "test message {} from ensure_container.py".format(f)}
         print("Sending {} to {}".format(json.dumps(body), uri))
         r = requests.put(uri, json=body)
