@@ -8,6 +8,15 @@ steps:
 - powershell: |
     function IsEmpty($s) { ( ($s -eq $null) -or ( $s -eq "" ) -or ( $s.StartsWith("$") ) ) } 
 
+    function GetArchitecture() {
+      $plat = (uname -m) | Out-String     
+      if ($plat.StartsWith("armv7")) {
+        "arm64"
+      } else {
+        "x64"
+      }
+    }
+
     $SkipTest="no"
 
     Write-Host "Configuring test suite=$env:Suite"
@@ -152,6 +161,9 @@ steps:
     }
     $ImageTestMod = $env:IOTHUB_E2E_REPO_ADDRESS + "/" + ${Language} + "-e2e-v3:" + ${TestImageTag}
 
+    $Architecture=GetArchitecture
+
+    Write-Host "##vso[task.setvariable variable=architecture]${Architecture}"
     Write-Host "##vso[task.setvariable variable=language]${Language}"
     Write-Host "##vso[task.setvariable variable=variant]${Variant}"
     Write-Host "##vso[task.setvariable variable=scenario]${Scenario}"
@@ -165,6 +177,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=imageTestMod]${ImageTestMod}"
     Write-Host "##vso[task.setvariable variable=deploymentType]${DeploymentType}"
 
+    Write-Host "Architecture=${Architecture}"
     Write-Host "Language=${Language}"
     Write-Host "Variant=${Variant}"
     Write-Host "Scenario=${Scenario}"
