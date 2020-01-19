@@ -12,12 +12,17 @@ parameters:
 steps:
 - template: steps-ensure-e2e-fx-repo.yaml
 
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.7'
-
 - powershell: |
     function IsEmpty($s) { ( ($s -eq $null) -or ( $s -eq "" ) -or ( $s.StartsWith("$") ) ) } 
+
+    function GetArchitecture() {
+      $plat = (uname -m) | Out-String     
+      if ($plat.StartsWith("armv7")) {
+        "arm64"
+      } else {
+        "amd64"
+      }
+    }
 
     $BuildImage="yes"
     if ( -not (IsEmpty($env:ForcedImage)) ) {
@@ -93,18 +98,24 @@ steps:
       $IsPr = "yes"
     }
 
+    $Architecture=GetArchitecture
+
+    Write-Host "##vso[task.setvariable variable=architecture]${Architecture}"
     Write-Host "##vso[task.setvariable variable=buildImage]${BuildImage}"
     Write-Host "##vso[task.setvariable variable=IsPr]${IsPr}"
     Write-Host "##vso[task.setvariable variable=RepoToPass]${RepoToPass}"
     Write-Host "##vso[task.setvariable variable=CommitToPass]${CommitToPass}"
     Write-Host "##vso[task.setvariable variable=LanguageToPass]${LanguageToPass}"
     Write-Host "##vso[task.setvariable variable=VariantToPass]${VariantToPass}"
+
+    Write-Host "Architecture=${Architecture}"
     Write-Host "BuildImage=${BuildImage}"
     Write-Host "IsPr=${IsPr}"
     Write-Host "RepoToPass=${RepoToPass}"
     Write-Host "CommitToPass=${CommitToPass}"
     Write-Host "LanguageToPass=${LanguageToPass}"
     Write-Host "VariantToPass=${VariantToPass}"
+
   displayName: Custom task execution logic
   env:
     Commit: ${{ parameters.commit }}
@@ -115,6 +126,12 @@ steps:
   ignoreLASTEXITCODE: false
   errorActionPreference: Stop
   failOnStderr: true
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.7'
+    architecture: $(architecture)
+
 
 - script: |
     cd ${BUILD_SOURCESDIRECTORY} &&
