@@ -18,8 +18,8 @@ pytestmark = pytest.mark.asyncio
 # how long to test for
 test_run_time = datetime.timedelta(days=0, hours=2, minutes=0)
 
-# maximum extra time to add to timeout.  used to complete current iteration.
-max_timeout_overage = datetime.timedelta(minutes=120)
+# maximum extra time to add to timeout.
+max_timeout_overage = datetime.timedelta(minutes=15)
 
 # actual timeout overage
 timeout_overage = min(max_timeout_overage, test_run_time)
@@ -95,54 +95,45 @@ class TestStressEdgeHubModuleClient(object):
         count = initial_repeats
 
         while count <= max_repeats:
-            if time_limit.is_test_done():
-                return
-
             logger(dashes)
             logger("Next Iteration. Running with {} operations per step".format(count))
             time_limit.print_progress(logger)
             logger(dashes)
 
             await self.do_test_telemetry(
-                client=client, logger=logger, eventhub=eventhub, count=count
+                client=client,
+                logger=logger,
+                eventhub=eventhub,
+                count=count,
+                time_limit=time_limit,
             )
-
-            if time_limit.is_test_done():
-                return
 
             await self.do_test_handle_method_from_service(
                 client=client, logger=logger, service=service, count=count
+                logger=logger,
+                service=service,
+                count=count,
+                time_limit=time_limit,
             )
-
-            if time_limit.is_test_done():
-                return
 
             """
             await self.do_test_handle_method_to_friend(
-                client=client, logger=logger, friend=friend, count=count
+                client=client, logger=logger, friend=friend, count=count, time_limit=time_limit
             )
-
-            if time_limit.is_test_done():
-                return
 
             await self.do_test_handle_method_to_leaf_device(
-                client=client, logger=logger, leaf_device=leaf_device, count=count
+                client=client, logger=logger, leaf_device=leaf_device, count=count, time_limit=time_limit
             )
 
-            if time_limit.is_test_done():
-                return
             """
-
             await self.do_test_desired_property_patch(
                 client=client,
                 logger=logger,
                 registry=registry,
                 sample_desired_props=sample_desired_props,
                 count=count,
+                time_limit=time_limit,
             )
-
-            if time_limit.is_test_done():
-                return
 
             await self.do_test_get_twin(
                 client=client,
@@ -150,10 +141,8 @@ class TestStressEdgeHubModuleClient(object):
                 registry=registry,
                 sample_desired_props=sample_desired_props,
                 count=count,
+                time_limit=time_limit,
             )
-
-            if time_limit.is_test_done():
-                return
 
             await self.do_test_reported_properties(
                 client=client,
@@ -161,6 +150,7 @@ class TestStressEdgeHubModuleClient(object):
                 registry=registry,
                 sample_reported_props=sample_reported_props,
                 count=count,
+                time_limit=time_limit,
             )
 
             count = count * 2
@@ -168,7 +158,7 @@ class TestStressEdgeHubModuleClient(object):
             if count >= max_repeats:
                 count = initial_repeats
 
-    async def do_test_telemetry(self, *, client, logger, eventhub, count):
+    async def do_test_telemetry(self, *, client, logger, eventhub, count, time_limit):
         logger("testing telemetry with {} operations".format(count))
 
         payloads = [new_telemetry_message() for x in range(0, count)]
@@ -209,11 +199,14 @@ class TestStressEdgeHubModuleClient(object):
         eventhub.disconnect_sync()
 
     async def do_test_get_twin(
-        self, *, client, logger, registry, sample_desired_props, count
+        self, *, client, logger, registry, sample_desired_props, count, time_limit
     ):
         await client.enable_twin()
 
         for i in range(0, count):
+            if time_limit.is_test_done():
+                return
+
             logger("get_twin {}/{}".format(i + 1, count))
             twin_sent = sample_desired_props()
 
@@ -248,7 +241,7 @@ class TestStressEdgeHubModuleClient(object):
         await patch_future  # raises if patch not received
 
     async def do_test_desired_property_patch(
-        self, *, client, logger, registry, sample_desired_props, count
+        self, *, client, logger, registry, sample_desired_props, count, time_limit
     ):
         await client.enable_twin()
 
@@ -264,6 +257,9 @@ class TestStressEdgeHubModuleClient(object):
         )
 
         for i in range(0, count):
+            if time_limit.is_test_done():
+                return
+
             logger("desired_property_patch {}/{}".format(i + 1, count))
             await self.patch_desired(
                 client=client,
@@ -274,11 +270,14 @@ class TestStressEdgeHubModuleClient(object):
             logger("patch {} received".format(i))
 
     async def do_test_reported_properties(
-        self, *, client, logger, registry, sample_reported_props, count
+        self, *, client, logger, registry, sample_reported_props, count, time_limit
     ):
         await client.enable_twin()
 
         for i in range(0, count):
+            if time_limit.is_test_done():
+                return
+
             logger("reported_properties {}/{}".format(i + 1, count))
 
             properties_sent = sample_reported_props()
@@ -293,10 +292,13 @@ class TestStressEdgeHubModuleClient(object):
             )
 
     async def do_test_handle_method_from_service(
-        self, *, client, logger, service, count
+        self, *, client, logger, service, count, time_limit
     ):
 
         for i in range(0, count):
+            if time_limit.is_test_done():
+                return
+
             logger("method_from_service {}/{}".format(i + 1, count))
 
             # BKTODO: pull enable_methods out of run_method_call_test
@@ -305,18 +307,26 @@ class TestStressEdgeHubModuleClient(object):
                 source=service, destination=client, logger=logger
             )
 
-    async def do_test_handle_method_to_friend(self, *, client, logger, friend, count):
+    async def do_test_handle_method_to_friend(
+        self, *, client, logger, friend, count, time_limit
+    ):
 
         for i in range(0, count):
+            if time_limit.is_test_done():
+                return
+
             logger("method_to_friend {}/{}".format(i + 1, count))
 
             await run_method_call_test(source=client, destination=friend, logger=logger)
 
     async def do_test_handle_method_to_leaf_device(
-        self, *, client, logger, leaf_device, count
+        self, *, client, logger, leaf_device, count, time_limit
     ):
 
         for i in range(0, count):
+            if time_limit.is_test_done():
+                return
+
             logger("method_to_leaf_device {}/{}".format(i + 1, count))
 
             # BKTODO: pull enable_methods out of run_method_call_test
