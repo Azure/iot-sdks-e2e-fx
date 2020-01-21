@@ -8,13 +8,16 @@ import hashlib
 import time
 import base64
 
+# default sas expiry in seconds
+default_sas_expiry = 30
+
 
 def generate_auth_token(uri, sas_name, sas_value):
     """
     Given a URI, a sas_name, and a sas_value, return a shared access signature.
     """
     sas = base64.b64decode(sas_value)
-    expiry = str(int(time.time() + 10000))
+    expiry = str(int(time.time() + default_sas_expiry))
     string_to_sign = (uri + "\n" + expiry).encode("utf-8")
     signed_hmac_sha256 = hmac.HMAC(sas, string_to_sign, hashlib.sha256)
     signature = urllib.parse.quote(base64.b64encode(signed_hmac_sha256.digest()))

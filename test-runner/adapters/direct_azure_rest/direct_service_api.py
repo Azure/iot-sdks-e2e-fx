@@ -17,30 +17,31 @@ class ServiceApi(AbstractServiceApi):
     def __init__(self):
         global object_list
         object_list.append(self)
-        self.cn = None
         self.service = None
         self.service_connection_string = None
         self.amqp_service_client = None
 
     def headers(self):
+        cn = connection_string.connection_string_to_sas_token(
+            self.service_connection_string
+        )
         return {
-            "Authorization": self.cn["sas"],
+            "Authorization": cn["sas"],
             "Request-Id": str(uuid.uuid4()),
             "User-Agent": "azure-edge-e2e",
         }
 
     def connect_sync(self, service_connection_string):
         self.service_connection_string = service_connection_string
-        self.cn = connection_string.connection_string_to_sas_token(
+        host = connection_string.connection_string_to_dictionary(
             service_connection_string
-        )
-        self.service = IotHubGatewayServiceAPIs("https://" + self.cn["host"]).service
+        )["HostName"]
+        self.service = IotHubGatewayServiceAPIs("https://" + host).service
 
     def disconnect_sync(self):
         if self.amqp_service_client:
             self.amqp_service_client.disconnect_sync()
             self.amqp_serice_client = None
-        self.cn = None
         self.service = None
 
     @emulate_async

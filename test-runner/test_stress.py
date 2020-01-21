@@ -4,25 +4,35 @@
 
 import pytest
 import asyncio
+import datetime
 from utilities import next_random_string
 from twin_tests import (
     patch_desired_props,
     wait_for_desired_properties_patch,
     wait_for_reported_properties_update,
 )
-from method_tests import (
-    run_method_call_test,
-    time_for_method_to_fully_register_service_call,
-)
-
+from method_tests import run_method_call_test
 
 pytestmark = pytest.mark.asyncio
 
-hours = 3600
-days = 24 * hours
-stress_timeout = 7 * days
+# how long to test for
+test_run_time = datetime.timedelta(days=0, hours=2, minutes=0)
 
+# maximum extra time to add to timeout.  used to complete current iteration.
+max_timeout_overage = datetime.timedelta(minutes=120)
+
+# actual timeout overage
+timeout_overage = min(max_timeout_overage, test_run_time)
+
+# actual timeout
+test_timeout = (test_run_time + timeout_overage).total_seconds()
+
+# number of times to repeat each operation (initial)
+initial_repeats = 4
+
+# number of times to repeat each operation (max)
 max_repeats = 1024
+
 dashes = "".join(("-" for _ in range(0, 30)))
 
 
@@ -30,14 +40,43 @@ def new_telemetry_message():
     return {"payload": next_random_string("telemetry")}
 
 
+def pretty_time(t):
+    """
+    return pretty string for datetime and timedelta objects (no date, second accuracy)
+    """
+    if isinstance(t, datetime.timedelta):
+        return str(datetime.timedelta(seconds=t.seconds))
+    else:
+        return t.strftime("%H:%M:%S")
+
+
+class TimeLimit(object):
+    def __init__(self, test_run_time):
+        self.test_run_time = test_run_time
+        self.test_start_time = datetime.datetime.now()
+        self.test_end_time = self.test_start_time + self.test_run_time
+
+    def is_test_done(self):
+        return datetime.datetime.now() >= self.test_end_time
+
+    def print_progress(self, logger):
+        now = datetime.datetime.now()
+        logger("Start time: {}".format(pretty_time(self.test_start_time)))
+        logger("Duration:   {}".format(pretty_time(self.test_run_time)))
+        logger("End time:   {}".format(pretty_time(self.test_end_time)))
+        logger("now:        {}".format(pretty_time(now)))
+        logger("Time left:  {}".format(pretty_time(self.test_end_time - now)))
+
+
 @pytest.mark.testgroup_stress
 @pytest.mark.describe("EdgeHub Module Client Stress")
-@pytest.mark.timeout(stress_timeout)
+@pytest.mark.timeout(test_timeout)
 class TestStressEdgeHubModuleClient(object):
     @pytest.fixture
     def client(self, test_module):
         return test_module
 
+    @pytest.mark.it("Run for {}".format(pretty_time(test_run_time)))
     async def test_stress(
         self,
         logger,
@@ -50,61 +89,84 @@ class TestStressEdgeHubModuleClient(object):
         sample_desired_props,
         sample_reported_props,
     ):
-        count = 1
+
+        time_limit = TimeLimit(test_run_time)
+
+        count = initial_repeats
 
         while count <= max_repeats:
+            if time_limit.is_test_done():
+                return
+
             logger(dashes)
-            logger("Running with {} operations per step".format(count))
+            logger("Next Iteration. Running with {} operations per step".format(count))
+            time_limit.print_progress(logger)
+            logger(dashes)
 
             await self.do_test_telemetry(
                 client=client, logger=logger, eventhub=eventhub, count=count
             )
 
-            """
+            if time_limit.is_test_done():
+                return
 
             await self.do_test_handle_method_from_service(
                 client=client, logger=logger, service=service, count=count
             )
 
+            if time_limit.is_test_done():
+                return
+
+            """
             await self.do_test_handle_method_to_friend(
                 client=client, logger=logger, friend=friend, count=count
             )
+
+            if time_limit.is_test_done():
+                return
 
             await self.do_test_handle_method_to_leaf_device(
                 client=client, logger=logger, leaf_device=leaf_device, count=count
             )
 
-            if count <= 64:
-                # BKTODO: we get unauthorized errors if we do too many twin ops.  Is this a throttling thing?
-                await self.do_test_desired_property_patch(
-                    client=client,
-                    logger=logger,
-                    registry=registry,
-                    sample_desired_props=sample_desired_props,
-                    count=count,
-                )
-
-                await self.do_test_get_twin(
-                    client=client,
-                    logger=logger,
-                    registry=registry,
-                    sample_desired_props=sample_desired_props,
-                    count=count,
-                )
-
-                await self.do_test_reported_properties(
-                    client=client,
-                    logger=logger,
-                    registry=registry,
-                    sample_reported_props=sample_reported_props,
-                    count=count,
-               )
+            if time_limit.is_test_done():
+                return
             """
+
+            await self.do_test_desired_property_patch(
+                client=client,
+                logger=logger,
+                registry=registry,
+                sample_desired_props=sample_desired_props,
+                count=count,
+            )
+
+            if time_limit.is_test_done():
+                return
+
+            await self.do_test_get_twin(
+                client=client,
+                logger=logger,
+                registry=registry,
+                sample_desired_props=sample_desired_props,
+                count=count,
+            )
+
+            if time_limit.is_test_done():
+                return
+
+            await self.do_test_reported_properties(
+                client=client,
+                logger=logger,
+                registry=registry,
+                sample_reported_props=sample_reported_props,
+                count=count,
+            )
 
             count = count * 2
 
             if count >= max_repeats:
-                count = 1
+                count = initial_repeats
 
     async def do_test_telemetry(self, *, client, logger, eventhub, count):
         logger("testing telemetry with {} operations".format(count))
@@ -240,10 +302,7 @@ class TestStressEdgeHubModuleClient(object):
             # BKTODO: pull enable_methods out of run_method_call_test
 
             await run_method_call_test(
-                source=service,
-                destination=client,
-                logger=logger,
-                registration_sleep=time_for_method_to_fully_register_service_call,
+                source=service, destination=client, logger=logger
             )
 
     async def do_test_handle_method_to_friend(self, *, client, logger, friend, count):
