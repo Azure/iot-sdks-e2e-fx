@@ -27,9 +27,9 @@ jobs:
     matrix:
       py27_mqtt_iothub_module_and_device:     { suite: py27_mqtt_iothub_module_and_device }
       py38_mqtt_iothub_module_and_device:     { suite: py38_mqtt_iothub_module_and_device }
-      node8_mqtt_iothub_module_and_device:     { suite: node8_mqtt_iothub_module_and_device }
-      c_mqtt_iothub_module_and_device:          { suite: c_mqtt_iothub_module_and_device }
-      csharp_mqtt_iothub_module_and_device:     { suite: csharp_mqtt_iothub_module_and_device }
+      node8_mqtt_iothub_module_and_device:     { suite: node8_mqtt_iothub_module }
+      c_mqtt_iothub_module_and_device:          { suite: c_mqtt_iothub_module }
+      csharp_mqtt_iothub_module_and_device:     { suite: csharp_mqtt_iothub_module }
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
