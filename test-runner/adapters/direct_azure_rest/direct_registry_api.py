@@ -32,9 +32,9 @@ class RegistryApi(AbstractRegistryApi):
 
     def connect_sync(self, service_connection_string):
         self.service_connection_string = service_connection_string
-        host = connection_string.connection_string_to_disctionary(
+        host = connection_string.connection_string_to_dictionary(
             service_connection_string
-        )["host"]
+        )["HostName"]
         self.service = IotHubGatewayServiceAPIs("https://" + host).service
 
     def disconnect_sync(self):
