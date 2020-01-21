@@ -8,17 +8,8 @@ import multiprocessing
 import asyncio
 from utilities import next_integer, next_random_string
 
-# How long do we have to wait after a module registers to receive
-# method calls until we can actually call a method.
-time_for_method_to_fully_register = 5
 
-# when we're invoking from the service, we give it more time
-time_for_method_to_fully_register_service_call = 15
-
-
-async def run_method_call_test(
-    logger, source, destination, registration_sleep=time_for_method_to_fully_register
-):
+async def run_method_call_test(logger, source, destination):
     """
     Helper function which invokes a method call on one module and responds to it from another module
     """
@@ -44,6 +35,13 @@ async def run_method_call_test(
             method_name, status_code, method_invoke_parameters, method_response_body
         )
     )
+
+    if getattr(source, "methods_registered", False):
+        registration_sleep = 0.5
+    else:
+        source.methods_registered = True
+        registration_sleep = 10
+
     logger(
         "sleeping for {} seconds to make sure all registration is complete".format(
             registration_sleep
@@ -89,12 +87,7 @@ class ReceiveMethodCallFromServiceTests(BaseReceiveMethodCallTests):
     @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from the IoTHub service")
     async def test_method_call_invoked_from_service(self, client, service, logger):
-        await run_method_call_test(
-            source=service,
-            destination=client,
-            logger=logger,
-            registration_sleep=time_for_method_to_fully_register_service_call,
-        )
+        await run_method_call_test(source=service, destination=client, logger=logger)
 
 
 class ReceiveMethodCallFromModuleTests(BaseReceiveMethodCallTests):

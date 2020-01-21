@@ -17,21 +17,25 @@ class RegistryApi(AbstractRegistryApi):
     def __init__(self):
         global object_list
         object_list.append(self)
-        self.cn = None
         self.service = None
+        self.service_connection_string = None
 
     def headers(self):
+        cn = connection_string.connection_string_to_sas_token(
+            self.service_connection_string
+        )
         return {
-            "Authorization": self.cn["sas"],
+            "Authorization": cn["sas"],
             "Request-Id": str(uuid.uuid4()),
             "User-Agent": "azure-edge-e2e",
         }
 
     def connect_sync(self, service_connection_string):
-        self.cn = connection_string.connection_string_to_sas_token(
+        self.service_connection_string = service_connection_string
+        host = connection_string.connection_string_to_dictionary(
             service_connection_string
-        )
-        self.service = IotHubGatewayServiceAPIs("https://" + self.cn["host"]).service
+        )["HostName"]
+        self.service = IotHubGatewayServiceAPIs("https://" + host).service
 
     def disconnect_sync(self):
         pass
