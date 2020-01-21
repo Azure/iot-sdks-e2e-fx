@@ -4,6 +4,7 @@
 
 import pytest
 import asyncio
+import datetime
 from utilities import next_random_string
 from twin_tests import (
     patch_desired_props,
@@ -12,14 +13,26 @@ from twin_tests import (
 )
 from method_tests import run_method_call_test
 
-
 pytestmark = pytest.mark.asyncio
 
-hours = 3600
-days = 24 * hours
-stress_timeout = 7 * days
+# how long to test for
+test_run_time = datetime.timedelta(days=0, hours=0, minutes=5)
 
+# maximum extra time to add to timeout.  used to complete current iteration.
+max_timeout_overage = datetime.timedelta(minutes=30)
+
+# actual timeout overage
+timeout_overage = min(max_timeout_overage, test_run_time)
+
+# actual timeout
+test_timeout = (test_run_time + timeout_overage).total_seconds()
+
+# number of times to repeat each operation (initial)
+initial_repeats = 4
+
+# number of times to repeat each operation (max)
 max_repeats = 1024
+
 dashes = "".join(("-" for _ in range(0, 30)))
 
 
@@ -27,9 +40,19 @@ def new_telemetry_message():
     return {"payload": next_random_string("telemetry")}
 
 
+def pretty_time(t):
+    """
+    return pretty string for datetime and timedelta objects (no date, second accuracy)
+    """
+    if isinstance(t, datetime.timedelta):
+        return str(datetime.timedelta(seconds=t.seconds))
+    else:
+        return t.strftime("%H:%M:%S")
+
+
 @pytest.mark.testgroup_stress
 @pytest.mark.describe("EdgeHub Module Client Stress")
-@pytest.mark.timeout(stress_timeout)
+@pytest.mark.timeout(test_timeout)
 class TestStressEdgeHubModuleClient(object):
     @pytest.fixture
     def client(self, test_module):
@@ -47,11 +70,33 @@ class TestStressEdgeHubModuleClient(object):
         sample_desired_props,
         sample_reported_props,
     ):
-        count = 4
+        test_start_time = datetime.datetime.now()
+        test_end_time = test_start_time + test_run_time
+
+        count = initial_repeats
 
         while count <= max_repeats:
+            now = datetime.datetime.now()
+            if now > test_end_time:
+                logger(dashes)
+                logger("Test complete.  Successfully ran for {}".format(test_run_time))
+                return
+
             logger(dashes)
-            logger("Running with {} operations per step".format(count))
+            logger("Next Iteration:")
+            logger("    Operations per step:    {}".format(count))
+            logger(
+                "    Start time:             {}".format(pretty_time(test_start_time))
+            )
+            logger("    Duration:               {}".format(pretty_time(test_run_time)))
+            logger("    End time:               {}".format(pretty_time(test_end_time)))
+            logger("    Current time:           {}".format(pretty_time(now)))
+            logger(
+                "    Time left:              {}".format(
+                    pretty_time(test_end_time - now)
+                )
+            )
+            logger(dashes)
 
             await self.do_test_telemetry(
                 client=client, logger=logger, eventhub=eventhub, count=count
@@ -98,7 +143,7 @@ class TestStressEdgeHubModuleClient(object):
             count = count * 2
 
             if count >= max_repeats:
-                count = 1
+                count = initial_repeats
 
     async def do_test_telemetry(self, *, client, logger, eventhub, count):
         logger("testing telemetry with {} operations".format(count))
