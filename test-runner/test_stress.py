@@ -16,7 +16,7 @@ from method_tests import run_method_call_test
 pytestmark = pytest.mark.asyncio
 
 # how long to test for
-test_run_time = datetime.timedelta(days=0, hours=0, minutes=5)
+test_run_time = datetime.timedelta(days=0, hours=2, minutes=0)
 
 # maximum extra time to add to timeout.  used to complete current iteration.
 max_timeout_overage = datetime.timedelta(minutes=30)
@@ -50,6 +50,24 @@ def pretty_time(t):
         return t.strftime("%H:%M:%S")
 
 
+class TimeLimit(object):
+    def __init__(self, test_run_time):
+        self.test_run_time = test_run_time
+        self.test_start_time = datetime.datetime.now()
+        self.test_end_time = self.test_start_time + self.test_run_time
+
+    def is_test_done(self):
+        return datetime.datetime.now() >= self.test_end_time
+
+    def print_progress(self, logger):
+        now = datetime.datetime.now()
+        logger("Start time: {}".format(pretty_time(self.test_start_time)))
+        logger("Duration:   {}".format(pretty_time(self.test_run_time)))
+        logger("End time:   {}".format(pretty_time(self.test_end_time)))
+        logger("now:        {}".format(pretty_time(now)))
+        logger("Time left:  {}".format(pretty_time(self.test_end_time - now)))
+
+
 @pytest.mark.testgroup_stress
 @pytest.mark.describe("EdgeHub Module Client Stress")
 @pytest.mark.timeout(test_timeout)
@@ -58,6 +76,7 @@ class TestStressEdgeHubModuleClient(object):
     def client(self, test_module):
         return test_module
 
+    @pytest.mark.it("Run for {}".format(pretty_time(test_run_time)))
     async def test_stress(
         self,
         logger,
@@ -70,50 +89,48 @@ class TestStressEdgeHubModuleClient(object):
         sample_desired_props,
         sample_reported_props,
     ):
-        test_start_time = datetime.datetime.now()
-        test_end_time = test_start_time + test_run_time
+
+        time_limit = TimeLimit(test_run_time)
 
         count = initial_repeats
 
         while count <= max_repeats:
-            now = datetime.datetime.now()
-            if now > test_end_time:
-                logger(dashes)
-                logger("Test complete.  Successfully ran for {}".format(test_run_time))
+            if time_limit.is_test_done():
                 return
 
             logger(dashes)
-            logger("Next Iteration:")
-            logger("    Operations per step:    {}".format(count))
-            logger(
-                "    Start time:             {}".format(pretty_time(test_start_time))
-            )
-            logger("    Duration:               {}".format(pretty_time(test_run_time)))
-            logger("    End time:               {}".format(pretty_time(test_end_time)))
-            logger("    Current time:           {}".format(pretty_time(now)))
-            logger(
-                "    Time left:              {}".format(
-                    pretty_time(test_end_time - now)
-                )
-            )
+            logger("Next Iteration. Running with {} operations per step".format(count))
+            time_limit.print_progress(logger)
             logger(dashes)
 
             await self.do_test_telemetry(
                 client=client, logger=logger, eventhub=eventhub, count=count
             )
 
+            if time_limit.is_test_done():
+                return
+
             await self.do_test_handle_method_from_service(
                 client=client, logger=logger, service=service, count=count
             )
+
+            if time_limit.is_test_done():
+                return
 
             """
             await self.do_test_handle_method_to_friend(
                 client=client, logger=logger, friend=friend, count=count
             )
 
+            if time_limit.is_test_done():
+                return
+
             await self.do_test_handle_method_to_leaf_device(
                 client=client, logger=logger, leaf_device=leaf_device, count=count
             )
+
+            if time_limit.is_test_done():
+                return
             """
 
             await self.do_test_desired_property_patch(
@@ -124,6 +141,9 @@ class TestStressEdgeHubModuleClient(object):
                 count=count,
             )
 
+            if time_limit.is_test_done():
+                return
+
             await self.do_test_get_twin(
                 client=client,
                 logger=logger,
@@ -131,6 +151,9 @@ class TestStressEdgeHubModuleClient(object):
                 sample_desired_props=sample_desired_props,
                 count=count,
             )
+
+            if time_limit.is_test_done():
+                return
 
             await self.do_test_reported_properties(
                 client=client,
