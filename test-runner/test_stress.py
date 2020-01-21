@@ -10,10 +10,7 @@ from twin_tests import (
     wait_for_desired_properties_patch,
     wait_for_reported_properties_update,
 )
-from method_tests import (
-    run_method_call_test,
-    time_for_method_to_fully_register_service_call,
-)
+from method_tests import run_method_call_test
 
 
 pytestmark = pytest.mark.asyncio
@@ -50,7 +47,7 @@ class TestStressEdgeHubModuleClient(object):
         sample_desired_props,
         sample_reported_props,
     ):
-        count = 1
+        count = 4
 
         while count <= max_repeats:
             logger(dashes)
@@ -237,10 +234,7 @@ class TestStressEdgeHubModuleClient(object):
             # BKTODO: pull enable_methods out of run_method_call_test
 
             await run_method_call_test(
-                source=service,
-                destination=client,
-                logger=logger,
-                registration_sleep=time_for_method_to_fully_register_service_call,
+                source=service, destination=client, logger=logger
             )
 
     async def do_test_handle_method_to_friend(self, *, client, logger, friend, count):
