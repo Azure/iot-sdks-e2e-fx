@@ -19,7 +19,7 @@ pytestmark = pytest.mark.asyncio
 test_run_time = datetime.timedelta(days=0, hours=2, minutes=0)
 
 # maximum extra time to add to timeout.  used to complete current iteration.
-max_timeout_overage = datetime.timedelta(minutes=30)
+max_timeout_overage = datetime.timedelta(minutes=120)
 
 # actual timeout overage
 timeout_overage = min(max_timeout_overage, test_run_time)
