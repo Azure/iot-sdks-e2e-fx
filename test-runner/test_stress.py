@@ -109,7 +109,7 @@ class TestStressEdgeHubModuleClient(object):
             )
 
             await self.do_test_handle_method_from_service(
-                client=client, logger=logger, service=service, count=count
+                client=client,
                 logger=logger,
                 service=service,
                 count=count,
