@@ -8,7 +8,11 @@ jobs:
   pool: "Horton_Raspi_Python"
   strategy:
     matrix:
-      py37: { variant: py37 }
+      py27: { variant: py27 }
+      py38: { variant: py38 }
+      node8: { variant: node8 }
+      c: { language: c }
+      csharp: { language: csharp }
   steps:
   - template: templates/steps-build-docker-image.yaml
     parameters:
@@ -21,8 +25,11 @@ jobs:
     - "build_linux_arm"
   strategy:
     matrix:
-      py37_mqtt_iothub_module_and_device:     { suite: py37_mqtt_iothub_module_and_device }
-      py37_mqtt_edgehub_module:               { suite: py37_mqtt_edgehub_module }
+      py27_mqtt_iothub_module_and_device:     { suite: py27_mqtt_iothub_module_and_device }
+      py38_mqtt_iothub_module_and_device:     { suite: py38_mqtt_iothub_module_and_device }
+      node8_mqtt_iothub_module_and_device:     { suite: node8_mqtt_iothub_module }
+      c_mqtt_iothub_module_and_device:          { suite: c_mqtt_iothub_module }
+      csharp_mqtt_iothub_module_and_device:     { suite: csharp_mqtt_iothub_module }
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
