@@ -45,7 +45,7 @@ def pretty_time(t):
     return pretty string for datetime and timedelta objects (no date, second accuracy)
     """
     if isinstance(t, datetime.timedelta):
-        return str(datetime.timedelta(seconds=t.seconds))
+        return str(datetime.timedelta(days=t.days, seconds=t.seconds))
     else:
         return t.strftime("%H:%M:%S")
 
@@ -57,6 +57,11 @@ class TimeLimit(object):
         self.test_end_time = self.test_start_time + self.test_run_time
 
     def is_test_done(self):
+        print(
+            "Remaining Time: {}".format(
+                pretty_time(self.test_end_time - datetime.datetime.now())
+            )
+        )
         return datetime.datetime.now() >= self.test_end_time
 
     def print_progress(self, logger):
@@ -108,6 +113,9 @@ class TestStressEdgeHubModuleClient(object):
                 time_limit=time_limit,
             )
 
+            if time_limit.is_test_done():
+                return
+
             await self.do_test_handle_method_from_service(
                 client=client,
                 logger=logger,
@@ -116,16 +124,26 @@ class TestStressEdgeHubModuleClient(object):
                 time_limit=time_limit,
             )
 
+            if time_limit.is_test_done():
+                return
+
             """
             await self.do_test_handle_method_to_friend(
                 client=client, logger=logger, friend=friend, count=count, time_limit=time_limit
             )
 
+            if time_limit.is_test_done():
+                return
+
             await self.do_test_handle_method_to_leaf_device(
                 client=client, logger=logger, leaf_device=leaf_device, count=count, time_limit=time_limit
             )
 
+            if time_limit.is_test_done():
+                return
+
             """
+
             await self.do_test_desired_property_patch(
                 client=client,
                 logger=logger,
@@ -134,6 +152,9 @@ class TestStressEdgeHubModuleClient(object):
                 count=count,
                 time_limit=time_limit,
             )
+
+            if time_limit.is_test_done():
+                return
 
             await self.do_test_get_twin(
                 client=client,
@@ -144,6 +165,9 @@ class TestStressEdgeHubModuleClient(object):
                 time_limit=time_limit,
             )
 
+            if time_limit.is_test_done():
+                return
+
             await self.do_test_reported_properties(
                 client=client,
                 logger=logger,
@@ -152,6 +176,9 @@ class TestStressEdgeHubModuleClient(object):
                 count=count,
                 time_limit=time_limit,
             )
+
+            if time_limit.is_test_done():
+                return
 
             count = count * 2
 
@@ -190,6 +217,10 @@ class TestStressEdgeHubModuleClient(object):
                 )
             else:
                 logger("Received unexpected message: {}".format(received_message))
+
+            if time_limit.is_test_done():
+                eventhub.disconnect_sync()
+                return
 
             if len(payloads):
                 received_message_future = asyncio.ensure_future(
