@@ -36,20 +36,23 @@ def assert_json_equality(a, b):
     assert json_is_same(a, b)
 
 
-_index = 0
+_index = {}
 
 
-def next_integer():
+def next_integer(prefix):
     """
     return the next integer in the sequence using the given prefix as an index
     """
     global _index
-    _index = _index + 1
-    return _index
+    if prefix in _index:
+        _index[prefix] += 1
+    else:
+        _index[prefix] = 1
+    return _index[prefix]
 
 
 def next_random_string(prefix):
     """
     return a random string with the given prefix
     """
-    return random_string("{} {}".format(prefix, next_integer()))
+    return random_string("{} {}".format(prefix, next_integer(prefix)))
