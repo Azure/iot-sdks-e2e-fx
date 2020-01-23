@@ -7,9 +7,10 @@ import json
 import multiprocessing
 import asyncio
 from utilities import next_integer, next_random_string
+from horton_logging import logger
 
 
-async def run_method_call_test(logger, source, destination):
+async def run_method_call_test(source, destination):
     """
     Helper function which invokes a method call on one module and responds to it from another module
     """
@@ -86,30 +87,26 @@ class BaseReceiveMethodCallTests(object):
 class ReceiveMethodCallFromServiceTests(BaseReceiveMethodCallTests):
     @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from the IoTHub service")
-    async def test_method_call_invoked_from_service(self, client, service, logger):
-        await run_method_call_test(source=service, destination=client, logger=logger)
+    async def test_method_call_invoked_from_service(self, client, service):
+        await run_method_call_test(source=service, destination=client)
 
 
 class ReceiveMethodCallFromModuleTests(BaseReceiveMethodCallTests):
     @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from an EdgeHub module")
-    async def test_method_call_invoked_from_friend(self, client, friend, logger):
-        await run_method_call_test(source=friend, destination=client, logger=logger)
+    async def test_method_call_invoked_from_friend(self, client, friend):
+        await run_method_call_test(source=friend, destination=client)
 
 
 class InvokeMethodCallOnModuleTests(object):
     @pytest.mark.invokesModuleMethodCalls
     @pytest.mark.it("Can invoke a method call on an EdgeHub module")
-    async def test_method_call_invoked_on_friend(self, client, friend, logger):
-        await run_method_call_test(source=client, destination=friend, logger=logger)
+    async def test_method_call_invoked_on_friend(self, client, friend):
+        await run_method_call_test(source=client, destination=friend)
 
 
 class InvokeMethodCallOnLeafDeviceTests(object):
     @pytest.mark.invokesDeviceMethodCalls
     @pytest.mark.it("Can invoke a method call on an EdgeHub leaf device")
-    async def test_method_call_invoked_on_leaf_device(
-        self, client, leaf_device, logger
-    ):
-        await run_method_call_test(
-            source=client, destination=leaf_device, logger=logger
-        )
+    async def test_method_call_invoked_on_leaf_device(self, client, leaf_device):
+        await run_method_call_test(source=client, destination=leaf_device)

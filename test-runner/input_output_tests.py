@@ -6,6 +6,7 @@ import pytest
 import asyncio
 import utilities
 import sample_content
+from horton_logging import logger
 
 
 input_name_from_friend = "fromFriend"
@@ -35,7 +36,7 @@ class InputOutputTests(object):
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
     async def test_inputoutput_module_to_friend_routing(
-        self, client, friend, input_name_from_test_client, logger
+        self, client, friend, input_name_from_test_client
     ):
         payload = sample_content.make_message_payload()
 

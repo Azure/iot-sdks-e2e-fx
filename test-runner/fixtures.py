@@ -9,13 +9,9 @@ import utilities
 import sample_content
 from adapters import adapter_config
 from horton_settings import settings
+from horton_logging import logger
 
 # BKTODO: remove test_ prefix on non-test functions
-
-
-@pytest.fixture(scope="session")
-def logger():
-    return adapter_config.logger
 
 
 dashes = "".join(("-" for _ in range(0, 30)))
@@ -23,7 +19,7 @@ separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
 
 
 @pytest.fixture
-def eventhub(logger):
+def eventhub():
     eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
     eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
     yield eventhub
@@ -35,7 +31,7 @@ def eventhub(logger):
 
 
 @pytest.fixture
-def registry(logger):
+def registry():
     registry = connections.connect_registry_client()
     yield registry
     logger(separator.format("registry"))
@@ -46,7 +42,7 @@ def registry(logger):
 
 
 @pytest.fixture
-def friend(logger):
+def friend():
     friend = connections.get_module_client(settings.friend_module)
     yield friend
     logger(separator.format("friend module"))
@@ -57,7 +53,7 @@ def friend(logger):
 
 
 @pytest.fixture
-def test_module(logger):
+def test_module():
     test_module = connections.get_module_client(settings.test_module)
     yield test_module
     logger(separator.format("test module"))
@@ -68,7 +64,7 @@ def test_module(logger):
 
 
 @pytest.fixture
-def leaf_device(logger):
+def leaf_device():
     leaf_device = connections.get_device_client(settings.leaf_device)
     yield leaf_device
     logger(separator.format("leaf device"))
@@ -79,7 +75,7 @@ def leaf_device(logger):
 
 
 @pytest.fixture
-def test_device(logger):
+def test_device():
     test_device = connections.get_device_client(settings.test_device)
     yield test_device
     logger(separator.format("device"))
@@ -90,7 +86,7 @@ def test_device(logger):
 
 
 @pytest.fixture
-def service(logger):
+def service():
     service = connections.connect_service_client()
     yield service
     logger(separator.format("service"))

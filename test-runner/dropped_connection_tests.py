@@ -7,6 +7,7 @@ import asyncio
 import datetime
 from twin_tests import wait_for_reported_properties_update
 from horton_settings import settings
+from horton_logging import logger
 import sample_content
 
 
@@ -29,21 +30,20 @@ class DroppedConnectionTestsBase(object):
 
     @pytest.mark.it("Can reconnect after dropped connection")
     async def test_client_dropped_connection(
-        self, client, net_control, drop_mechanism, logger, test_module_transport
+        self, client, net_control, drop_mechanism, test_module_transport
     ):
         await client.connect2()
         assert await client.get_connection_status() == "connected"
 
         await self.start_dropping(
             net_control=net_control,
-            logger=logger,
             drop_mechanism=drop_mechanism,
             test_module_transport=test_module_transport,
         )
-        await self.wait_for_disconnection_event(client=client, logger=logger)
+        await self.wait_for_disconnection_event(client=client)
         await asyncio.sleep(10)
-        await self.stop_dropping(net_control=net_control, logger=logger)
-        await self.wait_for_reconnection_event(client=client, logger=logger)
+        await self.stop_dropping(net_control=net_control)
+        await self.wait_for_reconnection_event(client=client)
 
 
 class DroppedConnectionTestsTelemetry(object):
@@ -80,7 +80,7 @@ class DroppedConnectionTestsTelemetry(object):
 class DroppedConnectionTestsC2d(object):
     @pytest.mark.it("Can reliably reveive c2d (1st-time possible subscribe)")
     async def test_dropped_c2d_1st_call(
-        self, client, service, before_api_call, after_api_call, logger
+        self, client, service, before_api_call, after_api_call
     ):
         payload = sample_content.make_message_payload()
 
@@ -102,7 +102,7 @@ class DroppedConnectionTestsC2d(object):
 
     @pytest.mark.it("Can reliably reveive c2d (2nd-time)")
     async def test_dropped_c2d_2nd_call(
-        self, client, service, before_api_call, after_api_call, logger
+        self, client, service, before_api_call, after_api_call
     ):
 
         # 1st call
@@ -134,7 +134,7 @@ class DroppedConnectionTestsTwin(object):
         "Can reliably update reported properties (1st time - possible subscribe)"
     )
     async def test_twin_dropped_reported_properties_publish_1st_call(
-        self, client, before_api_call, after_api_call, logger, registry
+        self, client, before_api_call, after_api_call, registry
     ):
 
         props = sample_content.make_reported_props()
@@ -145,12 +145,12 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props, client=client, registry=registry, logger=logger
+            properties_sent=props, client=client, registry=registry
         )
 
     @pytest.mark.it("Can reliably update reported properties (2nd time)")
     async def test_twin_dropped_reported_properties_publish_2nd_call(
-        self, client, before_api_call, after_api_call, logger, registry
+        self, client, before_api_call, after_api_call, registry
     ):
         await client.patch_twin(sample_content.make_reported_props())
 
@@ -161,7 +161,7 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props, client=client, registry=registry, logger=logger
+            properties_sent=props, client=client, registry=registry
         )
 
     @pytest.mark.it("Can reliably get the twin (1st call - possible subscribe)")
@@ -235,7 +235,7 @@ class DroppedConnectionTestsInputOutput(object):
 
     @pytest.mark.it("Can reliably send 5 output events")
     async def test_dropped_send_output_5x(
-        self, client, eventhub, logger, before_api_call, after_api_call
+        self, client, eventhub, before_api_call, after_api_call
     ):
         start_listening_time = datetime.datetime.utcnow() - datetime.timedelta(
             seconds=30

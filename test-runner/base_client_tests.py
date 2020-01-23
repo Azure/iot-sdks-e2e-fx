@@ -3,9 +3,6 @@
 # full license information.
 
 import pytest
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class BaseClientTests(object):
