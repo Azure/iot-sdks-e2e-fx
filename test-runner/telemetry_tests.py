@@ -6,13 +6,14 @@ import asyncio
 import pytest
 import json
 import limitations
+import sample_content
 from horton_settings import settings
 
 
 class TelemetryTests(object):
     @pytest.mark.it("Can send telemetry directly to IoTHub")
     async def test_send_telemetry_to_iothub(
-        self, client, eventhub, telemetry_payload, logger, request
+        self, client, eventhub, telemetry_payload, logger
     ):
         if len(str(telemetry_payload)) > limitations.get_maximum_telemetry_message_size(
             client
@@ -31,13 +32,11 @@ class TelemetryTests(object):
         assert received_message is not None, "Message not received"
 
     @pytest.mark.it("Can send 5 telemetry events directly to iothub")
-    async def test_send_5_telemetry_events_to_iothub(
-        self, client, eventhub, sample_payload, logger
-    ):
+    async def test_send_5_telemetry_events_to_iothub(self, client, eventhub, logger):
         if not limitations.can_always_overlap_telemetry_messages(client):
             pytest.skip("client's can't reliably overlap telemetry messages")
 
-        payloads = [sample_payload() for x in range(0, 5)]
+        payloads = [sample_content.make_message_payload() for x in range(0, 5)]
         futures = []
 
         # start listening before we send

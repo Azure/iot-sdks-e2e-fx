@@ -16,8 +16,6 @@ import connections
 from distutils.version import LooseVersion
 from horton_settings import settings
 from fixtures import (
-    test_object_stringified,
-    test_object_stringified_2,
     logger,
     eventhub,
     registry,
@@ -26,12 +24,8 @@ from fixtures import (
     service,
     test_device,
     test_module,
-    sample_reported_props,
-    sample_desired_props,
-    sample_payload,
     net_control,
     telemetry_payload,
-    test_payload,
 )
 from log_fixtures import (
     pytest_runtest_makereport,

@@ -5,7 +5,7 @@
 import pytest
 import asyncio
 import datetime
-from utilities import next_random_string
+import sample_content
 from twin_tests import (
     patch_desired_props,
     wait_for_desired_properties_patch,
@@ -34,10 +34,6 @@ initial_repeats = 4
 max_repeats = 1024
 
 dashes = "".join(("-" for _ in range(0, 30)))
-
-
-def new_telemetry_message():
-    return {"payload": next_random_string("telemetry")}
 
 
 def pretty_time(t):
@@ -83,16 +79,7 @@ class TestStressEdgeHubModuleClient(object):
 
     @pytest.mark.it("Run for {}".format(pretty_time(test_run_time)))
     async def test_stress(
-        self,
-        logger,
-        client,
-        eventhub,
-        service,
-        registry,
-        friend,
-        leaf_device,
-        sample_desired_props,
-        sample_reported_props,
+        self, logger, client, eventhub, service, registry, friend, leaf_device
     ):
 
         time_limit = TimeLimit(test_run_time)
@@ -148,7 +135,6 @@ class TestStressEdgeHubModuleClient(object):
                 client=client,
                 logger=logger,
                 registry=registry,
-                sample_desired_props=sample_desired_props,
                 count=count,
                 time_limit=time_limit,
             )
@@ -160,7 +146,6 @@ class TestStressEdgeHubModuleClient(object):
                 client=client,
                 logger=logger,
                 registry=registry,
-                sample_desired_props=sample_desired_props,
                 count=count,
                 time_limit=time_limit,
             )
@@ -172,7 +157,6 @@ class TestStressEdgeHubModuleClient(object):
                 client=client,
                 logger=logger,
                 registry=registry,
-                sample_reported_props=sample_reported_props,
                 count=count,
                 time_limit=time_limit,
             )
@@ -188,7 +172,7 @@ class TestStressEdgeHubModuleClient(object):
     async def do_test_telemetry(self, *, client, logger, eventhub, count, time_limit):
         logger("testing telemetry with {} operations".format(count))
 
-        payloads = [new_telemetry_message() for x in range(0, count)]
+        payloads = [sample_content.make_message_payload() for x in range(0, count)]
         futures = []
 
         # start listening before we send
@@ -229,9 +213,7 @@ class TestStressEdgeHubModuleClient(object):
 
         eventhub.disconnect_sync()
 
-    async def do_test_get_twin(
-        self, *, client, logger, registry, sample_desired_props, count, time_limit
-    ):
+    async def do_test_get_twin(self, *, client, logger, registry, count, time_limit):
         await client.enable_twin()
 
         for i in range(0, count):
@@ -239,7 +221,7 @@ class TestStressEdgeHubModuleClient(object):
                 return
 
             logger("get_twin {}/{}".format(i + 1, count))
-            twin_sent = sample_desired_props()
+            twin_sent = sample_content.make_desired_props()
 
             await patch_desired_props(registry, client, twin_sent)
 
@@ -254,10 +236,8 @@ class TestStressEdgeHubModuleClient(object):
                     logger("Twin does not match.  Sleeping for 2 seconds and retrying.")
                     await asyncio.sleep(2)
 
-    async def patch_desired(
-        self, *, client, registry, logger, sample_desired_props, mistakes=1
-    ):
-        twin_sent = sample_desired_props()
+    async def patch_desired(self, *, client, registry, logger, mistakes=1):
+        twin_sent = sample_content.make_desired_props()
         logger("Patching desired properties to {}".format(twin_sent))
 
         patch_future = asyncio.ensure_future(
@@ -272,7 +252,7 @@ class TestStressEdgeHubModuleClient(object):
         await patch_future  # raises if patch not received
 
     async def do_test_desired_property_patch(
-        self, *, client, logger, registry, sample_desired_props, count, time_limit
+        self, *, client, logger, registry, count, time_limit
     ):
         await client.enable_twin()
 
@@ -280,11 +260,7 @@ class TestStressEdgeHubModuleClient(object):
         # patches from previous get_twin tests, so we set mistakes to a large
         # number
         await self.patch_desired(
-            client=client,
-            registry=registry,
-            logger=logger,
-            sample_desired_props=sample_desired_props,
-            mistakes=max_repeats * 2,
+            client=client, registry=registry, logger=logger, mistakes=max_repeats * 2
         )
 
         for i in range(0, count):
@@ -292,16 +268,11 @@ class TestStressEdgeHubModuleClient(object):
                 return
 
             logger("desired_property_patch {}/{}".format(i + 1, count))
-            await self.patch_desired(
-                client=client,
-                registry=registry,
-                logger=logger,
-                sample_desired_props=sample_desired_props,
-            )
+            await self.patch_desired(client=client, registry=registry, logger=logger)
             logger("patch {} received".format(i))
 
     async def do_test_reported_properties(
-        self, *, client, logger, registry, sample_reported_props, count, time_limit
+        self, *, client, logger, registry, count, time_limit
     ):
         await client.enable_twin()
 
@@ -311,7 +282,7 @@ class TestStressEdgeHubModuleClient(object):
 
             logger("reported_properties {}/{}".format(i + 1, count))
 
-            properties_sent = sample_reported_props()
+            properties_sent = sample_content.make_reported_props()
 
             await client.patch_twin(properties_sent)
 
