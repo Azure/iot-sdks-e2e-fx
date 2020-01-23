@@ -27,6 +27,7 @@ def get_module_client(settings_object):
     client.device_id = settings_object.device_id
     client.module_id = settings_object.module_id
     client.capabilities = settings_object.capabilities
+    client.settings = settings_object
 
     if settings_object.capabilities.v2_connect_group:
         if settings_object.connection_type == "environment":
@@ -57,6 +58,7 @@ def get_device_client(settings_object):
 
     client.device_id = settings_object.device_id
     client.capabilities = settings_object.capabilities
+    client.settings = settings_object
 
     if settings_object.capabilities.v2_connect_group:
         client.create_from_connection_string_sync(
