@@ -5,6 +5,7 @@
 import asyncio
 import pytest
 import json
+import limitations
 from horton_settings import settings
 
 
@@ -13,12 +14,10 @@ class TelemetryTests(object):
     async def test_send_telemetry_to_iothub(
         self, client, eventhub, telemetry_payload, logger, request
     ):
-        if (
-            len(str(telemetry_payload)) > 65500
-            and settings.horton.transport == "amqpws"
-            and settings.horton.language == "java"
+        if len(str(telemetry_payload)) > limitations.get_maximum_telemetry_message_size(
+            client
         ):
-            pytest.skip("amqpws on Java can't do 64kb telemetry")
+            pytest.skip("message is too big")
 
         await eventhub.connect()
 
@@ -35,6 +34,9 @@ class TelemetryTests(object):
     async def test_send_5_telemetry_events_to_iothub(
         self, client, eventhub, sample_payload, logger
     ):
+        if not limitations.can_always_overlap_telemetry_messages(client):
+            pytest.skip("client's can't reliably overlap telemetry messages")
+
         payloads = [sample_payload() for x in range(0, 5)]
         futures = []
 

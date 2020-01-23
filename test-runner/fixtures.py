@@ -130,13 +130,13 @@ minimum_payload = {"a": {}}
 
 
 def make_payload(size):
-    wrapper_overhead = len(json.dumps(minimum_payload))
+    wrapper_overhead = len(json.dumps({"payload": ""}))
     if size == 0:
         return zero_size_payload
     elif size <= wrapper_overhead:
         return minimum_payload
     else:
-        return {"payload": random_string(length=size - wrapper_overhead - 7)}
+        return {"payload": random_string(length=size - wrapper_overhead)}
 
 
 @pytest.fixture
@@ -154,8 +154,10 @@ def net_control():
     params=[
         pytest.param({}, id="empty object"),
         pytest.param(make_payload(1), id="smallest object"),
-        pytest.param(make_payload(20), id="small object"),
-        pytest.param(make_payload(65535), id="64K object"),
+        pytest.param(make_payload(40), id="small object"),
+        pytest.param(make_payload(63 * 1024), id="63K object"),
+        pytest.param(make_payload(127 * 1024), id="127K object"),
+        pytest.param(make_payload(255 * 1024), id="255K object"),
     ],
 )
 def telemetry_payload(request):
