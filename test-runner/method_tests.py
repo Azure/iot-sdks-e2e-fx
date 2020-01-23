@@ -14,9 +14,9 @@ async def run_method_call_test(logger, source, destination):
     Helper function which invokes a method call on one module and responds to it from another module
     """
 
-    method_name = "test_method_{}".format(next_integer())
+    method_name = "test_method_{}".format(next_integer("test_method"))
     method_payload = {"payloadData": next_random_string("method_payload")}
-    status_code = 1000 + next_integer()
+    status_code = 1000 + next_integer("status_code")
 
     method_invoke_parameters = {
         "methodName": method_name,
