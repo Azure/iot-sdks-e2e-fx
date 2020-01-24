@@ -4,8 +4,9 @@
 
 import pytest
 import asyncio
-import sample_content
 import utilities
+import sample_content
+from horton_logging import logger
 
 
 input_name_from_friend = "fromFriend"
@@ -35,9 +36,9 @@ class InputOutputTests(object):
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
     async def test_inputoutput_module_to_friend_routing(
-        self, client, friend, sample_payload, input_name_from_test_client, logger
+        self, client, friend, input_name_from_test_client
     ):
-        payload = sample_payload()
+        payload = sample_content.make_message_payload()
 
         await friend.enable_input_messages()
         logger("messages enabled")
@@ -58,9 +59,9 @@ class InputOutputTests(object):
     @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can receive an input message which is routed from another module")
     async def test_inputoutput_friend_to_module_routing(
-        self, client, friend, sample_payload, output_name_to_test_client
+        self, client, friend, output_name_to_test_client
     ):
-        payload = sample_payload()
+        payload = sample_content.make_message_payload()
 
         await client.enable_input_messages()
 
@@ -80,15 +81,10 @@ class InputOutputTests(object):
         "Can send a message that gets routed to a friend and then receive a message in reply"
     )
     async def test_inputoutput_module_test_to_friend_and_back(
-        self,
-        client,
-        friend,
-        sample_payload,
-        input_name_from_test_client,
-        output_name_to_test_client,
+        self, client, friend, input_name_from_test_client, output_name_to_test_client
     ):
-        payload = sample_payload()
-        payload_2 = sample_payload()
+        payload = sample_content.make_message_payload()
+        payload_2 = sample_content.make_message_payload()
 
         await client.enable_input_messages()
         await friend.enable_input_messages()
@@ -113,10 +109,8 @@ class InputOutputTests(object):
 
     @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send a message that gets routed to eventhub")
-    async def test_inputoutput_module_output_routed_upstream(
-        self, client, eventhub, sample_payload
-    ):
-        payload = sample_payload()
+    async def test_inputoutput_module_output_routed_upstream(self, client, eventhub):
+        payload = sample_content.make_message_payload()
 
         # start listening before we send
         await eventhub.connect()

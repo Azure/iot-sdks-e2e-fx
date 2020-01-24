@@ -6,6 +6,8 @@ import pytest
 import random
 import json
 import asyncio
+import sample_content
+from horton_logging import logger
 
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
@@ -18,9 +20,7 @@ async def patch_desired_props(registry, client, twin):
         await registry.patch_device_twin(client.device_id, twin)
 
 
-async def wait_for_reported_properties_update(
-    *, properties_sent, client, registry, logger
-):
+async def wait_for_reported_properties_update(*, properties_sent, client, registry):
     """
     Helper function which uses the registry to wait for reported properties
     to update to the expected value
@@ -49,9 +49,7 @@ async def wait_for_reported_properties_update(
             await asyncio.sleep(2)
 
 
-async def wait_for_desired_properties_patch(
-    *, client, expected_twin, logger, mistakes=1
-):
+async def wait_for_desired_properties_patch(*, client, expected_twin, mistakes=1):
     mistakes_left = mistakes
     while True:
         patch_received = await client.wait_for_desired_property_patch()
@@ -85,10 +83,8 @@ class TwinTests(object):
 
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can get the most recent twin from the service")
-    async def test_twin_desired_props(
-        self, client, logger, registry, sample_desired_props
-    ):
-        twin_sent = sample_desired_props()
+    async def test_twin_desired_props(self, client, registry):
+        twin_sent = sample_content.make_desired_props()
 
         await patch_desired_props(registry, client, twin_sent)
 
@@ -111,13 +107,11 @@ class TwinTests(object):
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can get the most recent twin from the service 5 times")
     @pytest.mark.skip("Failing on pythonv2")
-    async def test_twin_desired_props_5_times(
-        self, client, logger, registry, sample_desired_props
-    ):
+    async def test_twin_desired_props_5_times(self, client, registry):
         await client.enable_twin()
 
         for _ in range(0, 5):
-            twin_sent = sample_desired_props()
+            twin_sent = sample_content.make_desired_props()
 
             await patch_desired_props(registry, client, twin_sent)
 
@@ -134,19 +128,17 @@ class TwinTests(object):
 
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can receive desired property patches as events")
-    async def test_twin_desired_props_patch(
-        self, client, logger, registry, sample_desired_props
-    ):
+    async def test_twin_desired_props_patch(self, client, registry):
 
         await client.enable_twin()
 
         for i in range(1, 4):
-            twin_sent = sample_desired_props()
+            twin_sent = sample_content.make_desired_props()
 
             logger("start waiting for patch {}".format(i))
             patch_future = asyncio.ensure_future(
                 wait_for_desired_properties_patch(
-                    client=client, expected_twin=twin_sent, logger=logger
+                    client=client, expected_twin=twin_sent
                 )
             )
             await asyncio.sleep(3)  # wait for async call to take effect
@@ -162,38 +154,28 @@ class TwinTests(object):
     @pytest.mark.it(
         "Can set reported properties which can be successfully retrieved by the service"
     )
-    async def test_twin_reported_props(
-        self, client, logger, registry, sample_reported_props
-    ):
-        properties_sent = sample_reported_props()
+    async def test_twin_reported_props(self, client, registry):
+        properties_sent = sample_content.make_reported_props()
 
         await client.enable_twin()
         await client.patch_twin(properties_sent)
 
         await wait_for_reported_properties_update(
-            properties_sent=properties_sent,
-            client=client,
-            registry=registry,
-            logger=logger,
+            properties_sent=properties_sent, client=client, registry=registry
         )
 
     @pytest.mark.supportsTwin
     @pytest.mark.it(
         "Can set reported properties 5 times and retrieve them from the service"
     )
-    async def test_twin_reported_props_5_times(
-        self, client, logger, registry, sample_reported_props
-    ):
+    async def test_twin_reported_props_5_times(self, client, registry):
         await client.enable_twin()
 
         for _ in range(0, 5):
-            properties_sent = sample_reported_props()
+            properties_sent = sample_content.make_reported_props()
 
             await client.patch_twin(properties_sent)
 
             await wait_for_reported_properties_update(
-                properties_sent=properties_sent,
-                client=client,
-                registry=registry,
-                logger=logger,
+                properties_sent=properties_sent, client=client, registry=registry
             )

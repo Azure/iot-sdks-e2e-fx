@@ -5,6 +5,7 @@
 import json
 import pytest
 import asyncio
+import sample_content
 
 
 class C2dTests(object):
@@ -13,8 +14,8 @@ class C2dTests(object):
         await client.enable_c2d()
 
     @pytest.mark.it("Can receive C2D messages from the IoTHub Service")
-    async def test_device_receive_c2d(self, client, service, sample_payload):
-        test_payload = sample_payload()
+    async def test_device_receive_c2d(self, client, service):
+        test_payload = sample_content.make_message_payload()
 
         await client.enable_c2d()
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())

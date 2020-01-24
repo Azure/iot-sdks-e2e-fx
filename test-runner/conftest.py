@@ -14,11 +14,9 @@ import runtime_capabilities
 import scenarios
 import connections
 from distutils.version import LooseVersion
+from horton_logging import logger, set_logger
 from horton_settings import settings
 from fixtures import (
-    test_object_stringified,
-    test_object_stringified_2,
-    logger,
     eventhub,
     registry,
     friend,
@@ -26,12 +24,8 @@ from fixtures import (
     service,
     test_device,
     test_module,
-    sample_reported_props,
-    sample_desired_props,
-    sample_payload,
     net_control,
     telemetry_payload,
-    test_payload,
 )
 from log_fixtures import (
     pytest_runtest_makereport,
@@ -263,19 +257,6 @@ def skip_unsupported_tests(items):
         settings.test_module.skip_list,
         "it isn't implemented in the {} wrapper".format(settings.test_module.language),
     )
-
-
-def set_logger():
-    settings.test_module.wrapper_api = adapters.create_adapter(
-        settings.test_module.adapter_address, "wrapper"
-    )
-
-    def print_and_log(message):
-        if settings.test_module.adapter_address != "direct_python":
-            print(message)
-        settings.test_module.wrapper_api.log_message_sync(message)
-
-    adapter_config.logger = print_and_log
 
 
 def pytest_collection_modifyitems(config, items):

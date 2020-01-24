@@ -7,6 +7,8 @@ import asyncio
 import datetime
 from twin_tests import wait_for_reported_properties_update
 from horton_settings import settings
+from horton_logging import logger
+import sample_content
 
 
 telemetry_output_name = "telemetry"
@@ -28,28 +30,29 @@ class DroppedConnectionTestsBase(object):
 
     @pytest.mark.it("Can reconnect after dropped connection")
     async def test_client_dropped_connection(
-        self, client, net_control, drop_mechanism, logger, test_module_transport
+        self, client, net_control, drop_mechanism, test_module_transport
     ):
         await client.connect2()
         assert await client.get_connection_status() == "connected"
 
         await self.start_dropping(
             net_control=net_control,
-            logger=logger,
             drop_mechanism=drop_mechanism,
             test_module_transport=test_module_transport,
         )
-        await self.wait_for_disconnection_event(client=client, logger=logger)
+        await self.wait_for_disconnection_event(client=client)
         await asyncio.sleep(10)
-        await self.stop_dropping(net_control=net_control, logger=logger)
-        await self.wait_for_reconnection_event(client=client, logger=logger)
+        await self.stop_dropping(net_control=net_control)
+        await self.wait_for_reconnection_event(client=client)
 
 
 class DroppedConnectionTestsTelemetry(object):
     @pytest.mark.it("Can reliably send an event")
     async def test_client_dropped_send_event(
-        self, client, before_api_call, after_api_call, eventhub, test_payload
+        self, client, before_api_call, after_api_call, eventhub
     ):
+        test_payload = sample_content.make_message_payload()
+
         start_listening_time = datetime.datetime.utcnow() - datetime.timedelta(
             seconds=30
         )  # start listning early because of clock skew
@@ -77,9 +80,9 @@ class DroppedConnectionTestsTelemetry(object):
 class DroppedConnectionTestsC2d(object):
     @pytest.mark.it("Can reliably reveive c2d (1st-time possible subscribe)")
     async def test_dropped_c2d_1st_call(
-        self, client, service, before_api_call, after_api_call, sample_payload, logger
+        self, client, service, before_api_call, after_api_call
     ):
-        payload = sample_payload()
+        payload = sample_content.make_message_payload()
 
         await client.enable_c2d()
 
@@ -99,11 +102,11 @@ class DroppedConnectionTestsC2d(object):
 
     @pytest.mark.it("Can reliably reveive c2d (2nd-time)")
     async def test_dropped_c2d_2nd_call(
-        self, client, service, before_api_call, after_api_call, logger, sample_payload
+        self, client, service, before_api_call, after_api_call
     ):
 
         # 1st call
-        payload = sample_payload()
+        payload = sample_content.make_message_payload()
 
         await client.enable_c2d()
 
@@ -113,7 +116,7 @@ class DroppedConnectionTestsC2d(object):
         assert received_message.body == payload
 
         # 2nd call
-        payload = sample_payload()
+        payload = sample_content.make_message_payload()
 
         await before_api_call()
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
@@ -131,16 +134,10 @@ class DroppedConnectionTestsTwin(object):
         "Can reliably update reported properties (1st time - possible subscribe)"
     )
     async def test_twin_dropped_reported_properties_publish_1st_call(
-        self,
-        client,
-        before_api_call,
-        after_api_call,
-        logger,
-        registry,
-        sample_reported_props,
+        self, client, before_api_call, after_api_call, registry
     ):
 
-        props = sample_reported_props()
+        props = sample_content.make_reported_props()
 
         await before_api_call()
         patch_future = asyncio.ensure_future(client.patch_twin(props))
@@ -148,29 +145,23 @@ class DroppedConnectionTestsTwin(object):
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props, client=client, registry=registry, logger=logger
+            properties_sent=props, client=client, registry=registry
         )
 
     @pytest.mark.it("Can reliably update reported properties (2nd time)")
     async def test_twin_dropped_reported_properties_publish_2nd_call(
-        self,
-        client,
-        before_api_call,
-        after_api_call,
-        logger,
-        registry,
-        sample_reported_props,
+        self, client, before_api_call, after_api_call, registry
     ):
-        await client.patch_twin(sample_reported_props())
+        await client.patch_twin(sample_content.make_reported_props())
 
         await before_api_call()
-        props = sample_reported_props()
+        props = sample_content.make_reported_props()
         patch_future = asyncio.ensure_future(client.patch_twin(props))
         await after_api_call()
 
         await patch_future
         await wait_for_reported_properties_update(
-            properties_sent=props, client=client, registry=registry, logger=logger
+            properties_sent=props, client=client, registry=registry
         )
 
     @pytest.mark.it("Can reliably get the twin (1st call - possible subscribe)")
@@ -223,9 +214,8 @@ class DroppedConnectionTestsInputOutput(object):
         input_name_from_test_client,
         before_api_call,
         after_api_call,
-        sample_payload,
     ):
-        test_payload = sample_payload()
+        test_payload = sample_content.make_message_payload()
 
         friend_input_future = asyncio.ensure_future(
             friend.wait_for_input_event(input_name_from_test_client)
@@ -245,12 +235,12 @@ class DroppedConnectionTestsInputOutput(object):
 
     @pytest.mark.it("Can reliably send 5 output events")
     async def test_dropped_send_output_5x(
-        self, client, eventhub, sample_payload, logger, before_api_call, after_api_call
+        self, client, eventhub, before_api_call, after_api_call
     ):
         start_listening_time = datetime.datetime.utcnow() - datetime.timedelta(
             seconds=30
         )  # start listning early because of clock skew
-        payloads = [sample_payload() for x in range(0, 5)]
+        payloads = [sample_content.make_message_payload() for x in range(0, 5)]
         futures = []
 
         await before_api_call()

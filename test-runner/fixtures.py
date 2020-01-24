@@ -5,32 +5,13 @@ import pytest
 import connections
 import adapters
 import json
+import utilities
+import sample_content
 from adapters import adapter_config
-from utilities import random_string, next_random_string
 from horton_settings import settings
+from horton_logging import logger
 
-# BKTODO: replace test content fixtures with generator fixtures
 # BKTODO: remove test_ prefix on non-test functions
-
-
-@pytest.fixture
-def test_payload(sample_payload):
-    return sample_payload()
-
-
-@pytest.fixture
-def test_object_stringified():
-    return '{ "message": "' + next_random_string("tos") + '" }'
-
-
-@pytest.fixture
-def test_object_stringified_2():
-    return '{ "message": "' + next_random_string("tos2") + '" }'
-
-
-@pytest.fixture(scope="session")
-def logger():
-    return adapter_config.logger
 
 
 dashes = "".join(("-" for _ in range(0, 30)))
@@ -38,7 +19,7 @@ separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
 
 
 @pytest.fixture
-def eventhub(logger):
+def eventhub():
     eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
     eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
     yield eventhub
@@ -50,7 +31,7 @@ def eventhub(logger):
 
 
 @pytest.fixture
-def registry(logger):
+def registry():
     registry = connections.connect_registry_client()
     yield registry
     logger(separator.format("registry"))
@@ -61,7 +42,7 @@ def registry(logger):
 
 
 @pytest.fixture
-def friend(logger):
+def friend():
     friend = connections.get_module_client(settings.friend_module)
     yield friend
     logger(separator.format("friend module"))
@@ -72,7 +53,7 @@ def friend(logger):
 
 
 @pytest.fixture
-def test_module(logger):
+def test_module():
     test_module = connections.get_module_client(settings.test_module)
     yield test_module
     logger(separator.format("test module"))
@@ -83,7 +64,7 @@ def test_module(logger):
 
 
 @pytest.fixture
-def leaf_device(logger):
+def leaf_device():
     leaf_device = connections.get_device_client(settings.leaf_device)
     yield leaf_device
     logger(separator.format("leaf device"))
@@ -94,7 +75,7 @@ def leaf_device(logger):
 
 
 @pytest.fixture
-def test_device(logger):
+def test_device():
     test_device = connections.get_device_client(settings.test_device)
     yield test_device
     logger(separator.format("device"))
@@ -105,7 +86,7 @@ def test_device(logger):
 
 
 @pytest.fixture
-def service(logger):
+def service():
     service = connections.connect_service_client()
     yield service
     logger(separator.format("service"))
@@ -113,35 +94,6 @@ def service(logger):
         service.disconnect_sync()
     except Exception as e:
         logger("exception disconnecting service: {}".format(e))
-
-
-@pytest.fixture
-def sample_reported_props():
-    return lambda: {"reported": {"foo": next_random_string("reported props")}}
-
-
-@pytest.fixture
-def sample_desired_props():
-    return lambda: {"desired": {"foo": next_random_string("desired props")}}
-
-
-zero_size_payload = {}
-minimum_payload = {"a": {}}
-
-
-def make_payload(size):
-    wrapper_overhead = len(json.dumps({"payload": ""}))
-    if size == 0:
-        return zero_size_payload
-    elif size <= wrapper_overhead:
-        return minimum_payload
-    else:
-        return {"payload": random_string(length=size - wrapper_overhead)}
-
-
-@pytest.fixture
-def sample_payload():
-    return lambda: {"payload": next_random_string("payload")}
 
 
 @pytest.fixture
@@ -153,11 +105,11 @@ def net_control():
     scope="function",
     params=[
         pytest.param({}, id="empty object"),
-        pytest.param(make_payload(1), id="smallest object"),
-        pytest.param(make_payload(40), id="small object"),
-        pytest.param(make_payload(63 * 1024), id="63K object"),
-        pytest.param(make_payload(127 * 1024), id="127K object"),
-        pytest.param(make_payload(255 * 1024), id="255K object"),
+        pytest.param(sample_content.make_message_payload(1), id="smallest object"),
+        pytest.param(sample_content.make_message_payload(40), id="small object"),
+        pytest.param(sample_content.make_message_payload(63 * 1024), id="63K object"),
+        pytest.param(sample_content.make_message_payload(127 * 1024), id="127K object"),
+        pytest.param(sample_content.make_message_payload(255 * 1024), id="255K object"),
     ],
 )
 def telemetry_payload(request):

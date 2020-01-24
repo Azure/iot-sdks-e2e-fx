@@ -40,6 +40,9 @@ _index = {}
 
 
 def next_integer(prefix):
+    """
+    return the next integer in the sequence using the given prefix as an index
+    """
     global _index
     if prefix in _index:
         _index[prefix] += 1
@@ -49,4 +52,7 @@ def next_integer(prefix):
 
 
 def next_random_string(prefix):
+    """
+    return a random string with the given prefix
+    """
     return random_string("{} {}".format(prefix, next_integer(prefix)))
