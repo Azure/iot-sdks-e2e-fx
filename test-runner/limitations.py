@@ -5,8 +5,9 @@
 
 def get_maximum_telemetry_message_size(client):
     if client.settings.language == "java" and client.settings.transport == "amqpws":
-        # java amqpws limitation
-        return 63 * 1024
+        # java amqpws limitation.  Actual number is unknown.  This just blocks 63K+ tests.
+        # The real limit is probably near an even number like 32K
+        return 62 * 1024
     elif client.settings.language == "node":
         # node swagger wrapper limitation
         return 64 * 1024
