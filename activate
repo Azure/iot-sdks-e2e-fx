@@ -52,6 +52,8 @@ if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
     colorecho $_yellow "Creating virtual evnronment"
     python3 -m virtualenv ${root_dir}/_virtualenv/horton/
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
+
+    colorecho $_green "Horton environment created"
 fi
 
 colorecho $_yellow "activating horton environment"
@@ -60,10 +62,11 @@ source ${root_dir}/_virtualenv/horton/bin/activate
 
 colorecho $_yellow "installing required python libraries"
 pip install -q -r ${root_dir}/test-runner/requirements.txt && \
-pip install -q -e ${root_dir}/horton_helpers/ && \
-pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/
+    pip install -q -e ${root_dir}/horton_helpers/ && \
+    pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/ && \
+    pip install -q -r ${root_dir}/pyscripts/requirements.txt
 [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
 
-colorecho $_green "Horton environment created"
+colorecho $_green "Horton environment activated"
 
 

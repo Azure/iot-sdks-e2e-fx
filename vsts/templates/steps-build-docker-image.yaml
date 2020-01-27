@@ -132,6 +132,9 @@ steps:
     versionSpec: '3.7'
     architecture: $(architecture)
 
+- script: source $(Horton.FrameworkRoot}/activate
+  displayName: 'Activate Horton environment"
+  condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - script: |
     cd ${BUILD_SOURCESDIRECTORY} &&
@@ -151,6 +154,7 @@ steps:
     CommitToPass: $(CommitToPass)
 
 - task: PublishBuildArtifacts@1
+  displayName: "publish patch"
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)/'
     ArtifactName: 'patch'
@@ -160,12 +164,6 @@ steps:
       not(eq(variables['Horton.FrameworkRoot'], variables['Build.SourcesDirectory'])),
       eq(variables['IsPr'],'yes')
       )
-
-- script: |
-    pip install --upgrade pip &&
-    pip install -r $(Horton.FrameworkRoot)/pyscripts/requirements.txt
-  displayName: 'Install python libs'
-  condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - script: |
     python $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
