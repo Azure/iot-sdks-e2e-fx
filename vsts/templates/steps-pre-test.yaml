@@ -19,7 +19,6 @@ steps:
 
 - script: source $(Horton.FrameworkRoot}/activate
   displayName: 'Activate Horton environment'
-  condition: and(succeeded(), eq(variables['buildImage'],'yes'))
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
