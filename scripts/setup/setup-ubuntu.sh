@@ -22,10 +22,6 @@ header $_cyan "installing powershell"
 $script_dir/setup-powershell.sh
 [ $? -eq 0 ] ||  failure "setup-powershell failed"
 
-header $_cyan "installing python 3.6"
-$script_dir/setup-python.sh
-[ $? -eq 0 ] ||  failure "setup-pythonfailed"
-
 header $_cyan "installing moby"
 $script_dir/setup-moby.sh
 [ $? -eq 0 ] || failure "setup-moby failed"
