@@ -18,7 +18,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: source $(Horton.FrameworkRoot}/activate
-  displayName: 'Activate Horton environment"
+  displayName: 'Activate Horton environment'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
