@@ -16,3 +16,5 @@ pytestdebug.log
 *.swo
 _horton_settings.json
 
+_virtualenv/*
+

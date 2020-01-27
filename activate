@@ -1,0 +1,79 @@
+#!/bin/bash
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+if [ "${BASH_SOURCE-}" = "$0" ]; then
+    echo "You must source this script: \$ source $0" >&2
+    exit 33
+fi
+
+root_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")") 
+pushd $root_dir
+
+source "$root_dir/scripts/colorecho.sh"
+
+if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
+    colorecho $_yellow "Initializing horton environment"
+
+    # Make sure we're running python 3.5 or higher
+    colorecho $_yellow "checking for python 3.5+"
+    needpython=1
+    which python3
+    if [ $? -eq 0 ]; then
+      python3 --version
+
+      ret=`python3 -c 'import sys; print("%i" % (sys.hexversion>0x03050000))'`
+      if [ $ret -eq 1 ]; then
+        colorecho $_yellow "Python3.5+ is already installed"
+        needpython=0
+      fi
+    fi
+
+    if [ $needpython -eq 1 ]; then
+      colorecho $_yellow "Installing python3"
+      sudo apt-get install -y python3
+      [ $? -eq 0 ] || { colorecho $_red "apt-get for python3 failed"; return 1; }
+    fi
+
+    colorecho $_yellow "Checking for pip3"
+    which pip3
+    if [ $? -ne 0 ]; then
+        colorecho $_yellow "installing pip3"
+        sudo apt-get install -y python3-pip
+      [ $? -eq 0 ] || { colorecho $_red "apt-get for python3-pip3 failed"; return 1; }
+    fi
+
+    colorecho $_yellow "Installing virtualenv python libraries"
+    python3 -m pip -q install --user virtualenv
+    if [ $? -ne 0 ]; then 
+        colorecho $_yellow "user path not accepted.  Installing globally"
+        python3 -m pip -q install virtualenv
+        [ $? -eq 0 ] || { colorecho $_red "pip install requirements.txt failed"; return 1; }
+    fi
+
+    colorecho $_yellow "Creating virtual evnronment"
+    python3 -m virtualenv ${root_dir}/_virtualenv/horton/
+    [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
+
+    colorecho $_green "Horton environment created"
+
+    colorecho $_yellow "activating horton environment"
+    source ${root_dir}/_virtualenv/horton/bin/activate
+    [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
+
+    colorecho $_yellow "installing required python libraries"
+    pip install -q --upgrade pip && \
+        pip install -q -r ${root_dir}/test-runner/requirements.txt && \
+        pip install -q -e ${root_dir}/horton_helpers/ && \
+        pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/ && \
+        pip install -q -r ${root_dir}/pyscripts/requirements.txt
+    [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
+
+else
+    source ${root_dir}/_virtualenv/horton/bin/activate
+    [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
+fi
+
+colorecho $_green "Horton environment activated"
+
+
