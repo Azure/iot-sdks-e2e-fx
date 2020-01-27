@@ -17,7 +17,7 @@ steps:
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: source $(Horton.FrameworkRoot}/activate
+- script: source $(Horton.FrameworkRoot)/activate
   displayName: 'Activate Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 

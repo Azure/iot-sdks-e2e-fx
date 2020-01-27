@@ -132,7 +132,7 @@ steps:
     versionSpec: '3.7'
     architecture: $(architecture)
 
-- script: source $(Horton.FrameworkRoot}/activate
+- script: source $(Horton.FrameworkRoot)/activate
   displayName: 'Activate Horton environment'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
