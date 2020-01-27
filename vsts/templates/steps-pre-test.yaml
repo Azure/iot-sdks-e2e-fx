@@ -22,7 +22,6 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
-  workingDirectory: $(Horton.FrameworkRoot)
   displayName: 'Install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
@@ -45,8 +44,7 @@ steps:
 
 - script: 
     source $(Horton.FrameworkRoot)/activate &&
-    python deploy.py ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
-  workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
+    python deploy-containers/deploy.py ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
   displayName: 'Create new identites and deploy containers'
   env:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -74,15 +72,13 @@ steps:
 
 - script: 
     source $(Horton.FrameworkRoot)/activate &&
-    python ensure_container.py testMod
-  workingDirectory: $(Horton.FrameworkRoot)/pyscripts
+    python pyscripts/ensure_container.py testMod
   displayName: 'Verify that testMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script:
     source $(Horton.FrameworkRoot)/activate &&
-    python ensure_container.py friendMod
-  workingDirectory: $(Horton.FrameworkRoot)/pyscripts
+    python pyscripts/ensure_container.py friendMod
   displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
@@ -92,8 +88,7 @@ steps:
   
 - script: 
     source $(Horton.FrameworkRoot)/activate &&
-    python get_credentials.py
-  workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
+    python deploy-containers/get_credentials.py
   displayName: 'Get credentials'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 

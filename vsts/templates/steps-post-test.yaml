@@ -32,8 +32,7 @@ steps:
 
 - script:
     source $(Horton.FrameworkRoot)/activate &&
-    python remove_deployment.py
-  workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
+    python deploy-containers/remove_deployment.py
   displayName: 'remove devices'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)

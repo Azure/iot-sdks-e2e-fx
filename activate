@@ -42,10 +42,10 @@ if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
     fi
 
     colorecho $_yellow "Installing virtualenv python libraries"
-    python3 -m pip install --user virtualenv
+    python3 -m pip -q install --user virtualenv
     if [ $? -ne 0 ]; then 
         colorecho $_yellow "user path not accepted.  Installing globally"
-        python3 -m pip install virtualenv
+        python3 -m pip -q install virtualenv
         [ $? -eq 0 ] || { colorecho $_red "pip install requirements.txt failed"; return 1; }
     fi
 
@@ -60,7 +60,7 @@ if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
     colorecho $_yellow "installing required python libraries"
-    pip install --upgrade pip && \
+    pip install -q --upgrade pip && \
         pip install -q -r ${root_dir}/test-runner/requirements.txt && \
         pip install -q -e ${root_dir}/horton_helpers/ && \
         pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/ && \
