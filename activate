@@ -18,8 +18,10 @@ if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
     # Make sure we're running python 3.5 or higher
     colorecho $_yellow "checking for python 3.5+"
     needpython=1
-    which python3 > /dev/null
+    which python3
     if [ $? -eq 0 ]; then
+      python3 --version
+
       ret=`python3 -c 'import sys; print("%i" % (sys.hexversion>0x03050000))'`
       if [ $ret -eq 1 ]; then
         colorecho $_yellow "Python3.5+ is already installed"
@@ -34,7 +36,7 @@ if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
     fi
 
     colorecho $_yellow "Checking for pip3"
-    which pip3 > /dev/null
+    which pip3
     if [ $? -ne 0 ]; then
         colorecho $_yellow "installing pip3"
         sudo apt-get install -y python3-pip
