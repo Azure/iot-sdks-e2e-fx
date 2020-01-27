@@ -4,7 +4,9 @@ parameters:
   deployment_type: ''
 
 steps:
-- script: $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.deployment_type }} $(Build.SourcesDirectory)/results ${{ parameters.log_folder_name }}
+- script:
+    source $(Horton.FrameworkRoot)/activate &&
+    $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.deployment_type }} $(Build.SourcesDirectory)/results ${{ parameters.log_folder_name }}
   displayName: 'Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
@@ -28,7 +30,9 @@ steps:
     ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
-- script: python remove_deployment.py
+- script:
+    source $(Horton.FrameworkRoot)/activate &&
+    python remove_deployment.py
   workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
   displayName: 'remove devices'
   env:
