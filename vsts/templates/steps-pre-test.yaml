@@ -18,7 +18,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: source $(Horton.FrameworkRoot)/activate
-  displayName: 'Activate Horton environment'
+  displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
@@ -43,7 +43,9 @@ steps:
   displayName: 'pre-cache edge images'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- script: python deploy.py ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
+- script: 
+    source $(Horton.FrameworkRoot)/activate
+    python deploy.py ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
   workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
   displayName: 'Create new identites and deploy containers'
   env:
@@ -70,12 +72,16 @@ steps:
   displayName: 'Verify testMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: python ensure_container.py testMod
+- script: 
+    source $(Horton.FrameworkRoot)/activate
+    python ensure_container.py testMod
   workingDirectory: $(Horton.FrameworkRoot)/pyscripts
   displayName: 'Verify that testMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: python ensure_container.py friendMod
+- script:
+    python ensure_container.py friendMod
+    source $(Horton.FrameworkRoot)/activate
   workingDirectory: $(Horton.FrameworkRoot)/pyscripts
   displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
@@ -84,7 +90,9 @@ steps:
   displayName: 'give edgeHub 30 seconds to start up'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
   
-- script: python get_credentials.py
+- script: 
+    source $(Horton.FrameworkRoot)/activate
+    python get_credentials.py
   workingDirectory: $(Horton.FrameworkRoot)/deploy-containers
   displayName: 'Get credentials'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
