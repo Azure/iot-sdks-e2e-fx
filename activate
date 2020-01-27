@@ -62,6 +62,11 @@ python3 -m virtualenv ${root_dir}/_virtualenv/horton/
 source ${root_dir}/_virtualenv/horton/bin/activate
 [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
+pip install -r ${root_dir}/test-runner/requirements.txt && \
+pip install -e ${root_dir}/horton_helpers/ && \
+pip install -3 ${root_dir}/docker_images/pythonv2/wrapper/python_glue/
+[ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
+
 colorecho $_green "Horton environment created"
 
 
