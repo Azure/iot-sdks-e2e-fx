@@ -6,11 +6,6 @@ parameters:
 
 steps:
 
-- powershell: $(Horton.FrameworkRoot)/scripts/setup/setup-python36.ps1
-  workingDirectory: $(Horton.FrameworkRoot)
-  displayName: 'Install python libs'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
-
 - script: |
     rm -r $(Horton.FrameworkRoot)/results
     mkdir $(Horton.FrameworkRoot)/results &&

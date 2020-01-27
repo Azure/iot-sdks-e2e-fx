@@ -30,34 +30,23 @@ if [ $? -ne 0 ]; then
   [ $? -eq 0 ] || { colorecho $_red "apt-get for python3-pip3 failed"; exit 1; }
 fi
 
-colorecho $_yellow "Installing python libraries"
-cd ${root_dir}/docker_images/pythonv2/wrapper  &&  \
-    python3 -m pip install --user -e python_glue
+colorecho $_yellow "Installing virtualenv python libraries"
+python3 -m pip install --user virtualenv
 if [ $? -ne 0 ]; then 
     colorecho $_yellow "user path not accepted.  Installing globally"
-    cd ${root_dir}/docker_images/pythonv2/wrapper  &&  \
-        python3 -m pip install -e python_glue
-    [ $? -eq 0 ] || { colorecho $_red "install python_glue failed"; exit 1; }
-fi
-
-cd ${root_dir} &&  \
-    python3 -m pip install --user -e horton_helpers
-if [ $? -ne 0 ]; then 
-    colorecho $_yellow "user path not accepted.  Installing globally"
-    cd ${root_dir} &&  \
-        python3 -m pip install -e horton_helpers
-    [ $? -eq 0 ] || { colorecho $_red "install horton_helpers failed"; exit 1; }
-fi
-
-# install requirements for our test runner
-cd ${root_dir}/test-runner &&  \
-    python3 -m pip install --user -r requirements.txt
-if [ $? -ne 0 ]; then 
-    colorecho $_yellow "user path not accepted.  Installing globally"
-    cd ${root_dir}/test-runner &&  \
-        python3 -m pip install -r requirements.txt
+    python3 -m pip install virtualenv
     [ $? -eq 0 ] || { colorecho $_red "pip install requirements.txt failed"; exit 1; }
 fi
+
+if [ ! -e ${root_dir}/horton_venv/bin/activate ]; then
+    colorecho $_yellow "Creating virtual evnronment"
+    python3 -m virtualenv ${root_dir}/horton_venv/
+    [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; exit 1; }
+fi
+
+
+
+
 
 colorecho $_green "Python3 and Python libraries installed successfully"
 

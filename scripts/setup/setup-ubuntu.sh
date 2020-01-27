@@ -23,8 +23,8 @@ $script_dir/setup-powershell.sh
 [ $? -eq 0 ] ||  failure "setup-powershell failed"
 
 header $_cyan "installing python 3.6"
-$script_dir/setup-python36.sh
-[ $? -eq 0 ] ||  failure "setup-python36 failed"
+$script_dir/setup-python.sh
+[ $? -eq 0 ] ||  failure "setup-pythonfailed"
 
 header $_cyan "installing moby"
 $script_dir/setup-moby.sh
