@@ -14,13 +14,14 @@ jobs:
     - "build_linux_amd64"
   strategy:
     matrix:
-      java_mqtt_iothub_module:      { suite: java_mqtt_iothub_module }
+      # ModuleClient to IotHub tests are disabled for Java because Java e2e tests outside of Horton already run these scenarios
+      # java_mqtt_iothub_module:      { suite: java_mqtt_iothub_module }
+      # java_mqttws_iothub_module:    { suite: java_mqttws_iothub_module }
+      # java_amqp_iothub_module:      { suite: java_amqp_iothub_module }
+      # java_amqpws_iothub_module:    { suite: java_amqpws_iothub_module }
       java_mqtt_edgehub_module:     { suite: java_mqtt_edgehub_module }
-      java_mqttws_iothub_module:    { suite: java_mqttws_iothub_module }
       java_mqttws_edgehub_module:   { suite: java_mqttws_edgehub_module }
-      java_amqp_iothub_module:      { suite: java_amqp_iothub_module }
       java_amqp_edgehub_module:     { suite: java_amqp_edgehub_module }
-      java_amqpws_iothub_module:    { suite: java_amqpws_iothub_module }
       java_amqpws_edgehub_module:   { suite: java_amqpws_edgehub_module }
 
   steps:
