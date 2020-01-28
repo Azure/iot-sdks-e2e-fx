@@ -14,7 +14,7 @@ import msrest
 
 
 invalid_symmetric_key_fields = [
-    ("SharedAccessKey", "OPpcYRFtns6e9FCJIwhsNUbG0fHaUuB+AaUWUqy5kzg="),
+    ("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
     # ("HostName", "fakeFake.azure-devices.net"),
     ("DeviceId", "fakeDeviceId"),
 ]
@@ -37,15 +37,14 @@ def is_api_failure_exception(e):
 
 
 class RegressionTests(object):
-    @pytest.mark.v2_connect_group
     @pytest.mark.it("Fails to connect if part of the connection string is wrong")
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
     )
-    @pytest.mark.skip()
-    async def test_regression_connect_fails_with_corrupt_symmetric_key(
+    async def test_regression_connect_fails_with_corrupt_connection_string(
         self, client, field_name, new_field_value
     ):
+        limitations.only_run_test_for(client, "pythonv2")
 
         if not limitations.uses_shared_key_auth(client):
             pytest.skip("client is not using shared key auth")
@@ -65,15 +64,14 @@ class RegressionTests(object):
             await client.connect2()
         assert is_api_failure_exception(e._excinfo[1])
 
-    @pytest.mark.v2_connect_group
     @pytest.mark.it("Fails to send a message if part of the connection string is wrong")
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
     )
-    @pytest.mark.skip()
-    async def test_regression_send_message_fails_with_corrupt_symmetric_key(
+    async def test_regression_send_message_fails_with_corrupt_connection_string(
         self, client, field_name, new_field_value
     ):
+        limitations.only_run_test_for(client, "pythonv2")
 
         if not limitations.uses_shared_key_auth(client):
             pytest.skip("client is not using shared key auth")
@@ -96,6 +94,7 @@ class RegressionTests(object):
         assert is_api_failure_exception(e._excinfo[1])
 
     @pytest.mark.skip()
+    @pytest.mark.it("fails to send messages over 256 kb in size")
     async def test_regression_send_message_fails_with_message_over_256K(self, client):
         big_payload = sample_content.make_message_payload(size=257 * 1024)
 
@@ -104,6 +103,9 @@ class RegressionTests(object):
         assert is_api_failure_exception(e._excinfo[1])
 
     @pytest.mark.skip()
+    @pytest.mark.it(
+        "does not break the client on failure sending messages over 256 kb in size"
+    )
     async def test_regression_send_message_big_message_doesnt_break_client(
         self, client, eventhub
     ):
