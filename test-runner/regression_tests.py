@@ -89,5 +89,35 @@ class RegressionTests(object):
             connections.get_ca_cert(client.settings),
         )
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception) as e:
             await client.send_event(payload)
+        assert is_api_failure_exception(e._excinfo[1])
+
+    @pytest.mark.skip()
+    async def test_regression_send_message_fails_with_message_over_256K(self, client):
+        big_payload = sample_content.make_message_payload(size=257 * 1024)
+
+        with pytest.raises(Exception) as e:
+            await client.send_event(big_payload)
+        assert is_api_failure_exception(e._excinfo[1])
+
+    @pytest.mark.skip()
+    async def test_regression_send_message_big_message_doesnt_break_client(
+        self, client, eventhub
+    ):
+        big_payload = sample_content.make_message_payload(size=257 * 1024)
+        small_payload = sample_content.make_message_payload()
+
+        await eventhub.connect()
+
+        received_message_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(client.device_id, excepected=small_payload)
+        )
+
+        asyncio.ensure_future(client.send_event(big_payload))
+        await asyncio.sleep(1)
+
+        await client.send_event(small_payload)
+
+        received_message = await received_message_future
+        assert received_message is not None, "Message not received"
