@@ -10,6 +10,7 @@ from base_client_tests import BaseClientTests
 from method_tests import ReceiveMethodCallFromServiceTests
 from telemetry_tests import TelemetryTests
 from twin_tests import TwinTests
+from regression_tests import RegressionTests
 
 pytestmark = pytest.mark.asyncio
 
@@ -29,6 +30,7 @@ class TestIotHubModuleClient(
     TelemetryTests,
     TwinTests,
     ReceiveMethodCallFromServiceTests,
+    RegressionTests,
 ):
     pass
 

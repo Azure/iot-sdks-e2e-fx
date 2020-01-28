@@ -33,4 +33,4 @@ def uses_shared_key_auth(client):
     """
     return True if the client supports shared key auth
     """
-    return client.settings.connection_type.startswith("ConnectionString")
+    return client.settings.connection_type.startswith("connection_string")
