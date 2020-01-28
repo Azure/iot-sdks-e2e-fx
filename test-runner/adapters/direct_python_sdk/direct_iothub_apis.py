@@ -37,8 +37,9 @@ class Connect(object):
         if self in client_object_list:
             client_object_list.remove(self)
 
-        self.glue.disconnect()
-        self.glue = None
+        if self.glue:
+            self.glue.disconnect()
+            self.glue = None
 
     def create_from_connection_string_sync(
         self, transport, connection_string, ca_certificate

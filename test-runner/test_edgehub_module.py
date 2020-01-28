@@ -16,6 +16,7 @@ from method_tests import (
 )
 import dropped_connection_tests
 import drop_scenario
+from regression_tests import RegressionTests
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,6 +40,7 @@ class TestEdgeHubModuleClient(
     ReceiveMethodCallFromModuleTests,
     InvokeMethodCallOnModuleTests,
     InvokeMethodCallOnLeafDeviceTests,
+    RegressionTests,
 ):
     pass
 

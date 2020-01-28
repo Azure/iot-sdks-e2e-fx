@@ -11,6 +11,7 @@ from method_tests import ReceiveMethodCallFromServiceTests
 from c2d_tests import C2dTests
 import dropped_connection_tests
 import drop_scenario
+from regression_tests import RegressionTests
 
 pytestmark = pytest.mark.asyncio
 
@@ -31,6 +32,7 @@ class TestIotHubDeviceClient(
     TwinTests,
     ReceiveMethodCallFromServiceTests,
     C2dTests,
+    RegressionTests,
 ):
     pass
 

@@ -35,15 +35,22 @@ def get_event_loop():
 def run_coroutine_sync(coroutine):
     global loop
     result = None
+    error = None
 
     done = threading.Event()
 
     async def wrapped_coroutine():
         logger.info("inside wrapped_corountine")
         nonlocal result
-        result = await coroutine
+        nonlocal error
+        try:
+            result = await coroutine
+        except Exception as e:
+            error = e
         done.set()
 
     asyncio.run_coroutine_threadsafe(wrapped_coroutine(), loop=get_event_loop())
     done.wait()
+    if error:
+        raise error
     return result
