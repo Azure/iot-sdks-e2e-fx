@@ -32,7 +32,13 @@ def connection_string_to_dictionary(str):
     """
     cn = {}
     for pair in str.split(";"):
-        (key, value) = pair.rstrip("=").split("=")
+        suffix = ""
+        if pair.endswith("="):
+            # base64 keys end in "=".  Remove this before splitting, then put it back.
+            pair = pair.rstrip("=")
+            suffix = "="
+        (key, value) = pair.split("=")
+        value += suffix
         cn[key] = value
     return cn
 
