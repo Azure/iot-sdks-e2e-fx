@@ -42,6 +42,7 @@ class RegressionTests(object):
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
     )
+    @pytest.mark.skip()
     async def test_regression_connect_fails_with_corrupt_symmetric_key(
         self, client, field_name, new_field_value
     ):
@@ -69,6 +70,7 @@ class RegressionTests(object):
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
     )
+    @pytest.mark.skip()
     async def test_regression_send_message_fails_with_corrupt_symmetric_key(
         self, client, field_name, new_field_value
     ):
