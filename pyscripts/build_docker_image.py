@@ -98,9 +98,6 @@ def print_filtered_docker_line(line):
 def build_image(tags):
     print(print_separator)
     print("BUILDING IMAGE")
-    print("repo = {}".format(tags.repo))
-    print("commit_name = {}".format(tags.commit_name))
-    print("commit_sha = {}".format(tags.commit_sha))
     print(print_separator)
 
     api_client = docker.APIClient(base_url=base_url)
@@ -212,6 +209,11 @@ def prefetch_cached_images(tags):
 tags = docker_tags.get_docker_tags_from_commit(
     args.language, args.repo, args.commit, args.variant
 )
+
+print(print_separator)
+print("repo = {}".format(tags.repo))
+print("commit_name = {}".format(tags.commit_name))
+print("commit_sha = {}".format(tags.commit_sha))
 
 prefetch_cached_images(tags)
 build_image(tags)
