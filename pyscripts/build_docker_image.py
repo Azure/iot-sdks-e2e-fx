@@ -28,7 +28,11 @@ parser.add_argument(
     "--commit", help="commit to apply (ref or branch)", type=str, default="master"
 )
 parser.add_argument(
-    "--variant", help="Docker image variant (blank for default)", type=str, nargs="?", const=""
+    "--variant",
+    help="Docker image variant (blank for default)",
+    type=str,
+    nargs="?",
+    const="",
 )
 args = parser.parse_args()
 
@@ -41,7 +45,7 @@ if args.repo == default_repo:
 
 print_separator = "".join("/\\" for _ in range(80))
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     base_url = "tcp://127.0.0.1:2375"
 else:
     base_url = "unix://var/run/docker.sock"
@@ -54,13 +58,15 @@ auth_config = {
 
 def get_dockerfile_directory(tags):
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    return os.path.normpath(os.path.join(script_dir, "../docker_images/" + tags.language))
+    return os.path.normpath(
+        os.path.join(script_dir, "../docker_images/" + tags.language)
+    )
 
 
 def print_filtered_docker_line(line):
     try:
         obj = json.loads(line.decode("utf-8"))
-    except:
+    except Exception:
         print("".join([i if ord(i) < 128 else "#" for i in line.decode("utf-8")]))
     else:
         if "status" in obj:
@@ -79,7 +85,7 @@ def print_filtered_docker_line(line):
             else:
                 print(obj["status"])
         elif "error" in obj:
-            print ("docker error: {}".format(line))
+            print("docker error: {}".format(line))
             raise Exception(obj["error"])
         elif "Step" in obj or "---" in obj:
             print("step: {}".format(obj).strip())
@@ -92,9 +98,11 @@ def print_filtered_docker_line(line):
 def build_image(tags):
     print(print_separator)
     print("BUILDING IMAGE")
+    print("repo = {}".format(tags.repo))
+    print("commit_name = {}".format(tags.commit_name))
+    print("commit_sha = {}".format(tags.commit_sha))
     print(print_separator)
 
-    force_flag = 0
     api_client = docker.APIClient(base_url=base_url)
 
     build_args = {
@@ -135,6 +143,7 @@ def build_image(tags):
         except KeyError:
             print_filtered_docker_line(line)
 
+
 def tag_images(tags):
     print(print_separator)
     print("TAGGING IMAGE")
@@ -162,7 +171,7 @@ def push_images(tags):
         ):
             try:
                 sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
-            except:
+            except Exception:
                 print_filtered_docker_line(line)
 
 
