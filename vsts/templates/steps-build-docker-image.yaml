@@ -36,7 +36,7 @@ steps:
     $CommitToPass = $env:Commit
     $VariantToPass = $env:Variant
 
-    if ($CommitToPass -like '$(Horton.Commit)') {
+    if (IsEmpty($CommitToPass)) {
         $CommitToPass="master"
     }
 
