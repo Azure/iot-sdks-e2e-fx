@@ -11,6 +11,7 @@ import connections
 import connection_string
 import requests
 import msrest
+import input_output_tests
 
 
 invalid_symmetric_key_fields = [
@@ -114,6 +115,20 @@ class RegressionTests(object):
 
         with pytest.raises(Exception) as e:
             await client.send_event(big_payload)
+        assert is_api_failure_exception(e._excinfo[1])
+
+    @pytest.mark.it("fails to send output messages over 256 kb in size")
+    async def test_regression_send_output_message_fails_with_message_over_256K(
+        self, client
+    ):
+        limitations.only_run_test_on_iotedge_module(client)
+
+        big_payload = sample_content.make_message_payload(size=257 * 1024)
+
+        with pytest.raises(Exception) as e:
+            await client.send_output_event(
+                input_output_tests.output_name_to_friend, big_payload
+            )
         assert is_api_failure_exception(e._excinfo[1])
 
     @pytest.mark.skip()

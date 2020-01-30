@@ -73,3 +73,7 @@ def skip_if_no_net_control():
     """
     if not settings.net_control.adapter_address:
         pytest.skip()
+
+
+def only_run_test_on_iotedge_module(client):
+    pass
