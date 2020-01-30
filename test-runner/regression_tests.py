@@ -248,3 +248,30 @@ class RegressionTests(object):
         received_message = await received_message_future
 
         assert received_message
+
+    @pytest.mark.it(
+        "Can retry multiple conenct operations while the network is disconnected"
+    )
+    async def test_regression_bad_connection_retry_multiple_connections(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        await client.connect2()
+        await client.disconnect2()
+
+        await net_control.disconnect(drop_mechanism)
+
+        connect_future_1 = asyncio.ensure_future(client.connect2())
+        connect_future_2 = asyncio.ensure_future(client.connect2())
+        connect_future_3 = asyncio.ensure_future(client.connect2())
+
+        await asyncio.sleep(5)
+
+        await net_control.reconnect()
+
+        await connect_future_1
+        await connect_future_2
+        await connect_future_3
+
