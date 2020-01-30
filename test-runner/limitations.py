@@ -76,4 +76,5 @@ def skip_if_no_net_control():
 
 
 def only_run_test_on_iotedge_module(client):
-    pass
+    if client.settings.object_type != "iotedge_module":
+        pytest.skip()
