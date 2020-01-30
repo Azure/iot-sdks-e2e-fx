@@ -276,3 +276,29 @@ class RegressionTests(object):
         await connect_future_1
         await connect_future_2
         await connect_future_3
+
+    @pytest.mark.skip()
+    @pytest.mark.it(
+        "Enables automatic reconnection even if connect is not called directly"
+    )
+    async def test_regression_autoconnect_without_calling_connect(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        payload = sample_content.make_message_payload()
+        await client.send_event(payload)
+
+        status = await client.get_connection_status()
+        assert status == "connected"
+
+        await net_control.disconnect(drop_mechanism)
+
+        status = await client.wait_for_connection_status_change()
+        assert status == "disconnected"
+
+        await net_control.reconnect()
+
+        status = await client.wait_for_connection_status_change()
+        assert status == "connected"
