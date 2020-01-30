@@ -98,7 +98,12 @@ def service():
 
 @pytest.fixture
 def net_control():
-    return settings.net_control.api
+    yield settings.net_control.api
+    logger(separator.format("net_control"))
+    try:
+        settings.net_control.api.reconnect_sync()
+    except Exception as e:
+        logger("exception reconnecting network: {}".format(e))
 
 
 @pytest.fixture(

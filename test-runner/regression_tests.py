@@ -15,9 +15,9 @@ import input_output_tests
 
 
 invalid_symmetric_key_fields = [
-    ("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
-    ("HostName", "fakeFake.azure-devices.net"),
-    ("DeviceId", "fakeDeviceId"),
+    pytest.param("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
+    pytest.param("HostName", "fakeFake.azure-devices.net", marks=pytest.mark.xfail),
+    pytest.param("DeviceId", "fakeDeviceId"),
 ]
 
 
@@ -108,20 +108,23 @@ class RegressionTests(object):
             await client.send_event(payload)
         assert is_api_failure_exception(e._excinfo[1])
 
-    @pytest.mark.xfail()
+    @pytest.mark.skip()
     @pytest.mark.it("fails to send messages over 256 kb in size")
     async def test_regression_send_message_fails_with_message_over_256K(self, client):
+        limitations.only_run_test_for(client, "pythonv2")
+
         big_payload = sample_content.make_message_payload(size=257 * 1024)
 
         with pytest.raises(Exception) as e:
             await client.send_event(big_payload)
         assert is_api_failure_exception(e._excinfo[1])
 
-    @pytest.mark.xfail()
+    @pytest.mark.skip()
     @pytest.mark.it("fails to send output messages over 256 kb in size")
     async def test_regression_send_output_message_fails_with_message_over_256K(
         self, client
     ):
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.only_run_test_on_iotedge_module(client)
 
         big_payload = sample_content.make_message_payload(size=257 * 1024)
@@ -132,20 +135,22 @@ class RegressionTests(object):
             )
         assert is_api_failure_exception(e._excinfo[1])
 
-    @pytest.mark.xfail()
+    @pytest.mark.skip()
     @pytest.mark.it(
         "does not break the client on failure sending messages over 256 kb in size"
     )
     async def test_regression_send_message_big_message_doesnt_break_client(
         self, client, eventhub
     ):
+        limitations.only_run_test_for(client, "pythonv2")
+
         big_payload = sample_content.make_message_payload(size=257 * 1024)
         small_payload = sample_content.make_message_payload()
 
         await eventhub.connect()
 
         received_message_future = asyncio.ensure_future(
-            eventhub.wait_for_next_event(client.device_id, excepected=small_payload)
+            eventhub.wait_for_next_event(client.device_id, expected=small_payload)
         )
 
         asyncio.ensure_future(client.send_event(big_payload))
@@ -162,6 +167,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_fail_first_connection(
         self, net_control, client, drop_mechanism
     ):
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
 
         await net_control.disconnect(drop_mechanism)
@@ -177,6 +183,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_fail_first_send_event(
         self, net_control, client, drop_mechanism
     ):
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
 
         await net_control.disconnect(drop_mechanism)
@@ -194,6 +201,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_retry_second_connection(
         self, net_control, client, drop_mechanism
     ):
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
 
         await client.connect2()
@@ -203,9 +211,9 @@ class RegressionTests(object):
 
         connect_future = asyncio.ensure_future(client.connect2())
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
-        await net_control.reconnect(drop_mechanism)
+        await net_control.reconnect()
 
         await connect_future
 
@@ -215,6 +223,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_retry_second_send_event(
         self, net_control, client, drop_mechanism, eventhub
     ):
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
 
         await client.connect2()
@@ -224,7 +233,7 @@ class RegressionTests(object):
 
         await eventhub.connect()
         received_message_future = asyncio.ensure_future(
-            eventhub.wait_for_next_event(client.device_id, excepected=payload)
+            eventhub.wait_for_next_event(client.device_id, expected=payload)
         )
 
         await net_control.disconnect(drop_mechanism)
@@ -233,7 +242,7 @@ class RegressionTests(object):
 
         await asyncio.sleep(1)
 
-        await net_control.reconnect(drop_mechanism)
+        await net_control.reconnect()
 
         await send_future
         received_message = await received_message_future
