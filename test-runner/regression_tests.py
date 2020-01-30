@@ -117,6 +117,7 @@ class RegressionTests(object):
             await client.send_event(big_payload)
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip()
     @pytest.mark.it("fails to send output messages over 256 kb in size")
     async def test_regression_send_output_message_fails_with_message_over_256K(
         self, client
