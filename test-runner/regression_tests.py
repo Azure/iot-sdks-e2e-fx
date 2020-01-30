@@ -15,7 +15,7 @@ import msrest
 
 invalid_symmetric_key_fields = [
     ("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
-    # ("HostName", "fakeFake.azure-devices.net"),
+    ("HostName", "fakeFake.azure-devices.net"),
     ("DeviceId", "fakeDeviceId"),
 ]
 
@@ -37,6 +37,20 @@ def is_api_failure_exception(e):
 
 
 class RegressionTests(object):
+    @pytest.fixture(
+        params=[
+            pytest.param("DROP", id="Drop using iptables DROP"),
+            pytest.param("REJECT", id="Drop using iptables REJECT"),
+        ]
+    )
+    def drop_mechanism(self, request):
+        """
+        Parametrized fixture which lets our tests run against the full set
+        of dropping mechanisms.  Every test in this file will run using each value
+        for this array of parameters.
+        """
+        return request.param
+
     @pytest.mark.it("Fails to connect if part of the connection string is wrong")
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
@@ -125,3 +139,42 @@ class RegressionTests(object):
 
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
+
+    @pytest.mark.it(
+        "fails a connect operation if connection fails for the first time connecting"
+    )
+    async def test_regression_bad_connection_fail_first_connection(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.skip_if_no_net_control()
+
+        await net_control.disconnect(drop_mechanism)
+
+        with pytest.raises(Exception) as e:
+            await client.connect2()
+
+        assert is_api_failure_exception(e._excinfo[1])
+
+    @pytest.mark.it(
+        "fails a send_event operation if connection fails for the first time connecting"
+    )
+    async def test_regression_bad_connection_fail_first_send_event(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.skip_if_no_net_control()
+
+    @pytest.mark.it(
+        "retries a connect operation if connection fails for the second time connecting"
+    )
+    async def test_regression_bad_connection_retry_second_connection(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.skip_if_no_net_control()
+
+    @pytest.mark.it(
+        "retries a send_event operation if connection fails for the second time connecting"
+    )
+    async def test_regression_bad_connection_retry_second_send_event(
+        self, net_control, client, drop_mechanism, eventhub
+    ):
+        limitations.skip_if_no_net_control()

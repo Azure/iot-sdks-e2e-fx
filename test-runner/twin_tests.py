@@ -106,7 +106,6 @@ class TwinTests(object):
 
     @pytest.mark.supportsTwin
     @pytest.mark.it("Can get the most recent twin from the service 5 times")
-    @pytest.mark.skip("Failing on pythonv2")
     async def test_twin_desired_props_5_times(self, client, registry):
         await client.enable_twin()
 

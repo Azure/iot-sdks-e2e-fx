@@ -2,6 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import pytest
+from horton_settings import settings
 
 all_langauges = ["pythonv2", "c", "csharp", "java", "node"]
 
@@ -64,3 +65,11 @@ def skip_test_for(client, languages):
             raise ValueError("Language {} is invalid".format(language))
         if client.settings.language == language:
             pytest.skip()
+
+
+def skip_if_no_net_control():
+    """
+    Skip the test if we don't have a net_control API
+    """
+    if not settings.net_control.adapter_address:
+        pytest.skip()
