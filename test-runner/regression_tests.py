@@ -163,6 +163,15 @@ class RegressionTests(object):
     ):
         limitations.skip_if_no_net_control()
 
+        await net_control.disconnect(drop_mechanism)
+
+        payload = sample_content.make_message_payload()
+
+        with pytest.raises(Exception) as e:
+            await client.send_event(payload)
+
+        assert is_api_failure_exception(e._excinfo[1])
+
     @pytest.mark.it(
         "retries a connect operation if connection fails for the second time connecting"
     )
@@ -171,6 +180,19 @@ class RegressionTests(object):
     ):
         limitations.skip_if_no_net_control()
 
+        await client.connect2()
+        await client.disconnect2()
+
+        await net_control.disconnect(drop_mechanism)
+
+        connect_future = asyncio.ensure_future(client.connect2())
+
+        await asyncio.sleep(1)
+
+        await net_control.reconnect(drop_mechanism)
+
+        await connect_future
+
     @pytest.mark.it(
         "retries a send_event operation if connection fails for the second time connecting"
     )
@@ -178,3 +200,26 @@ class RegressionTests(object):
         self, net_control, client, drop_mechanism, eventhub
     ):
         limitations.skip_if_no_net_control()
+
+        await client.connect2()
+        await client.disconnect2()
+
+        payload = sample_content.make_message_payload()
+
+        await eventhub.connect()
+        received_message_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(client.device_id, excepected=payload)
+        )
+
+        await net_control.disconnect(drop_mechanism)
+
+        send_future = asyncio.ensure_future(client.send_event(payload))
+
+        await asyncio.sleep(1)
+
+        await net_control.reconnect(drop_mechanism)
+
+        await send_future
+        received_message = await received_message_future
+
+        assert received_message
