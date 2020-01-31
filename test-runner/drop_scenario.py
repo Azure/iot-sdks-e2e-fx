@@ -157,31 +157,3 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
         return func
 
 
-class NetworkDroppedClientDisconnected(DropScenarioBaseClass):
-    @pytest.fixture
-    def before_api_call(
-        self, client, drop_mechanism, net_control, test_module_transport
-    ):
-        async def func():
-            await client.disconnect2()
-            assert await client.get_connection_status() == "disconnected"
-            await self.start_dropping(
-                net_control=net_control,
-                drop_mechanism=drop_mechanism,
-                test_module_transport=test_module_transport,
-            )
-
-        return func
-
-    @pytest.fixture
-    def after_api_call(self, client, net_control):
-        async def wait_and_reconnect():
-            await asyncio.sleep(30)
-            await self.stop_dropping(net_control=net_control)
-
-        async def func():
-            asyncio.ensure_future(wait_and_reconnect())
-
-        return func
-
-    pass
