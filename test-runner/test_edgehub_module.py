@@ -72,14 +72,3 @@ class TestEdgeHubModuleNetworkGlitchClientDisconnected(
     pass
 
 
-@pytest.mark.describe(
-    "EdgeHub ModuleClient dropped connections - network dropped and client disconencted"
-)
-@pytest.mark.testgroup_edgehub_module_full_drop
-@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestEdgeHubModuleNetworkDroppedClientDisconnected(
-    EdgeHubModuleClient,
-    drop_scenario.NetworkDroppedClientDisconnected,
-    dropped_connection_tests.DroppedConnectionEdgeHubModuleTests,
-):
-    pass

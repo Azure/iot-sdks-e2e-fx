@@ -64,14 +64,3 @@ class TestIoTHubModuleNetworkGlitchClientDisconnected(
     pass
 
 
-@pytest.mark.describe(
-    "IoTHub DeviceClient dropped connections - network dropped and client disconnected"
-)
-@pytest.mark.testgroup_iothub_device_full_drop
-@pytest.mark.timeout(timeouts.dropped_connection_test_timeout)
-class TestIoTHubDeviceNetworkDroppedClientDisconnected(
-    IoTHubDeviceClient,
-    drop_scenario.NetworkDroppedClientDisconnected,
-    dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
-):
-    pass
