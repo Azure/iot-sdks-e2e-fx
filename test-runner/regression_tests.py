@@ -11,12 +11,13 @@ import connections
 import connection_string
 import requests
 import msrest
+import input_output_tests
 
 
 invalid_symmetric_key_fields = [
-    ("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
-    # ("HostName", "fakeFake.azure-devices.net"),
-    ("DeviceId", "fakeDeviceId"),
+    pytest.param("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
+    pytest.param("HostName", "fakeFake.azure-devices.net", marks=pytest.mark.skip),
+    pytest.param("DeviceId", "fakeDeviceId"),
 ]
 
 
@@ -37,6 +38,20 @@ def is_api_failure_exception(e):
 
 
 class RegressionTests(object):
+    @pytest.fixture(
+        params=[
+            pytest.param("DROP", id="Drop using iptables DROP"),
+            pytest.param("REJECT", id="Drop using iptables REJECT"),
+        ]
+    )
+    def drop_mechanism(self, request):
+        """
+        Parametrized fixture which lets our tests run against the full set
+        of dropping mechanisms.  Every test in this file will run using each value
+        for this array of parameters.
+        """
+        return request.param
+
     @pytest.mark.it("Fails to connect if part of the connection string is wrong")
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
@@ -96,10 +111,28 @@ class RegressionTests(object):
     @pytest.mark.skip()
     @pytest.mark.it("fails to send messages over 256 kb in size")
     async def test_regression_send_message_fails_with_message_over_256K(self, client):
+        limitations.only_run_test_for(client, "pythonv2")
+
         big_payload = sample_content.make_message_payload(size=257 * 1024)
 
         with pytest.raises(Exception) as e:
             await client.send_event(big_payload)
+        assert is_api_failure_exception(e._excinfo[1])
+
+    @pytest.mark.skip()
+    @pytest.mark.it("fails to send output messages over 256 kb in size")
+    async def test_regression_send_output_message_fails_with_message_over_256K(
+        self, client
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.only_run_test_on_iotedge_module(client)
+
+        big_payload = sample_content.make_message_payload(size=257 * 1024)
+
+        with pytest.raises(Exception) as e:
+            await client.send_output_event(
+                input_output_tests.output_name_to_friend, big_payload
+            )
         assert is_api_failure_exception(e._excinfo[1])
 
     @pytest.mark.skip()
@@ -109,13 +142,15 @@ class RegressionTests(object):
     async def test_regression_send_message_big_message_doesnt_break_client(
         self, client, eventhub
     ):
+        limitations.only_run_test_for(client, "pythonv2")
+
         big_payload = sample_content.make_message_payload(size=257 * 1024)
         small_payload = sample_content.make_message_payload()
 
         await eventhub.connect()
 
         received_message_future = asyncio.ensure_future(
-            eventhub.wait_for_next_event(client.device_id, excepected=small_payload)
+            eventhub.wait_for_next_event(client.device_id, expected=small_payload)
         )
 
         asyncio.ensure_future(client.send_event(big_payload))
@@ -125,3 +160,145 @@ class RegressionTests(object):
 
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
+
+    @pytest.mark.skip
+    @pytest.mark.it(
+        "fails a connect operation if connection fails for the first time connecting"
+    )
+    async def test_regression_bad_connection_fail_first_connection(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        await net_control.disconnect(drop_mechanism)
+
+        with pytest.raises(Exception) as e:
+            await client.connect2()
+
+        assert is_api_failure_exception(e._excinfo[1])
+
+    @pytest.mark.skip
+    @pytest.mark.it(
+        "fails a send_event operation if connection fails for the first time connecting"
+    )
+    async def test_regression_bad_connection_fail_first_send_event(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        await net_control.disconnect(drop_mechanism)
+
+        payload = sample_content.make_message_payload()
+
+        with pytest.raises(Exception) as e:
+            await client.send_event(payload)
+
+        assert is_api_failure_exception(e._excinfo[1])
+
+    @pytest.mark.it(
+        "retries a connect operation if connection fails for the second time connecting"
+    )
+    async def test_regression_bad_connection_retry_second_connection(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        await client.connect2()
+        await client.disconnect2()
+
+        await net_control.disconnect(drop_mechanism)
+
+        connect_future = asyncio.ensure_future(client.connect2())
+
+        await asyncio.sleep(2)
+
+        await net_control.reconnect()
+
+        await connect_future
+
+    @pytest.mark.it(
+        "retries a send_event operation if connection fails for the second time connecting"
+    )
+    async def test_regression_bad_connection_retry_second_send_event(
+        self, net_control, client, drop_mechanism, eventhub
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        await client.connect2()
+        await client.disconnect2()
+
+        payload = sample_content.make_message_payload()
+
+        await eventhub.connect()
+        received_message_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(client.device_id, expected=payload)
+        )
+
+        await net_control.disconnect(drop_mechanism)
+
+        send_future = asyncio.ensure_future(client.send_event(payload))
+
+        await asyncio.sleep(1)
+
+        await net_control.reconnect()
+
+        await send_future
+        received_message = await received_message_future
+
+        assert received_message
+
+    @pytest.mark.it(
+        "Can retry multiple conenct operations while the network is disconnected"
+    )
+    async def test_regression_bad_connection_retry_multiple_connections(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        await client.connect2()
+        await client.disconnect2()
+
+        await net_control.disconnect(drop_mechanism)
+
+        connect_future_1 = asyncio.ensure_future(client.connect2())
+        connect_future_2 = asyncio.ensure_future(client.connect2())
+        connect_future_3 = asyncio.ensure_future(client.connect2())
+
+        await asyncio.sleep(5)
+
+        await net_control.reconnect()
+
+        await connect_future_1
+        await connect_future_2
+        await connect_future_3
+
+    @pytest.mark.skip()
+    @pytest.mark.it(
+        "Enables automatic reconnection even if connect is not called directly"
+    )
+    async def test_regression_autoconnect_without_calling_connect(
+        self, net_control, client, drop_mechanism
+    ):
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+
+        payload = sample_content.make_message_payload()
+        await client.send_event(payload)
+
+        status = await client.get_connection_status()
+        assert status == "connected"
+
+        await net_control.disconnect(drop_mechanism)
+
+        status = await client.wait_for_connection_status_change()
+        assert status == "disconnected"
+
+        await net_control.reconnect()
+
+        status = await client.wait_for_connection_status_change()
+        assert status == "connected"

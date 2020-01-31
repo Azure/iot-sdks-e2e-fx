@@ -31,6 +31,7 @@ class HortonDeviceSettings(HortonSettingsObject):
         self.container_port = None
         self.container_name = None
         self.image = None
+        self.object_type = None
 
 
 class HortonModuleSettings(HortonSettingsObject):
@@ -49,6 +50,7 @@ class HortonModuleSettings(HortonSettingsObject):
         self.container_port = None
         self.container_name = None
         self.image = None
+        self.object_type = None
 
 
 class HortonSettings:

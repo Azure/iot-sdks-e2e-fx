@@ -40,6 +40,7 @@ def deploy_for_iotedge(testMod_image):
     settings.leaf_device.language = settings.test_module.language
     settings.leaf_device.host_port = settings.test_module.host_port
     settings.leaf_device.container_port = settings.test_module.container_port
+    settings.leaf_device.object_type = "leaf_device"
 
     settings.net_control.test_destination = host
 
@@ -69,6 +70,7 @@ def deploy_for_iothub(testMod_image):
     settings.test_device.connection_type = "connection_string"
     settings.test_device.host_port = testMod_host_port
     settings.test_device.container_name = "testMod"
+    settings.test_device.object_type = "iothub_device"
     utilities.set_args_from_image(settings.test_device, testMod_image)
     iothub_service_helper.create_device(settings.test_device.device_id)
 
@@ -77,6 +79,7 @@ def deploy_for_iothub(testMod_image):
     settings.test_module.connection_type = "connection_string"
     settings.test_module.host_port = testMod_host_port
     settings.test_module.container_name = "testMod"
+    settings.test_module.object_type = "iothub_module"
     utilities.set_args_from_image(settings.test_module, testMod_image)
     iothub_service_helper.create_device_module(
         settings.test_module.device_id, settings.test_module.module_id

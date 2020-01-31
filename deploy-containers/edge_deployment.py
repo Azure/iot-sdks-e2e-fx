@@ -33,12 +33,14 @@ def add_edge_modules(testMod_image):
     settings.friend_module.device_id = settings.iotedge.device_id
     settings.friend_module.module_id = "friendMod"
     settings.friend_module.connection_type = "environment"
+    settings.friend_module.object_type = "iotedge_module"
     utilities.set_args_from_image(settings.friend_module, friendMod_image)
 
     settings.test_module.host_port = testMod_host_port
     settings.test_module.device_id = settings.iotedge.device_id
     settings.test_module.module_id = "testMod"
     settings.test_module.connection_type = "environment"
+    settings.test_module.object_type = "iotedge_module"
     utilities.set_args_from_image(settings.test_module, testMod_image)
 
 
