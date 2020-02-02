@@ -5,7 +5,7 @@ parameters:
   repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
   image_edgeHub: mcr.microsoft.com/azureiotedge-hub:1.0
   image_edgeAgent: mcr.microsoft.com/azureiotedge-agent:1.0
-  image_friendMod: $(IOTHUB-E2E-REPO-ADDRESS)/default-friend-module
+  image_friendMod: $(IOTHUB-E2E-REPO-ADDRESS)/default-friend-module:$(Architecture)-v2
   image_testMod: ''
   test_image_tag: ''
   deployment_type: ''
@@ -62,7 +62,7 @@ steps:
   displayName: 'Verify edgeAgent deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 friendMod ${{ parameters.image_friendMod }}:$(architecture)-v2
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 friendMod ${{ parameters.image_friendMod }}
   displayName: 'Verify friendMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
