@@ -62,7 +62,7 @@ steps:
   displayName: 'Verify edgeAgent deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 friendMod ${{ parameters.image_friendMod }}:$(architecture)-v2
+- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 friendMod ${{ parameters.image_friendMod }}
   displayName: 'Verify friendMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
