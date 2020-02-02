@@ -1,0 +1,33 @@
+name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
+
+jobs:
+- job: "build_linux_amd64"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  strategy:
+    matrix:
+        py37:   { variant: py37 }
+
+  steps:
+  - template: templates/steps-build-docker-image.yaml
+    parameters:
+      language: $(language)
+      variant: $(variant)
+
+- job: "test_linux_amd64"
+  pool:
+      vmImage: 'Ubuntu 16.04'
+  dependsOn:
+    - "build_linux_amd64"
+
+  strategy:
+    matrix:
+      py37_mqtt_edgehub_module_2h_stress:           { suite: py37_mqtt_edgehub_2h_stress }
+
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      suite: $(suite)
+
