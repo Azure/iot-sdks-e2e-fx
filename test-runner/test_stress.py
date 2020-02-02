@@ -93,57 +93,61 @@ class TestStressEdgeHubModuleClient(object):
             time_limit.print_progress()
             logger(dashes)
 
-            await self.do_test_telemetry(
-                client=client, eventhub=eventhub, count=count, time_limit=time_limit
-            )
+            if False:
+                await self.do_test_telemetry(
+                    client=client, eventhub=eventhub, count=count, time_limit=time_limit
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            await self.do_test_handle_method_from_service(
-                client=client, service=service, count=count, time_limit=time_limit
-            )
+            if False:
+                await self.do_test_handle_method_from_service(
+                    client=client, service=service, count=count, time_limit=time_limit
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            """
-            await self.do_test_handle_method_to_friend(
-                client=client, friend=friend, count=count, time_limit=time_limit
-            )
+            if True:
+                await self.do_test_handle_method_to_friend(
+                    client=client, friend=friend, count=count, time_limit=time_limit
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            await self.do_test_handle_method_to_leaf_device(
-                client=client, leaf_device=leaf_device, count=count, time_limit=time_limit
-            )
+            if False:
+                await self.do_test_handle_method_to_leaf_device(
+                    client=client, leaf_device=leaf_device, count=count, time_limit=time_limit
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            """
+            if False:
+                await self.do_test_desired_property_patch(
+                    client=client, registry=registry, count=count, time_limit=time_limit
+                )
 
-            await self.do_test_desired_property_patch(
-                client=client, registry=registry, count=count, time_limit=time_limit
-            )
+                if time_limit.is_test_done():
+                    return
 
-            if time_limit.is_test_done():
-                return
+            if False:
+                await self.do_test_get_twin(
+                    client=client, registry=registry, count=count, time_limit=time_limit
+                )
 
-            await self.do_test_get_twin(
-                client=client, registry=registry, count=count, time_limit=time_limit
-            )
+                if time_limit.is_test_done():
+                    return
 
-            if time_limit.is_test_done():
-                return
+            if False:
+                await self.do_test_reported_properties(
+                    client=client, registry=registry, count=count, time_limit=time_limit
+                )
 
-            await self.do_test_reported_properties(
-                client=client, registry=registry, count=count, time_limit=time_limit
-            )
-
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
             count = count * 2
 
