@@ -70,19 +70,11 @@ class TimeLimit(object):
         logger("Time left:  {}".format(pretty_time(self.test_end_time - now)))
 
 
-@pytest.mark.testgroup_stress
-@pytest.mark.describe("EdgeHub Module Client Stress")
-@pytest.mark.timeout(test_timeout)
-class TestStressEdgeHubModuleClient(object):
-    @pytest.fixture
-    def client(self, test_module):
-        return test_module
-
+class StressTest(object):
     @pytest.mark.it("Run for {}".format(pretty_time(test_run_time)))
     async def test_stress(
         self, client, eventhub, service, registry, friend, leaf_device
     ):
-
         time_limit = TimeLimit(test_run_time)
 
         count = initial_repeats
@@ -93,57 +85,64 @@ class TestStressEdgeHubModuleClient(object):
             time_limit.print_progress()
             logger(dashes)
 
-            await self.do_test_telemetry(
-                client=client, eventhub=eventhub, count=count, time_limit=time_limit
-            )
+            if False:
+                await self.do_test_telemetry(
+                    client=client, eventhub=eventhub, count=count, time_limit=time_limit
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            await self.do_test_handle_method_from_service(
-                client=client, service=service, count=count, time_limit=time_limit
-            )
+            if False:
+                await self.do_test_handle_method_from_service(
+                    client=client, service=service, count=count, time_limit=time_limit
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            """
-            await self.do_test_handle_method_to_friend(
-                client=client, friend=friend, count=count, time_limit=time_limit
-            )
+            if True:
+                await self.do_test_handle_method_to_friend(
+                    client=client, friend=friend, count=count, time_limit=time_limit
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            await self.do_test_handle_method_to_leaf_device(
-                client=client, leaf_device=leaf_device, count=count, time_limit=time_limit
-            )
+            if False:
+                await self.do_test_handle_method_to_leaf_device(
+                    client=client,
+                    leaf_device=leaf_device,
+                    count=count,
+                    time_limit=time_limit,
+                )
 
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
-            """
+            if False:
+                await self.do_test_desired_property_patch(
+                    client=client, registry=registry, count=count, time_limit=time_limit
+                )
 
-            await self.do_test_desired_property_patch(
-                client=client, registry=registry, count=count, time_limit=time_limit
-            )
+                if time_limit.is_test_done():
+                    return
 
-            if time_limit.is_test_done():
-                return
+            if False:
+                await self.do_test_get_twin(
+                    client=client, registry=registry, count=count, time_limit=time_limit
+                )
 
-            await self.do_test_get_twin(
-                client=client, registry=registry, count=count, time_limit=time_limit
-            )
+                if time_limit.is_test_done():
+                    return
 
-            if time_limit.is_test_done():
-                return
+            if False:
+                await self.do_test_reported_properties(
+                    client=client, registry=registry, count=count, time_limit=time_limit
+                )
 
-            await self.do_test_reported_properties(
-                client=client, registry=registry, count=count, time_limit=time_limit
-            )
-
-            if time_limit.is_test_done():
-                return
+                if time_limit.is_test_done():
+                    return
 
             count = count * 2
 
@@ -308,3 +307,22 @@ class TestStressEdgeHubModuleClient(object):
             # BKTODO: pull enable_methods out of run_method_call_test
 
             await run_method_call_test(source=client, destination=leaf_device)
+
+
+@pytest.mark.testgroup_edgehub_module_2h_stress
+@pytest.mark.testgroup_iothub_module_2h_stress
+@pytest.mark.describe("Module Client 2 Hour Stress")
+@pytest.mark.timeout(test_timeout)
+class TestModuleClient2HourStress(StressTest):
+    @pytest.fixture
+    def client(self, test_module):
+        return test_module
+
+
+@pytest.mark.testgroup_device_module_2h_stress
+@pytest.mark.describe("Device Client 2 Hour Stress")
+@pytest.mark.timeout(test_timeout)
+class TestDeviceClient2HourStress(StressTest):
+    @pytest.fixture
+    def client(self, test_device):
+        return test_device
