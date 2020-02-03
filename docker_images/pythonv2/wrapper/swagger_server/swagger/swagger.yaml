@@ -805,6 +805,14 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
+      - name: "connectionStatus"
+        in: "query"
+        description: "Desired connection status"
+        required: true
+        type: "string"
+        enum:
+        - "connected"
+        - "disconnected"
       responses:
         200:
           description: "OK"
@@ -1355,6 +1363,14 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
+      - name: "connectionStatus"
+        in: "query"
+        description: "Desired connection status"
+        required: true
+        type: "string"
+        enum:
+        - "connected"
+        - "disconnected"
       responses:
         200:
           description: "OK"

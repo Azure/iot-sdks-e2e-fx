@@ -286,9 +286,11 @@ class ConnectionStatus(object):
 
     @emulate_async
     @log_entry_and_exit
-    def wait_for_connection_status_change(self):
+    def wait_for_connection_status_change(self, connection_status):
         status = self.rest_endpoint.wait_for_connection_status_change(
-            self.connection_id, timeout=adapter_config.default_api_timeout
+            self.connection_id,
+            connection_status,
+            timeout=adapter_config.default_api_timeout,
         )
         try:
             return json.loads(status)

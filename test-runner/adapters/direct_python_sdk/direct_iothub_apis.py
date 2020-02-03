@@ -183,8 +183,8 @@ class ConnectionStatus(object):
         return self.glue.get_connection_status()
 
     @emulate_async
-    def wait_for_connection_status_change(self):
-        return self.glue.wait_for_connection_status_change()
+    def wait_for_connection_status_change(self, connection_status):
+        return self.glue.wait_for_connection_status_change(connection_status)
 
 
 class DeviceApi(

@@ -122,8 +122,10 @@ class ModuleGlue:
     def get_connection_status(self, connection_id):
         return self.object_map[connection_id].get_connection_status()
 
-    def wait_for_connection_status_change(self, connection_id):
-        return self.object_map[connection_id].wait_for_connection_status_change()
+    def wait_for_connection_status_change(self, connection_id, connection_status):
+        return self.object_map[connection_id].wait_for_connection_status_change(
+            connection_status
+        )
 
     def cleanup_resources(self):
         listcopy = list(self.object_map.keys())

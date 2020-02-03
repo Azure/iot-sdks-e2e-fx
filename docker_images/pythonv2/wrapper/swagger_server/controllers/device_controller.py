@@ -264,18 +264,20 @@ def device_wait_for_c2d_message(connectionId):  # noqa: E501
     return device_glue.wait_for_c2d_message(connectionId)
 
 
-def device_wait_for_connection_status_change(connectionId):  # noqa: E501
+def device_wait_for_connection_status_change(connectionId, connectionStatus):  # noqa: E501
     """wait for the current connection status to change and return the changed status
 
      # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
+    :param connectionStatus: Desired connection status
+    :type connectionStatus: str
 
     :rtype: str
     """
     # changed from return 'do some magic!'
-    return json.dumps(device_glue.wait_for_connection_status_change(connectionId))
+    return json.dumps(device_glue.wait_for_connection_status_change(connectionId, connectionStatus))
 
 
 def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
