@@ -450,6 +450,9 @@
       "parameters": [
         {
           "$ref": "parameters.json#/connectionId"
+        },
+        {
+          "$ref": "parameters.json#/connectionStatus"
         }
       ],
       "responses": {

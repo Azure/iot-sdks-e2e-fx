@@ -136,7 +136,7 @@ class ConnectionStatus(object):
         pass
 
     @abc.abstractmethod
-    def wait_for_connection_status_change(self):
+    def wait_for_connection_status_change(self, connection_status):
         pass
 
 
@@ -196,9 +196,6 @@ class AbstractRegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin):
 
 @six.add_metaclass(abc.ABCMeta)
 class AbstractServiceApi(ServiceConnectDisconnect, InvokeMethods):
-
     @abc.abstractmethod
     def send_c2d(self, device_id, message):
         pass
-
-

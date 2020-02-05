@@ -69,8 +69,7 @@ class DropScenarioBaseClass(object):
         assert status == "connected"
 
         logger("waiting for client disconnection event")
-        status = await client.wait_for_connection_status_change()
-        assert status == "disconnected"
+        await client.wait_for_connection_status_change("disconnected")
         logger("client disconnection event received")
 
     async def stop_dropping(self, *, net_control):
@@ -79,8 +78,7 @@ class DropScenarioBaseClass(object):
 
     async def wait_for_reconnection_event(self, *, client):
         logger("waiting for client reconnection event")
-        status = await client.wait_for_connection_status_change()
-        assert status == "connected"
+        await client.wait_for_connection_status_change("connected")
         logger("client reconnection event received")
 
 
@@ -155,5 +153,3 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
             await asyncio.sleep(5)
 
         return func
-
-

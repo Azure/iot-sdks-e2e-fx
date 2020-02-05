@@ -943,12 +943,15 @@ class DeviceOperations(object):
     get_connection_status.metadata = {'url': '/device/{connectionId}/connectionStatus'}
 
     def wait_for_connection_status_change(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+            self, connection_id, connection_status, custom_headers=None, raw=False, **operation_config):
         """wait for the current connection status to change and return the changed
         status.
 
         :param connection_id: Id for the connection
         :type connection_id: str
+        :param connection_status: Desired connection status. Possible values
+         include: 'connected', 'disconnected'
+        :type connection_status: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -968,6 +971,7 @@ class DeviceOperations(object):
 
         # Construct parameters
         query_parameters = {}
+        query_parameters['connectionStatus'] = self._serialize.query("connection_status", connection_status, 'str')
 
         # Construct headers
         header_parameters = {}

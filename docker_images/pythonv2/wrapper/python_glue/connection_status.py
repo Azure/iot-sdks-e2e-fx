@@ -43,7 +43,11 @@ class ConnectionStatus(object):
         else:
             return "disconnected"
 
-    def wait_for_connection_status_change(self):
+    def wait_for_connection_status_change(self, connection_status):
+        if self.get_connection_status() == connection_status:
+            logger.info("Client is alredy {}.  Returning.".format(connection_status))
+            return connection_status
+
         if self.connected:
             logger.info("Client appears connected.  Waiting for client to disconenct")
             self.disconnected_event.clear()

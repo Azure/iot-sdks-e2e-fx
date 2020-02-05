@@ -340,18 +340,20 @@ def module_send_output_event(connectionId, outputName, eventBody):  # noqa: E501
     module_glue.send_output_event(connectionId, outputName, eventBody)
 
 
-def module_wait_for_connection_status_change(connectionId):  # noqa: E501
+def module_wait_for_connection_status_change(connectionId, connectionStatus):  # noqa: E501
     """wait for the current connection status to change and return the changed status
 
      # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
+    :param connectionStatus: Desired connection status
+    :type connectionStatus: str
 
     :rtype: str
     """
     # changed from return 'do some magic!'
-    return json.dumps(module_glue.wait_for_connection_status_change(connectionId))
+    return json.dumps(module_glue.wait_for_connection_status_change(connectionId, connectionStatus))
 
 
 def module_wait_for_desired_properties_patch(connectionId):  # noqa: E501

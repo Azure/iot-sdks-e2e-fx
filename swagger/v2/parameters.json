@@ -123,5 +123,16 @@
     "schema": {
       "$ref": "definitions.json#/twin"
     }
-  } 
+  },
+  "connectionStatus": {
+    "name": "connectionStatus",
+    "in": "query",
+    "description": "Desired connection status",
+    "required": true,
+    "type": "string",
+    "enum": [
+      "connected",
+      "disconnected"
+    ]
+  }
 }

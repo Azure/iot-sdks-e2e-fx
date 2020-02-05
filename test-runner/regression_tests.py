@@ -295,10 +295,9 @@ class RegressionTests(object):
 
         await net_control.disconnect(drop_mechanism)
 
-        status = await client.wait_for_connection_status_change()
-        assert status == "disconnected"
+        await client.wait_for_connection_status_change("disconnected")
 
         await net_control.reconnect()
 
-        status = await client.wait_for_connection_status_change()
+        await client.wait_for_connection_status_change("connected")
         assert status == "connected"
