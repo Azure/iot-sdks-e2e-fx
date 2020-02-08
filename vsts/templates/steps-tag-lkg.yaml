@@ -3,6 +3,10 @@ parameters:
 
 steps:
 - script: |
+    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+  displayName: 'docker login'
+
+- script: |
     $(Horton.FrameworkRoot)/scripts/tag-lkg.sh ${{ parameters.language }} vsts-${BUILD_BUILDID}
   displayName: "tag LKG ${{ parameters.language }}"
   condition: and(succeeded(), eq(variables['Horton.Commit'],'master'))
