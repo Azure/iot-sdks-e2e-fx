@@ -42,9 +42,6 @@ steps:
     } elseif ($env:Suite.StartsWith("py27_")) {
         $Language = "pythonv2"
         $Variant = "py27"
-    } elseif ($env:Suite.StartsWith("py34_")) {
-        $Language = "pythonv2"
-        $Variant = "py34"
     } elseif ($env:Suite.StartsWith("py35_")) {
         $Language = "pythonv2"
         $Variant = "py35"

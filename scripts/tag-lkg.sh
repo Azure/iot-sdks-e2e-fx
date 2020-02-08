@@ -30,7 +30,7 @@ case "$language" in
     variants="node6 node8 node10"
     ;;
   pythonv2)
-    variants="py27 py34 py35 py36 py37 py38"
+    variants="py27 py35 py36 py37 py38"
     ;;
 esac
 
