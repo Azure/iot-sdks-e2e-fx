@@ -57,9 +57,6 @@ steps:
         } elseif ($VariantToPass -like "py27") {
             $LanguageToPass="pythonv2"
             $RepoToPass = "Azure/azure-iot-sdk-python"
-        } elseif ($VariantToPass -like "py34") {
-            $LanguageToPass="pythonv2"
-            $RepoToPass = "Azure/azure-iot-sdk-python"
         } elseif ($VariantToPass -like "py35") {
             $LanguageToPass="pythonv2"
             $RepoToPass = "Azure/azure-iot-sdk-python"
