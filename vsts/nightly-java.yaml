@@ -32,3 +32,13 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
 
+- job: "tag_lkg_amd64"
+  pool:
+      vmImage: 'Ubuntu 16.04'
+  dependsOn:
+     "test_linux_amd64"
+  steps:
+  - template: templates/steps-tag-lkg.yaml
+    parameters:
+      language: java
+
