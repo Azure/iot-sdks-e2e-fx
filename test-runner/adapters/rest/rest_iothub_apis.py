@@ -66,6 +66,7 @@ class Connect(object):
             ca_certificate=ca_certificate,
             timeout=adapter_config.default_api_timeout,
         )
+        assert not self.connection_id
         self.connection_id = result.connection_id
 
     @log_entry_and_exit(print_args=False)
@@ -73,6 +74,7 @@ class Connect(object):
         result = self.rest_endpoint.create_from_x509(
             transport, x509, timeout=adapter_config.default_api_timeout
         )
+        assert not self.connection - id
         self.connection_id = result.connection_id
 
     @emulate_async
@@ -120,6 +122,7 @@ class ConnectFromEnvironment(object):
         result = self.rest_endpoint.connect_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
+        assert not self.connection_id
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
@@ -127,6 +130,7 @@ class ConnectFromEnvironment(object):
         result = self.rest_endpoint.create_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
+        assert not self.connection_id
         self.connection_id = result.connection_id
 
 

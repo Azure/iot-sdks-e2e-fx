@@ -22,3 +22,7 @@ class AbstractControlApi:
     @abc.abstractmethod
     def set_flags_sync(self, flags):
         pass
+
+    @abc.abstractmethod
+    def send_command_sync(self, message):
+        pass

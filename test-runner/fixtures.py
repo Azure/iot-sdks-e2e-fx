@@ -11,89 +11,48 @@ from adapters import adapter_config
 from horton_settings import settings
 from horton_logging import logger
 
-# BKTODO: remove test_ prefix on non-test functions
-
-
-dashes = "".join(("-" for _ in range(0, 30)))
-separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
-
 
 @pytest.fixture
 def eventhub():
     eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
     eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
-    yield eventhub
-    logger(separator.format("eventhub"))
-    try:
-        eventhub.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting eventhub: {}".format(e))
+    return eventhub
 
 
 @pytest.fixture
 def registry():
     registry = connections.connect_registry_client()
-    yield registry
-    logger(separator.format("registry"))
-    try:
-        registry.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting registry: {}".format(e))
+    return registry
 
 
 @pytest.fixture
 def friend():
     friend = connections.get_module_client(settings.friend_module)
-    yield friend
-    logger(separator.format("friend module"))
-    try:
-        friend.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting friend module: {}".format(e))
+    return friend
 
 
 @pytest.fixture
 def test_module():
     test_module = connections.get_module_client(settings.test_module)
-    yield test_module
-    logger(separator.format("test module"))
-    try:
-        test_module.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting test module: {}".format(e))
+    return test_module
 
 
 @pytest.fixture
 def leaf_device():
     leaf_device = connections.get_device_client(settings.leaf_device)
-    yield leaf_device
-    logger(separator.format("leaf device"))
-    try:
-        leaf_device.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting leaf device: {}".format(e))
+    return leaf_device
 
 
 @pytest.fixture
 def test_device():
     test_device = connections.get_device_client(settings.test_device)
-    yield test_device
-    logger(separator.format("device"))
-    try:
-        test_device.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting test device: {}".format(e))
+    return test_device
 
 
 @pytest.fixture
 def service():
     service = connections.connect_service_client()
-    yield service
-    logger(separator.format("service"))
-    try:
-        service.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting service: {}".format(e))
+    return service
 
 
 @pytest.fixture
@@ -101,11 +60,10 @@ def net_control():
     api = getattr(settings.net_control, "api", None)
     yield api
     if api:
+        dashes = "".join(("-" for _ in range(0, 30)))
+        separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
         logger(separator.format("net_control"))
-        try:
-            settings.net_control.api.reconnect_sync()
-        except Exception as e:
-            logger("exception reconnecting network: {}".format(e))
+        settings.net_control.api.reconnect_sync()
 
 
 @pytest.fixture(

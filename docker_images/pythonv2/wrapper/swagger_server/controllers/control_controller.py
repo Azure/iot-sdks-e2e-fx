@@ -3,6 +3,7 @@ import six
 
 from swagger_server.models.log_message import LogMessage  # noqa: E501
 from swagger_server import util
+
 # added 1 line in merge
 import control_glue
 
@@ -36,7 +37,7 @@ def control_log_message(logMessage):  # noqa: E501
 
      # noqa: E501
 
-    :param logMessage: 
+    :param logMessage:
     :type logMessage: dict | bytes
 
     :rtype: None
@@ -57,7 +58,8 @@ def control_send_command(cmd):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    control_glue.send_command(cmd)
 
 
 def control_set_flags(flags):  # noqa: E501
@@ -65,11 +67,10 @@ def control_set_flags(flags):  # noqa: E501
 
      # noqa: E501
 
-    :param flags: 
-    :type flags: 
+    :param flags:
+    :type flags:
 
     :rtype: None
     """
     # changed from return 'do some magic!'
     control_glue.set_flags(flags)
-

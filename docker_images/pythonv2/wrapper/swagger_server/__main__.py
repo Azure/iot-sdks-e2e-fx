@@ -41,7 +41,7 @@ def main():
         arguments={"title": "Azure IOT End-to-End Test Wrapper Rest Api"},
     )
     # changed from app.run(port=8080)
-    app.run(port=8080, debug=True, use_reloader=False, threaded=True)
+    app.run(port=8080, debug=False, use_reloader=False, threaded=True)
 
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ def get_module_client(settings_object):
     client.module_id = settings_object.module_id
     client.capabilities = settings_object.capabilities
     client.settings = settings_object
+    client.settings.client = client
 
     if settings_object.capabilities.v2_connect_group:
         if settings_object.connection_type == "environment":
@@ -59,6 +60,7 @@ def get_device_client(settings_object):
     client.device_id = settings_object.device_id
     client.capabilities = settings_object.capabilities
     client.settings = settings_object
+    client.settings.client = client
 
     if settings_object.capabilities.v2_connect_group:
         client.create_from_connection_string_sync(
@@ -81,6 +83,8 @@ def connect_registry_client():
     """
     client = adapters.create_adapter(settings.registry.adapter_address, "registry")
     client.connect_sync(settings.registry.connection_string)
+    client.settings = settings.registry
+    client.settings.client = client
     return client
 
 
@@ -90,6 +94,8 @@ def connect_service_client():
     """
     client = adapters.create_adapter(settings.service.adapter_address, "service")
     client.connect_sync(settings.service.connection_string)
+    client.settings = settings.service
+    client.settings.client = client
     return client
 
 

@@ -32,6 +32,7 @@ class HortonDeviceSettings(HortonSettingsObject):
         self.container_name = None
         self.image = None
         self.object_type = None
+        self.client = None
 
 
 class HortonModuleSettings(HortonSettingsObject):
@@ -51,6 +52,7 @@ class HortonModuleSettings(HortonSettingsObject):
         self.container_name = None
         self.image = None
         self.object_type = None
+        self.client = None
 
 
 class HortonSettings:

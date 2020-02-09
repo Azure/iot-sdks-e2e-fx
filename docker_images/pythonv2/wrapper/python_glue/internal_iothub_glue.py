@@ -4,7 +4,6 @@
 import logging
 import convert
 import internal_control_glue
-import heap_check
 from connection_status import ConnectionStatus
 from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodResponse
 from azure.iot.device.common import mqtt_transport
@@ -72,12 +71,13 @@ class Connect(ConnectionStatus):
 
     def destroy(self):
         if self.client:
-            self.client.disconnect()
-            packets_left = self.get_inflight_packet_count()
-            logger.info("destroy: {} packets still in flight".format(packets_left))
-            self.client = None
-            heap_check.assert_all_iothub_objects_have_been_collected()
-            assert packets_left == 0
+            try:
+                self.client.disconnect()
+                packets_left = self.get_inflight_packet_count()
+                logger.info("destroy: {} packets still in flight".format(packets_left))
+                assert packets_left == 0
+            finally:
+                self.client = None
 
 
 class ConnectFromEnvironment(object):
