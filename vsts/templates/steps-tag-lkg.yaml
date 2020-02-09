@@ -3,7 +3,7 @@ parameters:
 
 steps:
 - script: |
-    docker login -u $(IOTHUB_E2E_REPO_USER) -p $(IOTHUB_E2E_REPO_PASSWORD) $(IOTHUB_E2E_REPO_ADDRESS)
+    docker login -u ${IOTHUB_E2E_REPO_USER} -p ${IOTHUB_E2E_REPO_PASSWORD} ${IOTHUB_E2E_REPO_ADDRESS}
   displayName: 'docker login'
 
 - script: |
