@@ -16,7 +16,7 @@ import input_output_tests
 
 invalid_symmetric_key_fields = [
     pytest.param("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
-    pytest.param("HostName", "fakeFake.azure-devices.net"),
+    pytest.param("HostName", "fakeFake.azure-devices.net", marks=pytest.mark.skip),
     pytest.param("DeviceId", "fakeDeviceId"),
 ]
 
@@ -31,7 +31,6 @@ def is_api_failure_exception(e):
     if "azure.iot.device" in str(e.__class__):
         return True
     else:
-
         return (
             type(e) == msrest.exceptions.ClientRequestError
             and type(e.inner_exception) == requests.exceptions.RetryError
@@ -70,7 +69,6 @@ class RegressionTests(object):
         )
         cs_fields[field_name] = new_field_value
 
-        client.destroy_sync()
         client.create_from_connection_string_sync(
             client.settings.transport,
             connection_string.dictionary_to_connection_string(cs_fields),
@@ -100,7 +98,6 @@ class RegressionTests(object):
         )
         cs_fields[field_name] = new_field_value
 
-        client.destroy_sync()
         client.create_from_connection_string_sync(
             client.settings.transport,
             connection_string.dictionary_to_connection_string(cs_fields),
@@ -111,6 +108,7 @@ class RegressionTests(object):
             await client.send_event(payload)
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip()
     @pytest.mark.it("fails to send messages over 256 kb in size")
     async def test_regression_send_message_fails_with_message_over_256K(self, client):
         limitations.only_run_test_for(client, "pythonv2")
@@ -121,6 +119,7 @@ class RegressionTests(object):
             await client.send_event(big_payload)
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip()
     @pytest.mark.it("fails to send output messages over 256 kb in size")
     async def test_regression_send_output_message_fails_with_message_over_256K(
         self, client
@@ -136,6 +135,7 @@ class RegressionTests(object):
             )
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip()
     @pytest.mark.it(
         "does not break the client on failure sending messages over 256 kb in size"
     )
@@ -161,6 +161,7 @@ class RegressionTests(object):
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
 
+    @pytest.mark.skip
     @pytest.mark.it(
         "fails a connect operation if connection fails for the first time connecting"
     )
@@ -177,6 +178,7 @@ class RegressionTests(object):
 
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip
     @pytest.mark.it(
         "fails a send_event operation if connection fails for the first time connecting"
     )
@@ -275,6 +277,7 @@ class RegressionTests(object):
         await connect_future_2
         await connect_future_3
 
+    @pytest.mark.skip()
     @pytest.mark.it(
         "Enables automatic reconnection even if connect is not called directly"
     )

@@ -63,7 +63,10 @@ def net_control():
         dashes = "".join(("-" for _ in range(0, 30)))
         separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
         logger(separator.format("net_control"))
-        settings.net_control.api.reconnect_sync()
+        try:
+            settings.net_control.api.reconnect_sync()
+        except Exception as e:
+            logger("exception reconnecting network: {}".format(e))
 
 
 @pytest.fixture(
