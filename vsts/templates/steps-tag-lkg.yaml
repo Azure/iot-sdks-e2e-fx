@@ -1,9 +1,12 @@
 parameters:
   langauge: ''
+  repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
+  repo_user: $(IOTHUB-E2E-REPO-USER)
+  repo_password: $(IOTHUB-E2E-REPO-PASSWORD)
 
 steps:
 - script: |
-    docker login -u ${IOTHUB-E2E-REPO-USER} -p ${IOTHUB-E2E-REPO-PASSWORD} ${IOTHUB-E2E-REPO-ADDRESS}
+    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
   displayName: 'docker login'
 
 - script: |
