@@ -74,7 +74,7 @@ class Connect(object):
         result = self.rest_endpoint.create_from_x509(
             transport, x509, timeout=adapter_config.default_api_timeout
         )
-        assert not self.connection - id
+        assert not self.connection _id
         self.connection_id = result.connection_id
 
     @emulate_async
