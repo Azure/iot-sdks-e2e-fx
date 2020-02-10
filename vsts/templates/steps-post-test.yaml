@@ -5,7 +5,7 @@ parameters:
 
 steps:
 - script:
-    source $(Horton.FrameworkRoot)/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate &&
     $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.deployment_type }} $(Build.SourcesDirectory)/results ${{ parameters.log_folder_name }}
   displayName: 'Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'))
@@ -31,7 +31,7 @@ steps:
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
 - script:
-    source $(Horton.FrameworkRoot)/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate &&
     python deploy-containers/remove_deployment.py
   displayName: 'remove devices'
   env:
