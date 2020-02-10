@@ -31,7 +31,6 @@ def is_api_failure_exception(e):
     if "azure.iot.device" in str(e.__class__):
         return True
     else:
-
         return (
             type(e) == msrest.exceptions.ClientRequestError
             and type(e.inner_exception) == requests.exceptions.RetryError
