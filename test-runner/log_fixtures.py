@@ -41,9 +41,9 @@ def pytest_pyfunc_call(pyfuncitem):
         logger(separator.format("registry"))
         settings.registry.client.disconnect_sync()
 
-    if getattr(settings, "friend", None) and settings.friend.client:
+    if getattr(settings, "friend_module", None) and settings.friend_module.client:
         logger(separator.format("friend module"))
-        settings.friend.client.disconnect_sync()
+        settings.friend_module.client.disconnect_sync()
 
     if getattr(settings, "test_module", None) and settings.test_module.client:
         logger(separator.format("test module"))
