@@ -37,7 +37,7 @@ def control_log_message(logMessage):  # noqa: E501
 
      # noqa: E501
 
-    :param logMessage: 
+    :param logMessage:
     :type logMessage: dict | bytes
 
     :rtype: None
@@ -67,11 +67,10 @@ def control_set_flags(flags):  # noqa: E501
 
      # noqa: E501
 
-    :param flags: 
-    :type flags: 
+    :param flags:
+    :type flags:
 
     :rtype: None
     """
     # changed from return 'do some magic!'
     control_glue.set_flags(flags)
-
