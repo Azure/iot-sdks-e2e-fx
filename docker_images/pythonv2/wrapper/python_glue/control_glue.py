@@ -23,10 +23,5 @@ def get_capabilities():
     return internal_control_glue.get_capabilities()
 
 
-def network_disconnect(transport, disconnect_type):
-    print("wrapper disconnect")
-    return internal_control_glue.network_disconnect(transport, disconnect_type)
-
-
-def network_reconnect():
-    return internal_control_glue.network_reconnect()
+def send_command(cmd):
+    return internal_control_glue.send_command(cmd)

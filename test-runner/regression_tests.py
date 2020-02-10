@@ -69,6 +69,7 @@ class RegressionTests(object):
         )
         cs_fields[field_name] = new_field_value
 
+        client.destroy_sync()
         client.create_from_connection_string_sync(
             client.settings.transport,
             connection_string.dictionary_to_connection_string(cs_fields),
@@ -98,6 +99,7 @@ class RegressionTests(object):
         )
         cs_fields[field_name] = new_field_value
 
+        client.destroy_sync()
         client.create_from_connection_string_sync(
             client.settings.transport,
             connection_string.dictionary_to_connection_string(cs_fields),

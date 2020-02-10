@@ -29,6 +29,7 @@ from fixtures import (
 )
 from log_fixtures import (
     pytest_runtest_makereport,
+    pytest_pyfunc_call,
     session_log_fixture,
     module_log_fixture,
     function_log_fixture,
@@ -140,6 +141,13 @@ def set_transport(transport):
     settings.test_device.transport = transport
 
 
+def set_local_net_control():
+    if settings.net_control.adapter_address:
+        settings.net_control.adapter_address = "http://localhost:{}".format(
+            settings.net_control.container_port
+        )
+
+
 def set_local():
     print("Running against local module")
 
@@ -154,10 +162,7 @@ def set_local():
                 settings.test_module.container_port
             )
 
-    if settings.net_control.adapter_address:
-        settings.net_control.adapter_address = "http://localhost:{}".format(
-            settings.net_control.container_port
-        )
+    set_local_net_control()
 
 
 def set_python_direct():
@@ -167,6 +172,8 @@ def set_python_direct():
     settings.leaf_device.adapter_address = "direct_python"
     if settings.test_module.connection_type == "environment":
         settings.test_module.connection_type = "connection_string_with_edge_gateway"
+
+    set_local_net_control()
 
 
 def set_async():
@@ -187,16 +194,19 @@ def add_service_settings():
     settings.eventhub.name = "eventhub"
     settings.eventhub.connection_string = settings.iothub.connection_string
     settings.eventhub.adapter_address = "direct_rest"
+    settings.eventhub.client = None
 
     settings.registry = ServiceSettings()
     settings.registry.name = "registry"
     settings.registry.connection_string = settings.iothub.connection_string
     settings.registry.adapter_address = settings.test_module.adapter_address
+    settings.registry.client = None
 
     settings.service = ServiceSettings()
     settings.service.name = "service"
     settings.service.connection_string = settings.iothub.connection_string
     settings.service.adapter_address = settings.test_module.adapter_address
+    settings.service.client = None
 
 
 def adjust_surfaces_for_missing_implementations():
