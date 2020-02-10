@@ -319,7 +319,7 @@ class TestModuleClient2HourStress(StressTest):
         return test_module
 
 
-@pytest.mark.testgroup_device_module_2h_stress
+@pytest.mark.testgroup_iothub_device_2h_stress
 @pytest.mark.describe("Device Client 2 Hour Stress")
 @pytest.mark.timeout(test_timeout)
 class TestDeviceClient2HourStress(StressTest):

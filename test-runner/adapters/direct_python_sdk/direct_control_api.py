@@ -20,3 +20,6 @@ class ControlApi(AbstractControlApi):
 
     def set_flags_sync(self, flags):
         internal_control_glue.set_flags(flags)
+
+    def send_command_sync(self, cmd):
+        internal_control_glue.send_command(cmd)

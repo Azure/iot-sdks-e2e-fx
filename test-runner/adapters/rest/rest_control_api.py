@@ -72,3 +72,8 @@ class ControlApi(AbstractControlApi):
             flags, timeout=adapter_config.default_api_timeout
         )
 
+    @log_entry_and_exit
+    def send_command_sync(self, cmd):
+        return self.rest_endpoint.send_command(
+            cmd, timeout=adapter_config.default_api_timeout
+        )

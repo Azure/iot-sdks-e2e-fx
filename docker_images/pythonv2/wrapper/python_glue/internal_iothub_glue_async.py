@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-import heap_check
 import logging
 import convert
 import async_helper
@@ -64,12 +63,13 @@ class Connect(ConnectionStatus):
 
     def destroy(self):
         if self.client:
-            async_helper.run_coroutine_sync(self.client.disconnect())
-            packets_left = self.get_inflight_packet_count()
-            logger.info("destroy: {} packets still in flight".format(packets_left))
-            self.client = None
-            heap_check.assert_all_iothub_objects_have_been_collected()
-            assert packets_left == 0
+            try:
+                async_helper.run_coroutine_sync(self.client.disconnect())
+                packets_left = self.get_inflight_packet_count()
+                logger.info("destroy: {} packets still in flight".format(packets_left))
+                assert packets_left == 0
+            finally:
+                self.client = None
 
 
 class ConnectFromEnvironment(object):
