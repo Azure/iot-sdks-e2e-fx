@@ -7,12 +7,13 @@ if [ "${BASH_SOURCE-}" = "$0" ]; then
     exit 33
 fi
 
-root_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")") 
+script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+root_dir=${script_dir}/..
 pushd $root_dir
 
 source "$root_dir/scripts/colorecho.sh"
 
-if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
+if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     colorecho $_yellow "Initializing horton environment"
 
     # Make sure we're running python 3.5 or higher
@@ -52,13 +53,14 @@ if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
     fi
 
     colorecho $_yellow "Creating virtual evnronment"
-    python3 -m virtualenv ${root_dir}/_virtualenv/horton/
+    echo python3 -m virtualenv ${script_dir}/_virtualenv/horton/
+    python3 -m virtualenv ${root_dir}/bin/_virtualenv/horton/
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
 
     colorecho $_green "Horton environment created"
 
     colorecho $_yellow "activating horton environment"
-    source ${root_dir}/_virtualenv/horton/bin/activate
+    source ${script_dir}/_virtualenv/horton/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
     colorecho $_yellow "installing required python libraries"
@@ -70,7 +72,7 @@ if [ ! -e ${root_dir}/_virtualenv/horton/bin/activate ]; then
     [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
 
 else
-    source ${root_dir}/_virtualenv/horton/bin/activate
+    source ${script_dir}/_virtualenv/horton/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 fi
 

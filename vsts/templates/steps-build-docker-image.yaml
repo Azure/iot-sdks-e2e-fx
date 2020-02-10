@@ -129,7 +129,7 @@ steps:
     versionSpec: '3.7'
     architecture: $(architecture)
 
-- script: source $(Horton.FrameworkRoot)/activate
+- script: source $(Horton.FrameworkRoot)/bin/activate
   displayName: 'Create Horton environment'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
@@ -163,7 +163,7 @@ steps:
       )
 
 - script: |
-    source $(Horton.FrameworkRoot)/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate &&
     python $(Horton.FrameworkRoot)/pyscripts/build_docker_image.py --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 

@@ -17,7 +17,7 @@ steps:
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: source $(Horton.FrameworkRoot)/activate
+- script: source $(Horton.FrameworkRoot)/bin/activate
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
@@ -43,7 +43,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - script: 
-    source $(Horton.FrameworkRoot)/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate &&
     python deploy-containers/deploy.py ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
   displayName: 'Create new identites and deploy containers'
   env:
@@ -71,13 +71,13 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: 
-    source $(Horton.FrameworkRoot)/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate &&
     python pyscripts/ensure_container.py testMod
   displayName: 'Verify that testMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script:
-    source $(Horton.FrameworkRoot)/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate &&
     python pyscripts/ensure_container.py friendMod
   displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
@@ -87,7 +87,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
   
 - script: 
-    source $(Horton.FrameworkRoot)/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate &&
     python deploy-containers/get_credentials.py
   displayName: 'Get credentials'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
