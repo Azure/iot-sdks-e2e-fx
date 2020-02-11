@@ -4,15 +4,17 @@
 import gc
 import inspect
 import os
-import azure.iot.device as library_root
+import azure.iot.device as iothub_library_root
 import weakref
 import time
 import logging
+import _ctypes
+from six import string_types, types
 
 logger = logging.getLogger(__name__)
 
-library_root_path = os.path.dirname(inspect.getsourcefile(library_root))
-library_root_path_len = len(library_root_path) + 1
+iothub_library_root_path = os.path.dirname(inspect.getsourcefile(iothub_library_root))
+iothub_library_root_path_len = len(iothub_library_root_path) + 1
 
 
 class LeakedObject(object):
@@ -29,6 +31,32 @@ class LeakedObject(object):
         return "{}-{}".format(self.source_file, self.value)
 
 
+def _is_paho_object(obj):
+    if not isinstance(obj, BaseException):
+        try:
+            c = obj.__class__
+            source_file = inspect.getsourcefile(c)
+        except (TypeError, AttributeError):
+            pass
+        else:
+            if source_file and "paho" in source_file:
+                return True
+    return False
+
+
+def _is_iothub_object(obj):
+    if not isinstance(obj, BaseException):
+        try:
+            c = obj.__class__
+            source_file = inspect.getsourcefile(c)
+        except (TypeError, AttributeError):
+            pass
+        else:
+            if source_file and source_file.startswith(iothub_library_root_path):
+                return True
+    return False
+
+
 def get_all_iothub_objects():
     """
     Query the garbage collector for a a list of all objects that
@@ -36,15 +64,18 @@ def get_all_iothub_objects():
     """
     all = []
     for obj in gc.get_objects():
-        if not isinstance(obj, BaseException):
+        if _is_iothub_object(obj) or _is_paho_object(obj):
+            source_file = inspect.getsourcefile(obj.__class__)
+            if _is_iothub_object(obj):
+                source_file = source_file[iothub_library_root_path_len:]
             try:
-                c = obj.__class__
-                source_file = inspect.getsourcefile(c)
-            except (TypeError, AttributeError):
-                pass
-            else:
-                if source_file and source_file.startswith(library_root_path):
-                    all.append(LeakedObject(source_file[library_root_path_len:], obj))
+                all.append(LeakedObject(source_file, obj))
+            except TypeError:
+                logger.warning(
+                    "Could not add {} from {} to leak list".format(
+                        obj.__class__, source_file
+                    )
+                )
     return all
 
 
@@ -64,21 +95,57 @@ def _free_all(objs):
                 setattr(o, attr, None)
 
 
+def _dump_referrers(obj):
+    referrers = gc.get_referrers(obj.weakref())
+    for referrer in referrers:
+        if isinstance(referrer, dict):
+            for sub_referrer in gc.get_referrers(referrer):
+                if sub_referrer != referrers:
+                    print("  used by: {}:{}".format(type(sub_referrer), sub_referrer))
+        elif not isinstance(referrer, type):
+            print("  used by: {}:{}".format(type(referrer), referrer))
+
+
+def _dump_leaked_object(obj):
+    logger.error("LEAK: {}".format(obj))
+
+    _dump_referrers(obj)
+
+
+def _collect():
+    """
+    Collect everything until there's nothing more to collect
+    """
+    sleep_time = 1
+    done = False
+    while not done:
+        collected = gc.collect(2)
+        logger.info("{} objects collected".format(collected))
+        if collected:
+            logger.info("Sleeping for {} seconds".format(sleep_time))
+            time.sleep(sleep_time)
+            sleep_time *= 2
+        else:
+            done = True
+
+
 def assert_all_iothub_objects_have_been_collected():
     """
     Get all iothub objects from the garbage collector.  If any objects remain, list
     them and assert so the test fails.  Finally, attempt to clean up leaks so that
     future tests in this session have a clean slate (or as clean as we can make it).
     """
-    pass  # can't run this until python PR 334 accepted
-    """
-    while gc.collect(2):
-        time.sleep(1)
-    objs = get_all_iothub_objects()
-    if len(objs):
-        logger.error("Test failure.  Objects have leaked:")
-        for obj in objs:
-            logger.error("LEAK: {}".format(obj))
-        _free_all(objs)
+
+    _collect()
+
+    all_iothub_objects = get_all_iothub_objects()
+    if len(all_iothub_objects):
+        logger.error(
+            "Test failure.  {} objects have leaked:".format(len(all_iothub_objects))
+        )
+        for obj in all_iothub_objects:
+            _dump_leaked_object(obj)
+        _free_all(all_iothub_objects)
         assert False
-    """
+    else:
+        logger.info("No leaks")
