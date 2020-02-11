@@ -23,6 +23,7 @@ class HortonCapabilities(object):
         self.dropped_connection_tests = False
         self.net_connect_app = False
         self.checks_for_leaks = False
+        self.new_python_reconnect = False
 
 
 def collect_capabilities(horton_object):
