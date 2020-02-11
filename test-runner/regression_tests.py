@@ -160,7 +160,6 @@ class RegressionTests(object):
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
 
-    @pytest.mark.skip
     @pytest.mark.it(
         "fails a connect operation if connection fails for the first time connecting"
     )
@@ -169,6 +168,8 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
+        if not client.settings.capabilities.new_python_reconnect:
+            pytest.skip("waiting for python ReconnectStage changes")
 
         await net_control.disconnect(drop_mechanism)
 
@@ -177,7 +178,6 @@ class RegressionTests(object):
 
         assert is_api_failure_exception(e._excinfo[1])
 
-    @pytest.mark.skip
     @pytest.mark.it(
         "fails a send_event operation if connection fails for the first time connecting"
     )
@@ -186,6 +186,8 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
+        if not client.settings.capabilities.new_python_reconnect:
+            pytest.skip("waiting for python ReconnectStage changes")
 
         await net_control.disconnect(drop_mechanism)
 
@@ -276,7 +278,6 @@ class RegressionTests(object):
         await connect_future_2
         await connect_future_3
 
-    @pytest.mark.skip()
     @pytest.mark.it(
         "Enables automatic reconnection even if connect is not called directly"
     )
@@ -285,6 +286,8 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
+        if not client.settings.capabilities.new_python_reconnect:
+            pytest.skip("waiting for python ReconnectStage changes")
 
         payload = sample_content.make_message_payload()
         await client.send_event(payload)

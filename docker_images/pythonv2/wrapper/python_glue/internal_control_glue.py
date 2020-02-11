@@ -4,6 +4,7 @@
 import logging
 import heap_check
 from azure.iot.device import IoTHubModuleClient
+from azure.iot.device.common.pipeline import pipeline_stages_base
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,8 @@ def set_flags(flags):
 
 
 def get_capabilities():
+    reconnect_stage = pipeline_stages_base.ReconnectStage()
+    new_python_reconnect = True if getattr(reconnect_stage, "state", None) else False
     caps = {
         "flags": {
             "supports_async": True,
@@ -33,6 +36,7 @@ def get_capabilities():
             "dropped_connection_tests": True,
             "net_control_app": True,
             "checks_for_leaks": True,
+            "new_python_reconnect": new_python_reconnect,
         },
         "skip_list": [],
     }
