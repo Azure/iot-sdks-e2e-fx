@@ -12,6 +12,7 @@ import connection_string
 import requests
 import msrest
 import input_output_tests
+import telemetry_tests
 
 
 invalid_symmetric_key_fields = [
@@ -303,3 +304,103 @@ class RegressionTests(object):
 
         await client.wait_for_connection_status_change("connected")
         assert status == "connected"
+
+    @pytest.mark.it("Can retry send_event with different failure conditions")
+    async def test_regression_reconnect_send_event_different_timing(
+        self, net_control, client, drop_mechanism, eventhub
+    ):
+        payloads = []
+        send_futures = []
+
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+        if not client.settings.capabilities.new_python_reconnect:
+            pytest.skip("waiting for python ReconnectStage changes")
+
+        logger("connecting")
+        await client.connect2()
+
+        logger("unplugging network")
+        await net_control.disconnect(drop_mechanism)
+
+        # start listening before we send
+        await eventhub.connect()
+        received_message_future = asyncio.ensure_future(
+            eventhub.wait_for_next_event(client.device_id)
+        )
+
+        logger(
+            "sending 2 messages before the client realizes the network was unplugged"
+        )
+        for _ in range(0, 2):
+            telemetry_tests.ensure_send_telemetry_message(
+                client=client, payloads=payloads, send_futures=send_futures
+            )
+
+        logger("wait for the client to realize the network was unplugged")
+        await client.wait_for_connection_status_change("disconnected")
+
+        logger("send 2 more messages")
+        for _ in range(0, 2):
+            telemetry_tests.ensure_send_telemetry_message(
+                client=client, payloads=payloads, send_futures=send_futures
+            )
+
+        logger("reconnect the network")
+        await net_control.reconnect()
+
+        logger("waiting for all messages to send")
+        await asyncio.gather(*send_futures)
+
+        logger("waiting for events to arrive at eventhub")
+        await telemetry_tests.wait_for_all_telemetry_messages_to_arrive(
+            received_message_future=received_message_future,
+            payloads=payloads,
+            eventhub=eventhub,
+            client=client,
+        )
+
+    @pytest.mark.skip("Fails because packets are still 'in flight' when disconnecting")
+    @pytest.mark.it("Can fail send_event calls by manually disconnecting")
+    async def test_regression_disconnect_cancels_send_event(
+        self, net_control, client, drop_mechanism
+    ):
+        payloads = []
+        send_futures = []
+
+        limitations.only_run_test_for(client, "pythonv2")
+        limitations.skip_if_no_net_control()
+        if not client.settings.capabilities.new_python_reconnect:
+            pytest.skip("waiting for python ReconnectStage changes")
+
+        logger("connecting")
+        await client.connect2()
+
+        logger("unplugging network")
+        await net_control.disconnect(drop_mechanism)
+
+        logger(
+            "sending 2 messages before the client realizes the network was unplugged"
+        )
+        for _ in range(0, 2):
+            telemetry_tests.ensure_send_telemetry_message(
+                client=client, payloads=payloads, send_futures=send_futures
+            )
+
+        logger("wait for the client to realize the network was unplugged")
+        await client.wait_for_connection_status_change("disconnected")
+
+        logger("send 2 more messages")
+        for _ in range(0, 2):
+            telemetry_tests.ensure_send_telemetry_message(
+                client=client, payloads=payloads, send_futures=send_futures
+            )
+
+        logger("forcing a disconnection")
+        await client.disconnect2()
+
+        logger("verifying that all of our sends failed")
+        for send_future in send_futures:
+            with pytest.raises(Exception):
+                await send_future
+        logger("all sends failed")
