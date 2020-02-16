@@ -30,39 +30,52 @@ separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
 # BKTODO: move this out of this file into it's own file
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_pyfunc_call(pyfuncitem):
-    yield
 
-    # BKTODO: this should iterate over settings
-    if getattr(settings, "eventhub", None) and settings.eventhub.client:
-        logger(separator.format("eventhub"))
-        settings.eventhub.client.disconnect_sync()
+    # this hook wraps test runs.  this yield runs the actual test
+    outcome = yield
 
-    if getattr(settings, "registry", None) and settings.registry.client:
-        logger(separator.format("registry"))
-        settings.registry.client.disconnect_sync()
+    try:
+        # this will raise if the outcome was an exception
+        outcome.get_result()
+    finally:
+        # BKTODO: this should iterate over settings
+        if getattr(settings, "eventhub", None) and settings.eventhub.client:
+            logger(separator.format("eventhub"))
+            settings.eventhub.client.disconnect_sync()
+            settings.eventhub.client = None
 
-    if getattr(settings, "friend_module", None) and settings.friend_module.client:
-        logger(separator.format("friend module"))
-        settings.friend_module.client.disconnect_sync()
+        if getattr(settings, "registry", None) and settings.registry.client:
+            logger(separator.format("registry"))
+            settings.registry.client.disconnect_sync()
+            settings.registry.client = None
 
-    if getattr(settings, "test_module", None) and settings.test_module.client:
-        logger(separator.format("test module"))
-        settings.test_module.client.disconnect_sync()
+        if getattr(settings, "friend_module", None) and settings.friend_module.client:
+            logger(separator.format("friend module"))
+            settings.friend_module.client.disconnect_sync()
+            settings.friend_module.client = None
 
-    if getattr(settings, "leaf_device", None) and settings.leaf_device.client:
-        logger(separator.format("leaf device"))
-        settings.leaf_device.client.disconnect_sync()
+        if getattr(settings, "test_module", None) and settings.test_module.client:
+            logger(separator.format("test module"))
+            settings.test_module.client.disconnect_sync()
+            settings.test_module.client = None
 
-    if getattr(settings, "test_device", None) and settings.test_device.client:
-        logger(separator.format("device"))
-        settings.test_device.client.disconnect_sync()
+        if getattr(settings, "leaf_device", None) and settings.leaf_device.client:
+            logger(separator.format("leaf device"))
+            settings.leaf_device.client.disconnect_sync()
+            settings.leaf_device.client = None
 
-    if getattr(settings, "service", None) and settings.service.client:
-        logger(separator.format("service"))
-        settings.service.client.disconnect_sync()
+        if getattr(settings, "test_device", None) and settings.test_device.client:
+            logger(separator.format("device"))
+            settings.test_device.client.disconnect_sync()
+            settings.test_device.client = None
 
-    if settings.test_module.capabilities.checks_for_leaks:
-        settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
+        if getattr(settings, "service", None) and settings.service.client:
+            logger(separator.format("service"))
+            settings.service.client.disconnect_sync()
+            settings.service.client = None
+
+        if settings.test_module.capabilities.checks_for_leaks:
+            settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
 
 
 separator = "".join("-" for _ in range(0, 132))
