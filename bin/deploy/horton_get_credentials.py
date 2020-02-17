@@ -10,9 +10,6 @@ from . import utilities
 import argparse
 
 
-iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
-
-
 def get_edge_ca_cert_base64():
     filename = glob.glob("/var/lib/iotedge/hsm/certs/edge_owner_ca*.pem")[0]
     cert = utilities.run_shell_command("sudo -n cat {}".format(filename))
@@ -20,6 +17,7 @@ def get_edge_ca_cert_base64():
 
 
 def populate_credentials():
+    iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
     if settings.iotedge.device_id:
         settings.iotedge.ca_cert_base64 = get_edge_ca_cert_base64()
