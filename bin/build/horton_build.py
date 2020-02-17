@@ -1,7 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information
 import os
-import docker
 import json
 import sys
 from . import docker_tags
@@ -9,6 +8,7 @@ import argparse
 import datetime
 import colorama
 from colorama import Fore
+import subprocess
 
 colorama.init(autoreset=True)
 
@@ -23,13 +23,6 @@ else:
     base_url = "unix://var/run/docker.sock"
 
 
-def get_auth_config():
-    return {
-        "username": os.environ["IOTHUB_E2E_REPO_USER"],
-        "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
-    }
-
-
 def get_dockerfile_directory(tags):
     script_dir = os.path.dirname(os.path.realpath(__file__))
     return os.path.normpath(
@@ -37,36 +30,27 @@ def get_dockerfile_directory(tags):
     )
 
 
-def print_filtered_docker_line(line):
-    try:
-        obj = json.loads(line.decode("utf-8"))
-    except Exception:
-        print("".join([i if ord(i) < 128 else "#" for i in line.decode("utf-8")]))
-    else:
-        if "status" in obj:
-            if "id" in obj:
-                if obj["status"] not in [
-                    "Waiting",
-                    "Downloading",
-                    "Verifying Checksum",
-                    "Extracting",
-                    "Preparing",
-                    "Pushing",
-                ]:
-                    print("{}: {}".format(obj["status"], obj["id"]))
-                else:
-                    pass
-            else:
-                print(obj["status"])
-        elif "error" in obj:
-            print("docker error: {}".format(line))
-            raise Exception(obj["error"])
-        elif "Step" in obj or "---" in obj:
-            print("step: {}".format(obj).strip())
-        elif obj == "\n":
-            pass
-        else:
-            print("".join([i if ord(i) < 128 else "#" for i in line.decode("utf-8")]))
+class DockerSubprocessException(Exception):
+    pass
+
+
+def run_docker_command(cmdline):
+    print(Fore.YELLOW + "running [{}]".format(cmdline))
+    with subprocess.Popen(
+        cmdline,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        shell=True,
+    ) as proc:
+        while proc.poll() is None:
+            line = proc.stdout.readline().strip()
+            if line:
+                print(line)
+        if proc.returncode:
+            raise DockerSubprocessException(
+                "docker returned {}".format(proc.returncode)
+            )
 
 
 def build_image(tags):
@@ -74,45 +58,36 @@ def build_image(tags):
     print("BUILDING IMAGE")
     print(print_separator)
 
-    api_client = docker.APIClient(base_url=base_url)
-
     build_args = {
         "HORTON_REPO": tags.repo,
         "HORTON_COMMIT_NAME": tags.commit_name,
         "HORTON_COMMIT_SHA": tags.commit_sha,
     }
+    build_arg_string = ""
+    for arg in build_args:
+        build_arg_string += "--build-arg {}={} ".format(arg, build_args[arg])
 
     if tags.image_tag_to_use_for_cache:
-        cache_from = [
-            tags.docker_full_image_name + ":" + tags.image_tag_to_use_for_cache
-        ]
-        print("using {} for cache".format(cache_from[0]))
+        cache_from_string = "--cache-from {}:{}".format(
+            tags.docker_full_image_name, tags.image_tag_to_use_for_cache
+        )
     else:
-        cache_from = []
+        cache_from_string = ""
 
     if tags.variant:
         dockerfile = "Dockerfile." + tags.variant
     else:
         dockerfile = "Dockerfile"
 
-    print(
-        Fore.YELLOW
-        + "Building image for "
-        + tags.docker_image_name
-        + " using "
-        + dockerfile
+    run_docker_command(
+        "docker build --tag {tag} --file {path}/{dockerfile} {build_arg_string} {cache_from_string} {path}".format(
+            tag=tags.docker_image_name,
+            dockerfile=dockerfile,
+            build_arg_string=build_arg_string,
+            cache_from_string=cache_from_string,
+            path=get_dockerfile_directory(tags),
+        )
     )
-    for line in api_client.build(
-        path=get_dockerfile_directory(tags),
-        tag=tags.docker_image_name,
-        buildargs=build_args,
-        cache_from=cache_from,
-        dockerfile=dockerfile,
-    ):
-        try:
-            sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
-        except KeyError:
-            print_filtered_docker_line(line)
 
 
 def tag_images(tags):
@@ -120,12 +95,14 @@ def tag_images(tags):
     print("TAGGING IMAGE")
     print(print_separator)
 
-    api_client = docker.APIClient(base_url=base_url)
-
     print("Adding tags")
     for image_tag in tags.image_tags:
         print("Adding " + image_tag)
-        api_client.tag(tags.docker_image_name, tags.docker_full_image_name, image_tag)
+        run_docker_command(
+            "docker tag {} {}:{}".format(
+                tags.docker_image_name, tags.docker_full_image_name, image_tag
+            )
+        )
 
 
 def push_images(tags):
@@ -133,20 +110,11 @@ def push_images(tags):
     print("PUSHING IMAGE")
     print(print_separator)
 
-    api_client = docker.APIClient(base_url=base_url)
-
     for image_tag in tags.image_tags:
         print("Pushing {}:{}".format(tags.docker_full_image_name, image_tag))
-        for line in api_client.push(
-            tags.docker_full_image_name,
-            image_tag,
-            stream=True,
-            auth_config=get_auth_config(),
-        ):
-            try:
-                sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
-            except Exception:
-                print_filtered_docker_line(line)
+        run_docker_command(
+            "docker push {}:{}".format(tags.docker_full_image_name, image_tag)
+        )
 
 
 def prefetch_cached_images(tags):
@@ -156,8 +124,6 @@ def prefetch_cached_images(tags):
         print(print_separator)
         tags.image_tag_to_use_for_cache = None
 
-        api_client = docker.APIClient(base_url=base_url)
-
         for image_tag in tags.image_tags:
             print(
                 Fore.YELLOW
@@ -166,20 +132,16 @@ def prefetch_cached_images(tags):
                 )
             )
             try:
-                for line in api_client.pull(
-                    tags.docker_full_image_name,
-                    image_tag,
-                    stream=True,
-                    auth_config=get_auth_config(),
-                ):
-                    print_filtered_docker_line(line)
+                run_docker_command(
+                    "docker pull {}:{}".format(tags.docker_full_image_name, image_tag)
+                )
                 tags.image_tag_to_use_for_cache = image_tag
                 print(
                     Fore.GREEN
                     + "Found {}.  Using this for image cache".format(image_tag)
                 )
                 return
-            except docker.errors.APIError:
+            except DockerSubprocessException:
                 print(Fore.YELLOW + "Image not found in repository")
 
 
