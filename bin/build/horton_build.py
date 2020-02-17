@@ -22,10 +22,12 @@ if sys.platform == "win32":
 else:
     base_url = "unix://var/run/docker.sock"
 
-auth_config = {
-    "username": os.environ["IOTHUB_E2E_REPO_USER"],
-    "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
-}
+
+def get_auth_config():
+    return {
+        "username": os.environ["IOTHUB_E2E_REPO_USER"],
+        "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
+    }
 
 
 def get_dockerfile_directory(tags):
@@ -136,7 +138,10 @@ def push_images(tags):
     for image_tag in tags.image_tags:
         print("Pushing {}:{}".format(tags.docker_full_image_name, image_tag))
         for line in api_client.push(
-            tags.docker_full_image_name, image_tag, stream=True, auth_config=auth_config
+            tags.docker_full_image_name,
+            image_tag,
+            stream=True,
+            auth_config=get_auth_config(),
         ):
             try:
                 sys.stdout.write(json.loads(line.decode("utf-8"))["stream"])
@@ -165,7 +170,7 @@ def prefetch_cached_images(tags):
                     tags.docker_full_image_name,
                     image_tag,
                     stream=True,
-                    auth_config=auth_config,
+                    auth_config=get_auth_config(),
                 ):
                     print_filtered_docker_line(line)
                 tags.image_tag_to_use_for_cache = image_tag
