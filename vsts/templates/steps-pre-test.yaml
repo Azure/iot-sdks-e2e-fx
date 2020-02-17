@@ -1,4 +1,4 @@
-:
+parameters:
   language: ''
   repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
   repo_user: $(IOTHUB-E2E-REPO-USER)
