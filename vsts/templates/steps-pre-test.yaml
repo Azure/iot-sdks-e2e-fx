@@ -1,4 +1,4 @@
-parameters:
+:
   language: ''
   repo_address: $(IOTHUB-E2E-REPO-ADDRESS)
   repo_user: $(IOTHUB-E2E-REPO-USER)
@@ -17,7 +17,7 @@ steps:
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: source $(Horton.FrameworkRoot)/bin/activate
+- script: source $(Horton.FrameworkRoot)/bin/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
@@ -43,8 +43,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - script: 
-    source $(Horton.FrameworkRoot)/bin/activate &&
-    python deploy-containers/deploy.py ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
+    $(Horton.FrameworkRoot)/bin/horton deploy ${{ parameters.deployment_type }} --image ${{ parameters.image_testMod }}
   displayName: 'Create new identites and deploy containers'
   env:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
@@ -71,13 +70,13 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script: 
-    source $(Horton.FrameworkRoot)/bin/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate_horton &&
     python pyscripts/ensure_container.py testMod
   displayName: 'Verify that testMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - script:
-    source $(Horton.FrameworkRoot)/bin/activate &&
+    source $(Horton.FrameworkRoot)/bin/activate_horton &&
     python pyscripts/ensure_container.py friendMod
   displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
@@ -87,8 +86,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
   
 - script: 
-    source $(Horton.FrameworkRoot)/bin/activate &&
-    python deploy-containers/get_credentials.py
+    $(Horton.FrameworkRoot)/bin/horton get_credentials
   displayName: 'Get credentials'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 

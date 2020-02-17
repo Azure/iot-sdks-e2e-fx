@@ -65,10 +65,9 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
 
     colorecho $_yellow "installing required python libraries"
     pip install -q --upgrade pip && \
-        pip install -q -r ${root_dir}/test-runner/requirements.txt && \
+        pip install -q -r ${root_dir}/requirements.txt && \
         pip install -q -e ${root_dir}/horton_helpers/ && \
-        pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/ && \
-        pip install -q -r ${root_dir}/pyscripts/requirements.txt
+        pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/ 
     [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
 
 else
@@ -76,6 +75,8 @@ else
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 fi
 
+export _HORTON_=1
+export PATH=$PATH:${script_dir}
 colorecho $_green "Horton environment activated"
 
 

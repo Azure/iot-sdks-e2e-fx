@@ -2,8 +2,8 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license tagsrmation.
 import os
 import docker
-import github
-from image_variants import get_default_variant
+from . import github
+from .image_variants import get_default_variant
 
 
 class DockerTags:
@@ -84,7 +84,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
 
     default_variant = get_default_variant(language)
     tags.variant = variant or default_variant
-    tags.using_default_variant = (tags.variant == default_variant)
+    tags.using_default_variant = tags.variant == default_variant
 
     """
     The importance of tags:
@@ -152,7 +152,8 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
             tags.image_tags.insert(0, "{}".format(image_tag_prefix()))
             # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2
             tags.image_tags.insert(
-                0, "{}-{}".format(image_tag_prefix(), sanitize_string(tags.repo)).lower()
+                0,
+                "{}-{}".format(image_tag_prefix(), sanitize_string(tags.repo)).lower(),
             )
             # eg: pythonv2-e2e-v3:linux-amd64-dockerv18-azureazureiotsdkpythonv2-pr59
             tags.image_tags.insert(
@@ -176,7 +177,9 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
 
         if tags.variant:
             # eg: pythonv2-e2e-v3:vsts-12345-3.7.2-slim
-            tags.image_tags.insert(0, "vsts-{}-{}".format(os.environ["BUILD_BUILDID"],tags.variant))
+            tags.image_tags.insert(
+                0, "vsts-{}-{}".format(os.environ["BUILD_BUILDID"], tags.variant)
+            )
             # eg: pythonv2-e2e-v3:linux-amd64-$dockerv18-3.7.2-slim
             tags.image_tags.insert(
                 0, "{}-{}".format(image_tag_prefix(), tags.variant).lower()
@@ -212,4 +215,3 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
     else:
         tags.image_tags.insert(0, "latest")
     return tags
-    

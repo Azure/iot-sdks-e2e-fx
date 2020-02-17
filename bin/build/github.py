@@ -8,7 +8,7 @@ def get_sha_from_commit(repo, commit):
     given a GIT repo and a commit ID, return the SHA for that commit
     """
     if not commit.startswith("refs/"):
-      commit = "refs/heads/" + commit
+        commit = "refs/heads/" + commit
     response = requests.get(
         "https://api.github.com/repos/{}/git/{}".format(repo, commit)
     )
@@ -44,4 +44,3 @@ def get_sha_url_and_ref_from_prid(repo, prid):
                 prid, repo, response.status_code, response.json()
             )
         )
-

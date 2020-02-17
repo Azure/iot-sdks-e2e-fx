@@ -30,16 +30,16 @@ if not exist %script_dir%\_virtualenv\horton\Scripts\activate.bat (
     
     echo Installing horton libraries
     pip install -q --upgrade pip && ^
-pip install -q -r %root_dir%\test-runner\requirements.txt && ^
+pip install -q -r %root_dir%\requirements.txt && ^
 pip install -q -e %root_dir%\horton_helpers\ && ^
-pip install -q -e %root_dir%\docker_images\pythonv2\wrapper\python_glue\ && ^
-pip install -q -r %root_dir%\pyscripts\requirements.txt
+pip install -q -e %root_dir%\docker_images\pythonv2\wrapper\python_glue\
     if errorlevel 1 ( echo "failed to install horton libraries" && goto :failure)
 ) else (
     call %script_dir%_virtualenv\horton\Scripts\activate.bat
     if errorlevel 1 ( echo "failed to activate virtualenv" && goto :failure)
 )
 
+set _HORTON_=1
 echo Horton environment activated
 exit /b 0
 

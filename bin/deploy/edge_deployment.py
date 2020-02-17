@@ -5,9 +5,9 @@
 import os
 from config_yaml import ConfigFile
 from horton_settings import settings
-from edge_configuration import EdgeConfiguration
+from .edge_configuration import EdgeConfiguration
 from iothub_service_helper import IoTHubServiceHelper
-import utilities
+from . import utilities
 
 iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 

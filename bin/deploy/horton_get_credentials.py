@@ -6,7 +6,8 @@ from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 import base64
 import glob
-import utilities
+from . import utilities
+import argparse
 
 
 iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
@@ -65,5 +66,20 @@ def populate_credentials():
     settings.save()
 
 
-if __name__ == "__main__":
+def get_description():
+    return "get credentials required to run tests"
+
+
+def set_command_args(parser):
+    parser.description = get_description()
+
+
+def handle_command_args(args):
     populate_credentials()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="horton_get_credentials")
+    set_command_args(parser)
+    args = parser.parse_args()
+    handle_command_args(args)

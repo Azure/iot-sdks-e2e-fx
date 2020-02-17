@@ -4,7 +4,7 @@ import os
 import docker
 import json
 import sys
-import docker_tags
+from . import docker_tags
 import argparse
 import datetime
 import colorama
@@ -14,34 +14,6 @@ colorama.init(autoreset=True)
 
 default_repo = "(Azure/azure-iot-sdk-BLAH)"
 all_languages = ["c", "csharp", "pythonv2", "node", "java"]
-
-parser = argparse.ArgumentParser(description="build docker image for testing")
-parser.add_argument(
-    "--language",
-    help="language to build",
-    type=str,
-    required=True,
-    choices=all_languages,
-)
-parser.add_argument("--repo", help="repo with source", type=str, default=default_repo)
-parser.add_argument(
-    "--commit", help="commit to apply (ref or branch)", type=str, default="master"
-)
-parser.add_argument(
-    "--variant",
-    help="Docker image variant (blank for default)",
-    type=str,
-    nargs="?",
-    const="",
-)
-args = parser.parse_args()
-
-if args.repo == default_repo:
-    if args.language == "pythonv2":
-        args.repo = "Azure/azure-iot-sdk-python"
-    else:
-        args.repo = "Azure/azure-iot-sdk-" + args.language
-    print(Fore.YELLOW + "Repo not specified.  Defaulting to " + args.repo)
 
 print_separator = "".join("/\\" for _ in range(80))
 
@@ -59,7 +31,7 @@ auth_config = {
 def get_dockerfile_directory(tags):
     script_dir = os.path.dirname(os.path.realpath(__file__))
     return os.path.normpath(
-        os.path.join(script_dir, "../docker_images/" + tags.language)
+        os.path.join(script_dir, "../../docker_images/" + tags.language)
     )
 
 
@@ -206,25 +178,69 @@ def prefetch_cached_images(tags):
                 print(Fore.YELLOW + "Image not found in repository")
 
 
-tags = docker_tags.get_docker_tags_from_commit(
-    args.language, args.repo, args.commit, args.variant
-)
+def get_description():
+    return "build docker image for testing"
 
-print(print_separator)
-print("repo = {}".format(tags.repo))
-print("commit_name = {}".format(tags.commit_name))
-print("commit_sha = {}".format(tags.commit_sha))
 
-prefetch_cached_images(tags)
-build_image(tags)
-tag_images(tags)
-push_images(tags)
-
-if not docker_tags.running_on_azure_pipelines():
-    print(Fore.GREEN + "Done.  Deploy with the following command:")
-    print(
-        Fore.GREEN
-        + "python deploy.py iotedge --image {}:{}".format(
-            tags.docker_full_image_name, tags.image_tags[0]
-        )
+def set_command_args(parser):
+    parser.description = get_description()
+    parser.add_argument(
+        "--language",
+        help="language to build",
+        type=str,
+        required=True,
+        choices=all_languages,
     )
+    parser.add_argument(
+        "--repo", help="repo with source", type=str, default=default_repo
+    )
+    parser.add_argument(
+        "--commit", help="commit to apply (ref or branch)", type=str, default="master"
+    )
+
+    parser.add_argument(
+        "--variant",
+        help="Docker image variant (blank for default)",
+        type=str,
+        nargs="?",
+        const="",
+    )
+
+
+def handle_command_args(args):
+    if args.repo == default_repo:
+        if args.language == "pythonv2":
+            args.repo = "Azure/azure-iot-sdk-python"
+        else:
+            args.repo = "Azure/azure-iot-sdk-" + args.language
+        print(Fore.YELLOW + "Repo not specified.  Defaulting to " + args.repo)
+
+    tags = docker_tags.get_docker_tags_from_commit(
+        args.language, args.repo, args.commit, args.variant
+    )
+
+    print(print_separator)
+    print("repo = {}".format(tags.repo))
+    print("commit_name = {}".format(tags.commit_name))
+    print("commit_sha = {}".format(tags.commit_sha))
+
+    prefetch_cached_images(tags)
+    build_image(tags)
+    tag_images(tags)
+    push_images(tags)
+
+    if not docker_tags.running_on_azure_pipelines():
+        print(Fore.GREEN + "Done.  Deploy with the following command:")
+        print(
+            Fore.GREEN
+            + "horton deploy iothub --image {}:{}".format(
+                tags.docker_full_image_name, tags.image_tags[0]
+            )
+        )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="horton_build")
+    set_command_args(parser)
+    args = parser.parse_args()
+    handle_command_args(args)
