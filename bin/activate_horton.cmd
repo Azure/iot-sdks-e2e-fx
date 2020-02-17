@@ -40,6 +40,7 @@ pip install -q -e %root_dir%\docker_images\pythonv2\wrapper\python_glue\
 )
 
 set _HORTON_=1
+set Path=%script_dir%;%Path%
 echo Horton environment activated
 exit /b 0
 
