@@ -4,12 +4,12 @@
 
 set script_dir=%~dp0
 
-if "%_HORTON_%" != "" (
+if "%_HORTON_%" == "" (
     call %script_dir%\activate_horton.cmd
     if errorlevel 1 ( echo "failed to activate horton" && goto :failure)
 )
 
-python ${script_dir}/horton.py $*
+python %script_dir%/horton.py %*
 if errorlevel 1 ( echo "horton.py failed" && goto :failure)
 
 exit /b 0
