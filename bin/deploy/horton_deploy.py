@@ -5,8 +5,8 @@
 from connection_string import connection_string_to_sas_token
 from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
-import edge_deployment
-import utilities
+from . import edge_deployment
+from . import utilities
 import argparse
 
 testMod_host_port = 8099
@@ -92,12 +92,22 @@ def deploy_for_iothub(testMod_image):
     settings.save()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="deploy containers for testing")
-    parser.add_argument("deployment_type", type=str, choices=["iothub", "iotedge"])
+def get_description():
+    return "deploy containers for testing"
+
+
+def set_command_args(parser):
+    parser.description = get_description()
+    parser.add_argument(
+        "deployment_type",
+        type=str,
+        choices=["iothub", "iotedge"],
+        help="type of deployment",
+    )
     parser.add_argument("--image", help="docker image to deploy", type=str)
 
-    args = parser.parse_args()
+
+def handle_command_args(args):
     image = None
     if args.image:
         image = args.image
@@ -118,3 +128,10 @@ if __name__ == "__main__":
         deploy_for_iothub(image)
     elif args.deployment_type == "iotedge":
         deploy_for_iotedge(image)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="horton_deploy")
+    set_command_args(parser)
+    args = parser.parse_args()
+    handle_command_args(args)

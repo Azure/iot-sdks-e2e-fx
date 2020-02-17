@@ -13,6 +13,7 @@ from horton_settings import settings
 def is_windows():
     return ("OS" in os.environ) and (os.environ["OS"] == "Windows_NT")
 
+
 def is_pi():
     return (not is_windows()) and (run_shell_command("uname -m")[0] == "armv7l")
 
@@ -59,13 +60,7 @@ def get_random_device_name(extension=""):
 
 
 def get_cp_from_language(language):
-    port_map = {
-        "node": 8080,
-        "c": 8082,
-        "csharp": 80,
-        "java": 8080,
-        "pythonv2": 8080,
-    }
+    port_map = {"node": 8080, "c": 8082, "csharp": 80, "java": 8080, "pythonv2": 8080}
     return port_map[language]
 
 
