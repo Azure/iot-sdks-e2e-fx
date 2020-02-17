@@ -9,8 +9,6 @@ from .edge_configuration import EdgeConfiguration
 from iothub_service_helper import IoTHubServiceHelper
 from . import utilities
 
-iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
-
 
 friendMod_container_port = 8080
 friendMod_host_port = 8098
@@ -46,6 +44,7 @@ def add_edge_modules(testMod_image):
 
 def set_edge_configuration():
     edge_config = EdgeConfiguration()
+    iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
     for obj in (settings.test_module, settings.friend_module):
         edge_config.add_module_container(
@@ -63,6 +62,7 @@ def set_edge_configuration():
 
 
 def set_config_yaml():
+    iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
     settings.iotedge.connection_string = iothub_service_helper.get_device_connection_string(
         settings.iotedge.device_id
     )
