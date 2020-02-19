@@ -1,159 +1,178 @@
-{ 
-  "connect": {
-    "put": {
-      "tags": [
-        "registry"
-      ],
-      "summary": "Connect to registry",
-      "description": "Connect to the Azure IoTHub registry.  More specifically, the SDK saves the connection string that is passed in for future use.",
-      "operationId": "Registry_Connect",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionString"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/connectResponse"
-          }
-        }
-      }
-    }
-  },
-  "disconnect": {
-    "put": {
-      "tags": [
-        "registry"
-      ],
-      "summary": "Disconnect from the registry",
-      "description": "Disconnects from the Azure IoTHub registry.  More specifically, closes all connections and cleans up all resources for the active connection",
-      "operationId": "Registry_Disconnect",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "moduleTwin": {
-    "patch": {
-      "tags": [
-        "registry"
-      ],
-      "summary": "update the module twin for the given deviceId and moduleId",
-      "operationId": "Registry_PatchModuleTwin",
-      "consumes": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/deviceId"
-        },
-        {
-          "$ref": "parameters.json#/moduleId"
-        },
-        {
-          "$ref": "parameters.json#/twin"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Azure IOT End-to-End Test Wrapper Rest Api",
+        "version": "1.0.0"
     },
-    "get": {
-      "tags": [
-        "registry"
-      ],
-      "summary": "gets the module twin for the given deviceid and moduleid",
-      "operationId": "Registry_GetModuleTwin",
-      "produces": [
+    "schemes": [
+        "https"
+    ],
+    "produces": [
         "application/json"
-      ],
-      "parameters": [
+    ],
+    "tags": [
         {
-          "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/deviceId"
-        },
-        {
-          "$ref": "parameters.json#/moduleId"
+            "name": "registry",
+            "description": "registry APIs"
         }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/twin"
-          }
+    ],
+    "paths": {
+        "/registry/connect": {
+            "put": {
+                "tags": [
+                    "registry"
+                ],
+                "summary": "Connect to registry",
+                "description": "Connect to the Azure IoTHub registry.  More specifically, the SDK saves the connection string that is passed in for future use.",
+                "operationId": "Registry_Connect",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionString"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/connectResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/registry/{connectionId}/disconnect/": {
+            "put": {
+                "tags": [
+                    "registry"
+                ],
+                "summary": "Disconnect from the registry",
+                "description": "Disconnects from the Azure IoTHub registry.  More specifically, closes all connections and cleans up all resources for the active connection",
+                "operationId": "Registry_Disconnect",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}": {
+            "patch": {
+                "tags": [
+                    "registry"
+                ],
+                "summary": "update the module twin for the given deviceId and moduleId",
+                "operationId": "Registry_PatchModuleTwin",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/deviceId"
+                    },
+                    {
+                        "$ref": "parameters.json#/moduleId"
+                    },
+                    {
+                        "$ref": "parameters.json#/twin"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "registry"
+                ],
+                "summary": "gets the module twin for the given deviceid and moduleid",
+                "operationId": "Registry_GetModuleTwin",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/deviceId"
+                    },
+                    {
+                        "$ref": "parameters.json#/moduleId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/twin"
+                        }
+                    }
+                }
+            }
+        },
+        "/registry/{connectionId}/deviceTwin/{deviceId}": {
+            "patch": {
+                "tags": [
+                    "registry"
+                ],
+                "summary": "update the device twin for the given deviceId",
+                "operationId": "Registry_PatchDeviceTwin",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/deviceId"
+                    },
+                    {
+                        "$ref": "parameters.json#/twin"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "registry"
+                ],
+                "summary": "gets the device twin for the given deviceid",
+                "operationId": "Registry_GetDeviceTwin",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/deviceId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/twin"
+                        }
+                    }
+                }
+            }
         }
-      }
     }
-  },
-  "deviceTwin": {
-    "patch": {
-      "tags": [
-        "registry"
-      ],
-      "summary": "update the device twin for the given deviceId",
-      "operationId": "Registry_PatchDeviceTwin",
-      "consumes": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/deviceId"
-        },
-        {
-          "$ref": "parameters.json#/twin"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    },
-    "get": {
-      "tags": [
-        "registry"
-      ],
-      "summary": "gets the device twin for the given deviceid",
-      "operationId": "Registry_GetDeviceTwin",
-      "produces": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/deviceId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/twin"
-          }
-        }
-      }
-    }
-  }
 }
