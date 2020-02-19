@@ -163,6 +163,11 @@ steps:
       )
 
 - script: |
+    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+  displayName: 'docker login'
+  condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+
+- script: |
     $(Horton.FrameworkRoot)/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 
