@@ -1,98 +1,117 @@
 {
-  "setDestination": {
-    "put": {
-      "tags": [
-        "net"
-      ],
-      "summary": "Set destination for net disconnect ops",
-      "operationId": "Net_SetDestination",
-      "parameters": [
+    "swagger": "2.0",
+    "info": {
+        "title": "Azure IOT End-to-End Test Wrapper Rest Api",
+        "version": "1.0.0"
+    },
+    "schemes": [
+        "https"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "tags": [
         {
-          "name": "ip",
-          "in": "path",
-          "required": true,
-          "type": "string"
+            "name": "net",
+            "description": "network control APIs"
+        }
+    ],
+    "paths": {
+        "/net/setDestination/{ip}/{transportType}": {
+            "put": {
+                "tags": [
+                    "net"
+                ],
+                "summary": "Set destination for net disconnect ops",
+                "operationId": "Net_SetDestination",
+                "parameters": [
+                    {
+                        "name": "ip",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "$ref": "parameters.json#/transportType"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         },
-        {
-          "$ref": "parameters.json#/transportType"
+        "/net/disconnect/{disconnectType}": {
+            "put": {
+                "tags": [
+                    "net"
+                ],
+                "summary": "Simulate a network disconnection",
+                "operationId": "Net_Disconnect",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/disconnectType"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/net/reconnect": {
+            "put": {
+                "tags": [
+                    "net"
+                ],
+                "summary": "Reconnect the network after a simulated network disconnection",
+                "operationId": "Net_Reconnect",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/net/disconnectAfterC2d/{disconnectType}": {
+            "put": {
+                "tags": [
+                    "net"
+                ],
+                "summary": "Simulate a disconnect after the next C2D transfer",
+                "operationId": "Net_DisconnectAfterC2d",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/disconnectType"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/net/disconnectAfterD2c/{disconnectType}": {
+            "put": {
+                "tags": [
+                    "net"
+                ],
+                "summary": "Simulate a disconnect after the next D2C transfer",
+                "operationId": "Net_DisconnectAfterD2c",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/disconnectType"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
     }
-  },
-  "disconnect": {
-    "put": {
-      "tags": [
-        "net"
-      ],
-      "summary": "Simulate a network disconnection",
-      "operationId": "Net_Disconnect",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/disconnectType"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "reconnect": {
-    "put": {
-      "tags": [
-        "net"
-      ],
-      "summary": "Reconnect the network after a simulated network disconnection",
-      "operationId": "Net_Reconnect",
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "disconnectAfterC2d": {
-    "put": {
-      "tags": [
-        "net"
-      ],
-      "summary": "Simulate a disconnect after the next C2D transfer",
-      "operationId": "Net_DisconnectAfterC2d",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/disconnectType"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "disconnectAfterD2c": {
-    "put": {
-      "tags": [
-        "net"
-      ],
-      "summary": "Simulate a disconnect after the next D2C transfer",
-      "operationId": "Net_DisconnectAfterD2c",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/disconnectType"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  }
 }

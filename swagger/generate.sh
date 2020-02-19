@@ -16,21 +16,27 @@ language="$1"
 case $language in
     pythonv2)
         swagger_language=python-flask
+        tags="net control device module"
         ;;
     java)
         swagger_language=java-vertx
+        tags="control device module service registry"
         ;;
     c)
         swagger_language=restbed
+        tags="control device module service registry"
         ;;
     csharp)
         swagger_language=aspnetcore
+        tags="control device module service registry"
         ;;
     node)
         swagger_language=nodejs-server
+        tags="control device module service registry"
         ;;
     yaml)
         swagger_language=swagger-yaml
+        tags="net control device module service registry"
         ;;
     *)
         colorecho _red "Unkonwn language: $(language)"
@@ -40,6 +46,18 @@ case $language in
 esac
 
 colorecho $_yellow "Generating wrappers for ${language} using ${swagger_language} generator"
+
+files=
+for file in ${tags}; do
+    files="$files v2/${file}.json"
+done
+
+echo python combine.py -o v2/swagger.json ${files}
+python combine.py -o v2/swagger.json ${files}
+if [ $? -ne 0 ]; then
+    colorecho $_red "failed to combine json files"
+    exit 1
+fi
 
 docker run --rm -v ${script_dir}:/local swaggerapi/swagger-codegen-cli:2.4.2 generate \
     --config /local/config_${language}.json \

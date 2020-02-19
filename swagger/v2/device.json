@@ -1,468 +1,487 @@
 {
-  "connect": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Connect to the azure IoT Hub as a device",
-      "operationId": "Device_Connect",
-      "consumes": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/transportType"
-        },
-        {
-          "$ref": "parameters.json#/connectionString"
-        },
-        {
-          "name": "caCertificate",
-          "in": "body",
-          "schema": {
-            "$ref": "definitions.json#/certificate"
-          }
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/connectResponse"
-          }
-        }
-      }
-    }
-  },
-  "disconnect": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Disconnect the device",
-      "operationId": "Device_Disconnect",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "createFromConnectionString": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Create a device client from a connection string",
-      "operationId": "Device_CreateFromConnectionString",
-      "consumes": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/transportType"
-        },
-        {
-          "$ref": "parameters.json#/connectionString"
-        },
-        {
-          "name": "caCertificate",
-          "in": "body",
-          "schema": {
-            "$ref": "definitions.json#/certificate"
-          }
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/connectResponse"
-          }
-        }
-      }
-    }
-  },
-  "createFromX509": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Create a device client from X509 credentials",
-      "operationId": "Device_CreateFromX509",
-      "consumes": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/transportType"
-        },
-        {
-          "$ref": "parameters.json#/X509"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/connectResponse"
-          }
-        }
-      }
-    }
-  },
-  "connect2": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Connect the device",
-      "operationId": "Device_Connect2",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "reconnect": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Reconnect the device",
-      "operationId": "Device_Reconnect",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/forceRenewPassword"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "disconnect2": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Disconnect the device",
-      "operationId": "Device_Disconnect2",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "destroy": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Disconnect and destroy the device client",
-      "operationId": "Device_Destroy",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "enableMethods": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Enable methods",
-      "operationId": "Device_EnableMethods",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "waitForMethodAndReturnResponse": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Wait for a method call, verify the request, and return the response.",
-      "description": "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
-      "operationId": "Device_WaitForMethodAndReturnResponse",
-      "consumes": [
-        "application/json"
-      ],
-      "produces": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/methodName"
-        },
-        {
-          "name": "requestAndResponse",
-          "in": "body",
-          "required": true,
-          "schema": {
-            "$ref": "definitions.json#/methodRequestAndResponse"
-          }
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "event": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Send an event",
-      "operationId": "Device_SendEvent",
-      "consumes": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        },
-        {
-          "$ref": "parameters.json#/eventBody"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "enableC2dMessages": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Enable c2d messages",
-      "operationId": "Device_EnableC2dMessages",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "c2dMessage": {
-    "get": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Wait for a c2d message",
-      "operationId": "Device_WaitForC2dMessage",
-      "produces": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/eventBody"
-          }
-        }
-      }
-    }
-  },
-  "enableTwin": {
-    "put": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Enable device twins",
-      "operationId": "Device_EnableTwin",
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "twin": {
-    "get": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Get the device twin",
-      "operationId": "Device_GetTwin",
-      "produces": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/twin"
-          }
-        }
-      }
+    "swagger": "2.0",
+    "info": {
+        "title": "Azure IOT End-to-End Test Wrapper Rest Api",
+        "version": "1.0.0"
     },
-    "patch": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Updates the device twin",
-      "operationId": "Device_PatchTwin",
-      "consumes": [
+    "schemes": [
+        "https"
+    ],
+    "produces": [
         "application/json"
-      ],
-      "parameters": [
+    ],
+    "tags": [
         {
-          "$ref": "parameters.json#/connectionId"
+            "name": "device",
+            "description": "DeviceClient APIs"
+        }
+    ],
+    "paths": {
+        "/device/connect/{transportType}": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Connect to the azure IoT Hub as a device",
+                "operationId": "Device_Connect",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/transportType"
+                    },
+                    {
+                        "$ref": "parameters.json#/connectionString"
+                    },
+                    {
+                        "name": "caCertificate",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "definitions.json#/certificate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/connectResponse"
+                        }
+                    }
+                }
+            }
         },
-        {
-          "$ref": "parameters.json#/twin"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK"
-        }
-      }
-    }
-  },
-  "twinDesiredPropPatch": {
-    "get": {
-      "tags": [
-        "device"
-      ],
-      "summary": "Wait for the next desired property patch",
-      "operationId": "Device_WaitForDesiredPropertiesPatch",
-      "produces": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "$ref": "definitions.json#/twin"
-          }
-        }
-      }
-    }
-  },
-  "connectionStatus": {
-    "get": {
-      "tags": [
-        "device"
-      ],
-      "summary": "get the current connection status",
-      "operationId": "Device_GetConnectionStatus",
-      "produces": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "type": "string"
-          }
-        }
-      }
-    }
-  },
-  "connectionStatusChange": {
-    "get": {
-      "tags": [
-        "device"
-      ],
-      "summary": "wait for the current connection status to change and return the changed status",
-      "operationId": "Device_WaitForConnectionStatusChange",
-      "produces": [
-        "application/json"
-      ],
-      "parameters": [
-        {
-          "$ref": "parameters.json#/connectionId"
+        "/device/{connectionId}/disconnect": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Disconnect the device",
+                "operationId": "Device_Disconnect",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         },
-        {
-          "$ref": "parameters.json#/connectionStatus"
+        "/device/createFromConnectionString/{transportType}": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Create a device client from a connection string",
+                "operationId": "Device_CreateFromConnectionString",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/transportType"
+                    },
+                    {
+                        "$ref": "parameters.json#/connectionString"
+                    },
+                    {
+                        "name": "caCertificate",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "definitions.json#/certificate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/connectResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/device/createFromX509/{transportType}": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Create a device client from X509 credentials",
+                "operationId": "Device_CreateFromX509",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/transportType"
+                    },
+                    {
+                        "$ref": "parameters.json#/X509"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/connectResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/connect2": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Connect the device",
+                "operationId": "Device_Connect2",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/reconnect": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Reconnect the device",
+                "operationId": "Device_Reconnect",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/forceRenewPassword"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/disconnect2": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Disconnect the device",
+                "operationId": "Device_Disconnect2",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/destroy": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Disconnect and destroy the device client",
+                "operationId": "Device_Destroy",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/enableMethods": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Enable methods",
+                "operationId": "Device_EnableMethods",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/waitForMethodAndReturnResponse/{methodName}": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Wait for a method call, verify the request, and return the response.",
+                "description": "This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call)",
+                "operationId": "Device_WaitForMethodAndReturnResponse",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/methodName"
+                    },
+                    {
+                        "name": "requestAndResponse",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "definitions.json#/methodRequestAndResponse"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/enableC2dMessages": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Enable c2d messages",
+                "operationId": "Device_EnableC2dMessages",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/event": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Send an event",
+                "operationId": "Device_SendEvent",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/eventBody"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/c2dMessage": {
+            "get": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Wait for a c2d message",
+                "operationId": "Device_WaitForC2dMessage",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/eventBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/enableTwin": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Enable device twins",
+                "operationId": "Device_EnableTwin",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/twin": {
+            "get": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Get the device twin",
+                "operationId": "Device_GetTwin",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/twin"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Updates the device twin",
+                "operationId": "Device_PatchTwin",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/twin"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/twinDesiredPropPatch": {
+            "get": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Wait for the next desired property patch",
+                "operationId": "Device_WaitForDesiredPropertiesPatch",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/twin"
+                        }
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/connectionStatus": {
+            "get": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "get the current connection status",
+                "operationId": "Device_GetConnectionStatus",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/connectionStatusChange": {
+            "get": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "wait for the current connection status to change and return the changed status",
+                "operationId": "Device_WaitForConnectionStatusChange",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/connectionStatus"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
-      ],
-      "responses": {
-        "200": {
-          "description": "OK",
-          "schema": {
-            "type": "string"
-          }
-        }
-      }
     }
-  }
 }

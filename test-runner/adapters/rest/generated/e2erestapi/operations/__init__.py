@@ -5,18 +5,18 @@
 # regenerated.
 # --------------------------------------------------------------------------
 
+from .net_operations import NetOperations
 from .control_operations import ControlOperations
-from .registry_operations import RegistryOperations
+from .device_operations import DeviceOperations
 from .module_operations import ModuleOperations
 from .service_operations import ServiceOperations
-from .device_operations import DeviceOperations
-from .net_operations import NetOperations
+from .registry_operations import RegistryOperations
 
 __all__ = [
-    'ControlOperations',
-    'RegistryOperations',
-    'ModuleOperations',
-    'ServiceOperations',
-    'DeviceOperations',
-    'NetOperations',
+    "NetOperations",
+    "ControlOperations",
+    "DeviceOperations",
+    "ModuleOperations",
+    "ServiceOperations",
+    "RegistryOperations",
 ]
