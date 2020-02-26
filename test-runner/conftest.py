@@ -272,6 +272,11 @@ def skip_unsupported_tests(items):
 def pytest_collection_modifyitems(config, items):
     print("")
 
+    if not settings.test_module.connection_string:
+        raise Exception(
+            "settings are missing credentials.  Please run `horton get_credentials` and try again"
+        )
+
     set_transport(config.getoption("--transport"))
     if config.getoption("--local"):
         set_local()
@@ -292,7 +297,12 @@ def pytest_collection_modifyitems(config, items):
             settings.test_module.capabilities.net_connect_app = False
             settings.test_module.skip_list.append("dropped_connection_tests")
         else:
-            settings.net_control.api = connections.get_net_control_api()
+            try:
+                settings.net_control.api = connections.get_net_control_api()
+            except Exception:
+                raise Exception(
+                    "network control server is unavailable.  Either start the server or set net_control.adapter_address to '' in _horton_settings.json"
+                )
             settings.net_control.api.reconnect_sync()
 
     skip_unsupported_tests(items)
