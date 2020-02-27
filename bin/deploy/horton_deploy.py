@@ -8,6 +8,7 @@ from horton_settings import settings
 from . import edge_deployment
 from . import utilities
 import argparse
+import os
 
 testMod_host_port = 8099
 
@@ -104,25 +105,64 @@ def set_command_args(parser):
         choices=["iothub", "iotedge"],
         help="type of deployment",
     )
-    parser.add_argument("--image", help="docker image to deploy", type=str)
+
+    target_subparsers = parser.add_subparsers(dest="target")
+
+    image_parser = target_subparsers.add_parser("image", help="deploy image")
+    image_parser.add_argument("image_name", type=str, help="image name")
+
+    target_subparsers.add_parser("keep-same", help="keep same target")
+
+    target_subparsers.add_parser("in-proc", help="deploy for in-proc debugging")
+
+    vsts_parser = target_subparsers.add_parser(
+        "vsts", help="deploy based on vsts build"
+    )
+    vsts_parser.add_argument("build_id", type=str, help="vsts build id")
+    vsts_parser.add_argument("--language", type=str, help="sdk language", required=True)
+    vsts_parser.add_argument("--variant", type=str, help="sdk variant")
+
+    lkg_parser = target_subparsers.add_parser("lkg", help="deploy based on vsts LKG")
+    lkg_parser.add_argument("--language", type=str, help="sdk language", required=True)
+    lkg_parser.add_argument("--variant", type=str, help="sdk variant")
 
 
 def handle_command_args(args):
     image = None
-    if args.image:
-        image = args.image
+    if args.target == "image":
+        image = args.image_name
         print("Using new image: {}".format(image))
-    elif settings.horton.image:
-        image = settings.horton.image
-        print("Using previous image: {}".format(image))
-    else:
-        print("No previous image.  You need to specify an image")
-        parser.usage()
-        exit(1)
+    elif args.target == "lkg":
+        if args.variant:
+            image = "{}-e2e-v3:lkg-{}".format(args.language, args.variant)
+        else:
+            image = "{}-e2e-v3:lkg".format(args.language)
+        print("Using LKG image: {}".format(image))
+    elif args.target == "vsts":
+        if args.variant:
+            image = "{}-e2e-v3:vsts-{}-{}".format(
+                args.language, args.build_id, args.variant
+            )
+        else:
+            image = "{}-e2e-v3:vsts-{}".format(args.language, args.build_id)
+        print("Using VSTS image: {}".format(image))
+    elif args.target == "keep-same":
+        if settings.horton.image:
+            image = settings.horton.image
+            print("Using previous image: {}".format(image))
+        else:
+            print("No previous image.  You need to specify an image")
+            parser.usage()
+            exit(1)
 
     utilities.get_language_from_image_name(
         image
     )  # validate image name before continuing
+
+    if "/" not in image:
+        if "IOTHUB_E2E_REPO_ADDRESS" in os.environ:
+            repo_addr = os.environ["IOTHUB_E2E_REPO_ADDRESS"]
+            image = "{}/{}".format(repo_addr, image)
 
     if args.deployment_type == "iothub":
         deploy_for_iothub(image)
