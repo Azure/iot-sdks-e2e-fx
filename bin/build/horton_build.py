@@ -200,7 +200,7 @@ def handle_command_args(args):
         print(Fore.GREEN + "Done.  Deploy with the following command:")
         print(
             Fore.GREEN
-            + "horton deploy iothub --image {}:{}".format(
+            + "horton deploy iothub image {}:{}".format(
                 tags.docker_full_image_name, tags.image_tags[0]
             )
         )

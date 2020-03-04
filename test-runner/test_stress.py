@@ -5,7 +5,9 @@
 import pytest
 import asyncio
 import datetime
+import random
 import sample_content
+from adapters import adapter_config
 from twin_tests import (
     patch_desired_props,
     wait_for_desired_properties_patch,
@@ -17,7 +19,7 @@ from horton_logging import logger
 pytestmark = pytest.mark.asyncio
 
 # how long to test for
-test_run_time = datetime.timedelta(days=0, hours=2, minutes=0)
+test_run_time = datetime.timedelta(days=0, hours=8, minutes=0)
 
 # maximum extra time to add to timeout.
 max_timeout_overage = datetime.timedelta(minutes=15)
@@ -29,12 +31,34 @@ timeout_overage = min(max_timeout_overage, test_run_time)
 test_timeout = (test_run_time + timeout_overage).total_seconds()
 
 # number of times to repeat each operation (initial)
-initial_repeats = 4
+initial_repeats = 8
 
 # number of times to repeat each operation (max)
-max_repeats = 1024
+max_repeats = 32
+
+# random seed
+random_seed = 2251226 + 1
+
+# disconnect frequency in seconds.  This defines lower and upper bounds for how often to disconnect
+disconnect_frequency = (30, 90)
+
+# disconnect duration in seconds.  This defines lower and upper bounds for how long to remain disconnected
+disconnect_duration = (30, 90)
+
+# Amount of time to wait for any particular API to complete
+api_timeout = 1800
 
 dashes = "".join(("-" for _ in range(0, 30)))
+
+
+class StressTestConfig(object):
+    test_telemetry = True
+    test_handle_method = False
+    test_invoke_module_method = False
+    test_invoke_device_method = False
+    test_desired_property_patch = False
+    test_get_twin = False
+    test_reported_properties = False
 
 
 def pretty_time(t):
@@ -52,11 +76,19 @@ class TimeLimit(object):
         self.test_run_time = test_run_time
         self.test_start_time = datetime.datetime.now()
         self.test_end_time = self.test_start_time + self.test_run_time
+        self.prefix = ""
+        self.next_change = datetime.datetime.max
+        self.error = None
 
     def is_test_done(self):
+        if self.error:
+            raise self.error
+
         logger(
-            "Remaining Time: {}".format(
-                pretty_time(self.test_end_time - datetime.datetime.now())
+            "{}: Change in {},  Remaining Time: {}".format(
+                self.prefix,
+                pretty_time(self.next_change - datetime.datetime.now()),
+                pretty_time(self.test_end_time - datetime.datetime.now()),
             )
         )
         return datetime.datetime.now() >= self.test_end_time
@@ -73,9 +105,52 @@ class TimeLimit(object):
 class StressTest(object):
     @pytest.mark.it("Run for {}".format(pretty_time(test_run_time)))
     async def test_stress(
-        self, client, eventhub, service, registry, friend, leaf_device
+        self, client, eventhub, service, registry, friend, leaf_device, net_control
     ):
+
+        adapter_config.default_api_timeout = api_timeout
+
+        random.seed(random.seed)
+
         time_limit = TimeLimit(test_run_time)
+
+        async def chaos_function():
+            nonlocal time_limit
+            try:
+                while True:
+                    t = random.randrange(*disconnect_frequency)
+                    logger("CHAOS: sleeping while connected for {} seconds".format(t))
+                    time_limit.prefix = "connected for {}".format(
+                        pretty_time(datetime.timedelta(seconds=t))
+                    )
+                    time_limit.next_change = datetime.datetime.now() + datetime.timedelta(
+                        seconds=t
+                    )
+                    await asyncio.sleep(t)
+
+                    logger("CHAOS: disconnecting")
+                    await net_control.disconnect(random.choice(["DROP", "REJECT"]))
+
+                    t = random.randrange(*disconnect_duration)
+                    time_limit.prefix = "disconnected for {}".format(
+                        pretty_time(datetime.timedelta(seconds=t))
+                    )
+                    time_limit.next_change = datetime.datetime.now() + datetime.timedelta(
+                        seconds=t
+                    )
+                    logger(
+                        "CHAOS: sleeping while disconnected for {} seconds".format(t)
+                    )
+                    await asyncio.sleep(t)
+
+                    logger("CHAOS: reconnecting")
+                    await net_control.reconnect()
+
+            except Exception as e:
+                logger("chaos_function stopped because of {}".format(e))
+                time_limit.error = e
+
+        chaos_future = asyncio.ensure_future(chaos_function())
 
         count = initial_repeats
 
@@ -85,31 +160,34 @@ class StressTest(object):
             time_limit.print_progress()
             logger(dashes)
 
-            if False:
+            if StressTestConfig.test_telemetry:
                 await self.do_test_telemetry(
                     client=client, eventhub=eventhub, count=count, time_limit=time_limit
                 )
 
                 if time_limit.is_test_done():
+                    chaos_future.cancel()
                     return
 
-            if False:
+            if StressTestConfig.test_handle_method:
                 await self.do_test_handle_method_from_service(
                     client=client, service=service, count=count, time_limit=time_limit
                 )
 
                 if time_limit.is_test_done():
+                    chaos_future.cancel()
                     return
 
-            if True:
+            if StressTestConfig.test_invoke_module_method:
                 await self.do_test_handle_method_to_friend(
                     client=client, friend=friend, count=count, time_limit=time_limit
                 )
 
                 if time_limit.is_test_done():
+                    chaos_future.cancel()
                     return
 
-            if False:
+            if StressTestConfig.test_invoke_device_method:
                 await self.do_test_handle_method_to_leaf_device(
                     client=client,
                     leaf_device=leaf_device,
@@ -118,35 +196,39 @@ class StressTest(object):
                 )
 
                 if time_limit.is_test_done():
+                    chaos_future.cancel()
                     return
 
-            if False:
+            if StressTestConfig.test_desired_property_patch:
                 await self.do_test_desired_property_patch(
                     client=client, registry=registry, count=count, time_limit=time_limit
                 )
 
                 if time_limit.is_test_done():
+                    chaos_future.cancel()
                     return
 
-            if False:
+            if StressTestConfig.test_get_twin:
                 await self.do_test_get_twin(
                     client=client, registry=registry, count=count, time_limit=time_limit
                 )
 
                 if time_limit.is_test_done():
+                    chaos_future.cancel()
                     return
 
-            if False:
+            if StressTestConfig.test_reported_properties:
                 await self.do_test_reported_properties(
                     client=client, registry=registry, count=count, time_limit=time_limit
                 )
 
                 if time_limit.is_test_done():
+                    chaos_future.cancel()
                     return
 
             count = count * 2
 
-            if count >= max_repeats:
+            if count > max_repeats:
                 count = initial_repeats
 
     async def do_test_telemetry(self, *, client, eventhub, count, time_limit):

@@ -4,11 +4,11 @@
 import logging
 import convert
 import async_helper
+import internal_control_glue
 from connection_status import ConnectionStatus
 from azure.iot.device import MethodResponse
 from azure.iot.device.aio import IoTHubDeviceClient, IoTHubModuleClient
 from azure.iot.device.common import mqtt_transport
-from azure.iot.device.iothub.auth import base_renewable_token_authentication_provider
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,8 @@ class Connect(ConnectionStatus):
         self.destroy()
 
     def create_from_connection_string(self, transport_type, connection_string, cert):
+
+        internal_control_glue.set_sas_interval()
 
         kwargs = {}
         if transport_type == "mqttws":
@@ -79,6 +81,8 @@ class ConnectFromEnvironment(object):
         async_helper.run_coroutine_sync(self.client.connect())
 
     def create_from_environment(self, transport_type):
+
+        internal_control_glue.set_sas_interval()
 
         kwargs = {}
         if transport_type == "mqttws":

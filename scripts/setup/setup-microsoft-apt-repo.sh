@@ -12,7 +12,10 @@ if [ -f /etc/apt/sources.list.d/microsoft-prod.list ]; then
 fi
 
 # Download the Microsoft repository GPG keys
-if [ $(lsb_release -is) == "Ubuntu" ]; then
+if [ $(lsb_release -is) == "LinuxMint" ] && [ $(lsb_release -rs) == "19.3" ]; then
+    curl https://packages.microsoft.com/config/ubuntu/18.04/multiarch/prod.list > ./microsoft-prod.list
+    [ $? -eq 0 ] || { colorecho $_red "curl failed"; exit 1; }
+elif [ $(lsb_release -is) == "Ubuntu" ]; then
     curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/multiarch/prod.list > ./microsoft-prod.list
     [ $? -eq 0 ] || { colorecho $_red "curl failed"; exit 1; }
 elif [ $(lsb_release -is) == "Raspbian" ]; then

@@ -1,0 +1,27 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+script_dir=$(cd "$(dirname "$0")" && pwd)
+root_dir=$(cd "${script_dir}/.." && pwd)
+
+module_list="testMod friendMod edgeHub edgeAgent"
+
+for mod in ${module_list}; do
+  echo "getting log for $mod"
+  sudo docker logs -t ${mod} &> ${mod}.log 
+  [ $? -eq 0 ] || { echo "No log for ${mod}"; }
+done
+
+echo "merging logs"
+
+args="-filterfile ${root_dir}/pyscripts/docker_log_processor_filters.json"
+for mod in ${module_list}; do
+    if [ -f ${mod}.log ]; then
+        args="${args} -staticfile ${mod}.log"
+    fi
+done
+
+python ${root_dir}/pyscripts/docker_log_processor.py $args > merged.log
+[ $? -eq 0 ] || { echo "error merging logs"; exit 1; }
+
+echo "Done.  Output is in ./merged.log"
+
