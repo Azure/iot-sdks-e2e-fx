@@ -176,13 +176,6 @@ def set_python_direct():
     set_local_net_control()
 
 
-def set_sas_renewal():
-    if settings.test_module.device_id:
-        settings.test_module.wrapper_api.set_flags_sync({"sas_renewal_interval": 60})
-    if settings.test_device.device_id:
-        settings.test_device.wrapper_api.set_flags_sync({"sas_renewal_interval": 60})
-
-
 def set_async():
     if (
         settings.test_module.device_id
@@ -296,9 +289,6 @@ def pytest_collection_modifyitems(config, items):
     add_service_settings()
     adjust_surfaces_for_missing_implementations()
     only_include_scenario_tests(items, config.getoption("--scenario"))
-
-    if "stress" in config.getoption("--scenario"):
-        set_sas_renewal()
 
     # make sure the network is connected before starting (this can happen with interrupted runs)
     if settings.test_module.capabilities.dropped_connection_tests:
