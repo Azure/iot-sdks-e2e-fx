@@ -41,6 +41,7 @@ def deploy_for_iotedge(testMod_image):
     settings.leaf_device.language = settings.test_module.language
     settings.leaf_device.host_port = settings.test_module.host_port
     settings.leaf_device.container_port = settings.test_module.container_port
+    settings.leaf_device.container_name = settings.test_module.container_name
     settings.leaf_device.object_type = "leaf_device"
 
     settings.net_control.test_destination = host

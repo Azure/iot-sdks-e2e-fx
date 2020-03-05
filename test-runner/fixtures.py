@@ -40,13 +40,16 @@ def registry():
 
 @pytest.fixture
 def friend():
-    friend_module = connections.get_module_client(settings.friend_module)
-    yield friend_module
-    logger(separator.format("friend module"))
-    try:
-        friend_module.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting friend module: {}".format(e))
+    if settings.friend_module.adapter_address:
+        friend_module = connections.get_module_client(settings.friend_module)
+        yield friend_module
+        logger(separator.format("friend module"))
+        try:
+            friend_module.disconnect_sync()
+        except Exception as e:
+            logger("exception disconnecting friend module: {}".format(e))
+    else:
+        yield None
 
 
 @pytest.fixture
@@ -62,13 +65,16 @@ def test_module():
 
 @pytest.fixture
 def leaf_device():
-    leaf_device = connections.get_device_client(settings.leaf_device)
-    yield leaf_device
-    logger(separator.format("leaf device"))
-    try:
-        leaf_device.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting leaf device: {}".format(e))
+    if settings.leaf_device.adapter_address:
+        leaf_device = connections.get_device_client(settings.leaf_device)
+        yield leaf_device
+        logger(separator.format("leaf device"))
+        try:
+            leaf_device.disconnect_sync()
+        except Exception as e:
+            logger("exception disconnecting leaf device: {}".format(e))
+    else:
+        yield None
 
 
 @pytest.fixture

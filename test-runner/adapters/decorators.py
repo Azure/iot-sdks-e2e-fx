@@ -11,6 +11,10 @@ emulate_async_executor = concurrent.futures.ThreadPoolExecutor(
     max_workers=32, thread_name_prefix="emulate_async"
 )
 
+control_api_emulate_async_executor = concurrent.futures.ThreadPoolExecutor(
+    max_workers=8, thread_name_prefix="control_api_emulate_async"
+)
+
 
 def get_running_loop():
     """
@@ -29,7 +33,8 @@ def get_running_loop():
 
 
 def emulate_async(fn):
-    """Returns a coroutine function that calls a given function with emulated asynchronous
+    """
+    Returns a coroutine function that calls a given function with emulated asynchronous
     behavior via use of mulithreading.
 
     Can be applied as a decorator.
@@ -44,6 +49,32 @@ def emulate_async(fn):
 
         return await loop.run_in_executor(
             emulate_async_executor, functools.partial(fn, *args, **kwargs)
+        )
+
+    return async_fn_wrapper
+
+
+def control_api_emulate_async(fn):
+    """
+    Returns a coroutine function that calls a given function with emulated asynchronous
+    behavior via use of mulithreading.
+
+    Control APIs have their own threadpool.  This is necessary because the emualte_async
+    threadpool can become full, especially if the network is disconencted.  We need
+    control APIs to run so we can re-connect the network in this scenario.
+
+    Can be applied as a decorator.
+
+    :param fn: The sync function to be run in async.
+    :returns: A coroutine function that will call the given sync function.
+    """
+
+    @functools.wraps(fn)
+    async def async_fn_wrapper(*args, **kwargs):
+        loop = get_running_loop()
+
+        return await loop.run_in_executor(
+            control_api_emulate_async_executor, functools.partial(fn, *args, **kwargs)
         )
 
     return async_fn_wrapper

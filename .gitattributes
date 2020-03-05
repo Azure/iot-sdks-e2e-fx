@@ -19,6 +19,7 @@ compat eol=lf
 copyright eol=lf
 format eol=lf
 rules eol=lf
+bin/* eol=lf
 
 # Denote all files that should not have line endings normalized, should not be
 # merged, and should not show in a textual diff.

@@ -31,26 +31,15 @@ mkdir -p $resultsdir
 pushd $resultsdir
 [ $? -eq 0 ] || { echo "pushd ${resultsdir} failed"; exit 1; }
 
-echo "fetching docker logs for ${module_list}"
-for mod in ${module_list}; do
-  echo "getting log for $mod"
-  sudo docker logs -t ${mod} &> ${mod}.log 
-  [ $? -eq 0 ] || { echo "error fetching logs for ${mod}"; exit 1; }
-done
+echo "fetching docker logs"
+fetch-docker-logs
+[ $? -eq 0 ] || { echo "error fetching logs"; exit 1; }
 
 if [ "${deployment_type}" -eq "iotedge" ]; then
     echo getting iotedged log
     sudo journalctl -u iotedge -n 500 -e  &> iotedged.log
     [ $? -eq 0 ] || { echo "error fetching iotedged journal"; exit 1; }
 fi
-
-echo "merging logs"
-args="-filterfile ${root_dir}/pyscripts/docker_log_processor_filters.json"
-for mod in ${module_list}; do
-    args="${args} -staticfile ${mod}.log"
-done
-python ${root_dir}/pyscripts/docker_log_processor.py $args > merged.log
-[ $? -eq 0 ] || { echo "error merging logs"; exit 1; }
 
 echo "saving original junit"
 cp "../TEST-${job_name}.xml" "./orig-TEST-${job_name}.xml"

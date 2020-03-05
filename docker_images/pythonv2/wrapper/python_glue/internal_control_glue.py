@@ -5,10 +5,22 @@ import logging
 import heap_check
 from azure.iot.device import IoTHubModuleClient
 from azure.iot.device.common.pipeline import pipeline_stages_base
+from azure.iot.device.iothub.auth import base_renewable_token_authentication_provider
 
 logger = logging.getLogger(__name__)
 
 do_async = False
+sas_renewal_interval = None
+
+# Length of time, in seconds, that a SAS token is valid for.
+ORIGINAL_DEFAULT_TOKEN_VALIDITY_PERIOD = (
+    base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD
+)
+
+# Length of time, in seconds, before a token expires that we want to begin renewing it.
+ORIGINAL_DEFAULT_TOKEN_RENEWAL_MARGIN = (
+    base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN
+)
 
 
 def log_message(msg):
@@ -20,9 +32,15 @@ def log_message(msg):
 
 def set_flags(flags):
     global do_async
+    global sas_renewal_interval
+
     logger.info("setting flags to {}".format(flags))
-    if "test_async" in flags and flags["test_async"]:
-        do_async = True
+    # Resist the tempation to use getattr.  We don't want to change flags that aren't populated.
+    if "test_async" in flags:
+        do_async = flags["test_async"]
+    if "sas_renewal_interval" in flags:
+        sas_renewal_interval = flags["sas_renewal_interval"]
+        print("Setting sas_renewal_interval to {}".format(sas_renewal_interval))
 
 
 def get_capabilities():
@@ -48,3 +66,20 @@ def send_command(cmd):
         heap_check.assert_all_iothub_objects_have_been_collected()
     else:
         raise Exception("Unsupported Command")
+
+
+def set_sas_interval():
+    global sas_renewal_interval
+    print("Using sas_renewal_interval of {}".format(sas_renewal_interval))
+    if sas_renewal_interval:
+        base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD = (
+            sas_renewal_interval
+        )
+        base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN = 10
+    else:
+        base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD = (
+            ORIGINAL_DEFAULT_TOKEN_VALIDITY_PERIOD
+        )
+        base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN = (
+            ORIGINAL_DEFAULT_TOKEN_RENEWAL_MARGIN
+        )

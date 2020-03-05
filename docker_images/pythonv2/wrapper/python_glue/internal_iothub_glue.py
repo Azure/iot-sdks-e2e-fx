@@ -36,6 +36,8 @@ class Connect(ConnectionStatus):
 
     def create_from_connection_string(self, transport_type, connection_string, cert):
 
+        internal_control_glue.set_sas_interval()
+
         kwargs = {}
         if transport_type == "mqttws":
             kwargs["websockets"] = True
@@ -87,6 +89,8 @@ class ConnectFromEnvironment(object):
         self.client.connect()
 
     def create_from_environment(self, transport_type):
+
+        internal_control_glue.set_sas_interval()
 
         kwargs = {}
         if transport_type == "mqttws":
