@@ -19,7 +19,7 @@ from horton_logging import logger
 pytestmark = pytest.mark.asyncio
 
 # how long to test for
-test_run_time = datetime.timedelta(days=0, hours=8, minutes=0)
+test_run_time = datetime.timedelta(days=0, hours=3, minutes=0)
 
 # maximum extra time to add to timeout.
 max_timeout_overage = datetime.timedelta(minutes=15)
@@ -40,25 +40,25 @@ max_repeats = 32
 random_seed = 2251226 + 1
 
 # disconnect frequency in seconds.  This defines lower and upper bounds for how often to disconnect
-disconnect_frequency = (30, 90)
+disconnect_frequency = (5, 10)
 
 # disconnect duration in seconds.  This defines lower and upper bounds for how long to remain disconnected
-disconnect_duration = (30, 90)
+disconnect_duration = (10, 11)
 
 # Amount of time to wait for any particular API to complete
-api_timeout = 1800
+api_timeout = 900
 
 dashes = "".join(("-" for _ in range(0, 30)))
 
 
 class StressTestConfig(object):
-    test_telemetry = True
+    test_telemetry = False
     test_handle_method = False
     test_invoke_module_method = False
     test_invoke_device_method = False
     test_desired_property_patch = False
-    test_get_twin = False
-    test_reported_properties = False
+    test_get_twin = True
+    test_reported_properties = True
 
 
 def pretty_time(t):
