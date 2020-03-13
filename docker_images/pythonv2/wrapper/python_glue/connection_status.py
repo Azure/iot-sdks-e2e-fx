@@ -8,6 +8,12 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionStatus(object):
+    def get_pipeline(self):
+        try:
+            return self.client._mqtt_pipeline
+        except AttributeError:
+            return self.client._iothub_pipeline
+
     def _attach_connect_event_watcher(self):
         """
         Since the iothub clients don't expose on_connected and on_disconnected events,
@@ -17,7 +23,7 @@ class ConnectionStatus(object):
         self.connected_event = Event()
         self.disconnected_event = Event()
 
-        old_on_connected = self.client._iothub_pipeline.on_connected
+        old_on_connected = self.get_pipeline().on_connected
 
         def new_on_connected():
             logger.info("new_on_connected")
@@ -25,9 +31,9 @@ class ConnectionStatus(object):
             self.connected_event.set()
             old_on_connected()
 
-        self.client._iothub_pipeline.on_connected = new_on_connected
+        self.get_pipeline().on_connected = new_on_connected
 
-        old_on_disconnected = self.client._iothub_pipeline.on_disconnected
+        old_on_disconnected = self.get_pipeline().on_disconnected
 
         def new_on_disconnected():
             logger.info("new_on_disconnected")
@@ -35,7 +41,7 @@ class ConnectionStatus(object):
             self.disconnected_event.set()
             old_on_disconnected()
 
-        self.client._iothub_pipeline.on_disconnected = new_on_disconnected
+        self.get_pipeline().on_disconnected = new_on_disconnected
 
     def get_connection_status(self):
         if self.connected:
@@ -64,7 +70,7 @@ class ConnectionStatus(object):
         # use deep knowledge of Paho internals to verify that it doesn't have any messages
         # left inflight.  Do this because we can't cancel PUBLISH, SUBSCRUBE, or UNSUBSCRIBE
         # messages and we're just assuming that they magically disappear on disconnect.
-        stage = self.client._iothub_pipeline._pipeline
+        stage = self.get_pipeline()._pipeline
         while stage:
             if getattr(stage, "transport", None):
                 return stage.transport._mqtt_client._inflight_messages
