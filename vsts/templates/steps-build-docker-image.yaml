@@ -47,28 +47,20 @@ steps:
     if (IsEmpty($LanguageToPass)) {
         if ($VariantToPass -like "node6") {
             $LanguageToPass="node"
-            $RepoToPass = "Azure/azure-iot-sdk-node"
         } elseif ($VariantToPass -like "node8") {
             $LanguageToPass="node"
-            $RepoToPass = "Azure/azure-iot-sdk-node"
         } elseif ($VariantToPass -like "node10") {
             $LanguageToPass="node"
-            $RepoToPass = "Azure/azure-iot-sdk-node"
         } elseif ($VariantToPass -like "py27") {
             $LanguageToPass="pythonv2"
-            $RepoToPass = "Azure/azure-iot-sdk-python"
         } elseif ($VariantToPass -like "py35") {
             $LanguageToPass="pythonv2"
-            $RepoToPass = "Azure/azure-iot-sdk-python"
         } elseif ($VariantToPass -like "py36") {
             $LanguageToPass="pythonv2"
-            $RepoToPass = "Azure/azure-iot-sdk-python"
         } elseif ($VariantToPass -like "py37") {
             $LanguageToPass="pythonv2"
-            $RepoToPass = "Azure/azure-iot-sdk-python"
         } elseif ($VariantToPass -like "py38") {
             $LanguageToPass="pythonv2"
-            $RepoToPass = "Azure/azure-iot-sdk-python"
         }
     }
 
