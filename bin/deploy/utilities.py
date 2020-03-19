@@ -10,6 +10,9 @@ from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 
 
+PYTHON_INPROC = "python-inproc-debugging"
+
+
 def is_windows():
     return ("OS" in os.environ) and (os.environ["OS"] == "Windows_NT")
 
@@ -65,21 +68,28 @@ def get_cp_from_language(language):
 
 
 def get_language_from_image_name(image):
-    if "default-friend-module" in image:
+    if image == PYTHON_INPROC:
+        return "pythonv2"
+    elif "default-friend-module" in image:
         return "node"
-    languages = ["pythonv2", "java", "csharp", "node", "c"]
-    for language in languages:
-        if language + "-e2e" in image:
-            return language
-    raise Exception(
-        "Error: could not determine language from image name {}".format(image)
-    )
+    else:
+        languages = ["pythonv2", "java", "csharp", "node", "c"]
+        for language in languages:
+            if language + "-e2e" in image:
+                return language
+        raise Exception(
+            "Error: could not determine language from image name {}".format(image)
+        )
 
 
 def set_args_from_image(obj, image):
     obj.language = get_language_from_image_name(image)
-    obj.container_port = get_cp_from_language(obj.language)
-    obj.adapter_address = "http://{}:{}".format("localhost", obj.host_port)
+    if image == PYTHON_INPROC:
+        obj.container_port = None
+        obj.adapter_address = "python_inproc"
+    else:
+        obj.container_port = get_cp_from_language(obj.language)
+        obj.adapter_address = "http://{}:{}".format("localhost", obj.host_port)
     obj.image = image
 
 

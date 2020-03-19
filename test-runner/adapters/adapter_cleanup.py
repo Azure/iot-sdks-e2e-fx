@@ -5,13 +5,13 @@ from . import rest
 from . import direct_azure_rest
 
 try:
-    from . import direct_python_sdk
+    from . import python_inproc
 except ModuleNotFoundError:
     # It's OK to fail this.  The import will only succeed if the use has the
     # iot sdks pip packages installed, and the import is only necessary if
     # you're actually using the pp_direct adapters.
-    print("Failed to load direct_python_sdk adapters.  Skipping.")
-    direct_python_sdk = None
+    print("Failed to load python_inproc adapters.  Skipping.")
+    python_inproc = None
 
 
 def cleanup_test_objects():
@@ -21,5 +21,5 @@ def cleanup_test_objects():
     """
     rest.cleanup_test_objects()
     direct_azure_rest.cleanup_test_objects()
-    if direct_python_sdk:
-        direct_python_sdk.cleanup_test_objects()
+    if python_inproc:
+        python_inproc.cleanup_test_objects()

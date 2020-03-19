@@ -2,8 +2,8 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from .direct_iothub_apis import ModuleApi, DeviceApi, client_object_list
-from .direct_control_api import ControlApi
+from .inproc_iothub_apis import ModuleApi, DeviceApi, client_object_list
+from .inproc_control_api import ControlApi
 
 
 def cleanup_test_objects():
