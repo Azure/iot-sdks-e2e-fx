@@ -43,7 +43,7 @@ logging.getLogger("paho").setLevel(level=logging.DEBUG)
 logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
-logging.getLogger("azure.iot.device").setLevel(level=logging.INFO)
+logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
 
 
 def pytest_addoption(parser):
@@ -286,6 +286,7 @@ def configure_network_control():
                 settings.test_module.capabilities.dropped_connection_tests = False
                 settings.test_module.capabilities.net_connect_app = False
                 settings.test_module.skip_list.append("dropped_connection_tests")
+                settings.net_control.adapter_address = None
             else:
                 settings.net_control.api.reconnect_sync()
 

@@ -29,13 +29,13 @@ def is_api_failure_exception(e):
     """
     # BKTODO: there needs to be a better adapter-specific way to map
     # wrapper exceptions into something the tests can use
-    if "azure.iot.device" in str(e.__class__):
-        return True
+    if (
+        type(e) == msrest.exceptions.ClientRequestError
+        and type(e.inner_exception) == requests.exceptions.ReadTimeout
+    ):
+        return False
     else:
-        return (
-            type(e) == msrest.exceptions.ClientRequestError
-            and type(e.inner_exception) == requests.exceptions.RetryError
-        )
+        return True
 
 
 class RegressionTests(object):
@@ -153,8 +153,8 @@ class RegressionTests(object):
             eventhub.wait_for_next_event(client.device_id, expected=small_payload)
         )
 
-        asyncio.ensure_future(client.send_event(big_payload))
-        await asyncio.sleep(1)
+        with pytest.raises(Exception):
+            await client.send_event(big_payload)
 
         await client.send_event(small_payload)
 

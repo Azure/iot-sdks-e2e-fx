@@ -116,7 +116,7 @@ def _collect():
     """
     Collect everything until there's nothing more to collect
     """
-    sleep_time = 1
+    sleep_time = 0.5
     done = False
     while not done:
         collected = gc.collect(2)
@@ -124,7 +124,6 @@ def _collect():
         if collected:
             logger.info("Sleeping for {} seconds".format(sleep_time))
             time.sleep(sleep_time)
-            sleep_time *= 2
         else:
             done = True
 
