@@ -16,7 +16,7 @@ def set_logger():
     )
 
     def print_and_log(message):
-        if settings.test_module.adapter_address != "direct_python":
+        if settings.test_module.adapter_address != "python_inproc":
             print(message)
         settings.test_module.wrapper_api.log_message_sync(message)
 

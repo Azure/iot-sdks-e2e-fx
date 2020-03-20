@@ -5,13 +5,13 @@ from . import rest
 from . import direct_azure_rest
 
 try:
-    from . import direct_python_sdk
+    from . import python_inproc
 except ModuleNotFoundError:
     # It's OK to fail this.  The import will only succeed if the use has the
     # iot sdks pip packages installed, and the import is only necessary if
     # you're actually using the pp_direct adapters.
-    print("Failed to load direct_python_sdk_adapters.  Skipping.")
-    direct_python_sdk = None
+    print("Failed to load python_inproc adapters.  Skipping.")
+    python_inproc = None
 
 
 api_surfaces = [
@@ -29,8 +29,8 @@ def create_adapter(adapter_address, api_surface):
     if api_surface not in api_surfaces:
         raise ValueError("api_surface {} invalid".format(api_surface))
 
-    if adapter_address == "direct_python":
-        return create_direct_python_adapter(api_surface)
+    if adapter_address == "python_inproc":
+        return create_python_inproc_adapter(api_surface)
     elif adapter_address == "direct_rest":
         return create_direct_azure_adapter(api_surface)
     elif adapter_address.startswith("http"):
@@ -39,15 +39,15 @@ def create_adapter(adapter_address, api_surface):
         raise ValueError("adapter_address {} invalid".format(adapter_address))
 
 
-def create_direct_python_adapter(api_surface):
+def create_python_inproc_adapter(api_surface):
     if api_surface == "module_client":
-        return direct_python_sdk.ModuleApi()
+        return python_inproc.ModuleApi()
     elif api_surface == "device_client":
-        return direct_python_sdk.DeviceApi()
+        return python_inproc.DeviceApi()
     elif api_surface == "wrapper":
-        return direct_python_sdk.ControlApi()
+        return python_inproc.ControlApi()
     else:
-        raise ValueError("direct_python adapter for {} invalid".format(api_surface))
+        raise ValueError("python_inproc adapter for {} invalid".format(api_surface))
 
 
 def create_direct_azure_adapter(api_surface):

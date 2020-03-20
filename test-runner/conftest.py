@@ -43,7 +43,7 @@ logging.getLogger("paho").setLevel(level=logging.DEBUG)
 logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
-logging.getLogger("azure.iot.device").setLevel(level=logging.INFO)
+logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
 
 
 def pytest_addoption(parser):
@@ -68,7 +68,7 @@ def pytest_addoption(parser):
         choices=["mqtt", "mqttws", "amqp", "amqpws"],
     )
     parser.addoption(
-        "--direct-python",
+        "--python_inproc",
         action="store_true",
         default=False,
         help="run tests for the pythonv2 wrapper in-proc",
@@ -165,11 +165,11 @@ def set_local():
     set_local_net_control()
 
 
-def set_python_direct():
+def set_python_inproc():
     print("Using pythonv2 wrapper in-proc")
-    settings.test_module.adapter_address = "direct_python"
-    settings.test_device.adapter_address = "direct_python"
-    settings.leaf_device.adapter_address = "direct_python"
+    settings.test_module.adapter_address = "python_inproc"
+    settings.test_device.adapter_address = "python_inproc"
+    settings.leaf_device.adapter_address = "python_inproc"
     if settings.test_module.connection_type == "environment":
         settings.test_module.connection_type = "connection_string_with_edge_gateway"
 
@@ -276,6 +276,28 @@ def skip_unsupported_tests(items):
     )
 
 
+def configure_network_control():
+    # make sure the network is connected before starting (this can happen with interrupted runs)
+    if settings.test_module.capabilities.dropped_connection_tests:
+        if not settings.net_control.adapter_address:
+            settings.test_module.capabilities.dropped_connection_tests = False
+            settings.test_module.capabilities.net_connect_app = False
+            settings.test_module.skip_list.append("dropped_connection_tests")
+        else:
+            try:
+                settings.net_control.api = connections.get_net_control_api()
+            except Exception:
+                print(
+                    "network control server is unavailable.  Either start the server or set net_control.adapter_address to '' in _horton_settings.json"
+                )
+                settings.test_module.capabilities.dropped_connection_tests = False
+                settings.test_module.capabilities.net_connect_app = False
+                settings.test_module.skip_list.append("dropped_connection_tests")
+                settings.net_control.adapter_address = None
+            else:
+                settings.net_control.api.reconnect_sync()
+
+
 def pytest_collection_modifyitems(config, items):
     print("")
 
@@ -287,8 +309,8 @@ def pytest_collection_modifyitems(config, items):
     set_transport(config.getoption("--transport"))
     if config.getoption("--local"):
         set_local()
-    if config.getoption("--direct-python"):
-        set_python_direct()
+    if config.getoption("--python_inproc"):
+        set_python_inproc()
     set_logger()
     runtime_capabilities.collect_all_capabilities()
     if config.getoption("--async"):
@@ -300,20 +322,7 @@ def pytest_collection_modifyitems(config, items):
     if "stress" in config.getoption("--scenario"):
         set_sas_renewal()
 
-    # make sure the network is connected before starting (this can happen with interrupted runs)
-    if settings.test_module.capabilities.dropped_connection_tests:
-        if not settings.net_control.adapter_address:
-            settings.test_module.capabilities.dropped_connection_tests = False
-            settings.test_module.capabilities.net_connect_app = False
-            settings.test_module.skip_list.append("dropped_connection_tests")
-        else:
-            try:
-                settings.net_control.api = connections.get_net_control_api()
-            except Exception:
-                raise Exception(
-                    "network control server is unavailable.  Either start the server or set net_control.adapter_address to '' in _horton_settings.json"
-                )
-            settings.net_control.api.reconnect_sync()
+    configure_network_control()
 
     skip_unsupported_tests(items)
 
