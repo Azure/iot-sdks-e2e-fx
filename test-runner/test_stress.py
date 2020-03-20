@@ -52,7 +52,7 @@ dashes = "".join(("-" for _ in range(0, 30)))
 
 
 class StressTestConfig(object):
-    test_telemetry = False
+    test_telemetry = True
     test_handle_method = False
     test_invoke_module_method = False
     test_invoke_device_method = False
