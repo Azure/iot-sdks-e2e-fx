@@ -92,6 +92,9 @@ def deploy_for_iothub(testMod_image):
     if testMod_image != utilities.PYTHON_INPROC:
         utilities.create_docker_container(settings.test_module)
 
+    if testMod_image == utilities.PYTHON_INPROC:
+        settings.net_control.adapter_address = "http://localhost:{}".format(settings.net_control.container_port)
+
     settings.save()
 
 
