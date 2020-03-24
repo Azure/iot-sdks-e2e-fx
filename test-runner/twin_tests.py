@@ -130,6 +130,11 @@ class TwinTests(object):
     @pytest.mark.it("Can receive desired property patches as events")
     async def test_twin_desired_props_patch(self, client, registry):
 
+        if client.settings.language == "csharp" and (
+                client.settings.transport == "amqp" or client.settings.transport == "amqpws"
+            ):
+                pytest.skip("C#1132 twin desired property updates not received in preview service API version.")
+
         await client.enable_twin()
 
         for i in range(1, 4):
