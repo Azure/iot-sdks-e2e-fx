@@ -136,6 +136,14 @@ def remove_old_instances():
     remove_instance(settings.leaf_device)
 
 
+def pull_docker_image(image):
+    run_shell_command(
+        "docker pull {image}".format(
+            image=image,
+        )
+    )
+
+
 def create_docker_container(obj):
     try_remove_container(obj.container_name)
 

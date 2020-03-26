@@ -1,4 +1,4 @@
-# Copyright (c) Microsoft. All rights reserved.
+# Copyright (c) Microsoft. All rights teserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 language=$1
@@ -12,7 +12,7 @@ case "$language" in
     ;;
 esac
 
-module=${language}Mod
+module=testMod
 status=$(docker inspect --format='{{.State.Status}}' $module)
 if [ $? -ne 0 ] || [ $status != "running" ]; then
     echo $module is not running
