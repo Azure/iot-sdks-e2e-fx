@@ -14,6 +14,8 @@ testMod_host_port = 8099
 
 
 def deploy_for_iotedge(testMod_image):
+    utilities.pull_docker_image(testMod_image)
+
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
@@ -57,6 +59,8 @@ def deploy_for_iotedge(testMod_image):
 
 
 def deploy_for_iothub(testMod_image):
+    utilities.pull_docker_image(testMod_image)
+
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
