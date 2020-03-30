@@ -16,4 +16,5 @@ ruamel.yaml>=0.15.71
 setuptools
 six
 uamqp
-urllib3
+urllib3>=1.25.8
+PyYAML>=5.3.1
