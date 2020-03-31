@@ -15,7 +15,6 @@ testMod_host_port = 8099
 
 def deploy_for_iotedge(testMod_image):
     utilities.pull_docker_image(testMod_image)
-
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
@@ -47,6 +46,7 @@ def deploy_for_iotedge(testMod_image):
     settings.leaf_device.object_type = "leaf_device"
 
     settings.net_control.test_destination = host
+    settings.net_control.adapter_address = "http://localhost:{}".format(settings.net_control.host_port)
 
     edge_deployment.set_config_yaml()
     edge_deployment.restart_iotedge()
@@ -60,7 +60,6 @@ def deploy_for_iotedge(testMod_image):
 
 def deploy_for_iothub(testMod_image):
     utilities.pull_docker_image(testMod_image)
-
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
@@ -98,6 +97,8 @@ def deploy_for_iothub(testMod_image):
 
     if testMod_image == utilities.PYTHON_INPROC:
         settings.net_control.adapter_address = "http://localhost:{}".format(settings.net_control.container_port)
+    else:
+        settings.net_control.adapter_address = "http://localhost:{}".format(settings.net_control.host_port)
 
     settings.save()
 
