@@ -58,7 +58,7 @@ class StressTestConfig(object):
     test_invoke_device_method = False
     test_desired_property_patch = False
     test_get_twin = True
-    test_reported_properties = True
+    test_reported_properties = False
 
 
 def pretty_time(t):
@@ -111,6 +111,9 @@ class StressTest(object):
         adapter_config.default_api_timeout = api_timeout
 
         random.seed(random.seed)
+
+        await client.connect2()
+        await client.disconnect2()
 
         time_limit = TimeLimit(test_run_time)
 
