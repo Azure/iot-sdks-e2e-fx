@@ -12,7 +12,7 @@ import argparse
 
 def get_edge_ca_cert_base64():
     filename = glob.glob("/var/lib/iotedge/hsm/certs/edge_owner_ca*.pem")[0]
-    cert = utilities.run_shell_command("sudo -n cat {}".format(filename))
+    cert = utilities.run_elevated_shell_command("cat {}".format(filename))
     return base64.b64encode("\n".join(cert).encode("ascii")).decode("ascii")
 
 

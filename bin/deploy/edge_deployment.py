@@ -92,4 +92,4 @@ def set_config_yaml():
 
 
 def restart_iotedge():
-    utilities.run_shell_command("sudo -n systemctl restart iotedge")
+    utilities.run_elevated_shell_command("systemctl restart iotedge")
