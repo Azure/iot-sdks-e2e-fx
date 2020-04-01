@@ -127,7 +127,7 @@ def try_remove_container(container_name):
         print("Ignoring failure")
     try:
         run_elevated_shell_command("docker rm {}".format(container_name))
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except subprocess.CalledProcessError:
         print("Ignoring failure")
 
 
@@ -135,7 +135,7 @@ def remove_old_instances():
     if not is_windows():
         try:
             run_elevated_shell_command("systemctl stop iotedge")
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, FileNotFoundError):
             print("Ignoring failure")
 
     if settings.test_module.container_name:
