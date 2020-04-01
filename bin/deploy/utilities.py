@@ -123,11 +123,11 @@ def remove_instance(settings_object):
 def try_remove_container(container_name):
     try:
         run_elevated_shell_command("docker stop {}".format(container_name))
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         print("Ignoring failure")
     try:
         run_elevated_shell_command("docker rm {}".format(container_name))
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         print("Ignoring failure")
 
 
