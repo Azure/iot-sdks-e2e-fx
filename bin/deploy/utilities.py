@@ -137,11 +137,8 @@ def remove_old_instances():
 
 
 def pull_docker_image(image):
-    run_shell_command(
-        "docker pull {image}".format(
-            image=image,
-        )
-    )
+    if image != PYTHON_INPROC:
+        run_shell_command("docker pull {image}".format(image=image))
 
 
 def create_docker_container(obj):
