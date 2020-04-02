@@ -42,7 +42,7 @@ def sudo_prefix():
 
 
 def run_elevated_shell_command(cmd):
-    run_shell_command(sudo_prefix() + cmd)
+    return run_shell_command(sudo_prefix() + cmd)
 
 
 def run_shell_command(cmd):
