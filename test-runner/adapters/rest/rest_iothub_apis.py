@@ -390,7 +390,7 @@ class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
         self.rest_endpoint_sync.config.retry_policy.retries = 0
 
         self.rest_endpoint = GeneratedAsyncApi(hostname).service
-        self.rest_endpoint.config.aio.retry_policy.retries = 0
+        self.rest_endpoint.config.retry_policy.retries = 0
 
         self.connection_id = ""
 
