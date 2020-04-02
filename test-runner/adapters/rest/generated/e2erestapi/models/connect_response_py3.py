@@ -19,6 +19,6 @@ class ConnectResponse(Model):
         'connection_id': {'key': 'connectionId', 'type': 'str'},
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, connection_id: str=None, **kwargs) -> None:
         super(ConnectResponse, self).__init__(**kwargs)
-        self.connection_id = kwargs.get('connection_id', None)
+        self.connection_id = connection_id

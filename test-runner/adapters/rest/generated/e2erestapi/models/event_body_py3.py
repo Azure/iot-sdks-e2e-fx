@@ -25,8 +25,8 @@ class EventBody(Model):
         'attributes': {'key': 'attributes', 'type': 'object'},
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, body=None, horton_flags=None, attributes=None, **kwargs) -> None:
         super(EventBody, self).__init__(**kwargs)
-        self.body = kwargs.get('body', None)
-        self.horton_flags = kwargs.get('horton_flags', None)
-        self.attributes = kwargs.get('attributes', None)
+        self.body = body
+        self.horton_flags = horton_flags
+        self.attributes = attributes

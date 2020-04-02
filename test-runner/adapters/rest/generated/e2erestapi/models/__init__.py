@@ -5,20 +5,29 @@
 # regenerated.
 # --------------------------------------------------------------------------
 
-from .log_message import LogMessage
-from .certificate import Certificate
-from .connect_response import ConnectResponse
-from .method_request_and_response import MethodRequestAndResponse
-from .event_body import EventBody
-from .twin import Twin
-from .method_invoke import MethodInvoke
+try:
+    from .log_message_py3 import LogMessage
+    from .certificate_py3 import Certificate
+    from .connect_response_py3 import ConnectResponse
+    from .method_request_and_response_py3 import MethodRequestAndResponse
+    from .event_body_py3 import EventBody
+    from .twin_py3 import Twin
+    from .method_invoke_py3 import MethodInvoke
+except (SyntaxError, ImportError):
+    from .log_message import LogMessage
+    from .certificate import Certificate
+    from .connect_response import ConnectResponse
+    from .method_request_and_response import MethodRequestAndResponse
+    from .event_body import EventBody
+    from .twin import Twin
+    from .method_invoke import MethodInvoke
 
 __all__ = [
-    "LogMessage",
-    "Certificate",
-    "ConnectResponse",
-    "MethodRequestAndResponse",
-    "EventBody",
-    "Twin",
-    "MethodInvoke",
+    'LogMessage',
+    'Certificate',
+    'ConnectResponse',
+    'MethodRequestAndResponse',
+    'EventBody',
+    'Twin',
+    'MethodInvoke',
 ]

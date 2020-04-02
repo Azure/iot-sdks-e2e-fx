@@ -30,9 +30,9 @@ class MethodInvoke(Model):
         'connect_timeout_in_seconds': {'key': 'connectTimeoutInSeconds', 'type': 'int'},
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, method_name: str=None, payload=None, response_timeout_in_seconds: int=None, connect_timeout_in_seconds: int=None, **kwargs) -> None:
         super(MethodInvoke, self).__init__(**kwargs)
-        self.method_name = kwargs.get('method_name', None)
-        self.payload = kwargs.get('payload', None)
-        self.response_timeout_in_seconds = kwargs.get('response_timeout_in_seconds', None)
-        self.connect_timeout_in_seconds = kwargs.get('connect_timeout_in_seconds', None)
+        self.method_name = method_name
+        self.payload = payload
+        self.response_timeout_in_seconds = response_timeout_in_seconds
+        self.connect_timeout_in_seconds = connect_timeout_in_seconds

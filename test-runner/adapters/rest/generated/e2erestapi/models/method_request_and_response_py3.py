@@ -27,8 +27,8 @@ class MethodRequestAndResponse(Model):
         'status_code': {'key': 'statusCode', 'type': 'int'},
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, request_payload=None, response_payload=None, status_code: int=None, **kwargs) -> None:
         super(MethodRequestAndResponse, self).__init__(**kwargs)
-        self.request_payload = kwargs.get('request_payload', None)
-        self.response_payload = kwargs.get('response_payload', None)
-        self.status_code = kwargs.get('status_code', None)
+        self.request_payload = request_payload
+        self.response_payload = response_payload
+        self.status_code = status_code

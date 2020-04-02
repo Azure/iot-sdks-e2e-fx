@@ -19,6 +19,6 @@ class Certificate(Model):
         'cert': {'key': 'cert', 'type': 'str'},
     }
 
-    def __init__(self, cert=None):
-        super(Certificate, self).__init__()
-        self.cert = cert
+    def __init__(self, **kwargs):
+        super(Certificate, self).__init__(**kwargs)
+        self.cert = kwargs.get('cert', None)

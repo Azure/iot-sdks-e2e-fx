@@ -5,7 +5,7 @@
 # regenerated.
 # --------------------------------------------------------------------------
 
-from msrest.service_client import ServiceClient
+from msrest.service_client import SDKClient
 from msrest import Configuration, Serializer, Deserializer
 from .version import VERSION
 from msrest.exceptions import HttpOperationError
@@ -26,17 +26,18 @@ class AzureIOTEndToEndTestWrapperRestApiConfiguration(Configuration):
     :param str base_url: Service URL
     """
 
-    def __init__(self, base_url=None):
+    def __init__(
+            self, base_url=None):
 
         if not base_url:
-            base_url = "http://localhost"
+            base_url = 'http://localhost'
 
         super(AzureIOTEndToEndTestWrapperRestApiConfiguration, self).__init__(base_url)
 
-        self.add_user_agent("azureiotendtoendtestwrapperrestapi/{}".format(VERSION))
+        self.add_user_agent('azureiotendtoendtestwrapperrestapi/{}'.format(VERSION))
 
 
-class AzureIOTEndToEndTestWrapperRestApi(object):
+class AzureIOTEndToEndTestWrapperRestApi(SDKClient):
     """AzureIOTEndToEndTestWrapperRestApi
 
     :ivar config: Configuration for client.
@@ -58,33 +59,26 @@ class AzureIOTEndToEndTestWrapperRestApi(object):
     :param str base_url: Service URL
     """
 
-    def __init__(self, base_url=None):
+    def __init__(
+            self, base_url=None):
 
         self.config = AzureIOTEndToEndTestWrapperRestApiConfiguration(base_url)
-        self._client = ServiceClient(None, self.config)
+        super(AzureIOTEndToEndTestWrapperRestApi, self).__init__(None, self.config)
 
-        client_models = {
-            k: v for k, v in models.__dict__.items() if isinstance(v, type)
-        }
-        self.api_version = "1.0.0"
+        client_models = {k: v for k, v in models.__dict__.items() if isinstance(v, type)}
+        self.api_version = '1.0.0'
         self._serialize = Serializer(client_models)
         self._deserialize = Deserializer(client_models)
 
         self.net = NetOperations(
-            self._client, self.config, self._serialize, self._deserialize
-        )
+            self._client, self.config, self._serialize, self._deserialize)
         self.control = ControlOperations(
-            self._client, self.config, self._serialize, self._deserialize
-        )
+            self._client, self.config, self._serialize, self._deserialize)
         self.device = DeviceOperations(
-            self._client, self.config, self._serialize, self._deserialize
-        )
+            self._client, self.config, self._serialize, self._deserialize)
         self.module = ModuleOperations(
-            self._client, self.config, self._serialize, self._deserialize
-        )
+            self._client, self.config, self._serialize, self._deserialize)
         self.service = ServiceOperations(
-            self._client, self.config, self._serialize, self._deserialize
-        )
+            self._client, self.config, self._serialize, self._deserialize)
         self.registry = RegistryOperations(
-            self._client, self.config, self._serialize, self._deserialize
-        )
+            self._client, self.config, self._serialize, self._deserialize)

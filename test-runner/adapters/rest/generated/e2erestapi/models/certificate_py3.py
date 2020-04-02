@@ -8,17 +8,17 @@
 from msrest.serialization import Model
 
 
-class LogMessage(Model):
-    """message from the test script to output to the log.
+class Certificate(Model):
+    """certificate in the body of a message.
 
-    :param message: text of message
-    :type message: str
+    :param cert: unique identifier for this connection
+    :type cert: str
     """
 
     _attribute_map = {
-        'message': {'key': 'message', 'type': 'str'},
+        'cert': {'key': 'cert', 'type': 'str'},
     }
 
-    def __init__(self, **kwargs):
-        super(LogMessage, self).__init__(**kwargs)
-        self.message = kwargs.get('message', None)
+    def __init__(self, *, cert: str=None, **kwargs) -> None:
+        super(Certificate, self).__init__(**kwargs)
+        self.cert = cert

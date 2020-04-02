@@ -22,7 +22,7 @@ class Twin(Model):
         'reported': {'key': 'reported', 'type': 'object'},
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, desired=None, reported=None, **kwargs) -> None:
         super(Twin, self).__init__(**kwargs)
-        self.desired = kwargs.get('desired', None)
-        self.reported = kwargs.get('reported', None)
+        self.desired = desired
+        self.reported = reported

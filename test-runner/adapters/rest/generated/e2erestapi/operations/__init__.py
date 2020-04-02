@@ -13,10 +13,10 @@ from .service_operations import ServiceOperations
 from .registry_operations import RegistryOperations
 
 __all__ = [
-    "NetOperations",
-    "ControlOperations",
-    "DeviceOperations",
-    "ModuleOperations",
-    "ServiceOperations",
-    "RegistryOperations",
+    'NetOperations',
+    'ControlOperations',
+    'DeviceOperations',
+    'ModuleOperations',
+    'ServiceOperations',
+    'RegistryOperations',
 ]

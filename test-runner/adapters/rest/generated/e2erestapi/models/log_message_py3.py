@@ -19,6 +19,6 @@ class LogMessage(Model):
         'message': {'key': 'message', 'type': 'str'},
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, message: str=None, **kwargs) -> None:
         super(LogMessage, self).__init__(**kwargs)
-        self.message = kwargs.get('message', None)
+        self.message = message
