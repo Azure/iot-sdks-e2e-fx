@@ -88,7 +88,7 @@ void ControlApiControlCleanupResource::PUT_method_handler(const std::shared_ptr<
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -174,7 +174,7 @@ void ControlApiControlMessageResource::PUT_method_handler(const std::shared_ptr<
 			control_glue.PrintMessage(requestBody.c_str());
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -212,7 +212,7 @@ void ControlApiControlCommandResource::PUT_method_handler(const std::shared_ptr<
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -258,7 +258,7 @@ void ControlApiControlFlagsResource::PUT_method_handler(const std::shared_ptr<re
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 

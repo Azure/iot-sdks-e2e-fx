@@ -133,7 +133,7 @@ void ServiceApiServiceConnectionIdDisconnectResource::PUT_method_handler(const s
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -289,7 +289,7 @@ void ServiceApiServiceConnectionIdSendC2dDeviceIdResource::PUT_method_handler(co
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
