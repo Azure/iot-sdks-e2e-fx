@@ -14,6 +14,8 @@ from .. import models
 class RegistryOperations(object):
     """RegistryOperations operations.
 
+    You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
+
     :param client: Client for service requests.
     :param config: Configuration of service client.
     :param serializer: An object model serializer.
@@ -71,7 +73,6 @@ class RegistryOperations(object):
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -174,7 +175,6 @@ class RegistryOperations(object):
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('Twin', response)
 
@@ -283,7 +283,6 @@ class RegistryOperations(object):
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('Twin', response)
 

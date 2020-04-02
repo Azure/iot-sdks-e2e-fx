@@ -5,56 +5,38 @@
 # regenerated.
 # --------------------------------------------------------------------------
 
-from msrest.service_client import SDKClient
-from msrest import Configuration, Serializer, Deserializer
-from .version import VERSION
+from msrest.async_client import SDKClientAsync
+from msrest import Serializer, Deserializer
+
+from .._configuration import AzureIOTEndToEndTestWrapperRestApiConfiguration
 from msrest.exceptions import HttpOperationError
-from .operations.net_operations import NetOperations
-from .operations.control_operations import ControlOperations
-from .operations.device_operations import DeviceOperations
-from .operations.module_operations import ModuleOperations
-from .operations.service_operations import ServiceOperations
-from .operations.registry_operations import RegistryOperations
-from . import models
+from .operations_async import NetOperations
+from .operations_async import ControlOperations
+from .operations_async import DeviceOperations
+from .operations_async import ModuleOperations
+from .operations_async import ServiceOperations
+from .operations_async import RegistryOperations
+from .. import models
 
 
-class AzureIOTEndToEndTestWrapperRestApiConfiguration(Configuration):
-    """Configuration for AzureIOTEndToEndTestWrapperRestApi
-    Note that all parameters used to create this instance are saved as instance
-    attributes.
-
-    :param str base_url: Service URL
-    """
-
-    def __init__(
-            self, base_url=None):
-
-        if not base_url:
-            base_url = 'http://localhost'
-
-        super(AzureIOTEndToEndTestWrapperRestApiConfiguration, self).__init__(base_url)
-
-        self.add_user_agent('azureiotendtoendtestwrapperrestapi/{}'.format(VERSION))
-
-
-class AzureIOTEndToEndTestWrapperRestApi(SDKClient):
+class AzureIOTEndToEndTestWrapperRestApi(SDKClientAsync):
     """AzureIOTEndToEndTestWrapperRestApi
 
     :ivar config: Configuration for client.
     :vartype config: AzureIOTEndToEndTestWrapperRestApiConfiguration
 
     :ivar net: Net operations
-    :vartype net: e2erestapi.operations.NetOperations
+    :vartype net: e2erestapi.aio.operations_async.NetOperations
     :ivar control: Control operations
-    :vartype control: e2erestapi.operations.ControlOperations
+    :vartype control: e2erestapi.aio.operations_async.ControlOperations
     :ivar device: Device operations
-    :vartype device: e2erestapi.operations.DeviceOperations
+    :vartype device: e2erestapi.aio.operations_async.DeviceOperations
     :ivar module: Module operations
-    :vartype module: e2erestapi.operations.ModuleOperations
+    :vartype module: e2erestapi.aio.operations_async.ModuleOperations
     :ivar service: Service operations
-    :vartype service: e2erestapi.operations.ServiceOperations
+    :vartype service: e2erestapi.aio.operations_async.ServiceOperations
     :ivar registry: Registry operations
-    :vartype registry: e2erestapi.operations.RegistryOperations
+    :vartype registry: e2erestapi.aio.operations_async.RegistryOperations
 
     :param str base_url: Service URL
     """
@@ -63,7 +45,7 @@ class AzureIOTEndToEndTestWrapperRestApi(SDKClient):
             self, base_url=None):
 
         self.config = AzureIOTEndToEndTestWrapperRestApiConfiguration(base_url)
-        super(AzureIOTEndToEndTestWrapperRestApi, self).__init__(None, self.config)
+        super(AzureIOTEndToEndTestWrapperRestApi, self).__init__(self.config)
 
         client_models = {k: v for k, v in models.__dict__.items() if isinstance(v, type)}
         self.api_version = '1.0.0'

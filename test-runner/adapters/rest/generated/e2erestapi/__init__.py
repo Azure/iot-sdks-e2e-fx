@@ -5,10 +5,11 @@
 # regenerated.
 # --------------------------------------------------------------------------
 
-from .azure_iot_end_to_end_test_wrapper_rest_api import AzureIOTEndToEndTestWrapperRestApi
-from .version import VERSION
+from ._configuration import AzureIOTEndToEndTestWrapperRestApiConfiguration
+from ._azure_iot_end_to_end_test_wrapper_rest_api import AzureIOTEndToEndTestWrapperRestApi
+__all__ = ['AzureIOTEndToEndTestWrapperRestApi', 'AzureIOTEndToEndTestWrapperRestApiConfiguration']
 
-__all__ = ['AzureIOTEndToEndTestWrapperRestApi']
+from .version import VERSION
 
 __version__ = VERSION
 

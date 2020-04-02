@@ -6,28 +6,28 @@
 # --------------------------------------------------------------------------
 
 try:
-    from .log_message_py3 import LogMessage
-    from .certificate_py3 import Certificate
-    from .connect_response_py3 import ConnectResponse
-    from .method_request_and_response_py3 import MethodRequestAndResponse
-    from .event_body_py3 import EventBody
-    from .twin_py3 import Twin
-    from .method_invoke_py3 import MethodInvoke
+    from ._models_py3 import Certificate
+    from ._models_py3 import ConnectResponse
+    from ._models_py3 import EventBody
+    from ._models_py3 import LogMessage
+    from ._models_py3 import MethodInvoke
+    from ._models_py3 import MethodRequestAndResponse
+    from ._models_py3 import Twin
 except (SyntaxError, ImportError):
-    from .log_message import LogMessage
-    from .certificate import Certificate
-    from .connect_response import ConnectResponse
-    from .method_request_and_response import MethodRequestAndResponse
-    from .event_body import EventBody
-    from .twin import Twin
-    from .method_invoke import MethodInvoke
+    from ._models import Certificate
+    from ._models import ConnectResponse
+    from ._models import EventBody
+    from ._models import LogMessage
+    from ._models import MethodInvoke
+    from ._models import MethodRequestAndResponse
+    from ._models import Twin
 
 __all__ = [
-    'LogMessage',
     'Certificate',
     'ConnectResponse',
-    'MethodRequestAndResponse',
     'EventBody',
-    'Twin',
+    'LogMessage',
     'MethodInvoke',
+    'MethodRequestAndResponse',
+    'Twin',
 ]

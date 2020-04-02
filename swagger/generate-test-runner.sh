@@ -28,7 +28,7 @@ cd swagger_generated/yaml
 mv swagger.yaml e2e-restapi.yaml
 [ $? -eq 0 ] || { echo "mv failed"; exit 1; }
 
-autorest --python --input-file=e2e-restapi.yaml
+autorest --python --input-file=e2e-restapi.yaml --use=@microsoft.azure/autorest.python@~4.0.73
 [ $? -eq 0 ] || { echo "autorest failed"; exit 1; }
 
 colorecho $_yellow "copying generated files"

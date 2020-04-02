@@ -8,11 +8,13 @@
 from msrest.pipeline import ClientRawResponse
 from msrest.exceptions import HttpOperationError
 
-from .. import models
+from ... import models
 
 
-class ModuleOperations(object):
-    """ModuleOperations operations.
+class ModuleOperations:
+    """ModuleOperations async operations.
+
+    You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
 
     :param client: Client for service requests.
     :param config: Configuration of service client.
@@ -22,7 +24,7 @@ class ModuleOperations(object):
 
     models = models
 
-    def __init__(self, client, config, serializer, deserializer):
+    def __init__(self, client, config, serializer, deserializer) -> None:
 
         self._client = client
         self._serialize = serializer
@@ -30,8 +32,8 @@ class ModuleOperations(object):
 
         self.config = config
 
-    def connect(
-            self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):
+    async def connect(
+            self, transport_type, connection_string, ca_certificate=None, *, custom_headers=None, raw=False, **operation_config):
         """Connect to the azure IoT Hub as a module.
 
         :param transport_type: Transport to use. Possible values include:
@@ -78,13 +80,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -95,8 +96,8 @@ class ModuleOperations(object):
         return deserialized
     connect.metadata = {'url': '/module/connect/{transportType}'}
 
-    def disconnect(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def disconnect(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Disconnect the module.
 
         :param connection_id: Id for the connection
@@ -128,7 +129,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -138,8 +139,8 @@ class ModuleOperations(object):
             return client_raw_response
     disconnect.metadata = {'url': '/module/{connectionId}/disconnect'}
 
-    def connect_from_environment(
-            self, transport_type, custom_headers=None, raw=False, **operation_config):
+    async def connect_from_environment(
+            self, transport_type, *, custom_headers=None, raw=False, **operation_config):
         """Connect to the azure IoT Hub as a module using the environment
         variables.
 
@@ -175,13 +176,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -192,8 +192,8 @@ class ModuleOperations(object):
         return deserialized
     connect_from_environment.metadata = {'url': '/module/connectFromEnvironment/{transportType}'}
 
-    def create_from_connection_string(
-            self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):
+    async def create_from_connection_string(
+            self, transport_type, connection_string, ca_certificate=None, *, custom_headers=None, raw=False, **operation_config):
         """Create a module client from a connection string.
 
         :param transport_type: Transport to use. Possible values include:
@@ -240,13 +240,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -257,8 +256,8 @@ class ModuleOperations(object):
         return deserialized
     create_from_connection_string.metadata = {'url': '/module/createFromConnectionstring/{transportType}'}
 
-    def create_from_environment(
-            self, transport_type, custom_headers=None, raw=False, **operation_config):
+    async def create_from_environment(
+            self, transport_type, *, custom_headers=None, raw=False, **operation_config):
         """Create a module client using the EdgeHub environment.
 
         :param transport_type: Transport to use. Possible values include:
@@ -293,13 +292,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -310,8 +308,8 @@ class ModuleOperations(object):
         return deserialized
     create_from_environment.metadata = {'url': '/module/createFromEnvironment/{transportType}'}
 
-    def create_from_x509(
-            self, transport_type, x509, custom_headers=None, raw=False, **operation_config):
+    async def create_from_x509(
+            self, transport_type, x509, *, custom_headers=None, raw=False, **operation_config):
         """Create a module client from X509 credentials.
 
         :param transport_type: Transport to use. Possible values include:
@@ -352,13 +350,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -369,8 +366,8 @@ class ModuleOperations(object):
         return deserialized
     create_from_x509.metadata = {'url': '/module/createFromX509/{transportType}'}
 
-    def connect2(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def connect2(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Connect the module.
 
         :param connection_id: Id for the connection
@@ -402,7 +399,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -412,8 +409,8 @@ class ModuleOperations(object):
             return client_raw_response
     connect2.metadata = {'url': '/module/{connectionId}/connect2'}
 
-    def reconnect(
-            self, connection_id, force_renew_password=None, custom_headers=None, raw=False, **operation_config):
+    async def reconnect(
+            self, connection_id, force_renew_password=None, *, custom_headers=None, raw=False, **operation_config):
         """Reconnect the module.
 
         :param connection_id: Id for the connection
@@ -449,7 +446,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -459,8 +456,8 @@ class ModuleOperations(object):
             return client_raw_response
     reconnect.metadata = {'url': '/module/{connectionId}/reconnect'}
 
-    def disconnect2(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def disconnect2(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Disonnect the module.
 
         :param connection_id: Id for the connection
@@ -492,7 +489,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -502,8 +499,8 @@ class ModuleOperations(object):
             return client_raw_response
     disconnect2.metadata = {'url': '/module/{connectionId}/disconnect2'}
 
-    def destroy(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def destroy(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Disonnect and destroy the module client.
 
         :param connection_id: Id for the connection
@@ -535,7 +532,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -545,8 +542,8 @@ class ModuleOperations(object):
             return client_raw_response
     destroy.metadata = {'url': '/module/{connectionId}/destroy'}
 
-    def enable_twin(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def enable_twin(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Enable module twins.
 
         :param connection_id: Id for the connection
@@ -578,7 +575,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -588,8 +585,8 @@ class ModuleOperations(object):
             return client_raw_response
     enable_twin.metadata = {'url': '/module/{connectionId}/enableTwin'}
 
-    def enable_methods(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def enable_methods(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Enable methods.
 
         :param connection_id: Id for the connection
@@ -621,7 +618,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -631,8 +628,8 @@ class ModuleOperations(object):
             return client_raw_response
     enable_methods.metadata = {'url': '/module/{connectionId}/enableMethods'}
 
-    def enable_input_messages(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def enable_input_messages(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Enable input messages.
 
         :param connection_id: Id for the connection
@@ -664,7 +661,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -674,8 +671,8 @@ class ModuleOperations(object):
             return client_raw_response
     enable_input_messages.metadata = {'url': '/module/{connectionId}/enableInputMessages'}
 
-    def get_twin(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def get_twin(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Get the device twin.
 
         :param connection_id: Id for the connection
@@ -708,13 +705,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('Twin', response)
 
@@ -725,8 +721,8 @@ class ModuleOperations(object):
         return deserialized
     get_twin.metadata = {'url': '/module/{connectionId}/twin'}
 
-    def patch_twin(
-            self, connection_id, twin, custom_headers=None, raw=False, **operation_config):
+    async def patch_twin(
+            self, connection_id, twin, *, custom_headers=None, raw=False, **operation_config):
         """Updates the device twin.
 
         :param connection_id: Id for the connection
@@ -764,7 +760,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.patch(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -774,8 +770,8 @@ class ModuleOperations(object):
             return client_raw_response
     patch_twin.metadata = {'url': '/module/{connectionId}/twin'}
 
-    def wait_for_desired_properties_patch(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def wait_for_desired_properties_patch(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Wait for the next desired property patch.
 
         :param connection_id: Id for the connection
@@ -808,13 +804,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('Twin', response)
 
@@ -825,8 +820,8 @@ class ModuleOperations(object):
         return deserialized
     wait_for_desired_properties_patch.metadata = {'url': '/module/{connectionId}/twinDesiredPropPatch'}
 
-    def send_event(
-            self, connection_id, event_body, custom_headers=None, raw=False, **operation_config):
+    async def send_event(
+            self, connection_id, event_body, *, custom_headers=None, raw=False, **operation_config):
         """Send an event.
 
         :param connection_id: Id for the connection
@@ -864,7 +859,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -874,8 +869,8 @@ class ModuleOperations(object):
             return client_raw_response
     send_event.metadata = {'url': '/module/{connectionId}/event'}
 
-    def send_output_event(
-            self, connection_id, output_name, event_body, custom_headers=None, raw=False, **operation_config):
+    async def send_output_event(
+            self, connection_id, output_name, event_body, *, custom_headers=None, raw=False, **operation_config):
         """Send an event to a module output.
 
         :param connection_id: Id for the connection
@@ -916,7 +911,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -926,8 +921,8 @@ class ModuleOperations(object):
             return client_raw_response
     send_output_event.metadata = {'url': '/module/{connectionId}/outputEvent/{outputName}'}
 
-    def wait_for_input_message(
-            self, connection_id, input_name, custom_headers=None, raw=False, **operation_config):
+    async def wait_for_input_message(
+            self, connection_id, input_name, *, custom_headers=None, raw=False, **operation_config):
         """Wait for a message on a module input.
 
         :param connection_id: Id for the connection
@@ -964,13 +959,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('EventBody', response)
 
@@ -981,8 +975,8 @@ class ModuleOperations(object):
         return deserialized
     wait_for_input_message.metadata = {'url': '/module/{connectionId}/inputMessage/{inputName}'}
 
-    def wait_for_method_and_return_response(
-            self, connection_id, method_name, request_and_response, custom_headers=None, raw=False, **operation_config):
+    async def wait_for_method_and_return_response(
+            self, connection_id, method_name, request_and_response, *, custom_headers=None, raw=False, **operation_config):
         """Wait for a method call, verify the request, and return the response.
 
         This is a workaround to deal with SDKs that only have method call
@@ -1032,7 +1026,7 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -1042,8 +1036,8 @@ class ModuleOperations(object):
             return client_raw_response
     wait_for_method_and_return_response.metadata = {'url': '/module/{connectionId}/waitForMethodAndReturnResponse/{methodName}'}
 
-    def invoke_module_method(
-            self, connection_id, device_id, module_id, method_invoke_parameters, custom_headers=None, raw=False, **operation_config):
+    async def invoke_module_method(
+            self, connection_id, device_id, module_id, method_invoke_parameters, *, custom_headers=None, raw=False, **operation_config):
         """call the given method on the given module.
 
         :param connection_id: Id for the connection
@@ -1088,13 +1082,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('object', response)
 
@@ -1105,8 +1098,8 @@ class ModuleOperations(object):
         return deserialized
     invoke_module_method.metadata = {'url': '/module/{connectionId}/moduleMethod/{deviceId}/{moduleId}'}
 
-    def invoke_device_method(
-            self, connection_id, device_id, method_invoke_parameters, custom_headers=None, raw=False, **operation_config):
+    async def invoke_device_method(
+            self, connection_id, device_id, method_invoke_parameters, *, custom_headers=None, raw=False, **operation_config):
         """call the given method on the given device.
 
         :param connection_id: Id for the connection
@@ -1148,13 +1141,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters, body_content)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('object', response)
 
@@ -1165,8 +1157,8 @@ class ModuleOperations(object):
         return deserialized
     invoke_device_method.metadata = {'url': '/module/{connectionId}/deviceMethod/{deviceId}'}
 
-    def get_connection_status(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def get_connection_status(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """get the current connection status.
 
         :param connection_id: Id for the connection
@@ -1199,13 +1191,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('str', response)
 
@@ -1216,8 +1207,8 @@ class ModuleOperations(object):
         return deserialized
     get_connection_status.metadata = {'url': '/module/{connectionId}/connectionStatus'}
 
-    def wait_for_connection_status_change(
-            self, connection_id, connection_status, custom_headers=None, raw=False, **operation_config):
+    async def wait_for_connection_status_change(
+            self, connection_id, connection_status, *, custom_headers=None, raw=False, **operation_config):
         """wait for the current connection status to change and return the changed
         status.
 
@@ -1255,13 +1246,12 @@ class ModuleOperations(object):
 
         # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('str', response)
 
