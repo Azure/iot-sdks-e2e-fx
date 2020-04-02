@@ -3,7 +3,10 @@
 # full license information.
 import json
 import time
-from .generated import e2erestapi
+from .generated.e2erestapi import AzureIOTEndToEndTestWrapperRestApi as GeneratedSyncApi
+from .generated.e2erestapi.aio import (
+    AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
+)
 from .generated.e2erestapi.models import MethodInvoke, EventBody
 from .. import adapter_config
 from .rest_decorators import log_entry_and_exit
@@ -137,9 +140,10 @@ class Twin(object):
 
     @log_entry_and_exit
     async def get_twin(self):
-        return await self.rest_endpoint.get_twin(
+        twin = await self.rest_endpoint.get_twin(
             self.connection_id, timeout=adapter_config.default_api_timeout
-        ).as_dict()
+        )
+        return twin.as_dict()
 
     @log_entry_and_exit
     async def patch_twin(self, patch):
@@ -149,9 +153,10 @@ class Twin(object):
 
     @log_entry_and_exit
     async def wait_for_desired_property_patch(self):
-        return await self.rest_endpoint.wait_for_desired_properties_patch(
+        patch = await self.rest_endpoint.wait_for_desired_properties_patch(
             self.connection_id, timeout=adapter_config.default_api_timeout
-        ).as_dict()
+        )
+        return patch.as_dict()
 
 
 class HandleMethods(object):
@@ -299,12 +304,13 @@ class C2d(object):
 class ServiceSideOfTwin(object):
     @log_entry_and_exit
     async def get_module_twin(self, device_id, module_id):
-        return await self.rest_endpoint.get_module_twin(
+        twin = await self.rest_endpoint.get_module_twin(
             self.connection_id,
             device_id,
             module_id,
             timeout=adapter_config.default_api_timeout,
-        ).as_dict()
+        )
+        return twin.as_dict()
 
     @log_entry_and_exit
     async def patch_module_twin(self, device_id, module_id, patch):
@@ -318,9 +324,10 @@ class ServiceSideOfTwin(object):
 
     @log_entry_and_exit
     async def get_device_twin(self, device_id):
-        return await self.rest_endpoint.get_device_twin(
+        twin = await self.rest_endpoint.get_device_twin(
             self.connection_id, device_id, timeout=adapter_config.default_api_timeout
-        ).as_dict()
+        )
+        return twin.as_dict()
 
     @log_entry_and_exit
     async def patch_device_twin(self, device_id, patch):
@@ -336,10 +343,12 @@ class DeviceApi(
     Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, AbstractDeviceApi
 ):
     def __init__(self, hostname):
-        self.rest_endpoint = e2erestapi.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).device
+        self.rest_endpoint_sync = GeneratedSyncApi(hostname).device
+        self.rest_endpoint_sync.config.retry_policy.retries = 0
+
+        self.rest_endpoint = GeneratedAsyncApi(hostname).device
         self.rest_endpoint.config.retry_policy.retries = 0
+
         self.connection_id = ""
 
 
@@ -355,14 +364,10 @@ class ModuleApi(
     AbstractModuleApi,
 ):
     def __init__(self, hostname):
-        self.rest_endpoint_sync = e2erestapi.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).module
+        self.rest_endpoint_sync = GeneratedSyncApi(hostname).module
         self.rest_endpoint_sync.config.retry_policy.retries = 0
 
-        self.rest_endpoint = e2erestapi.aio.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).module
+        self.rest_endpoint = GeneratedAsyncApi(hostname).module
         self.rest_endpoint.config.retry_policy.retries = 0
 
         self.connection_id = ""
@@ -370,14 +375,10 @@ class ModuleApi(
 
 class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryApi):
     def __init__(self, hostname):
-        self.rest_endpoint_sync = e2erestapi.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).registry
+        self.rest_endpoint_sync = GeneratedSyncApi(hostname).registry
         self.rest_endpoint_sync.config.retry_policy.retries = 0
 
-        self.rest_endpoint = e2erestapi.aio.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).registry
+        self.rest_endpoint = GeneratedAsyncApi(hostname).registry
         self.rest_endpoint.config.retry_policy.retries = 0
 
         self.connection_id = ""
@@ -385,14 +386,10 @@ class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryA
 
 class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
     def __init__(self, hostname):
-        self.rest_endpoint_sync = e2erestapi.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).service
+        self.rest_endpoint_sync = GeneratedSyncApi(hostname).service
         self.rest_endpoint_sync.config.retry_policy.retries = 0
 
-        self.rest_endpoint = e2erestapi.aio.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).service
+        self.rest_endpoint = GeneratedAsyncApi(hostname).service
         self.rest_endpoint.config.aio.retry_policy.retries = 0
 
         self.connection_id = ""

@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from .generated import e2erestapi
+from .generated.e2erestapi import AzureIOTEndToEndTestWrapperRestApi as GeneratedSyncApi
 import msrest
 from .. import adapter_config
 from ..abstract_control_api import AbstractControlApi
@@ -23,9 +23,7 @@ def _get_sync_rest_endpoints():
     if sync_rest_endpoints is None:
         sync_rest_endpoints = set()
         for uri in all_rest_uris:
-            sync_rest_endpoint = e2erestapi.AzureIOTEndToEndTestWrapperRestApi(
-                uri
-            ).control
+            sync_rest_endpoint = GeneratedSyncApi(uri).control
             sync_rest_endpoint.config.retry_policy.retries = 0
             sync_rest_endpoints.add(sync_rest_endpoint)
 
@@ -42,9 +40,7 @@ def cleanup_test_objects_sync():
 
 class ControlApi(AbstractControlApi):
     def __init__(self, hostname):
-        self.sync_rest_endpoint = e2erestapi.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).control
+        self.sync_rest_endpoint = GeneratedSyncApi(hostname).control
         self.sync_rest_endpoint.config.retry_policy.retries = 0
 
     def log_message_sync(self, message):

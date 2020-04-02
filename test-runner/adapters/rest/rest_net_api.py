@@ -1,7 +1,10 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from .generated import e2erestapi
+from .generated.e2erestapi import AzureIOTEndToEndTestWrapperRestApi as GeneratedSyncApi
+from .generated.e2erestapi.aio import (
+    AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
+)
 import msrest
 from .. import adapter_config
 from ..abstract_net_api import AbstractNetApi
@@ -10,14 +13,10 @@ from .rest_decorators import log_entry_and_exit
 
 class NetApi(AbstractNetApi):
     def __init__(self, hostname):
-        self.rest_endpoint = e2erestapi.aio.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).net
+        self.rest_endpoint = GeneratedAsyncApi(hostname).net
         self.rest_endpoint.config.retry_policy.retries = 0
 
-        self.rest_endpoint_sync = e2erestapi.AzureIOTEndToEndTestWrapperRestApi(
-            hostname
-        ).net
+        self.rest_endpoint_sync = GeneratedSyncApi(hostname).net
         self.rest_endpoint_sync.config.retry_policy.retries = 0
 
     @log_entry_and_exit

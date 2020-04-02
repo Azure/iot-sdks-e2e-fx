@@ -14,12 +14,12 @@ except ModuleNotFoundError:
     python_inproc = None
 
 
-def cleanup_test_objects():
+def cleanup_test_objects_sync():
     """
     Function to call into all adapter objects and perform cleanup on the test objects
     that those adapters are responsible for.
     """
-    rest.cleanup_test_objects()
-    direct_azure_rest.cleanup_test_objects()
+    rest.cleanup_test_objects_sync()
+    direct_azure_rest.cleanup_test_objects_sync()
     if python_inproc:
-        python_inproc.cleanup_test_objects()
+        python_inproc.cleanup_test_objects_sync()
