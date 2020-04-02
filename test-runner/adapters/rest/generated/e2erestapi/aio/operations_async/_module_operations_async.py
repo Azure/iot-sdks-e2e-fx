@@ -8,11 +8,13 @@
 from msrest.pipeline import ClientRawResponse
 from msrest.exceptions import HttpOperationError
 
-from .. import models
+from ... import models
 
 
-class DeviceOperations(object):
-    """DeviceOperations operations.
+class ModuleOperations:
+    """ModuleOperations async operations.
+
+    You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
 
     :param client: Client for service requests.
     :param config: Configuration of service client.
@@ -22,7 +24,7 @@ class DeviceOperations(object):
 
     models = models
 
-    def __init__(self, client, config, serializer, deserializer):
+    def __init__(self, client, config, serializer, deserializer) -> None:
 
         self._client = client
         self._serialize = serializer
@@ -30,9 +32,9 @@ class DeviceOperations(object):
 
         self.config = config
 
-    def connect(
-            self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):
-        """Connect to the azure IoT Hub as a device.
+    async def connect(
+            self, transport_type, connection_string, ca_certificate=None, *, custom_headers=None, raw=False, **operation_config):
+        """Connect to the azure IoT Hub as a module.
 
         :param transport_type: Transport to use. Possible values include:
          'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
@@ -65,6 +67,7 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
         header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
@@ -76,15 +79,13 @@ class DeviceOperations(object):
             body_content = None
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -93,11 +94,11 @@ class DeviceOperations(object):
             return client_raw_response
 
         return deserialized
-    connect.metadata = {'url': '/device/connect/{transportType}'}
+    connect.metadata = {'url': '/module/connect/{transportType}'}
 
-    def disconnect(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Disconnect the device.
+    async def disconnect(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Disconnect the module.
 
         :param connection_id: Id for the connection
         :type connection_id: str
@@ -123,13 +124,12 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -137,11 +137,64 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect.metadata = {'url': '/device/{connectionId}/disconnect'}
+    disconnect.metadata = {'url': '/module/{connectionId}/disconnect'}
 
-    def create_from_connection_string(
-            self, transport_type, connection_string, ca_certificate=None, custom_headers=None, raw=False, **operation_config):
-        """Create a device client from a connection string.
+    async def connect_from_environment(
+            self, transport_type, *, custom_headers=None, raw=False, **operation_config):
+        """Connect to the azure IoT Hub as a module using the environment
+        variables.
+
+        :param transport_type: Transport to use. Possible values include:
+         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
+        :type transport_type: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: ConnectResponse or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.ConnectResponse or
+         ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.connect_from_environment.metadata['url']
+        path_format_arguments = {
+            'transportType': self._serialize.url("transport_type", transport_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+        if response.status_code == 200:
+            deserialized = self._deserialize('ConnectResponse', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    connect_from_environment.metadata = {'url': '/module/connectFromEnvironment/{transportType}'}
+
+    async def create_from_connection_string(
+            self, transport_type, connection_string, ca_certificate=None, *, custom_headers=None, raw=False, **operation_config):
+        """Create a module client from a connection string.
 
         :param transport_type: Transport to use. Possible values include:
          'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
@@ -174,6 +227,7 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
         header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
@@ -185,15 +239,13 @@ class DeviceOperations(object):
             body_content = None
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -202,11 +254,63 @@ class DeviceOperations(object):
             return client_raw_response
 
         return deserialized
-    create_from_connection_string.metadata = {'url': '/device/createFromConnectionString/{transportType}'}
+    create_from_connection_string.metadata = {'url': '/module/createFromConnectionstring/{transportType}'}
 
-    def create_from_x509(
-            self, transport_type, x509, custom_headers=None, raw=False, **operation_config):
-        """Create a device client from X509 credentials.
+    async def create_from_environment(
+            self, transport_type, *, custom_headers=None, raw=False, **operation_config):
+        """Create a module client using the EdgeHub environment.
+
+        :param transport_type: Transport to use. Possible values include:
+         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
+        :type transport_type: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: ConnectResponse or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.ConnectResponse or
+         ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.create_from_environment.metadata['url']
+        path_format_arguments = {
+            'transportType': self._serialize.url("transport_type", transport_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+        if response.status_code == 200:
+            deserialized = self._deserialize('ConnectResponse', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    create_from_environment.metadata = {'url': '/module/createFromEnvironment/{transportType}'}
+
+    async def create_from_x509(
+            self, transport_type, x509, *, custom_headers=None, raw=False, **operation_config):
+        """Create a module client from X509 credentials.
 
         :param transport_type: Transport to use. Possible values include:
          'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
@@ -236,6 +340,7 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
         header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
@@ -244,15 +349,13 @@ class DeviceOperations(object):
         body_content = self._serialize.body(x509, 'object')
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -261,11 +364,11 @@ class DeviceOperations(object):
             return client_raw_response
 
         return deserialized
-    create_from_x509.metadata = {'url': '/device/createFromX509/{transportType}'}
+    create_from_x509.metadata = {'url': '/module/createFromX509/{transportType}'}
 
-    def connect2(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Connect the device.
+    async def connect2(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Connect the module.
 
         :param connection_id: Id for the connection
         :type connection_id: str
@@ -291,13 +394,12 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -305,11 +407,11 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    connect2.metadata = {'url': '/device/{connectionId}/connect2'}
+    connect2.metadata = {'url': '/module/{connectionId}/connect2'}
 
-    def reconnect(
-            self, connection_id, force_renew_password=None, custom_headers=None, raw=False, **operation_config):
-        """Reconnect the device.
+    async def reconnect(
+            self, connection_id, force_renew_password=None, *, custom_headers=None, raw=False, **operation_config):
+        """Reconnect the module.
 
         :param connection_id: Id for the connection
         :type connection_id: str
@@ -339,13 +441,12 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -353,11 +454,11 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    reconnect.metadata = {'url': '/device/{connectionId}/reconnect'}
+    reconnect.metadata = {'url': '/module/{connectionId}/reconnect'}
 
-    def disconnect2(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Disconnect the device.
+    async def disconnect2(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Disonnect the module.
 
         :param connection_id: Id for the connection
         :type connection_id: str
@@ -383,13 +484,12 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -397,11 +497,11 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect2.metadata = {'url': '/device/{connectionId}/disconnect2'}
+    disconnect2.metadata = {'url': '/module/{connectionId}/disconnect2'}
 
-    def destroy(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Disconnect and destroy the device client.
+    async def destroy(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Disonnect and destroy the module client.
 
         :param connection_id: Id for the connection
         :type connection_id: str
@@ -427,13 +527,12 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -441,10 +540,53 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    destroy.metadata = {'url': '/device/{connectionId}/destroy'}
+    destroy.metadata = {'url': '/module/{connectionId}/destroy'}
 
-    def enable_methods(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def enable_twin(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Enable module twins.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.enable_twin.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    enable_twin.metadata = {'url': '/module/{connectionId}/enableTwin'}
+
+    async def enable_methods(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Enable methods.
 
         :param connection_id: Id for the connection
@@ -471,13 +613,12 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -485,10 +626,357 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    enable_methods.metadata = {'url': '/device/{connectionId}/enableMethods'}
+    enable_methods.metadata = {'url': '/module/{connectionId}/enableMethods'}
 
-    def wait_for_method_and_return_response(
-            self, connection_id, method_name, request_and_response, custom_headers=None, raw=False, **operation_config):
+    async def enable_input_messages(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Enable input messages.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.enable_input_messages.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    enable_input_messages.metadata = {'url': '/module/{connectionId}/enableInputMessages'}
+
+    async def get_twin(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Get the device twin.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.get_twin.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+        if response.status_code == 200:
+            deserialized = self._deserialize('Twin', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    get_twin.metadata = {'url': '/module/{connectionId}/twin'}
+
+    async def patch_twin(
+            self, connection_id, twin, *, custom_headers=None, raw=False, **operation_config):
+        """Updates the device twin.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param twin:
+        :type twin: ~e2erestapi.models.Twin
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.patch_twin.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        body_content = self._serialize.body(twin, 'Twin')
+
+        # Construct and send request
+        request = self._client.patch(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    patch_twin.metadata = {'url': '/module/{connectionId}/twin'}
+
+    async def wait_for_desired_properties_patch(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
+        """Wait for the next desired property patch.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.wait_for_desired_properties_patch.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+        if response.status_code == 200:
+            deserialized = self._deserialize('Twin', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    wait_for_desired_properties_patch.metadata = {'url': '/module/{connectionId}/twinDesiredPropPatch'}
+
+    async def send_event(
+            self, connection_id, event_body, *, custom_headers=None, raw=False, **operation_config):
+        """Send an event.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param event_body:
+        :type event_body: ~e2erestapi.models.EventBody
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.send_event.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        body_content = self._serialize.body(event_body, 'EventBody')
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    send_event.metadata = {'url': '/module/{connectionId}/event'}
+
+    async def send_output_event(
+            self, connection_id, output_name, event_body, *, custom_headers=None, raw=False, **operation_config):
+        """Send an event to a module output.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param output_name:
+        :type output_name: str
+        :param event_body:
+        :type event_body: ~e2erestapi.models.EventBody
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.send_output_event.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'outputName': self._serialize.url("output_name", output_name, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct body
+        body_content = self._serialize.body(event_body, 'EventBody')
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    send_output_event.metadata = {'url': '/module/{connectionId}/outputEvent/{outputName}'}
+
+    async def wait_for_input_message(
+            self, connection_id, input_name, *, custom_headers=None, raw=False, **operation_config):
+        """Wait for a message on a module input.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param input_name:
+        :type input_name: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: EventBody or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.EventBody or
+         ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.wait_for_input_message.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'inputName': self._serialize.url("input_name", input_name, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+        if response.status_code == 200:
+            deserialized = self._deserialize('EventBody', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    wait_for_input_message.metadata = {'url': '/module/{connectionId}/inputMessage/{inputName}'}
+
+    async def wait_for_method_and_return_response(
+            self, connection_id, method_name, request_and_response, *, custom_headers=None, raw=False, **operation_config):
         """Wait for a method call, verify the request, and return the response.
 
         This is a workaround to deal with SDKs that only have method call
@@ -537,9 +1025,8 @@ class DeviceOperations(object):
         body_content = self._serialize.body(request_and_response, 'MethodRequestAndResponse')
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -547,28 +1034,36 @@ class DeviceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    wait_for_method_and_return_response.metadata = {'url': '/device/{connectionId}/waitForMethodAndReturnResponse/{methodName}'}
+    wait_for_method_and_return_response.metadata = {'url': '/module/{connectionId}/waitForMethodAndReturnResponse/{methodName}'}
 
-    def enable_c2d_messages(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Enable c2d messages.
+    async def invoke_module_method(
+            self, connection_id, device_id, module_id, method_invoke_parameters, *, custom_headers=None, raw=False, **operation_config):
+        """call the given method on the given module.
 
         :param connection_id: Id for the connection
         :type connection_id: str
+        :param device_id:
+        :type device_id: str
+        :param module_id:
+        :type module_id: str
+        :param method_invoke_parameters:
+        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :return: object or ClientRawResponse if raw=true
+        :rtype: object or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.enable_c2d_messages.metadata['url']
+        url = self.invoke_module_method.metadata['url']
         path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'deviceId': self._serialize.url("device_id", device_id, 'str'),
+            'moduleId': self._serialize.url("module_id", module_id, 'str')
         }
         url = self._client.format_url(url, **path_format_arguments)
 
@@ -577,144 +1072,57 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    enable_c2d_messages.metadata = {'url': '/device/{connectionId}/enableC2dMessages'}
-
-    def send_event(
-            self, connection_id, event_body, custom_headers=None, raw=False, **operation_config):
-        """Send an event.
-
-        :param connection_id: Id for the connection
-        :type connection_id: str
-        :param event_body:
-        :type event_body: ~e2erestapi.models.EventBody
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.send_event.metadata['url']
-        path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
         header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(event_body, 'EventBody')
+        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    send_event.metadata = {'url': '/device/{connectionId}/event'}
-
-    def wait_for_c2d_message(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Wait for a c2d message.
-
-        :param connection_id: Id for the connection
-        :type connection_id: str
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: EventBody or ClientRawResponse if raw=true
-        :rtype: ~e2erestapi.models.EventBody or
-         ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.wait_for_c2d_message.metadata['url']
-        path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
-            deserialized = self._deserialize('EventBody', response)
+            deserialized = self._deserialize('object', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
             return client_raw_response
 
         return deserialized
-    wait_for_c2d_message.metadata = {'url': '/device/{connectionId}/c2dMessage'}
+    invoke_module_method.metadata = {'url': '/module/{connectionId}/moduleMethod/{deviceId}/{moduleId}'}
 
-    def enable_twin(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Enable device twins.
+    async def invoke_device_method(
+            self, connection_id, device_id, method_invoke_parameters, *, custom_headers=None, raw=False, **operation_config):
+        """call the given method on the given device.
 
         :param connection_id: Id for the connection
         :type connection_id: str
+        :param device_id:
+        :type device_id: str
+        :param method_invoke_parameters:
+        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :return: object or ClientRawResponse if raw=true
+        :rtype: object or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.enable_twin.metadata['url']
+        url = self.invoke_device_method.metadata['url']
         path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'deviceId': self._serialize.url("device_id", device_id, 'str')
         }
         url = self._client.format_url(url, **path_format_arguments)
 
@@ -723,176 +1131,34 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    enable_twin.metadata = {'url': '/device/{connectionId}/enableTwin'}
-
-    def get_twin(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Get the device twin.
-
-        :param connection_id: Id for the connection
-        :type connection_id: str
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: Twin or ClientRawResponse if raw=true
-        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.get_twin.metadata['url']
-        path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        deserialized = None
-
-        if response.status_code == 200:
-            deserialized = self._deserialize('Twin', response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(deserialized, response)
-            return client_raw_response
-
-        return deserialized
-    get_twin.metadata = {'url': '/device/{connectionId}/twin'}
-
-    def patch_twin(
-            self, connection_id, twin, custom_headers=None, raw=False, **operation_config):
-        """Updates the device twin.
-
-        :param connection_id: Id for the connection
-        :type connection_id: str
-        :param twin:
-        :type twin: ~e2erestapi.models.Twin
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.patch_twin.metadata['url']
-        path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
         header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(twin, 'Twin')
+        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
 
         # Construct and send request
-        request = self._client.patch(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    patch_twin.metadata = {'url': '/device/{connectionId}/twin'}
-
-    def wait_for_desired_properties_patch(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Wait for the next desired property patch.
-
-        :param connection_id: Id for the connection
-        :type connection_id: str
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: Twin or ClientRawResponse if raw=true
-        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.wait_for_desired_properties_patch.metadata['url']
-        path_format_arguments = {
-            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
-        }
-        url = self._client.format_url(url, **path_format_arguments)
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
-            deserialized = self._deserialize('Twin', response)
+            deserialized = self._deserialize('object', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
             return client_raw_response
 
         return deserialized
-    wait_for_desired_properties_patch.metadata = {'url': '/device/{connectionId}/twinDesiredPropPatch'}
+    invoke_device_method.metadata = {'url': '/module/{connectionId}/deviceMethod/{deviceId}'}
 
-    def get_connection_status(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def get_connection_status(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """get the current connection status.
 
         :param connection_id: Id for the connection
@@ -919,19 +1185,18 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        header_parameters['Accept'] = 'application/json'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('str', response)
 
@@ -940,10 +1205,10 @@ class DeviceOperations(object):
             return client_raw_response
 
         return deserialized
-    get_connection_status.metadata = {'url': '/device/{connectionId}/connectionStatus'}
+    get_connection_status.metadata = {'url': '/module/{connectionId}/connectionStatus'}
 
-    def wait_for_connection_status_change(
-            self, connection_id, connection_status, custom_headers=None, raw=False, **operation_config):
+    async def wait_for_connection_status_change(
+            self, connection_id, connection_status, *, custom_headers=None, raw=False, **operation_config):
         """wait for the current connection status to change and return the changed
         status.
 
@@ -975,19 +1240,18 @@ class DeviceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        header_parameters['Accept'] = 'application/json'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('str', response)
 
@@ -996,4 +1260,4 @@ class DeviceOperations(object):
             return client_raw_response
 
         return deserialized
-    wait_for_connection_status_change.metadata = {'url': '/device/{connectionId}/connectionStatusChange'}
+    wait_for_connection_status_change.metadata = {'url': '/module/{connectionId}/connectionStatusChange'}

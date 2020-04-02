@@ -11,8 +11,10 @@ from msrest.exceptions import HttpOperationError
 from .. import models
 
 
-class ControlOperations(object):
-    """ControlOperations operations.
+class NetOperations(object):
+    """NetOperations operations.
+
+    You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
 
     :param client: Client for service requests.
     :param config: Configuration of service client.
@@ -30,54 +32,100 @@ class ControlOperations(object):
 
         self.config = config
 
-    def get_capabilities(
+    def set_destination(
+            self, ip, transport_type, custom_headers=None, raw=False, **operation_config):
+        """Set destination for net disconnect ops.
+
+        :param ip:
+        :type ip: str
+        :param transport_type: Transport to use. Possible values include:
+         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
+        :type transport_type: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.set_destination.metadata['url']
+        path_format_arguments = {
+            'ip': self._serialize.url("ip", ip, 'str'),
+            'transportType': self._serialize.url("transport_type", transport_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    set_destination.metadata = {'url': '/net/setDestination/{ip}/{transportType}'}
+
+    def disconnect(
+            self, disconnect_type, custom_headers=None, raw=False, **operation_config):
+        """Simulate a network disconnection.
+
+        :param disconnect_type: disconnect method for dropped connection
+         tests. Possible values include: 'DROP', 'REJECT'
+        :type disconnect_type: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.disconnect.metadata['url']
+        path_format_arguments = {
+            'disconnectType': self._serialize.url("disconnect_type", disconnect_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    disconnect.metadata = {'url': '/net/disconnect/{disconnectType}'}
+
+    def reconnect(
             self, custom_headers=None, raw=False, **operation_config):
-        """Get capabilities for the objects in this server.
-
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: object or ClientRawResponse if raw=true
-        :rtype: object or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.get_capabilities.metadata['url']
-
-        # Construct parameters
-        query_parameters = {}
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        deserialized = None
-
-        if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(deserialized, response)
-            return client_raw_response
-
-        return deserialized
-    get_capabilities.metadata = {'url': '/control/capabilities'}
-
-    def cleanup(
-            self, custom_headers=None, raw=False, **operation_config):
-        """verify that the clients have cleaned themselves up completely.
+        """Reconnect the network after a simulated network disconnection.
 
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
@@ -90,20 +138,19 @@ class ControlOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.cleanup.metadata['url']
+        url = self.reconnect.metadata['url']
 
         # Construct parameters
         query_parameters = {}
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -111,14 +158,15 @@ class ControlOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    cleanup.metadata = {'url': '/control/cleanup'}
+    reconnect.metadata = {'url': '/net/reconnect'}
 
-    def log_message_method(
-            self, log_message, custom_headers=None, raw=False, **operation_config):
-        """log a message to output.
+    def disconnect_after_c2d(
+            self, disconnect_type, custom_headers=None, raw=False, **operation_config):
+        """Simulate a disconnect after the next C2D transfer.
 
-        :param log_message:
-        :type log_message: ~e2erestapi.models.LogMessage
+        :param disconnect_type: disconnect method for dropped connection
+         tests. Possible values include: 'DROP', 'REJECT'
+        :type disconnect_type: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -130,24 +178,23 @@ class ControlOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.log_message_method.metadata['url']
+        url = self.disconnect_after_c2d.metadata['url']
+        path_format_arguments = {
+            'disconnectType': self._serialize.url("disconnect_type", disconnect_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
 
         # Construct parameters
         query_parameters = {}
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
-        # Construct body
-        body_content = self._serialize.body(log_message, 'LogMessage')
-
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -155,14 +202,15 @@ class ControlOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    log_message_method.metadata = {'url': '/control/message'}
+    disconnect_after_c2d.metadata = {'url': '/net/disconnectAfterC2d/{disconnectType}'}
 
-    def set_flags(
-            self, flags, custom_headers=None, raw=False, **operation_config):
-        """set flags for the objects in this server to use.
+    def disconnect_after_d2c(
+            self, disconnect_type, custom_headers=None, raw=False, **operation_config):
+        """Simulate a disconnect after the next D2C transfer.
 
-        :param flags:
-        :type flags: object
+        :param disconnect_type: disconnect method for dropped connection
+         tests. Possible values include: 'DROP', 'REJECT'
+        :type disconnect_type: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -174,24 +222,23 @@ class ControlOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.set_flags.metadata['url']
+        url = self.disconnect_after_d2c.metadata['url']
+        path_format_arguments = {
+            'disconnectType': self._serialize.url("disconnect_type", disconnect_type, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
 
         # Construct parameters
         query_parameters = {}
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
-        # Construct body
-        body_content = self._serialize.body(flags, 'object')
-
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -199,45 +246,4 @@ class ControlOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    set_flags.metadata = {'url': '/control/flags'}
-
-    def send_command(
-            self, cmd, custom_headers=None, raw=False, **operation_config):
-        """send an arbitrary command.
-
-        :param cmd: command string
-        :type cmd: str
-        :param dict custom_headers: headers that will be added to the request
-        :param bool raw: returns the direct response alongside the
-         deserialized response
-        :param operation_config: :ref:`Operation configuration
-         overrides<msrest:optionsforoperations>`.
-        :return: None or ClientRawResponse if raw=true
-        :rtype: None or ~msrest.pipeline.ClientRawResponse
-        :raises:
-         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
-        """
-        # Construct URL
-        url = self.send_command.metadata['url']
-
-        # Construct parameters
-        query_parameters = {}
-        query_parameters['cmd'] = self._serialize.query("cmd", cmd, 'str')
-
-        # Construct headers
-        header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
-        if custom_headers:
-            header_parameters.update(custom_headers)
-
-        # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
-
-        if response.status_code not in [200]:
-            raise HttpOperationError(self._deserialize, response)
-
-        if raw:
-            client_raw_response = ClientRawResponse(None, response)
-            return client_raw_response
-    send_command.metadata = {'url': '/control/command'}
+    disconnect_after_d2c.metadata = {'url': '/net/disconnectAfterD2c/{disconnectType}'}

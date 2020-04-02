@@ -3,9 +3,7 @@
 # full license information.
 import json
 import time
-from .generated.e2erestapi.azure_iot_end_to_end_test_wrapper_rest_api import (
-    AzureIOTEndToEndTestWrapperRestApi,
-)
+from .generated.e2erestapi import AzureIOTEndToEndTestWrapperRestApi
 from .generated.e2erestapi.models import MethodInvoke, EventBody
 from .. import adapter_config
 from .rest_decorators import log_entry_and_exit

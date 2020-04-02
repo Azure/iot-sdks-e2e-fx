@@ -11,8 +11,10 @@ from msrest.exceptions import HttpOperationError
 from .. import models
 
 
-class ServiceOperations(object):
-    """ServiceOperations operations.
+class RegistryOperations(object):
+    """RegistryOperations operations.
+
+    You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
 
     :param client: Client for service requests.
     :param config: Configuration of service client.
@@ -32,9 +34,9 @@ class ServiceOperations(object):
 
     def connect(
             self, connection_string, custom_headers=None, raw=False, **operation_config):
-        """Connect to service.
+        """Connect to registry.
 
-        Connect to the Azure IoTHub service.  More specifically, the SDK saves
+        Connect to the Azure IoTHub registry.  More specifically, the SDK saves
         the connection string that is passed in for future use.
 
         :param connection_string: connection string
@@ -59,19 +61,18 @@ class ServiceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        header_parameters['Accept'] = 'application/json'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -80,13 +81,13 @@ class ServiceOperations(object):
             return client_raw_response
 
         return deserialized
-    connect.metadata = {'url': '/service/connect'}
+    connect.metadata = {'url': '/registry/connect'}
 
     def disconnect(
             self, connection_id, custom_headers=None, raw=False, **operation_config):
-        """Disconnect from the service.
+        """Disconnect from the registry.
 
-        Disconnects from the Azure IoTHub service.  More specifically, closes
+        Disconnects from the Azure IoTHub registry.  More specifically, closes
         all connections and cleans up all resources for the active connection.
 
         :param connection_id: Id for the connection
@@ -113,13 +114,12 @@ class ServiceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -127,11 +127,11 @@ class ServiceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect.metadata = {'url': '/service/{connectionId}/disconnect/'}
+    disconnect.metadata = {'url': '/registry/{connectionId}/disconnect/'}
 
-    def invoke_module_method(
-            self, connection_id, device_id, module_id, method_invoke_parameters, custom_headers=None, raw=False, **operation_config):
-        """call the given method on the given module.
+    def get_module_twin(
+            self, connection_id, device_id, module_id, custom_headers=None, raw=False, **operation_config):
+        """gets the module twin for the given deviceid and moduleid.
 
         :param connection_id: Id for the connection
         :type connection_id: str
@@ -139,20 +139,76 @@ class ServiceOperations(object):
         :type device_id: str
         :param module_id:
         :type module_id: str
-        :param method_invoke_parameters:
-        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: object or ClientRawResponse if raw=true
-        :rtype: object or ~msrest.pipeline.ClientRawResponse
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.invoke_module_method.metadata['url']
+        url = self.get_module_twin.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
+            'deviceId': self._serialize.url("device_id", device_id, 'str'),
+            'moduleId': self._serialize.url("module_id", module_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+        if response.status_code == 200:
+            deserialized = self._deserialize('Twin', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    get_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}
+
+    def patch_module_twin(
+            self, connection_id, device_id, module_id, twin, custom_headers=None, raw=False, **operation_config):
+        """update the module twin for the given deviceId and moduleId.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param device_id:
+        :type device_id: str
+        :param module_id:
+        :type module_id: str
+        :param twin:
+        :type twin: ~e2erestapi.models.Twin
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.patch_module_twin.metadata['url']
         path_format_arguments = {
             'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
             'deviceId': self._serialize.url("device_id", device_id, 'str'),
@@ -170,50 +226,40 @@ class ServiceOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
+        body_content = self._serialize.body(twin, 'Twin')
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.patch(url, query_parameters, header_parameters, body_content)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
-        deserialized = None
-
-        if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
-
         if raw:
-            client_raw_response = ClientRawResponse(deserialized, response)
+            client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
+    patch_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}
 
-        return deserialized
-    invoke_module_method.metadata = {'url': '/service/{connectionId}/moduleMethod/{deviceId}/{moduleId}'}
-
-    def invoke_device_method(
-            self, connection_id, device_id, method_invoke_parameters, custom_headers=None, raw=False, **operation_config):
-        """call the given method on the given device.
+    def get_device_twin(
+            self, connection_id, device_id, custom_headers=None, raw=False, **operation_config):
+        """gets the device twin for the given deviceid.
 
         :param connection_id: Id for the connection
         :type connection_id: str
         :param device_id:
         :type device_id: str
-        :param method_invoke_parameters:
-        :type method_invoke_parameters: ~e2erestapi.models.MethodInvoke
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
         :param operation_config: :ref:`Operation configuration
          overrides<msrest:optionsforoperations>`.
-        :return: object or ClientRawResponse if raw=true
-        :rtype: object or ~msrest.pipeline.ClientRawResponse
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.Twin or ~msrest.pipeline.ClientRawResponse
         :raises:
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.invoke_device_method.metadata['url']
+        url = self.get_device_twin.metadata['url']
         path_format_arguments = {
             'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
             'deviceId': self._serialize.url("device_id", device_id, 'str')
@@ -225,43 +271,38 @@ class ServiceOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        header_parameters['Accept'] = 'application/json'
         if custom_headers:
             header_parameters.update(custom_headers)
 
-        # Construct body
-        body_content = self._serialize.body(method_invoke_parameters, 'MethodInvoke')
-
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
+            deserialized = self._deserialize('Twin', response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
             return client_raw_response
 
         return deserialized
-    invoke_device_method.metadata = {'url': '/service/{connectionId}/deviceMethod/{deviceId}'}
+    get_device_twin.metadata = {'url': '/registry/{connectionId}/deviceTwin/{deviceId}'}
 
-    def send_c2d(
-            self, connection_id, device_id, event_body, custom_headers=None, raw=False, **operation_config):
-        """Send a c2d message.
+    def patch_device_twin(
+            self, connection_id, device_id, twin, custom_headers=None, raw=False, **operation_config):
+        """update the device twin for the given deviceId.
 
         :param connection_id: Id for the connection
         :type connection_id: str
         :param device_id:
         :type device_id: str
-        :param event_body:
-        :type event_body: ~e2erestapi.models.EventBody
+        :param twin:
+        :type twin: ~e2erestapi.models.Twin
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
          deserialized response
@@ -273,7 +314,7 @@ class ServiceOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.send_c2d.metadata['url']
+        url = self.patch_device_twin.metadata['url']
         path_format_arguments = {
             'connectionId': self._serialize.url("connection_id", connection_id, 'str'),
             'deviceId': self._serialize.url("device_id", device_id, 'str')
@@ -290,12 +331,11 @@ class ServiceOperations(object):
             header_parameters.update(custom_headers)
 
         # Construct body
-        body_content = self._serialize.body(event_body, 'EventBody')
+        body_content = self._serialize.body(twin, 'Twin')
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.patch(url, query_parameters, header_parameters, body_content)
+        response = self._client.send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -303,4 +343,4 @@ class ServiceOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    send_c2d.metadata = {'url': '/service/{connectionId}/sendC2d/{deviceId}'}
+    patch_device_twin.metadata = {'url': '/registry/{connectionId}/deviceTwin/{deviceId}'}

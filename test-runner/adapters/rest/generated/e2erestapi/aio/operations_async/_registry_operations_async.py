@@ -8,11 +8,13 @@
 from msrest.pipeline import ClientRawResponse
 from msrest.exceptions import HttpOperationError
 
-from .. import models
+from ... import models
 
 
-class RegistryOperations(object):
-    """RegistryOperations operations.
+class RegistryOperations:
+    """RegistryOperations async operations.
+
+    You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
 
     :param client: Client for service requests.
     :param config: Configuration of service client.
@@ -22,7 +24,7 @@ class RegistryOperations(object):
 
     models = models
 
-    def __init__(self, client, config, serializer, deserializer):
+    def __init__(self, client, config, serializer, deserializer) -> None:
 
         self._client = client
         self._serialize = serializer
@@ -30,8 +32,8 @@ class RegistryOperations(object):
 
         self.config = config
 
-    def connect(
-            self, connection_string, custom_headers=None, raw=False, **operation_config):
+    async def connect(
+            self, connection_string, *, custom_headers=None, raw=False, **operation_config):
         """Connect to registry.
 
         Connect to the Azure IoTHub registry.  More specifically, the SDK saves
@@ -59,19 +61,18 @@ class RegistryOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        header_parameters['Accept'] = 'application/json'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('ConnectResponse', response)
 
@@ -82,8 +83,8 @@ class RegistryOperations(object):
         return deserialized
     connect.metadata = {'url': '/registry/connect'}
 
-    def disconnect(
-            self, connection_id, custom_headers=None, raw=False, **operation_config):
+    async def disconnect(
+            self, connection_id, *, custom_headers=None, raw=False, **operation_config):
         """Disconnect from the registry.
 
         Disconnects from the Azure IoTHub registry.  More specifically, closes
@@ -113,13 +114,12 @@ class RegistryOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.put(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -129,8 +129,8 @@ class RegistryOperations(object):
             return client_raw_response
     disconnect.metadata = {'url': '/registry/{connectionId}/disconnect/'}
 
-    def get_module_twin(
-            self, connection_id, device_id, module_id, custom_headers=None, raw=False, **operation_config):
+    async def get_module_twin(
+            self, connection_id, device_id, module_id, *, custom_headers=None, raw=False, **operation_config):
         """gets the module twin for the given deviceid and moduleid.
 
         :param connection_id: Id for the connection
@@ -163,19 +163,18 @@ class RegistryOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        header_parameters['Accept'] = 'application/json'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('Twin', response)
 
@@ -186,8 +185,8 @@ class RegistryOperations(object):
         return deserialized
     get_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}
 
-    def patch_module_twin(
-            self, connection_id, device_id, module_id, twin, custom_headers=None, raw=False, **operation_config):
+    async def patch_module_twin(
+            self, connection_id, device_id, module_id, twin, *, custom_headers=None, raw=False, **operation_config):
         """update the module twin for the given deviceId and moduleId.
 
         :param connection_id: Id for the connection
@@ -230,9 +229,8 @@ class RegistryOperations(object):
         body_content = self._serialize.body(twin, 'Twin')
 
         # Construct and send request
-        request = self._client.patch(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.patch(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -242,8 +240,8 @@ class RegistryOperations(object):
             return client_raw_response
     patch_module_twin.metadata = {'url': '/registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}'}
 
-    def get_device_twin(
-            self, connection_id, device_id, custom_headers=None, raw=False, **operation_config):
+    async def get_device_twin(
+            self, connection_id, device_id, *, custom_headers=None, raw=False, **operation_config):
         """gets the device twin for the given deviceid.
 
         :param connection_id: Id for the connection
@@ -273,19 +271,18 @@ class RegistryOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Content-Type'] = 'application/json; charset=utf-8'
+        header_parameters['Accept'] = 'application/json'
         if custom_headers:
             header_parameters.update(custom_headers)
 
         # Construct and send request
-        request = self._client.get(url, query_parameters)
-        response = self._client.send(request, header_parameters, stream=False, **operation_config)
+        request = self._client.get(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
-
         if response.status_code == 200:
             deserialized = self._deserialize('Twin', response)
 
@@ -296,8 +293,8 @@ class RegistryOperations(object):
         return deserialized
     get_device_twin.metadata = {'url': '/registry/{connectionId}/deviceTwin/{deviceId}'}
 
-    def patch_device_twin(
-            self, connection_id, device_id, twin, custom_headers=None, raw=False, **operation_config):
+    async def patch_device_twin(
+            self, connection_id, device_id, twin, *, custom_headers=None, raw=False, **operation_config):
         """update the device twin for the given deviceId.
 
         :param connection_id: Id for the connection
@@ -337,9 +334,8 @@ class RegistryOperations(object):
         body_content = self._serialize.body(twin, 'Twin')
 
         # Construct and send request
-        request = self._client.patch(url, query_parameters)
-        response = self._client.send(
-            request, header_parameters, body_content, stream=False, **operation_config)
+        request = self._client.patch(url, query_parameters, header_parameters, body_content)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
