@@ -153,7 +153,7 @@ steps:
     }
 
     # parameters for local
-    if $(PythonInproc -eq "yes") {
+    if ($PythonInproc -eq "yes") {
       $TestArgs=$TestArgs + " --python_inproc"
     }
 
