@@ -56,7 +56,7 @@ steps:
         $Language = "pythonv2"
         $Variant = "py38"
     } elseif ($env:Suite.StartsWith("python_inproc_")) {
-        $Language = pythonv2
+        $Language = "pythonv2"
         $Variant = "py38"
         $PythonInproc = "yes"
     } else {
