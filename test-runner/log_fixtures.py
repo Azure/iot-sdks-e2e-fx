@@ -110,7 +110,7 @@ def function_log_fixture(request):
         )
 
         try:
-            adapters.cleanup_test_objects()
+            adapters.cleanup_test_objects_sync()
         except Exception:
             logger("Exception in cleanup")
             logger(traceback.format_exc())
@@ -138,13 +138,13 @@ def module_log_fixture(request):
 @pytest.fixture(scope="session", autouse=True)
 def session_log_fixture(request):
     logger("HORTON: Preforming pre-session cleanup")
-    adapters.cleanup_test_objects()
+    adapters.cleanup_test_objects_sync()
     logger("HORTON: pre-session cleanup complete")
 
     def fin():
         logger("Preforming post-session cleanup")
         try:
-            adapters.cleanup_test_objects()
+            adapters.cleanup_test_objects_sync()
         except Exception:
             logger("Exception in cleanup")
             logger(traceback.format_exc())

@@ -204,7 +204,7 @@ void ModuleApiModuleConnectionIdConnect2Resource::PUT_method_handler(const std::
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -294,7 +294,7 @@ void ModuleApiModuleCreateFromConnectionstringTransportTypeResource::PUT_method_
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -332,7 +332,7 @@ void ModuleApiModuleCreateFromEnvironmentTransportTypeResource::PUT_method_handl
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -380,7 +380,7 @@ void ModuleApiModuleCreateFromX509TransportTypeResource::PUT_method_handler(cons
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -418,7 +418,7 @@ void ModuleApiModuleConnectionIdDestroyResource::PUT_method_handler(const std::s
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -457,7 +457,7 @@ void ModuleApiModuleConnectionIdDisconnectResource::PUT_method_handler(const std
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -494,7 +494,7 @@ void ModuleApiModuleConnectionIdDisconnect2Resource::PUT_method_handler(const st
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -533,7 +533,7 @@ void ModuleApiModuleConnectionIdEnableInputMessagesResource::PUT_method_handler(
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -572,7 +572,7 @@ void ModuleApiModuleConnectionIdEnableMethodsResource::PUT_method_handler(const 
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -611,7 +611,7 @@ void ModuleApiModuleConnectionIdEnableTwinResource::PUT_method_handler(const std
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -648,7 +648,7 @@ void ModuleApiModuleConnectionIdConnectionStatusResource::GET_method_handler(con
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -723,7 +723,7 @@ void ModuleApiModuleConnectionIdTwinResource::PATCH_method_handler(const std::sh
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -870,7 +870,7 @@ void ModuleApiModuleConnectionIdReconnectResource::PUT_method_handler(const std:
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -921,7 +921,7 @@ void ModuleApiModuleConnectionIdEventResource::PUT_method_handler(const std::sha
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -973,7 +973,7 @@ void ModuleApiModuleConnectionIdOutputEventOutputNameResource::PUT_method_handle
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -1011,7 +1011,7 @@ void ModuleApiModuleConnectionIdConnectionStatusChangeResource::GET_method_handl
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -1142,7 +1142,7 @@ void ModuleApiModuleConnectionIdWaitForMethodAndReturnResponseMethodNameResource
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 

@@ -184,7 +184,7 @@ void DeviceApiDeviceConnectionIdConnect2Resource::PUT_method_handler(const std::
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -234,7 +234,7 @@ void DeviceApiDeviceCreateFromConnectionStringTransportTypeResource::PUT_method_
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -283,7 +283,7 @@ void DeviceApiDeviceCreateFromX509TransportTypeResource::PUT_method_handler(cons
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -321,7 +321,7 @@ void DeviceApiDeviceConnectionIdDestroyResource::PUT_method_handler(const std::s
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -360,7 +360,7 @@ void DeviceApiDeviceConnectionIdDisconnectResource::PUT_method_handler(const std
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -397,7 +397,7 @@ void DeviceApiDeviceConnectionIdDisconnect2Resource::PUT_method_handler(const st
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -434,7 +434,7 @@ void DeviceApiDeviceConnectionIdEnableC2dMessagesResource::PUT_method_handler(co
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -473,7 +473,7 @@ void DeviceApiDeviceConnectionIdEnableMethodsResource::PUT_method_handler(const 
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -510,7 +510,7 @@ void DeviceApiDeviceConnectionIdEnableTwinResource::PUT_method_handler(const std
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -547,7 +547,7 @@ void DeviceApiDeviceConnectionIdConnectionStatusResource::GET_method_handler(con
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -587,7 +587,7 @@ void DeviceApiDeviceConnectionIdTwinResource::GET_method_handler(const std::shar
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -618,7 +618,7 @@ void DeviceApiDeviceConnectionIdTwinResource::PATCH_method_handler(const std::sh
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -658,7 +658,7 @@ void DeviceApiDeviceConnectionIdReconnectResource::PUT_method_handler(const std:
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -706,7 +706,7 @@ void DeviceApiDeviceConnectionIdEventResource::PUT_method_handler(const std::sha
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -744,7 +744,7 @@ void DeviceApiDeviceConnectionIdC2dMessageResource::GET_method_handler(const std
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -781,7 +781,7 @@ void DeviceApiDeviceConnectionIdConnectionStatusChangeResource::GET_method_handl
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -818,7 +818,7 @@ void DeviceApiDeviceConnectionIdTwinDesiredPropPatchResource::GET_method_handler
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -868,7 +868,7 @@ void DeviceApiDeviceConnectionIdWaitForMethodAndReturnResponseMethodNameResource
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 

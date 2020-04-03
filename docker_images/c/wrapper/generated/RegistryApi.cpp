@@ -131,7 +131,7 @@ void RegistryApiRegistryConnectionIdDisconnectResource::PUT_method_handler(const
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -172,7 +172,7 @@ void RegistryApiRegistryConnectionIdDeviceTwinDeviceIdResource::GET_method_handl
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -204,7 +204,7 @@ void RegistryApiRegistryConnectionIdDeviceTwinDeviceIdResource::PATCH_method_han
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -284,7 +284,7 @@ void RegistryApiRegistryConnectionIdModuleTwinDeviceIdModuleIdResource::PATCH_me
 			 */
 
 			if (status_code == 200) {
-				session->close(200, "OK", { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
