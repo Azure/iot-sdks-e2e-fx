@@ -339,8 +339,20 @@ class ServiceSideOfTwin(object):
         )
 
 
+class BlobUpload(object):
+    @emulate_async
+    @log_entry_and_exit
+    def get_storage_info_for_blob(self, blob_name)
+        raise NotImplementedError()
+
+    @emulate_async
+    @log_entry_and_exit
+    def notify_blob_upload_status( self, correlation_id, is_success, status_code, status_description)
+        raise NotImplementedError()
+
+
 class DeviceApi(
-    Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, AbstractDeviceApi
+    Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, BlobUpload, AbstractDeviceApi
 ):
     def __init__(self, hostname):
         self.rest_endpoint_sync = GeneratedSyncApi(hostname).device
