@@ -46,8 +46,8 @@ jobs:
       #py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
       #py27_mqtt_edgehub_module_quick_drop:          { suite: py27_mqtt_edgehub_module_quick_drop }
       #py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
-      python_inproc_iothub_module:                   { suite: python_inproc_iothub_module }
-      python_inproc_edgehub_module:                  { suite: python_inproc_edgehub_module }
+      python_inproc_mqtt_iothub_module:                   { suite: python_inproc_mqtt_iothub_module }
+      python_inproc_mqtt_edgehub_module:                  { suite: python_inproc_mqtt_edgehub_module }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
