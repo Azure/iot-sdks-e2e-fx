@@ -18,6 +18,7 @@ steps:
     }
 
     $SkipTest="no"
+    $PythonInproc="no"
 
     Write-Host "Configuring test suite=$env:Suite"
 
@@ -54,6 +55,10 @@ steps:
     } elseif ($env:Suite.StartsWith("py38_")) {
         $Language = "pythonv2"
         $Variant = "py38"
+    } elseif ($env:Suite.StartsWith("python_inproc_")) {
+        $Language = pythonv2
+        $Variant = "py37"
+        $PythonInproc = "yes"
     } else {
         throw("Unknown/missing language in suite: " + $env:Suite)
     }
@@ -147,6 +152,10 @@ steps:
       $TestArgs=$TestArgs + " --async"
     }
 
+    # parameters for local
+    if $(PythonInproc -eq "yes") {
+      $TestArgs=$TestArgs + " --python_inproc"
+    }
 
     if ($env:AGENT_JOBNAME -ne "Job") {
       $LogFolderName=$env:AGENT_JOBNAME.replace(" + ","").replace(" ","_")
@@ -182,6 +191,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=testImageTag]${TestImageTag}"
     Write-Host "##vso[task.setvariable variable=imageTestMod]${ImageTestMod}"
     Write-Host "##vso[task.setvariable variable=deploymentType]${DeploymentType}"
+    Write-Host "##vso[task.setvariable variable=pythonInproc]${PythonInproc}"
 
     Write-Host "Architecture=${Architecture}"
     Write-Host "Language=${Language}"
@@ -197,6 +207,7 @@ steps:
     Write-Host "TestImageTag=${TestImageTag}"
     Write-Host "ImageTestMod=${ImageTestMod}"
     Write-Host "DeploymentType=${DeploymentType}"
+    Write-Host "PythonInproc=${PythonInproc}"
 
 
   displayName: Custom task execution logic
@@ -212,6 +223,8 @@ steps:
   failOnStderr: true
 
 - template: steps-ensure-e2e-fx-repo.yaml
+
+- template: steps-ensure-python-repo.yaml
 
 - template: steps-pre-test.yaml
   parameters:
