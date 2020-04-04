@@ -224,6 +224,16 @@ steps:
 
 - template: steps-ensure-e2e-fx-repo.yaml
 
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.7'
+    architecture: $(architecture)
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+
+- script: source $(Horton.FrameworkRoot)/bin/activate_horton
+  displayName: 'Create Horton environment'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+
 - template: steps-ensure-python-repo.yaml
 
 - template: steps-pre-test.yaml

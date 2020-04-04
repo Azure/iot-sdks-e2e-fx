@@ -11,16 +11,6 @@ parameters:
   deployment_type: ''
   
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.7'
-    architecture: $(architecture)
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
-
-- script: source $(Horton.FrameworkRoot)/bin/activate_horton
-  displayName: 'Create Horton environment'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
-
 - script: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
   displayName: 'Install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
