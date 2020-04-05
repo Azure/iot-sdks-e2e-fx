@@ -23,6 +23,9 @@ class PythonDirectTwin(object):
         self.reported = None
         self.desired = None
 
+    def to_dict(self):
+        return {"reported": self.reported, "desired": self.desired}
+
 
 class Connect(object):
     def connect_sync(self, transport, connection_string, ca_certificate):
