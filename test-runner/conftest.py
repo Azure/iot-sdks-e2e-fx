@@ -95,6 +95,8 @@ skip_for_c_connection_string = set(
     ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"]
 )
 
+skip_for_python_inproc = set(["invokesModuleMethodCalls", "invokesDeviceMethodCalls"])
+
 
 def _get_marker(item, marker):
     if LooseVersion(pytest.__version__) < LooseVersion("3.6"):
@@ -268,6 +270,11 @@ def skip_unsupported_tests(items):
                 skip_for_c_mqttws,
                 "it isn't implemented in the c wrapper with mqtt-ws",
             )
+
+    if settings.test_module.adapter_address == "python_inproc":
+        skip_tests_by_marker(
+            items, skip_for_python_inproc, "It isn't implemented for inproc python"
+        )
 
     skip_tests_by_marker(
         items,

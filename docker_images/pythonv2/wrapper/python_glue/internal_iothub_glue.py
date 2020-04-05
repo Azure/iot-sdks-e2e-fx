@@ -194,11 +194,11 @@ class InputsAndOutputs(object):
     def wait_for_input_message(self, input_name):
         logger.info("Waiting for input message")
         message = self.client.receive_message_on_input(input_name)
-        logger.info("Message received")
-        logger.info(message)
+        logger.info("Message received:")
+        logger.info(str(message))
         converted = convert.incoming_message_to_test_script_object(message)
-        logger.info("---")
-        logger.info(converted)
+        logger.info("converted to:")
+        logger.info(str(converted))
         logger.info("---")
         return converted
 

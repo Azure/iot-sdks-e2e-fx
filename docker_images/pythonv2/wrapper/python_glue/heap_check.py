@@ -30,6 +30,12 @@ class LeakedObject(object):
     def __repr__(self):
         return "{}-{}".format(self.source_file, self.value)
 
+    def __eq__(self, obj):
+        return self.source_file == obj.source_file and self.weakref == obj.weakref
+
+    def __ne__(self, obj):
+        return not self == obj
+
 
 def _is_paho_object(obj):
     if not isinstance(obj, BaseException):
@@ -112,7 +118,7 @@ def _dump_leaked_object(obj):
     _dump_referrers(obj)
 
 
-def _collect():
+def _run_garbage_collection():
     """
     Collect everything until there's nothing more to collect
     """
@@ -128,22 +134,66 @@ def _collect():
             done = True
 
 
+previous_leaks = []
+
+
+def _prune_previous_leaks_list():
+    global previous_leaks
+    new_previous_leaks = []
+    for obj in previous_leaks:
+        if obj.weakref():
+            new_previous_leaks.append(obj)
+        else:
+            logger.info(
+                "Object {} collected since last test.  Removing from previous_leaks list.".format(
+                    obj
+                )
+            )
+    logger.info(
+        "previous leaks pruned from {} items to {} items".format(
+            len(previous_leaks), len(new_previous_leaks)
+        )
+    )
+    previous_leaks = new_previous_leaks
+
+
+def _remove_previous_leaks_from_list(all):
+    global previous_leaks
+
+    _prune_previous_leaks_list()
+
+    new_list = []
+    for obj in all:
+        if obj not in previous_leaks:
+            new_list.append(obj)
+        else:
+            logger.info("Object {} previously reported".format(obj))
+
+    logger.info(
+        "active list pruned from {} items to {} items".format(len(all), len(new_list))
+    )
+    return new_list
+
+
 def assert_all_iothub_objects_have_been_collected():
     """
     Get all iothub objects from the garbage collector.  If any objects remain, list
     them and assert so the test fails.  Finally, attempt to clean up leaks so that
     future tests in this session have a clean slate (or as clean as we can make it).
     """
+    global previous_leaks
 
-    _collect()
+    _run_garbage_collection()
 
     all_iothub_objects = get_all_iothub_objects()
+    all_iothub_objects = _remove_previous_leaks_from_list(all_iothub_objects)
     if len(all_iothub_objects):
         logger.error(
             "Test failure.  {} objects have leaked:".format(len(all_iothub_objects))
         )
         for obj in all_iothub_objects:
             _dump_leaked_object(obj)
+            previous_leaks.append(obj)
         _free_all(all_iothub_objects)
         assert False
     else:

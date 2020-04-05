@@ -30,7 +30,6 @@ general_separator = "".join("-" for _ in range(0, 132))
 # BKTODO: move this out of this file into it's own file
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_pyfunc_call(pyfuncitem):
-    check_for_leaks = True
 
     cleanup_separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
 
@@ -41,11 +40,12 @@ def pytest_pyfunc_call(pyfuncitem):
         # this will raise if the outcome was an exception
         outcome.get_result()
 
+        logger(general_separator)
+        logger("TEST PASSED (before cleanup)")
+
     except Exception as e:
         logger(general_separator)
         logger("TEST FAILED BACAUSE OF {}".format(e))
-        logger(general_separator)
-        check_for_leaks = False
 
     finally:
         # BKTODO: this should iterate over settings
@@ -85,8 +85,7 @@ def pytest_pyfunc_call(pyfuncitem):
             settings.service.client = None
 
         if settings.test_module.capabilities.checks_for_leaks:
-            if check_for_leaks:
-                settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
+            settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
 
 
 @pytest.fixture(scope="function", autouse=True)
