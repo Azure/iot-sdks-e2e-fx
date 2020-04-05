@@ -154,7 +154,7 @@ steps:
 
     # parameters for local
     if ($PythonInproc -eq "yes") {
-      $TestArgs=$TestArgs + "-s --python_inproc"
+      $TestArgs=$TestArgs + " -s --python_inproc"
     }
 
     if ($env:AGENT_JOBNAME -ne "Job") {
