@@ -17,7 +17,7 @@ import telemetry_tests
 
 invalid_symmetric_key_fields = [
     pytest.param("SharedAccessKey", "aGlsbGJpbGx5IHN1bnJpc2UK"),
-    pytest.param("HostName", "fakeFake.azure-devices.net", marks=pytest.mark.skip),
+    pytest.param("HostName", "fakeFake.azure-devices.net"),
     pytest.param("DeviceId", "fakeDeviceId"),
 ]
 
