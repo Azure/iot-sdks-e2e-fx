@@ -150,7 +150,7 @@ class Twin(object):
         logger.info("Waiting for desired property patch")
         patch = self.client.receive_twin_desired_properties_patch()
         logger.info("patch received")
-        logger.info(patch)
+        logger.info(str(patch))
         return {"desired": patch}
 
     def get_twin(self):
@@ -195,10 +195,10 @@ class InputsAndOutputs(object):
         logger.info("Waiting for input message")
         message = self.client.receive_message_on_input(input_name)
         logger.info("Message received")
-        logger.info(message)
+        logger.info(str(message))
         converted = convert.incoming_message_to_test_script_object(message)
-        logger.info("---")
-        logger.info(converted)
+        logger.info("Converted to:")
+        logger.info(str(converted))
         logger.info("---")
         return converted
 
