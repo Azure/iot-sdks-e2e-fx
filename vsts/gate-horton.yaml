@@ -8,12 +8,12 @@ jobs:
     vmImage: 'Ubuntu 16.04'
   strategy:
     matrix:
-        node8:  { variant: node8 }
-        c:      { language: c }
-        java:   { language: java }
-        csharp: { language: csharp }
-        py27:   { variant: py27 }
-        py35:   { variant: py35 }
+        #node8:  { variant: node8 }
+        #c:      { language: c }
+        #java:   { language: java }
+        #csharp: { language: csharp }
+        #py27:   { variant: py27 }
+        #py35:   { variant: py35 }
         py38:   { variant: py38 }
 
   steps:
@@ -30,22 +30,26 @@ jobs:
 
   strategy:
     matrix:
-      node8_amqp_iothub_module:              { suite: node8_amqp_iothub_module }
-      node8_amqpws_edgehub_module:           { suite: node8_amqpws_edgehub_module }
-      node8_mqttws_edgehub_module:           { suite: node8_mqttws_edgehub_module }
-      c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
-      c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
-      java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
-      csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
-      csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
-      py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
-      py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
-      py35_mqtt_edgehub_module:                     { suite: py35_mqtt_edgehub_module }
-      py35_mqtt_iothub_module_and_device:           { suite: py35_mqtt_iothub_module_and_device }
-      py38_mqtt_iothub_module_and_device_async:     { suite: py38_mqtt_iothub_module_and_device_async }
-      py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
-      py27_mqtt_edgehub_module_quick_drop:          { suite: py27_mqtt_edgehub_module_quick_drop }
-      py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
+      #node8_amqp_iothub_module:              { suite: node8_amqp_iothub_module }
+      #node8_amqpws_edgehub_module:           { suite: node8_amqpws_edgehub_module }
+      #node8_mqttws_edgehub_module:           { suite: node8_mqttws_edgehub_module }
+      #c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
+      #c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
+      #java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
+      #csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
+      #csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
+      #py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
+      #py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
+      #py35_mqtt_edgehub_module:                     { suite: py35_mqtt_edgehub_module }
+      #py35_mqtt_iothub_module_and_device:           { suite: py35_mqtt_iothub_module_and_device }
+      #py38_mqtt_iothub_module_and_device_async:     { suite: py38_mqtt_iothub_module_and_device_async }
+      #py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
+      #py27_mqtt_edgehub_module_quick_drop:          { suite: py27_mqtt_edgehub_module_quick_drop }
+      #py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
+      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
+      python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
+      python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
+      python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
