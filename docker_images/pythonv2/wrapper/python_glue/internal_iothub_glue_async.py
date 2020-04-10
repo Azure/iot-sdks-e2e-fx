@@ -59,17 +59,11 @@ class Connect(ConnectionStatus):
     def disconnect2(self):
         # disconnect2 keeps the object around.  We might use it again
         async_helper.run_coroutine_sync(self.client.disconnect())
-        packets_left = self.get_inflight_packet_count()
-        logger.info("disconnect2: {} packets still in flight".format(packets_left))
-        assert packets_left == 0
 
     def destroy(self):
         if self.client:
             try:
                 async_helper.run_coroutine_sync(self.client.disconnect())
-                packets_left = self.get_inflight_packet_count()
-                logger.info("destroy: {} packets still in flight".format(packets_left))
-                assert packets_left == 0
             finally:
                 self.client = None
 
