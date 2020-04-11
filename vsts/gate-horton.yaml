@@ -1,6 +1,8 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
+  Horton.Repo: BertKleewein/azure-iot-sdk-python
+  Horton.Commit: bertk-nullcheck
 
 jobs:
 - job: "build_linux_amd64"
