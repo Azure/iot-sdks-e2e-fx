@@ -10,7 +10,8 @@ steps:
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
     mkdir $(Horton.FrameworkRoot)/python &&
     cd $(Horton.FrameworkRoot)/python &&
-    git clone https://github.com/Azure/azure-iot-sdk-python . &&
+    git clone https://github.com/BertKleewein/azure-iot-sdk-python . &&
+    git checkout bertk-nullcheck &&
     python env_setup.py --no_dev
   displayName: "Clone and register python repo"
   condition: and(succeeded(), eq(variables['Build.SourcesDirectory'], variables['Horton.FrameworkRoot']), eq(variables['pythonInproc'], 'yes'))
