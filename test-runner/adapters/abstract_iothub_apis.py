@@ -173,11 +173,13 @@ class ServiceSideOfTwin(object):
 @six.add_metaclass(abc.ABCMeta)
 class BlobUpload(object):
     @abc.abstractmethod
-    def get_storage_info_for_blob(self, blob_name)
+    def get_storage_info_for_blob(self, blob_name):
         pass
 
     @abc.abstractmethod
-    def notify_blob_upload_status( self, correlation_id, is_success, status_code, status_description)
+    def notify_blob_upload_status(
+        self, correlation_id, is_success, status_code, status_description
+    ):
         pass
 
 
@@ -196,7 +198,9 @@ class AbstractModuleApi(
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractDeviceApi(Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, BlobUpload):
+class AbstractDeviceApi(
+    Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, BlobUpload
+):
     pass
 
 

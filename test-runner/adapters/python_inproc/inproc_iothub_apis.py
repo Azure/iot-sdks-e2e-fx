@@ -189,18 +189,28 @@ class ConnectionStatus(object):
     def wait_for_connection_status_change(self, connection_status):
         return self.glue.wait_for_connection_status_change(connection_status)
 
+
 class BlobUpload(object):
     @emulate_async
-    def get_storage_info_for_blob(self, blob_name)
+    def get_storage_info_for_blob(self, blob_name):
         raise NotImplementedError()
 
     @emulate_async
-    def notify_blob_upload_status( self, correlation_id, is_success, status_code, status_description)
+    def notify_blob_upload_status(
+        self, correlation_id, is_success, status_code, status_description
+    ):
         raise NotImplementedError()
 
 
 class DeviceApi(
-    Connect, Twin, Telemetry, C2d, HandleMethods, ConnectionStatus, BlobUpload, AbstractDeviceApi
+    Connect,
+    Twin,
+    Telemetry,
+    C2d,
+    HandleMethods,
+    ConnectionStatus,
+    BlobUpload,
+    AbstractDeviceApi,
 ):
     def __init__(self):
         self.glue = InternalDeviceGlue()
