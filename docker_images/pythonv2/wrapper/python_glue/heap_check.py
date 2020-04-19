@@ -105,6 +105,7 @@ def _dump_referrers(obj):
     referrers = gc.get_referrers(obj.weakref())
     for referrer in referrers:
         if isinstance(referrer, dict):
+            print("  dict: {}".format(referrer))
             for sub_referrer in gc.get_referrers(referrer):
                 if sub_referrer != referrers:
                     print("  used by: {}:{}".format(type(sub_referrer), sub_referrer))
@@ -122,7 +123,7 @@ def _run_garbage_collection():
     """
     Collect everything until there's nothing more to collect
     """
-    sleep_time = 0.5
+    sleep_time = 2
     done = False
     while not done:
         collected = gc.collect(2)
