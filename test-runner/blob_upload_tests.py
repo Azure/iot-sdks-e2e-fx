@@ -4,16 +4,20 @@
 
 import pytest
 import asyncio
+import utilities
 from horton_logging import logger
 
 
 class BlobUploadTests(object):
-    @pytest.mark.it("Can connect, enable twin, and disconnect")
-    async def test_client_connect_enable_twin_disconnect(self, client):
-        await client.enable_twin()
+    @pytest.fixture
+    def blob_name(self):
+        return utilities.next_random_string("blob")
 
     @pytest.mark.supports_blob_upload
     @pytest.mark.it("Can get blob upload info")
-    async def test_blob_upload(self, client):
-        # BKTODO
-        pass
+    async def test_blob_upload(self, client, blob_name):
+        info = await client.get_storage_info_for_blob(blob_name)
+        import pdb
+
+        pdb.set_trace()
+        print(info)
