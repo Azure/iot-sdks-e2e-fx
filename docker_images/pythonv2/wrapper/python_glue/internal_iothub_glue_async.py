@@ -225,6 +225,23 @@ class InvokeMethods(object):
         return method_response
 
 
+class BlobUpload(object):
+    def get_storage_info_for_blob(self, blob_name):
+        info = async_helper.run_coroutine_sync(
+            self.client.get_storage_info_for_blob(blob_name)
+        )
+        return info
+
+    def notify_blob_upload_status(
+        self, correlation_id, is_success, status_code, status_description
+    ):
+        async_helper.run_coroutine_sync(
+            self.client.notify_blob_upload_status(
+                correlation_id, is_success, status_code, status_description
+            )
+        )
+
+
 class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin):
     def __init__(self):
         self.client = None

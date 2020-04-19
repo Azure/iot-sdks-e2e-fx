@@ -224,7 +224,19 @@ class InvokeMethods(object):
         return method_response
 
 
-class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry):
+class BlobUpload(object):
+    def get_storage_info_for_blob(self, blob_name):
+        return self.client.get_storage_info_for_blob(blob_name)
+
+    def notify_blob_upload_status(
+        self, correlation_id, is_success, status_code, status_description
+    ):
+        self.client.notify_blob_upload_status(
+            correlation_id, is_success, status_code, status_description
+        )
+
+
+class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry, BlobUpload):
     def __init__(self):
         self.client_class = IoTHubDeviceClient
         self.client = None

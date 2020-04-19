@@ -112,3 +112,13 @@ class DeviceGlue:
         for key in listcopy:
             logger.info("object {} not cleaned up".format(key))
             self.disconnect(key)
+
+    def get_storage_info_for_blob(self, connection_id, blob_name):
+        return self.object_map[connection_id].get_storage_info_for_blob(blob_name)
+
+    def notify_blob_upload_status(
+        self, connection_id, correlation_id, is_success, status_code, status_description
+    ):
+        return self.object_map[connection_id].notify_blob_upload_status(
+            correlation_id, is_success, status_code, status_description
+        )
