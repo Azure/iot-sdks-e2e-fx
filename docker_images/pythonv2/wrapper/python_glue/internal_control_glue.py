@@ -55,6 +55,7 @@ def get_capabilities():
             "net_control_app": True,
             "checks_for_leaks": True,
             "new_python_reconnect": new_python_reconnect,
+            "supports_blob_upload": True,
         },
         "skip_list": [],
     }

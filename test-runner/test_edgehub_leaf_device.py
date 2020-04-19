@@ -9,6 +9,7 @@ from method_tests import (
     ReceiveMethodCallFromServiceTests,
     ReceiveMethodCallFromModuleTests,
 )
+from blob_upload_tests import BlobUploadTests
 
 pytestmark = pytest.mark.asyncio
 
@@ -17,7 +18,10 @@ pytestmark = pytest.mark.asyncio
 @pytest.mark.describe("Edge Leaf Device")
 @pytest.mark.timeout(timeouts.generic_test_timeout)
 class TestEdgeHubLeafDevice(
-    BaseClientTests, ReceiveMethodCallFromServiceTests, ReceiveMethodCallFromModuleTests
+    BaseClientTests,
+    ReceiveMethodCallFromServiceTests,
+    ReceiveMethodCallFromModuleTests,
+    BlobUploadTests,
 ):
     @pytest.fixture
     def client(self, leaf_device):

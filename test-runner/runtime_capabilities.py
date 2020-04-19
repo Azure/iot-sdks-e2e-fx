@@ -24,6 +24,7 @@ class HortonCapabilities(object):
         self.net_connect_app = False
         self.checks_for_leaks = False
         self.new_python_reconnect = False
+        self.supports_blob_upload = False
 
 
 def collect_capabilities(horton_object):

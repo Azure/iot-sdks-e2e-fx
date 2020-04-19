@@ -193,13 +193,15 @@ class ConnectionStatus(object):
 class BlobUpload(object):
     @emulate_async
     def get_storage_info_for_blob(self, blob_name):
-        raise NotImplementedError()
+        return self.glue.get_storage_info_for_blob(blob_name)
 
     @emulate_async
     def notify_blob_upload_status(
         self, correlation_id, is_success, status_code, status_description
     ):
-        raise NotImplementedError()
+        return self.glue.notify_blob_upload_status(
+            correlation_id, is_success, status_code, status_description
+        )
 
 
 class DeviceApi(
