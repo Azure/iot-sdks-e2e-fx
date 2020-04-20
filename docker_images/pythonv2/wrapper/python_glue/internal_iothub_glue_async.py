@@ -242,7 +242,7 @@ class BlobUpload(object):
         )
 
 
-class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin):
+class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin, BlobUpload):
     def __init__(self):
         self.client = None
         self.client_class = IoTHubDeviceClient
@@ -260,7 +260,6 @@ class InternalModuleGlueAsync(
     Telemetry,
     InputsAndOutputs,
     InvokeMethods,
-    BlobUpload,
 ):
     def __init__(self):
         self.client = None
