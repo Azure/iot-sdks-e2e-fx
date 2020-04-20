@@ -14,9 +14,18 @@ class BlobUploadTests(object):
         return utilities.random_string()
 
     @pytest.mark.supports_blob_upload
+    @pytest.mark.it("Fails updating status for invalid correlation id")
+    async def test_blob_invalid_correlation_id(self, client):
+        with pytest.raises(Exception):
+            await client.notify_blob_upload_status(
+                "invalid_correlation_id", True, 200, "successful upload"
+            )
+
+    @pytest.mark.supports_blob_upload
     @pytest.mark.it("Can report a successful blob upload")
     async def test_blob_upload(self, client, blob_name):
         info = await client.get_storage_info_for_blob(blob_name)
+
         assert info.additional_properties is not None
         assert info.blob_name == "{}/{}".format(client.device_id, blob_name)
         assert info.container_name

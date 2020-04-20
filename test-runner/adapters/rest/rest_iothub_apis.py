@@ -350,7 +350,7 @@ class BlobUpload(object):
     async def notify_blob_upload_status(
         self, correlation_id, is_success, status_code, status_description
     ):
-        await self.rest_endpoit.notify_blob_upload_status(
+        await self.rest_endpoint.notify_blob_upload_status(
             correlation_id, is_success, status_code, status_description
         )
 
