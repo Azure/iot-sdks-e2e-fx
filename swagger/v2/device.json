@@ -482,6 +482,34 @@
                     }
                 }
             }
+        },
+        "/device/{connectionId}/storageInfoForBlob": {
+            "get": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Get storage info for uploading into blob storage",
+                "operationId": "Device_GetStorageInfoForBlob",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/blobName"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/blobStorageInfo"
+                        }
+                    }
+                }
+            }
         }
     }
 }

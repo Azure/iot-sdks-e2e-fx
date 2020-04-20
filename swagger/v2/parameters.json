@@ -134,5 +134,12 @@
       "connected",
       "disconnected"
     ]
+  },
+  "blobName": {
+    "name": "blobName",
+    "in": "query",
+    "description": "name of blob",
+    "required": true,
+    "type": "string"
   }
 }
