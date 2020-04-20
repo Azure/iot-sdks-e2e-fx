@@ -13,17 +13,21 @@ class BlobUploadTests(object):
     def blob_name(self):
         return utilities.random_string()
 
+    @pytest.fixture
+    def invalid_correlation_id(self):
+        return "Mjk5OTA0MjAyMjQ0X2YwMDE2ODJiLWMyOTItNGZiNi04MjUzLTZhZDQzZTI2ODIzMV9BRjRWU1BNNFNZQzJYWThGMFBSV09XS0VXUk9SOUFUUFJSSUVFVVZXU1Q4Vk1BMUUxWE84UjJUMFpVSVdCMVVVX3ZlcjIuMAo=="
+
     @pytest.mark.supports_blob_upload
     @pytest.mark.it("Fails updating status for invalid correlation id")
-    async def test_blob_invalid_correlation_id(self, client):
+    async def test_blob_invalid_correlation_id(self, client, invalid_correlation_id):
         with pytest.raises(Exception):
             await client.notify_blob_upload_status(
-                "invalid_correlation_id", True, 200, "successful upload"
+                invalid_correlation_id, True, 200, "successful upload"
             )
 
     @pytest.mark.supports_blob_upload
-    @pytest.mark.it("Can report a successful blob upload")
-    async def test_blob_upload(self, client, blob_name):
+    @pytest.mark.it("Can report a failed blob upload")
+    async def test_failed_blob_upload(self, client, blob_name):
         info = await client.get_storage_info_for_blob(blob_name)
 
         assert info.additional_properties is not None
@@ -34,5 +38,5 @@ class BlobUploadTests(object):
         assert info.sas_token
 
         await client.notify_blob_upload_status(
-            info.correlation_id, True, 200, "successful upload"
+            info.correlation_id, False, 400, "failed upload"
         )
