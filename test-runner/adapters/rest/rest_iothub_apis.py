@@ -342,7 +342,9 @@ class ServiceSideOfTwin(object):
 class BlobUpload(object):
     @log_entry_and_exit
     async def get_storage_info_for_blob(self, blob_name):
-        raise NotImplementedError()
+        return await self.rest_endpoint.get_storage_info_for_blob(
+            self.connection_id, blob_name
+        )
 
     @log_entry_and_exit
     async def notify_blob_upload_status(

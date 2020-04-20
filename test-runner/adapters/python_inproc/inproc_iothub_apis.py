@@ -27,6 +27,18 @@ class PythonDirectTwin(object):
         return {"reported": self.reported, "desired": self.desired}
 
 
+class PythonDirectBlobInfo(object):
+    def __init__(self, dikt=None):
+        if not dikt:
+            dikt = {}
+        self.additional_properties = dikt.get("additionalPoperties", {})
+        self.blob_name = dikt.get("blobName", "")
+        self.container_name = dikt.get("containerName", "")
+        self.correlation_id = dikt.get("correlationId", "")
+        self.host_name = dikt.get("hostName", "")
+        self.sas_token = dikt.get("sasToken", "")
+
+
 class Connect(object):
     def connect_sync(self, transport, connection_string, ca_certificate):
         client_object_list.append(self)
@@ -193,7 +205,8 @@ class ConnectionStatus(object):
 class BlobUpload(object):
     @emulate_async
     def get_storage_info_for_blob(self, blob_name):
-        return self.glue.get_storage_info_for_blob(blob_name)
+        info = self.glue.get_storage_info_for_blob(blob_name)
+        return PythonDirectBlobInfo(info)
 
     @emulate_async
     def notify_blob_upload_status(

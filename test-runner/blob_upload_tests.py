@@ -17,7 +17,9 @@ class BlobUploadTests(object):
     @pytest.mark.it("Can get blob upload info")
     async def test_blob_upload(self, client, blob_name):
         info = await client.get_storage_info_for_blob(blob_name)
-        import pdb
-
-        pdb.set_trace()
-        print(info)
+        assert info.additional_properties is not None
+        assert info.blob_name == "{}/{}".format(client.device_id, blob_name)
+        assert info.container_name
+        assert info.correlation_id
+        assert info.host_name
+        assert info.sas_token
