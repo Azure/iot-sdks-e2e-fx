@@ -8,6 +8,39 @@
 from msrest.serialization import Model
 
 
+class BlobStorageInfo(Model):
+    """storage info for blob upload.
+
+    :param blob_name: name of blob to upload
+    :type blob_name: str
+    :param container_name: name of container in the azure storage host to
+     upload into
+    :type container_name: str
+    :param correlation_id: correlation id to use for upload
+    :type correlation_id: str
+    :param host_name: name of azure storage host
+    :type host_name: str
+    :param sas_token: sas token to use to authenticate with azure storage host
+    :type sas_token: str
+    """
+
+    _attribute_map = {
+        'blob_name': {'key': 'blobName', 'type': 'str'},
+        'container_name': {'key': 'containerName', 'type': 'str'},
+        'correlation_id': {'key': 'correlationId', 'type': 'str'},
+        'host_name': {'key': 'hostName', 'type': 'str'},
+        'sas_token': {'key': 'sasToken', 'type': 'str'},
+    }
+
+    def __init__(self, *, blob_name: str=None, container_name: str=None, correlation_id: str=None, host_name: str=None, sas_token: str=None, **kwargs) -> None:
+        super(BlobStorageInfo, self).__init__(**kwargs)
+        self.blob_name = blob_name
+        self.container_name = container_name
+        self.correlation_id = correlation_id
+        self.host_name = host_name
+        self.sas_token = sas_token
+
+
 class Certificate(Model):
     """certificate in the body of a message.
 

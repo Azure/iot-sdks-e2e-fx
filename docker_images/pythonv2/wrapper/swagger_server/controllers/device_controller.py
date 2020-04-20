@@ -1,6 +1,7 @@
 import connexion
 import six
 
+from swagger_server.models.blob_storage_info import BlobStorageInfo  # noqa: E501
 from swagger_server.models.certificate import Certificate  # noqa: E501
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.event_body import EventBody  # noqa: E501
@@ -24,7 +25,7 @@ def device_connect(transportType, connectionString, caCertificate=None):  # noqa
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate:
+    :param caCertificate: 
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
@@ -58,7 +59,7 @@ def device_create_from_connection_string(transportType, connectionString, caCert
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate:
+    :param caCertificate: 
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
@@ -76,8 +77,8 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
 
     :param transportType: Transport to use
     :type transportType: str
-    :param X509:
-    :type X509:
+    :param X509: 
+    :type X509: 
 
     :rtype: ConnectResponse
     """
@@ -183,6 +184,21 @@ def device_get_connection_status(connectionId):  # noqa: E501
     return json.dumps(device_glue.get_connection_status(connectionId))
 
 
+def device_get_storage_info_for_blob(connectionId, blobName):  # noqa: E501
+    """Get storage info for uploading into blob storage
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param blobName: name of blob
+    :type blobName: str
+
+    :rtype: BlobStorageInfo
+    """
+    return 'do some magic!'
+
+
 def device_get_twin(connectionId):  # noqa: E501
     """Get the device twin
 
@@ -204,7 +220,7 @@ def device_patch_twin(connectionId, twin):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param twin:
+    :param twin: 
     :type twin: dict | bytes
 
     :rtype: None
@@ -231,7 +247,6 @@ def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
     device_glue.reconnect(connectionId, forceRenewPassword)
 
 
-
 def device_send_event(connectionId, eventBody):  # noqa: E501
     """Send an event
 
@@ -239,7 +254,7 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param eventBody:
+    :param eventBody: 
     :type eventBody: dict | bytes
 
     :rtype: None
@@ -303,7 +318,7 @@ def device_wait_for_method_and_return_response(connectionId, methodName, request
     :type connectionId: str
     :param methodName: name of the method to handle
     :type methodName: str
-    :param requestAndResponse:
+    :param requestAndResponse: 
     :type requestAndResponse: dict | bytes
 
     :rtype: None
