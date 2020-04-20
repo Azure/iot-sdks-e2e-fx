@@ -350,7 +350,9 @@ class BlobUpload(object):
     async def notify_blob_upload_status(
         self, correlation_id, is_success, status_code, status_description
     ):
-        raise NotImplementedError()
+        await self.rest_endpoit.notify_blob_upload_status(
+            correlation_id, is_success, status_code, status_description
+        )
 
 
 class DeviceApi(

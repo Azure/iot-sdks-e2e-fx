@@ -212,7 +212,7 @@ class BlobUpload(object):
     def notify_blob_upload_status(
         self, correlation_id, is_success, status_code, status_description
     ):
-        return self.glue.notify_blob_upload_status(
+        self.glue.notify_blob_upload_status(
             correlation_id, is_success, status_code, status_description
         )
 
