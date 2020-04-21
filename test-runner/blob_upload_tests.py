@@ -6,12 +6,20 @@ import pytest
 import asyncio
 import utilities
 from horton_logging import logger
+from azure.storage.blob import BlobClient
 
 invalid_correlation_id = "Mjk5OTA0MjAyMjQ0X2YwMDE2ODJiLWMyOTItNGZiNi04MjUzLTZhZDQzZTI2ODIzMV9BRjRWU1BNNFNZQzJYWThGMFBSV09XS0VXUk9SOUFUUFJSSUVFVVZXU1Q4Vk1BMUUxWE84UjJUMFpVSVdCMVVVX3ZlcjIuMAo=="
 success_code = 200
 success_message = "successful upload"
 failure_code = 400
 failure_message = "failed upload"
+
+
+def blob_client_from_info(info):
+    sas_url = "https://{}/{}/{}{}".format(
+        info.host_name, info.container_name, info.blob_name, info.sas_token
+    )
+    return BlobClient.from_blob_url(sas_url)
 
 
 class BlobUploadTests(object):
