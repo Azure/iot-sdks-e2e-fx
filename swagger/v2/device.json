@@ -510,6 +510,37 @@
                     }
                 }
             }
+        },
+        "/device/{connectionId}/blobUploadStatus": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "notify iothub about blob upload status",
+                "operationId": "Device_NotifyBlobUploadStatus",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/correlationId"
+                    },
+                    {
+                        "$ref": "parameters.json#/isSuccess"
+                    },
+                    {
+                        "$ref": "parameters.json#/statusCode"
+                    },
+                    {
+                        "$ref": "parameters.json#/statusDescription"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     }
 }

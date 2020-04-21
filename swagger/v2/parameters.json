@@ -138,7 +138,35 @@
   "blobName": {
     "name": "blobName",
     "in": "query",
-    "description": "name of blob",
+    "description": "name of blob for blob upload",
+    "required": true,
+    "type": "string"
+  },
+  "correlationId": {
+    "name": "correlationId",
+    "in": "query",
+    "description": "correlation id for blob upload",
+    "required": true,
+    "type": "string"
+  },
+  "isSuccess": {
+    "name": "isSuccess",
+    "in": "query",
+    "description": "True if blob upload was successful",
+    "required": true,
+    "type": "boolean"
+  },
+  "statusCode": {
+    "name": "statusCode",
+    "in": "query",
+    "description": "status code for blob upload",
+    "required": true,
+    "type": "string"
+  },
+  "statusDescription": {
+    "name": "statusDescription",
+    "in": "query",
+    "description": "human readable descripton of the status for blob upload",
     "required": true,
     "type": "string"
   }
