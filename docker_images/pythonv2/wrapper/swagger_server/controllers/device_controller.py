@@ -9,6 +9,12 @@ from swagger_server.models.method_request_and_response import MethodRequestAndRe
 from swagger_server.models.twin import Twin  # noqa: E501
 from swagger_server import util
 
+# Added 3 lines in merge
+import json
+from device_glue import DeviceGlue
+
+device_glue = DeviceGlue()
+
 
 def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Connect to the azure IoT Hub as a device
@@ -26,7 +32,8 @@ def device_connect(transportType, connectionString, caCertificate=None):  # noqa
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.connect(transportType, connectionString, caCertificate)
 
 
 def device_connect2(connectionId):  # noqa: E501
@@ -39,7 +46,8 @@ def device_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.connect2(connectionId)
 
 
 def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -58,7 +66,10 @@ def device_create_from_connection_string(transportType, connectionString, caCert
     """
     if connexion.request.is_json:
         caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.create_from_connection_string(
+        transportType, connectionString, caCertificate
+    )
 
 
 def device_create_from_x509(transportType, X509):  # noqa: E501
@@ -73,7 +84,8 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
 
     :rtype: ConnectResponse
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.create_from_x509(transportType, X509)
 
 
 def device_destroy(connectionId):  # noqa: E501
@@ -86,7 +98,8 @@ def device_destroy(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.destroy(connectionId)
 
 
 def device_disconnect(connectionId):  # noqa: E501
@@ -99,7 +112,8 @@ def device_disconnect(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.disconnect(connectionId)
 
 
 def device_disconnect2(connectionId):  # noqa: E501
@@ -112,7 +126,8 @@ def device_disconnect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.disconnect2(connectionId)
 
 
 def device_enable_c2d_messages(connectionId):  # noqa: E501
@@ -125,7 +140,8 @@ def device_enable_c2d_messages(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.enable_c2d(connectionId)
 
 
 def device_enable_methods(connectionId):  # noqa: E501
@@ -138,7 +154,8 @@ def device_enable_methods(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.enable_methods(connectionId)
 
 
 def device_enable_twin(connectionId):  # noqa: E501
@@ -151,7 +168,8 @@ def device_enable_twin(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.enable_twin(connectionId)
 
 
 def device_get_connection_status(connectionId):  # noqa: E501
@@ -164,7 +182,8 @@ def device_get_connection_status(connectionId):  # noqa: E501
 
     :rtype: str
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return json.dumps(device_glue.get_connection_status(connectionId))
 
 
 def device_get_storage_info_for_blob(connectionId, blobName):  # noqa: E501
@@ -174,12 +193,13 @@ def device_get_storage_info_for_blob(connectionId, blobName):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param blobName: name of blob for blob upload
+    :param blobName: name of blob
     :type blobName: str
 
     :rtype: BlobStorageInfo
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.get_storage_info_for_blob(connectionId, blobName)
 
 
 def device_get_twin(connectionId):  # noqa: E501
@@ -192,8 +212,8 @@ def device_get_twin(connectionId):  # noqa: E501
 
     :rtype: Twin
     """
-    return 'do some magic!'
-
+    # changed from return 'do some magic!'
+    return device_glue.get_twin(connectionId)
 
 def device_notify_blob_upload_status(connectionId, correlationId, isSuccess, statusCode, statusDescription):  # noqa: E501
     """notify iothub about blob upload status
@@ -230,7 +250,8 @@ def device_patch_twin(connectionId, twin):  # noqa: E501
     """
     if connexion.request.is_json:
         twin = Twin.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.send_twin_patch(connectionId, twin)
 
 
 def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
@@ -245,7 +266,8 @@ def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.reconnect(connectionId, forceRenewPassword)
 
 
 def device_send_event(connectionId, eventBody):  # noqa: E501
@@ -262,7 +284,8 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
     """
     if connexion.request.is_json:
         eventBody = EventBody.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.send_event(connectionId, eventBody)
 
 
 def device_wait_for_c2d_message(connectionId):  # noqa: E501
@@ -275,7 +298,8 @@ def device_wait_for_c2d_message(connectionId):  # noqa: E501
 
     :rtype: EventBody
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.wait_for_c2d_message(connectionId)
 
 
 def device_wait_for_connection_status_change(connectionId, connectionStatus):  # noqa: E501
@@ -290,7 +314,10 @@ def device_wait_for_connection_status_change(connectionId, connectionStatus):  #
 
     :rtype: str
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return json.dumps(
+        device_glue.wait_for_connection_status_change(connectionId, connectionStatus)
+    )
 
 
 def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
@@ -303,7 +330,8 @@ def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
 
     :rtype: Twin
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.wait_for_desired_property_patch(connectionId)
 
 
 def device_wait_for_method_and_return_response(connectionId, methodName, requestAndResponse):  # noqa: E501
@@ -322,4 +350,7 @@ def device_wait_for_method_and_return_response(connectionId, methodName, request
     """
     if connexion.request.is_json:
         requestAndResponse = MethodRequestAndResponse.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return device_glue.wait_for_method_and_return_response(
+        connectionId, methodName, requestAndResponse
+    )

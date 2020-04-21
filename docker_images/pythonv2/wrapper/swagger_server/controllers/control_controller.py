@@ -7,6 +7,7 @@ from swagger_server import util
 # added 1 line in merge
 import control_glue
 
+
 def control_cleanup():  # noqa: E501
     """verify that the clients have cleaned themselves up completely
 
