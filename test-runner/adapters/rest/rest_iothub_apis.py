@@ -429,3 +429,7 @@ class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
             event_body,
             timeout=adapter_config.default_api_timeout,
         )
+
+    @log_entry_and_exit
+    async def get_blob_upload_status(self):
+        raise NotImplementedError()

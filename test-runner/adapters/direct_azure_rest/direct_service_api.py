@@ -64,3 +64,9 @@ class ServiceApi(AbstractServiceApi):
             self.amqp_service_client = AmqpServiceClient()
             self.amqp_service_client.connect_sync(self.service_connection_string)
         await self.amqp_service_client.send_to_device(device_id, message)
+
+    async def get_blob_upload_status(self):
+        if not self.amqp_service_client:
+            self.amqp_service_client = AmqpServiceClient()
+            self.amqp_service_client.connect_sync(self.service_connection_string)
+        return await self.amqp_service_client.get_next_blob_status()
