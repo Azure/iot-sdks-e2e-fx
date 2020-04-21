@@ -81,3 +81,7 @@ class BlobUploadTests(object):
         await client.notify_blob_upload_status(
             info.correlation_id, True, success_code, success_message
         )
+
+        blob_data_copy = blob_client.download_blob().readall()
+
+        assert blob_data_copy.decode() == typical_blob_data
