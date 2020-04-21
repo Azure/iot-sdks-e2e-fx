@@ -3,6 +3,7 @@
 # flake8: noqa
 from __future__ import absolute_import
 # import models into model package
+from swagger_server.models.blob_storage_info import BlobStorageInfo
 from swagger_server.models.certificate import Certificate
 from swagger_server.models.connect_response import ConnectResponse
 from swagger_server.models.event_body import EventBody

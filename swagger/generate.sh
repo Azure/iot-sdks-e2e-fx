@@ -16,7 +16,7 @@ language="$1"
 case $language in
     pythonv2)
         swagger_language=python-flask
-        tags="net control device module"
+        tags="control device module"
         ;;
     java)
         swagger_language=java-vertx

@@ -6,6 +6,7 @@
 # --------------------------------------------------------------------------
 
 try:
+    from ._models_py3 import BlobStorageInfo
     from ._models_py3 import Certificate
     from ._models_py3 import ConnectResponse
     from ._models_py3 import EventBody
@@ -14,6 +15,7 @@ try:
     from ._models_py3 import MethodRequestAndResponse
     from ._models_py3 import Twin
 except (SyntaxError, ImportError):
+    from ._models import BlobStorageInfo
     from ._models import Certificate
     from ._models import ConnectResponse
     from ._models import EventBody
@@ -23,6 +25,7 @@ except (SyntaxError, ImportError):
     from ._models import Twin
 
 __all__ = [
+    'BlobStorageInfo',
     'Certificate',
     'ConnectResponse',
     'EventBody',

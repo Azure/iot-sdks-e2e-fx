@@ -100,5 +100,31 @@
         "type": "object"
       }
     }
+  },
+  "blobStorageInfo": {
+    "description": "storage info for blob upload",
+    "type": "object",
+    "properties" : {
+        "blobName": {
+            "description": "name of blob to upload",
+            "type": "string"
+        },
+        "containerName": {
+            "description": "name of container in the azure storage host to upload into",
+            "type": "string"
+        },
+        "correlationId": {
+            "description": "correlation id to use for upload",
+            "type": "string"
+        },
+        "hostName": {
+            "description": "name of azure storage host",
+            "type": "string"
+        },
+        "sasToken": {
+            "description": "sas token to use to authenticate with azure storage host",
+            "type": "string"
+        }
+    }
   }
 }

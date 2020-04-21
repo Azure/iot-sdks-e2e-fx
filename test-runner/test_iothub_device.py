@@ -12,6 +12,7 @@ from c2d_tests import C2dTests
 import dropped_connection_tests
 import drop_scenario
 from regression_tests import RegressionTests
+from blob_upload_tests import BlobUploadTests
 
 pytestmark = pytest.mark.asyncio
 
@@ -33,6 +34,7 @@ class TestIotHubDeviceClient(
     ReceiveMethodCallFromServiceTests,
     C2dTests,
     RegressionTests,
+    BlobUploadTests,
 ):
     pass
 
@@ -62,5 +64,3 @@ class TestIoTHubModuleNetworkGlitchClientDisconnected(
     dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
 ):
     pass
-
-

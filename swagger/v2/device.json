@@ -482,6 +482,65 @@
                     }
                 }
             }
+        },
+        "/device/{connectionId}/storageInfoForBlob": {
+            "get": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Get storage info for uploading into blob storage",
+                "operationId": "Device_GetStorageInfoForBlob",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/blobName"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/blobStorageInfo"
+                        }
+                    }
+                }
+            }
+        },
+        "/device/{connectionId}/blobUploadStatus": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "notify iothub about blob upload status",
+                "operationId": "Device_NotifyBlobUploadStatus",
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/connectionId"
+                    },
+                    {
+                        "$ref": "parameters.json#/correlationId"
+                    },
+                    {
+                        "$ref": "parameters.json#/isSuccess"
+                    },
+                    {
+                        "$ref": "parameters.json#/statusCode"
+                    },
+                    {
+                        "$ref": "parameters.json#/statusDescription"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     }
 }
