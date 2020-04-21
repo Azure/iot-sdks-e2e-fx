@@ -233,7 +233,8 @@ def device_notify_blob_upload_status(connectionId, correlationId, isSuccess, sta
 
     :rtype: None
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    device_glue.notify_blob_upload_status(connectionId, correlationId, isSuccess, statusCode, statusDescription)
 
 
 def device_patch_twin(connectionId, twin):  # noqa: E501

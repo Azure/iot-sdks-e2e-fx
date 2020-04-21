@@ -351,7 +351,11 @@ class BlobUpload(object):
         self, correlation_id, is_success, status_code, status_description
     ):
         await self.rest_endpoint.notify_blob_upload_status(
-            correlation_id, is_success, status_code, status_description
+            self.connection_id,
+            correlation_id,
+            is_success,
+            status_code,
+            status_description,
         )
 
 
