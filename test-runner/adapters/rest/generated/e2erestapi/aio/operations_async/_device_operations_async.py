@@ -987,7 +987,7 @@ class DeviceOperations:
 
         :param connection_id: Id for the connection
         :type connection_id: str
-        :param blob_name: name of blob
+        :param blob_name: name of blob for blob upload
         :type blob_name: str
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
@@ -1034,3 +1034,59 @@ class DeviceOperations:
 
         return deserialized
     get_storage_info_for_blob.metadata = {'url': '/device/{connectionId}/storageInfoForBlob'}
+
+    async def notify_blob_upload_status(
+            self, connection_id, correlation_id, is_success, status_code, status_description, *, custom_headers=None, raw=False, **operation_config):
+        """notify iothub about blob upload status.
+
+        :param connection_id: Id for the connection
+        :type connection_id: str
+        :param correlation_id: correlation id for blob upload
+        :type correlation_id: str
+        :param is_success: True if blob upload was successful
+        :type is_success: bool
+        :param status_code: status code for blob upload
+        :type status_code: str
+        :param status_description: human readable descripton of the status for
+         blob upload
+        :type status_description: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: None or ClientRawResponse if raw=true
+        :rtype: None or ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.notify_blob_upload_status.metadata['url']
+        path_format_arguments = {
+            'connectionId': self._serialize.url("connection_id", connection_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+        query_parameters['correlationId'] = self._serialize.query("correlation_id", correlation_id, 'str')
+        query_parameters['isSuccess'] = self._serialize.query("is_success", is_success, 'bool')
+        query_parameters['statusCode'] = self._serialize.query("status_code", status_code, 'str')
+        query_parameters['statusDescription'] = self._serialize.query("status_description", status_description, 'str')
+
+        # Construct headers
+        header_parameters = {}
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = await self._client.async_send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(None, response)
+            return client_raw_response
+    notify_blob_upload_status.metadata = {'url': '/device/{connectionId}/blobUploadStatus'}

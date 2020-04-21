@@ -4,8 +4,6 @@ info:
   version: "1.0.0"
   title: "Azure IOT End-to-End Test Wrapper Rest Api"
 tags:
-- name: "net"
-  description: "network control APIs"
 - name: "control"
   description: "Control APIs that aren't tied to any specific SDK"
 - name: "device"
@@ -17,100 +15,6 @@ schemes:
 produces:
 - "application/json"
 paths:
-  /net/setDestination/{ip}/{transportType}:
-    put:
-      tags:
-      - "net"
-      summary: "Set destination for net disconnect ops"
-      operationId: "net_set_destination"
-      parameters:
-      - name: "ip"
-        in: "path"
-        required: true
-        type: "string"
-      - name: "transportType"
-        in: "path"
-        description: "Transport to use"
-        required: true
-        type: "string"
-        enum:
-        - "amqp"
-        - "amqpws"
-        - "mqtt"
-        - "mqttws"
-        - "http"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.net_controller"
-  /net/disconnect/{disconnectType}:
-    put:
-      tags:
-      - "net"
-      summary: "Simulate a network disconnection"
-      operationId: "net_disconnect"
-      parameters:
-      - name: "disconnectType"
-        in: "path"
-        description: "disconnect method for dropped connection tests"
-        required: true
-        type: "string"
-        enum:
-        - "DROP"
-        - "REJECT"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.net_controller"
-  /net/reconnect:
-    put:
-      tags:
-      - "net"
-      summary: "Reconnect the network after a simulated network disconnection"
-      operationId: "net_reconnect"
-      parameters: []
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.net_controller"
-  /net/disconnectAfterC2d/{disconnectType}:
-    put:
-      tags:
-      - "net"
-      summary: "Simulate a disconnect after the next C2D transfer"
-      operationId: "net_disconnect_after_c2d"
-      parameters:
-      - name: "disconnectType"
-        in: "path"
-        description: "disconnect method for dropped connection tests"
-        required: true
-        type: "string"
-        enum:
-        - "DROP"
-        - "REJECT"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.net_controller"
-  /net/disconnectAfterD2c/{disconnectType}:
-    put:
-      tags:
-      - "net"
-      summary: "Simulate a disconnect after the next D2C transfer"
-      operationId: "net_disconnect_after_d2c"
-      parameters:
-      - name: "disconnectType"
-        in: "path"
-        description: "disconnect method for dropped connection tests"
-        required: true
-        type: "string"
-        enum:
-        - "DROP"
-        - "REJECT"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "swagger_server.controllers.net_controller"
   /control/capabilities:
     get:
       tags:
@@ -632,7 +536,7 @@ paths:
         type: "string"
       - name: "blobName"
         in: "query"
-        description: "name of blob"
+        description: "name of blob for blob upload"
         required: true
         type: "string"
       responses:
@@ -640,6 +544,42 @@ paths:
           description: "OK"
           schema:
             $ref: "#/definitions/blobStorageInfo"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/{connectionId}/blobUploadStatus:
+    put:
+      tags:
+      - "device"
+      summary: "notify iothub about blob upload status"
+      operationId: "device_notify_blob_upload_status"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "correlationId"
+        in: "query"
+        description: "correlation id for blob upload"
+        required: true
+        type: "string"
+      - name: "isSuccess"
+        in: "query"
+        description: "True if blob upload was successful"
+        required: true
+        type: "boolean"
+      - name: "statusCode"
+        in: "query"
+        description: "status code for blob upload"
+        required: true
+        type: "string"
+      - name: "statusDescription"
+        in: "query"
+        description: "human readable descripton of the status for blob upload"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
   /module/connect/{transportType}:
     put:

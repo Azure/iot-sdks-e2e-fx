@@ -5,17 +5,9 @@ from swagger_server.models.blob_storage_info import BlobStorageInfo  # noqa: E50
 from swagger_server.models.certificate import Certificate  # noqa: E501
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501
 from swagger_server.models.event_body import EventBody  # noqa: E501
-from swagger_server.models.method_request_and_response import (
-    MethodRequestAndResponse,
-)  # noqa: E501
+from swagger_server.models.method_request_and_response import MethodRequestAndResponse  # noqa: E501
 from swagger_server.models.twin import Twin  # noqa: E501
 from swagger_server import util
-
-# Added 3 lines in merge
-import json
-from device_glue import DeviceGlue
-
-device_glue = DeviceGlue()
 
 
 def device_connect(transportType, connectionString, caCertificate=None):  # noqa: E501
@@ -27,17 +19,14 @@ def device_connect(transportType, connectionString, caCertificate=None):  # noqa
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate:
+    :param caCertificate: 
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
     """
     if connexion.request.is_json:
-        caCertificate = Certificate.from_dict(
-            connexion.request.get_json()
-        )  # noqa: E501
-    # changed from return 'do some magic!'
-    return device_glue.connect(transportType, connectionString, caCertificate)
+        caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
 
 
 def device_connect2(connectionId):  # noqa: E501
@@ -50,13 +39,10 @@ def device_connect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.connect2(connectionId)
+    return 'do some magic!'
 
 
-def device_create_from_connection_string(
-    transportType, connectionString, caCertificate=None
-):  # noqa: E501
+def device_create_from_connection_string(transportType, connectionString, caCertificate=None):  # noqa: E501
     """Create a device client from a connection string
 
      # noqa: E501
@@ -65,19 +51,14 @@ def device_create_from_connection_string(
     :type transportType: str
     :param connectionString: connection string
     :type connectionString: str
-    :param caCertificate:
+    :param caCertificate: 
     :type caCertificate: dict | bytes
 
     :rtype: ConnectResponse
     """
     if connexion.request.is_json:
-        caCertificate = Certificate.from_dict(
-            connexion.request.get_json()
-        )  # noqa: E501
-    # changed from return 'do some magic!'
-    return device_glue.create_from_connection_string(
-        transportType, connectionString, caCertificate
-    )
+        caCertificate = Certificate.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
 
 
 def device_create_from_x509(transportType, X509):  # noqa: E501
@@ -87,13 +68,12 @@ def device_create_from_x509(transportType, X509):  # noqa: E501
 
     :param transportType: Transport to use
     :type transportType: str
-    :param X509:
-    :type X509:
+    :param X509: 
+    :type X509: 
 
     :rtype: ConnectResponse
     """
-    # changed from return 'do some magic!'
-    return device_glue.create_from_x509(transportType, X509)
+    return 'do some magic!'
 
 
 def device_destroy(connectionId):  # noqa: E501
@@ -106,8 +86,7 @@ def device_destroy(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.destroy(connectionId)
+    return 'do some magic!'
 
 
 def device_disconnect(connectionId):  # noqa: E501
@@ -120,8 +99,7 @@ def device_disconnect(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.disconnect(connectionId)
+    return 'do some magic!'
 
 
 def device_disconnect2(connectionId):  # noqa: E501
@@ -134,8 +112,7 @@ def device_disconnect2(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.disconnect2(connectionId)
+    return 'do some magic!'
 
 
 def device_enable_c2d_messages(connectionId):  # noqa: E501
@@ -148,8 +125,7 @@ def device_enable_c2d_messages(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.enable_c2d(connectionId)
+    return 'do some magic!'
 
 
 def device_enable_methods(connectionId):  # noqa: E501
@@ -162,8 +138,7 @@ def device_enable_methods(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.enable_methods(connectionId)
+    return 'do some magic!'
 
 
 def device_enable_twin(connectionId):  # noqa: E501
@@ -176,8 +151,7 @@ def device_enable_twin(connectionId):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.enable_twin(connectionId)
+    return 'do some magic!'
 
 
 def device_get_connection_status(connectionId):  # noqa: E501
@@ -190,8 +164,7 @@ def device_get_connection_status(connectionId):  # noqa: E501
 
     :rtype: str
     """
-    # changed from return 'do some magic!'
-    return json.dumps(device_glue.get_connection_status(connectionId))
+    return 'do some magic!'
 
 
 def device_get_storage_info_for_blob(connectionId, blobName):  # noqa: E501
@@ -201,13 +174,12 @@ def device_get_storage_info_for_blob(connectionId, blobName):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param blobName: name of blob
+    :param blobName: name of blob for blob upload
     :type blobName: str
 
     :rtype: BlobStorageInfo
     """
-    # changed from return 'do some magic!'
-    return device_glue.get_storage_info_for_blob(connectionId, blobName)
+    return 'do some magic!'
 
 
 def device_get_twin(connectionId):  # noqa: E501
@@ -220,8 +192,28 @@ def device_get_twin(connectionId):  # noqa: E501
 
     :rtype: Twin
     """
-    # changed from return 'do some magic!'
-    return device_glue.get_twin(connectionId)
+    return 'do some magic!'
+
+
+def device_notify_blob_upload_status(connectionId, correlationId, isSuccess, statusCode, statusDescription):  # noqa: E501
+    """notify iothub about blob upload status
+
+     # noqa: E501
+
+    :param connectionId: Id for the connection
+    :type connectionId: str
+    :param correlationId: correlation id for blob upload
+    :type correlationId: str
+    :param isSuccess: True if blob upload was successful
+    :type isSuccess: bool
+    :param statusCode: status code for blob upload
+    :type statusCode: str
+    :param statusDescription: human readable descripton of the status for blob upload
+    :type statusDescription: str
+
+    :rtype: None
+    """
+    return 'do some magic!'
 
 
 def device_patch_twin(connectionId, twin):  # noqa: E501
@@ -231,15 +223,14 @@ def device_patch_twin(connectionId, twin):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param twin:
+    :param twin: 
     :type twin: dict | bytes
 
     :rtype: None
     """
     if connexion.request.is_json:
         twin = Twin.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    device_glue.send_twin_patch(connectionId, twin)
+    return 'do some magic!'
 
 
 def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
@@ -254,8 +245,7 @@ def device_reconnect(connectionId, forceRenewPassword=None):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    device_glue.reconnect(connectionId, forceRenewPassword)
+    return 'do some magic!'
 
 
 def device_send_event(connectionId, eventBody):  # noqa: E501
@@ -265,15 +255,14 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
 
     :param connectionId: Id for the connection
     :type connectionId: str
-    :param eventBody:
+    :param eventBody: 
     :type eventBody: dict | bytes
 
     :rtype: None
     """
     if connexion.request.is_json:
         eventBody = EventBody.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    device_glue.send_event(connectionId, eventBody)
+    return 'do some magic!'
 
 
 def device_wait_for_c2d_message(connectionId):  # noqa: E501
@@ -286,13 +275,10 @@ def device_wait_for_c2d_message(connectionId):  # noqa: E501
 
     :rtype: EventBody
     """
-    # changed from return 'do some magic!'
-    return device_glue.wait_for_c2d_message(connectionId)
+    return 'do some magic!'
 
 
-def device_wait_for_connection_status_change(
-    connectionId, connectionStatus
-):  # noqa: E501
+def device_wait_for_connection_status_change(connectionId, connectionStatus):  # noqa: E501
     """wait for the current connection status to change and return the changed status
 
      # noqa: E501
@@ -304,10 +290,7 @@ def device_wait_for_connection_status_change(
 
     :rtype: str
     """
-    # changed from return 'do some magic!'
-    return json.dumps(
-        device_glue.wait_for_connection_status_change(connectionId, connectionStatus)
-    )
+    return 'do some magic!'
 
 
 def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
@@ -320,13 +303,10 @@ def device_wait_for_desired_properties_patch(connectionId):  # noqa: E501
 
     :rtype: Twin
     """
-    # changed from return 'do some magic!'
-    return device_glue.wait_for_desired_property_patch(connectionId)
+    return 'do some magic!'
 
 
-def device_wait_for_method_and_return_response(
-    connectionId, methodName, requestAndResponse
-):  # noqa: E501
+def device_wait_for_method_and_return_response(connectionId, methodName, requestAndResponse):  # noqa: E501
     """Wait for a method call, verify the request, and return the response.
 
     This is a workaround to deal with SDKs that only have method call operations that are sync.  This function responds to the method with the payload of this function, and then returns the method parameters.  Real-world implemenatations would never do this, but this is the only same way to write our test code right now (because the method handlers for C, Java, and probably Python all return the method response instead of supporting an async method call) # noqa: E501
@@ -335,16 +315,11 @@ def device_wait_for_method_and_return_response(
     :type connectionId: str
     :param methodName: name of the method to handle
     :type methodName: str
-    :param requestAndResponse:
+    :param requestAndResponse: 
     :type requestAndResponse: dict | bytes
 
     :rtype: None
     """
     if connexion.request.is_json:
-        requestAndResponse = MethodRequestAndResponse.from_dict(
-            connexion.request.get_json()
-        )  # noqa: E501
-    # changed from return 'do some magic!'
-    return device_glue.wait_for_method_and_return_response(
-        connectionId, methodName, requestAndResponse
-    )
+        requestAndResponse = MethodRequestAndResponse.from_dict(connexion.request.get_json())  # noqa: E501
+    return 'do some magic!'
