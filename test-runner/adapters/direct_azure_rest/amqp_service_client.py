@@ -11,11 +11,7 @@ from hmac import HMAC
 from time import time
 from uuid import uuid4
 from .. import adapter_config
-
-try:
-    from urllib import quote, quote_plus, urlencode  # Py2
-except Exception:
-    from urllib.parse import quote, quote_plus, urlencode
+from urllib.parse import quote, quote_plus, urlencode
 from connection_string import connection_string_to_dictionary, generate_auth_token
 
 import uamqp
@@ -44,7 +40,9 @@ class AmqpServiceClient:
         operation = "/messages/devicebound"
         target = "amqps://" + self.endpoint + operation
         logger.info("Target: {}".format(target))
-        self.send_client = uamqp.SendClient(target, debug=True)
+        self.send_client = uamqp.async_ops.client_async.SendClientAsync(
+            target, debug=True
+        )
         adapter_config.logger("AMQP service client connected")
 
     def disconnect_sync(self):
@@ -53,7 +51,7 @@ class AmqpServiceClient:
             self.send_client = None
             adapter_config.logger("AMQP service client disconnected")
 
-    def send_to_device(self, device_id, message):
+    async def send_to_device(self, device_id, message):
         msg_content = message
         app_properties = {}
         msg_props = uamqp.message.MessageProperties()
@@ -62,7 +60,5 @@ class AmqpServiceClient:
         message = uamqp.Message(
             msg_content, properties=msg_props, application_properties=app_properties
         )
-        self.send_client.queue_message(message)
-        results = self.send_client.send_all_messages(close_on_done=False)
-        assert not [m for m in results if m == uamqp.constants.MessageState.SendFailed]
+        await self.send_client.send_message_async(message)
         adapter_config.logger("AMQP service client sent: {}".format(message))
