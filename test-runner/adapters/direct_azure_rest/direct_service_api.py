@@ -59,9 +59,8 @@ class ServiceApi(AbstractServiceApi):
             device_id, method_invoke_parameters, custom_headers=self.headers()
         ).as_dict()
 
-    @emulate_async
-    def send_c2d(self, device_id, message):
+    async def send_c2d(self, device_id, message):
         if not self.amqp_service_client:
             self.amqp_service_client = AmqpServiceClient()
             self.amqp_service_client.connect_sync(self.service_connection_string)
-        self.amqp_service_client.send_to_device(device_id, message)
+        await self.amqp_service_client.send_to_device(device_id, message)

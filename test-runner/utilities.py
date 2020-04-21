@@ -5,8 +5,10 @@ import ast
 import random
 import string
 
+default_length = 64
 
-def random_string(prefix=None, length=64):
+
+def random_string(prefix=None, length=default_length):
     if prefix:
         s = prefix + ":"
     else:
@@ -51,8 +53,8 @@ def next_integer(prefix):
     return _index[prefix]
 
 
-def next_random_string(prefix):
+def next_random_string(prefix, length=default_length):
     """
     return a random string with the given prefix
     """
-    return random_string("{} {}".format(prefix, next_integer(prefix)))
+    return random_string("{} {}".format(prefix, next_integer(prefix)), length=length)

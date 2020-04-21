@@ -27,6 +27,10 @@ class BlobUploadTests(object):
     def blob_name(self):
         return utilities.random_string()
 
+    @pytest.fixture
+    def typical_blob_data(self):
+        return utilities.next_random_string("typical_blob", length=257)
+
     @pytest.mark.supports_blob_upload
     @pytest.mark.it("Fails updating status for invalid correlation id")
     async def test_blob_invalid_correlation_id(self, client):
@@ -52,7 +56,7 @@ class BlobUploadTests(object):
         )
 
     @pytest.mark.supports_blob_upload
-    @pytest.mark.it("Can't report success if noting was uploaded")
+    @pytest.mark.it("Fails to report success if noting was uploaded")
     async def test_success_without_upload(self, client, blob_name):
         info = await client.get_storage_info_for_blob(blob_name)
 
@@ -64,3 +68,20 @@ class BlobUploadTests(object):
         await client.notify_blob_upload_status(
             info.correlation_id, False, 400, "failed upload"
         )
+
+    @pytest.mark.supports_blob_upload
+    @pytest.mark.it("Can be used to successfully upload a blob")
+    async def test_upload(self, client, blob_name, typical_blob_data):
+        info = await client.get_storage_info_for_blob(blob_name)
+
+        blob_client = blob_client_from_info(info)
+
+        blob_client.upload_blob(typical_blob_data)
+
+        await client.notify_blob_upload_status(
+            info.correlation_id, True, success_code, success_message
+        )
+
+        blob_data_copy = blob_client.download_blob().readall()
+
+        assert blob_data_copy.decode() == typical_blob_data
