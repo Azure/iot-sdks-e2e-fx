@@ -12,10 +12,6 @@ class AbstractControlApi:
         pass
 
     @abc.abstractmethod
-    def cleanup_sync(self):
-        pass
-
-    @abc.abstractmethod
     def get_capabilities_sync(self):
         pass
 

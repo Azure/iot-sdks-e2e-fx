@@ -54,10 +54,6 @@ class ControlApi(AbstractControlApi):
             # swallow this exception.  logs are allowed to fail (especially if we're testing disconnection scenarios)
 
     @log_entry_and_exit
-    def cleanup_sync(self):
-        self.sync_rest_endpoint.cleanup(timeout=adapter_config.default_api_timeout)
-
-    @log_entry_and_exit
     def get_capabilities_sync(self):
         return self.sync_rest_endpoint.get_capabilities(
             timeout=adapter_config.default_api_timeout

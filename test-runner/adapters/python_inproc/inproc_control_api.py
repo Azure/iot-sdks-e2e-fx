@@ -12,9 +12,6 @@ class ControlApi(AbstractControlApi):
     def log_message_sync(self, message):
         internal_control_glue.log_message(message)
 
-    def cleanup_sync(self):
-        pass
-
     def get_capabilities_sync(self):
         return internal_control_glue.get_capabilities()
 
