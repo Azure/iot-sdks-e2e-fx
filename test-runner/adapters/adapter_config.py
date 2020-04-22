@@ -12,5 +12,11 @@ control_api_timeout = 60
 # timeout for print_message calls
 print_message_timeout = 2
 
-# function that adapters can use to log messages to the output stream
-logger = None
+logger_function = None
+
+
+# function that adapters can use to log messages to the output stream.
+# This needs to be indirected through a function because `logger` gets imported
+# _before_ `logger_function` gets set.
+def logger(*args, **kwargs):
+    logger_function(*args, **kwargs)

@@ -20,4 +20,4 @@ def set_logger():
             print(message)
         settings.test_module.wrapper_api.log_message_sync(message)
 
-    adapters.adapter_config.logger = print_and_log
+    adapters.adapter_config.logger_function = print_and_log
