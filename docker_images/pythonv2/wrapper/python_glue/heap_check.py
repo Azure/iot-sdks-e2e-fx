@@ -4,7 +4,7 @@
 import gc
 import inspect
 import os
-import azure.iot.device as iothub_library_root
+import azure.eventhub as iothub_library_root
 import weakref
 import time
 import logging

@@ -73,27 +73,26 @@ class EventHubApi:
             await self.received_events.put(event)
 
         async def listener():
-            async with self.consumer_client:
-                await self.consumer_client.receive(on_event, starting_position=offset)
+            await self.consumer_client.receive(on_event, starting_position=offset)
 
         self.receive_future = asyncio.ensure_future(listener())
 
     async def _close_eventhub_client(self):
+        if self.consumer_client:
+            logger("_close_eventhub_client: stopping consumer client")
+            await self.consumer_client.close()
+            logger("_close_eventhub_client: done stopping consumer client")
+            self.consumer_client = None
+
         if self.receive_future:
             logger("_close_eventhub_client: stopping receiver")
-            self.receive_future.cancel()
+            # self.receive_future.cancel()
             try:
                 await self.receive_future
             except asyncio.CancelledError:
                 pass
             logger("_close_eventhub_client: done stopping receiver")
             self.receive_future = None
-
-        if self.consumer_client:
-            logger("_close_eventhub_client: stopping consumer client")
-            await self.consumer_client.close()
-            logger("_close_eventhub_client: done stopping consumer client")
-            self.consumer_client = None
 
     async def disconnect(self):
         logger("async disconnect {}".format(object_list))
