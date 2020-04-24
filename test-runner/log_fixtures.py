@@ -7,6 +7,7 @@ import pytest
 import traceback
 from horton_settings import settings
 from horton_logging import logger
+import pprint
 
 # from https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -22,6 +23,41 @@ def pytest_runtest_makereport(item, call):
         # set a report attribute for each phase of a call, which can
         # be 'setup', 'call', 'teardown'
         setattr(item, "rep_" + rep.when, rep)
+
+
+def nodeid_to_xunit_class_and_test(nodeid):
+    # nodeid: 'test_iothub_module.py::TestIotHubModuleClient::test_regression_connect_fails_with_corrupt_connection_string[SharedAccessKey-aGlsbGJpbGx5IHN1bnJpc2UK]'
+    # <--becomes-->
+    # xunit_class= 'test_iothub_module.TestIotHubModuleClient'
+    # xunit_test 'test_regression_connect_fails_with_corrupt_connection_string[SharedAccessKey-aGlsbGJpbGx5IHN1bnJpc2UK]'
+
+    parts = nodeid.split["::"]
+    xunit_class = parts[0][:-3] + "." + parts[1]
+    xunit_test = parts[0]
+
+    return (xunit_test, xunit_class)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_logfinish(nodeid, location):
+    (xunit_class, xunit_test) = nodeid_to_xunit_class_and_test(nodeid)
+    logger("HORTON: XXXXXXX function '{}' '{}'".format(xunit_class, xunit_test))
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_logstart(nodeid, location):
+    print("logstart")
+    pprint.pprint(nodeid)
+    print("--")
+    pprint.pprint(location)
+    print("--")
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_teardown(item, nextitem):
+    print("teardown")
+    pprint.pprint(item)
+    print("--")
 
 
 dashes = "".join(("-" for _ in range(0, 30)))
@@ -49,6 +85,7 @@ def pytest_pyfunc_call(pyfuncitem):
 
     finally:
         # BKTODO: this should iterate over settings
+        logger("finally")
         if getattr(settings, "eventhub", None) and settings.eventhub.client:
             logger(cleanup_separator.format("eventhub"))
             settings.eventhub.client.disconnect_sync()
@@ -85,6 +122,7 @@ def pytest_pyfunc_call(pyfuncitem):
             settings.service.client = None
 
         if settings.test_module.capabilities.checks_for_leaks:
+            logger("checking for leaks")
             settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
 
 
@@ -120,16 +158,6 @@ def function_log_fixture(request):
                     request.module.__name__, request.cls.__name__, request.node.name
                 )
             )
-
-    request.addfinalizer(fin)
-
-
-@pytest.fixture(scope="module", autouse=True)
-def module_log_fixture(request):
-    logger("HORTON: Entering module {}".format(request.module.__name__))
-
-    def fin():
-        logger("HORTON: Exiting module {}".format(request.module.__name__))
 
     request.addfinalizer(fin)
 

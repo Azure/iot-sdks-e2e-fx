@@ -29,9 +29,11 @@ from fixtures import (
 )
 from log_fixtures import (
     pytest_runtest_makereport,
+    pytest_runtest_logstart,
+    pytest_runtest_logfinish,
+    pytest_runtest_teardown,
     pytest_pyfunc_call,
     session_log_fixture,
-    module_log_fixture,
     function_log_fixture,
 )
 
