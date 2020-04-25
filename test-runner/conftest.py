@@ -29,7 +29,7 @@ from fixtures import (
     net_control,
     telemetry_payload,
 )
-from log_fixtures import (
+from hooks import (
     pytest_runtest_logstart,
     pytest_runtest_logfinish,
     pytest_runtest_teardown,
