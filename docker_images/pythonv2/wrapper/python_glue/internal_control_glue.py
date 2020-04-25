@@ -14,7 +14,6 @@ sas_renewal_interval = None
 
 tracker = leak_check.LeakTracker()
 tracker.add_tracked_module("azure.iot.device")
-tracker.add_tracked_module("azure.eventhub")
 tracker.set_baseline()
 
 # Length of time, in seconds, that a SAS token is valid for.

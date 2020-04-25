@@ -78,7 +78,7 @@ class BlobUploadTests(object):
     @pytest.mark.supports_blob_upload
     @pytest.mark.it("Can be used to successfully upload a blob")
     async def test_upload(self, client, service, blob_name, typical_blob_data):
-        asyncio.ensure_future(move_blob_status(service))
+        # asyncio.ensure_future(move_blob_status(service))
 
         info = await client.get_storage_info_for_blob(blob_name)
 
@@ -94,4 +94,4 @@ class BlobUploadTests(object):
 
         assert blob_data_copy.decode() == typical_blob_data
 
-        await asyncio.sleep(10)
+        # await asyncio.sleep(10)
