@@ -7,22 +7,12 @@ import pytest
 import traceback
 from horton_settings import settings
 from horton_logging import logger
+from pytest_asyncio.plugin import wrap_in_sync
 import pprint
 
-# from https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    # execute all other hooks to obtain the report object
-    outcome = yield
-    rep = outcome.get_result()
 
-    if rep.when == "teardown":
-        if rep.failed:
-            logger("teardown:   " + str(rep.outcome))
-    else:
-        # set a report attribute for each phase of a call, which can
-        # be 'setup', 'call', 'teardown'
-        setattr(item, "rep_" + rep.when, rep)
+def separator(message=""):
+    return message.center(132, "-")
 
 
 def nodeid_to_xunit_class_and_test(nodeid):
@@ -31,43 +21,35 @@ def nodeid_to_xunit_class_and_test(nodeid):
     # xunit_class= 'test_iothub_module.TestIotHubModuleClient'
     # xunit_test 'test_regression_connect_fails_with_corrupt_connection_string[SharedAccessKey-aGlsbGJpbGx5IHN1bnJpc2UK]'
 
-    parts = nodeid.split["::"]
+    parts = nodeid.split("::")
     xunit_class = parts[0][:-3] + "." + parts[1]
-    xunit_test = parts[0]
+    xunit_test = parts[2]
 
-    return (xunit_test, xunit_class)
+    return (xunit_class, xunit_test)
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_logstart(nodeid, location):
+    (xunit_class, xunit_test) = nodeid_to_xunit_class_and_test(nodeid)
+    logger(separator())
+    logger("HORTON: Entering function '{}' '{}'".format(xunit_class, xunit_test))
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_logfinish(nodeid, location):
     (xunit_class, xunit_test) = nodeid_to_xunit_class_and_test(nodeid)
-    logger("HORTON: XXXXXXX function '{}' '{}'".format(xunit_class, xunit_test))
-
-
-@pytest.hookimpl(tryfirst=True)
-def pytest_runtest_logstart(nodeid, location):
-    print("logstart")
-    pprint.pprint(nodeid)
-    print("--")
-    pprint.pprint(location)
-    print("--")
+    logger("HORTON: Exiting function '{}' '{}'".format(xunit_class, xunit_test))
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item, nextitem):
-    print("teardown")
-    pprint.pprint(item)
-    print("--")
+    if settings.test_module.capabilities.checks_for_leaks:
+        logger(separator("checking for leaks"))
+        settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
 
 
-dashes = "".join(("-" for _ in range(0, 30)))
-general_separator = "".join("-" for _ in range(0, 132))
-
-# BKTODO: move this out of this file into it's own file
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_pyfunc_call(pyfuncitem):
-
-    cleanup_separator = "{} CLEANUP {} {}".format(dashes, "{}", dashes)
 
     # this hook wraps test runs.  this yield runs the actual test
     outcome = yield
@@ -76,107 +58,36 @@ def pytest_pyfunc_call(pyfuncitem):
         # this will raise if the outcome was an exception
         outcome.get_result()
 
-        logger(general_separator)
-        logger("TEST PASSED (before cleanup)")
+        logger(separator("TEST PASSED (before cleanup)"))
 
     except Exception as e:
-        logger(general_separator)
-        logger("TEST FAILED BACAUSE OF {}".format(e))
+        logger(separator("TEST FAILED BACAUSE OF {}".format(e)))
 
+
+async def session_init():
+    print(separator("SESSION INIT"))
+    if settings.net_control.api:
+        settings.net_control.api.reconnect_sync()
+
+
+async def session_teardown():
+    print(separator("SESSION TEARDOWN"))
+    logger("Preforming post-session cleanup")
+    try:
+        adapters.cleanup_test_objects_sync()
+    except Exception:
+        logger("Exception in cleanup")
+        logger(traceback.format_exc())
+        raise
     finally:
-        # BKTODO: this should iterate over settings
-        logger("finally")
-        if getattr(settings, "eventhub", None) and settings.eventhub.client:
-            logger(cleanup_separator.format("eventhub"))
-            settings.eventhub.client.disconnect_sync()
-            settings.eventhub.client = None
-
-        if getattr(settings, "registry", None) and settings.registry.client:
-            logger(cleanup_separator.format("registry"))
-            settings.registry.client.disconnect_sync()
-            settings.registry.client = None
-
-        if getattr(settings, "friend_module", None) and settings.friend_module.client:
-            logger(cleanup_separator.format("friend module"))
-            settings.friend_module.client.disconnect_sync()
-            settings.friend_module.client = None
-
-        if getattr(settings, "test_module", None) and settings.test_module.client:
-            logger(cleanup_separator.format("test module"))
-            settings.test_module.client.disconnect_sync()
-            settings.test_module.client = None
-
-        if getattr(settings, "leaf_device", None) and settings.leaf_device.client:
-            logger(cleanup_separator.format("leaf device"))
-            settings.leaf_device.client.disconnect_sync()
-            settings.leaf_device.client = None
-
-        if getattr(settings, "test_device", None) and settings.test_device.client:
-            logger(cleanup_separator.format("device"))
-            settings.test_device.client.disconnect_sync()
-            settings.test_device.client = None
-
-        if getattr(settings, "service", None) and settings.service.client:
-            logger(cleanup_separator.format("service"))
-            settings.service.client.disconnect_sync()
-            settings.service.client = None
-
-        if settings.test_module.capabilities.checks_for_leaks:
-            logger("checking for leaks")
-            settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
+        logger("HORTON: post-session cleanup complete")
 
 
-@pytest.fixture(scope="function", autouse=True)
-def function_log_fixture(request):
-    logger(general_separator)
-    logger(
-        "HORTON: Entering function '{}.{}' '{}'".format(
-            request.module.__name__, request.cls.__name__, request.node.name
-        )
-    )
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtestloop(session):
+    wrap_in_sync(session_init)()
 
-    def fin():
-        logger(general_separator)
-        if hasattr(request.node, "rep_setup"):
-            logger("setup:      " + str(request.node.rep_setup.outcome))
-        if hasattr(request.node, "rep_call"):
-            logger("call:       " + str(request.node.rep_call.outcome))
-        logger(general_separator)
-        logger(
-            "HORTON: Cleaning up after function {}".format(request.function.__name__)
-        )
-
-        try:
-            adapters.cleanup_test_objects_sync()
-        except Exception:
-            logger("Exception in cleanup")
-            logger(traceback.format_exc())
-            raise
-        finally:
-            logger(
-                "HORTON: Exiting function '{}.{}' '{}'".format(
-                    request.module.__name__, request.cls.__name__, request.node.name
-                )
-            )
-
-    request.addfinalizer(fin)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def session_log_fixture(request):
-    logger("HORTON: Preforming pre-session cleanup")
-    adapters.cleanup_test_objects_sync()
-    logger("HORTON: pre-session cleanup complete")
-
-    def fin():
-        logger("Preforming post-session cleanup")
-        try:
-            adapters.cleanup_test_objects_sync()
-        except Exception:
-            logger("Exception in cleanup")
-            logger(traceback.format_exc())
-            raise
-        finally:
-            logger("HORTON: post-session cleanup complete")
-
-    request.addfinalizer(fin)
+    try:
+        yield
+    finally:
+        wrap_in_sync(session_teardown)()

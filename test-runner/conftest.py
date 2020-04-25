@@ -8,6 +8,8 @@ import pathlib
 import adapters
 import logging
 import traceback
+import sys
+import io
 from adapters import adapter_config
 from dump_object import dump_object
 import runtime_capabilities
@@ -28,13 +30,11 @@ from fixtures import (
     telemetry_payload,
 )
 from log_fixtures import (
-    pytest_runtest_makereport,
     pytest_runtest_logstart,
     pytest_runtest_logfinish,
     pytest_runtest_teardown,
     pytest_pyfunc_call,
-    session_log_fixture,
-    function_log_fixture,
+    pytest_runtestloop,
 )
 
 # default to logging.INFO
@@ -46,6 +46,9 @@ logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
 logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
+
+# disable output buffering,  This is necessary to get the shell 2>&1 and &| redirects to interleve correctly
+sys.stdout = io.TextIOWrapper(open(sys.stdout.fileno(), "wb", 0), write_through=True)
 
 
 def pytest_addoption(parser):
@@ -286,7 +289,6 @@ def skip_unsupported_tests(items):
 
 
 def configure_network_control():
-    # make sure the network is connected before starting (this can happen with interrupted runs)
     if settings.test_module.capabilities.dropped_connection_tests:
         if not settings.net_control.adapter_address:
             settings.test_module.capabilities.dropped_connection_tests = False
@@ -303,8 +305,6 @@ def configure_network_control():
                 settings.test_module.capabilities.net_connect_app = False
                 settings.test_module.skip_list.append("dropped_connection_tests")
                 settings.net_control.adapter_address = None
-            else:
-                settings.net_control.api.reconnect_sync()
 
 
 def pytest_collection_modifyitems(config, items):
