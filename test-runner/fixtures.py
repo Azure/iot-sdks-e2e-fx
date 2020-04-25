@@ -16,7 +16,7 @@ separator = "{} FINAL CLEANUP {} {}".format(dashes, "{}", dashes)
 
 
 @pytest.fixture
-async def eventhub():
+async def eventhub(event_loop):
     eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
     eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
     yield eventhub

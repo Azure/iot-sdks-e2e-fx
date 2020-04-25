@@ -42,6 +42,7 @@ logging.basicConfig(level=logging.INFO)
 # AMQP is chatty at INFO level.  Dial this down to WARNING.
 logging.getLogger("uamqp").setLevel(level=logging.WARNING)
 logging.getLogger("paho").setLevel(level=logging.DEBUG)
+logging.getLogger("asyncio").setLevel(level=logging.DEBUG)
 logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log

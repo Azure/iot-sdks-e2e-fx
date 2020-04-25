@@ -6,14 +6,11 @@ import json
 import ast
 import random
 import datetime
+import threading
+from threading import Event
 from azure.eventhub.aio import EventHubConsumerClient
 from ..adapter_config import logger
-from ..decorators import emulate_async
 from . import eventhub_connection_string
-
-# our receive loop cycles through our 4 partitions, waiting for
-# RECEIVE_CYCLE_TIME seconds at each partition for a message to arrive
-RECEIVE_CYCLE_TIME = 0.25
 
 object_list = []
 
@@ -45,7 +42,8 @@ class EventHubApi:
         self.iothub_connection_string = None
         self.eventhub_connection_string = None
         self.received_events = None
-        self.receive_future = None
+        self.listener_future = None
+        self.listener_complete = None
 
     def create_from_connection_string_sync(self, connection_string):
         self.iothub_connection_string = connection_string
@@ -54,6 +52,13 @@ class EventHubApi:
         )
 
     async def connect(self, offset=None):
+        logger(
+            "connect: thread={} {} loop={}".format(
+                threading.current_thread(),
+                id(threading.current_thread()),
+                id(asyncio.get_running_loop()),
+            )
+        )
         if not offset:
             offset = datetime.datetime.utcnow() - datetime.timedelta(seconds=10)
 
@@ -72,27 +77,40 @@ class EventHubApi:
             logger("received {}".format(event))
             await self.received_events.put(event)
 
-        async def listener():
-            await self.consumer_client.receive(on_event, starting_position=offset)
+        self.listener_complete = Event()
 
-        self.receive_future = asyncio.ensure_future(listener())
+        async def listener():
+            try:
+                await self.consumer_client.receive(on_event, starting_position=offset)
+            finally:
+                self.listener_complete.set()
+
+        self.listener_future = asyncio.ensure_future(listener())
 
     async def _close_eventhub_client(self):
+
+        logger(
+            "close: thread={} {} loop={}".format(
+                threading.current_thread(),
+                id(threading.current_thread()),
+                id(asyncio.get_running_loop()),
+            )
+        )
+
         if self.consumer_client:
             logger("_close_eventhub_client: stopping consumer client")
             await self.consumer_client.close()
             logger("_close_eventhub_client: done stopping consumer client")
             self.consumer_client = None
 
-        if self.receive_future:
-            logger("_close_eventhub_client: stopping receiver")
-            # self.receive_future.cancel()
-            try:
-                await self.receive_future
-            except asyncio.CancelledError:
-                pass
-            logger("_close_eventhub_client: done stopping receiver")
-            self.receive_future = None
+        if self.listener_future:
+            logger("_close_eventhub_client: cancelling listener")
+            self.listener_future.cancel()
+            logger("_close_eventhub_client: waiting for listener to complete")
+            await self.listener_future
+            self.listener_complete.wait()
+            logger("_close_eventhub_client: listener is complete")
+            self.listener_complete = None
 
     async def disconnect(self):
         logger("async disconnect {}".format(object_list))
