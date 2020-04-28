@@ -1,4 +1,4 @@
-# Copyright (c) Microsoft. All rights reserved.
+#l Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 #
@@ -35,10 +35,6 @@ class InjectIntoJunit:
             log_file_lines = f.read().splitlines()
 
         xml = JUnitXml.fromfile(junit_file_name)
-
-        import pdb
-
-        pdb.set_trace()
 
         for suite in xml:
             for testcase in suite:
