@@ -284,7 +284,6 @@ def skip_unsupported_tests(items):
 
 
 def configure_network_control():
-    # make sure the network is connected before starting (this can happen with interrupted runs)
     if settings.test_module.capabilities.dropped_connection_tests:
         if not settings.net_control.adapter_address:
             settings.test_module.capabilities.dropped_connection_tests = False

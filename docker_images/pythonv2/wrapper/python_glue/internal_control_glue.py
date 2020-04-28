@@ -2,7 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import logging
-import heap_check
+import leak_check
 from azure.iot.device import IoTHubModuleClient
 from azure.iot.device.common.pipeline import pipeline_stages_base
 from azure.iot.device.iothub.auth import base_renewable_token_authentication_provider
@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 
 do_async = False
 sas_renewal_interval = None
+
+tracker = leak_check.LeakTracker()
+tracker.add_tracked_module("azure.iot.device")
+tracker.set_baseline()
 
 # Length of time, in seconds, that a SAS token is valid for.
 ORIGINAL_DEFAULT_TOKEN_VALIDITY_PERIOD = (
@@ -64,7 +68,7 @@ def get_capabilities():
 
 def send_command(cmd):
     if cmd == "check_for_leaks":
-        heap_check.assert_all_iothub_objects_have_been_collected()
+        tracker.check_for_new_leaks()
     else:
         raise Exception("Unsupported Command")
 
