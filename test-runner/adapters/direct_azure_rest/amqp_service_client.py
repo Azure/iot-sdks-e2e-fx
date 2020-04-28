@@ -37,29 +37,19 @@ class AmqpServiceClient:
     def connect_sync(self, service_connection_string):
         self.config = connection_string_to_dictionary(service_connection_string)
         self.endpoint = _build_iothub_amqp_endpoint(self.config)
-
-        send_operation = "/messages/devicebound"
-        send_target = "amqps://" + self.endpoint + send_operation
-        logger.info("send target: {}".format(send_target))
+        operation = "/messages/devicebound"
+        target = "amqps://" + self.endpoint + operation
+        logger.info("Target: {}".format(target))
         self.send_client = uamqp.async_ops.client_async.SendClientAsync(
-            send_target, debug=True
+            target, debug=True
         )
-
-        self.blob_status_receive_client = None
-        self.blob_status_receive_iter = None
-
         adapter_config.logger("AMQP service client connected")
 
     def disconnect_sync(self):
         if self.send_client:
             self.send_client.close()
             self.send_client = None
-            adapter_config.logger("AMQP send client disconnected")
-
-        if self.blob_status_receive_client:
-            self.blob_status_receive_client.close()
-            self.blob_status_receive_client = None
-            adapter_config.logger("AMQP blob status receive client disconnected")
+            adapter_config.logger("AMQP service client disconnected")
 
     async def send_to_device(self, device_id, message):
         msg_content = message
@@ -72,24 +62,3 @@ class AmqpServiceClient:
         )
         await self.send_client.send_message_async(message)
         adapter_config.logger("AMQP service client sent: {}".format(message))
-
-    async def get_next_blob_status(self):
-        if not self.blob_status_receive_client:
-            blob_status_receive_operation = "/messages/serviceBound/filenotifications"
-            blob_status_receive_source = (
-                "amqps://" + self.endpoint + blob_status_receive_operation
-            )
-
-            logger.info(
-                "blob status receive source: {}".format(blob_status_receive_source)
-            )
-
-            self.blob_status_receive_client = uamqp.async_ops.client_async.ReceiveClientAsync(
-                blob_status_receive_source
-            )
-            self.blob_status_receive_iter = (
-                self.blob_status_receive_client.receive_messages_iter_async()
-            )
-
-        async for message in self.blob_status_receive_iter:
-            return message

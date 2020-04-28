@@ -29,12 +29,12 @@ from fixtures import (
     net_control,
     telemetry_payload,
 )
-from hooks import (
-    pytest_runtest_logstart,
-    pytest_runtest_logfinish,
-    pytest_runtest_teardown,
+from log_fixtures import (
+    pytest_runtest_makereport,
     pytest_pyfunc_call,
-    pytest_runtestloop,
+    session_log_fixture,
+    module_log_fixture,
+    function_log_fixture,
 )
 
 # default to logging.INFO
@@ -305,6 +305,8 @@ def configure_network_control():
                 settings.test_module.capabilities.net_connect_app = False
                 settings.test_module.skip_list.append("dropped_connection_tests")
                 settings.net_control.adapter_address = None
+            else:
+                settings.net_control.api.reconnect_sync()
 
 
 def pytest_collection_modifyitems(config, items):
