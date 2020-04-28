@@ -118,8 +118,7 @@ class EventHubApi:
             object_list.remove(self)
             await self._close_eventhub_client()
 
-    #  30 second timeout was too small.  Bumping to 90.
-    async def wait_for_next_event(self, device_id, timeout=90, expected=None):
+    async def wait_for_next_event(self, device_id, expected=None):
         logger("EventHubApi: waiting for next event for {}".format(device_id))
 
         while True:
