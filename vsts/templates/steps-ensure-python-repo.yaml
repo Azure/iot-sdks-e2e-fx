@@ -2,7 +2,8 @@ steps:
 - script: |
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
     cd $(Build.SourcesDirectory) &&
-    python env_setup.py --no_dev
+    python env_setup.py --no_dev &&
+    pip install pytest-asyncio==0.10.0
   displayName: "Register python repo"
   condition: and(succeeded(), ne(variables['Build.SourcesDirectory'], variables['Horton.FrameworkRoot']), eq(variables['pythonInproc'], 'yes'))
 
@@ -11,7 +12,8 @@ steps:
     mkdir $(Horton.FrameworkRoot)/python &&
     cd $(Horton.FrameworkRoot)/python &&
     git clone https://github.com/Azure/azure-iot-sdk-python . &&
-    python env_setup.py --no_dev
+    python env_setup.py --no_dev &&
+    pip install pytest-asyncio==0.10.0
   displayName: "Clone and register python repo"
   condition: and(succeeded(), eq(variables['Build.SourcesDirectory'], variables['Horton.FrameworkRoot']), eq(variables['pythonInproc'], 'yes'))
 
