@@ -8,8 +8,6 @@ import pathlib
 import adapters
 import logging
 import traceback
-import sys
-import io
 from adapters import adapter_config
 from dump_object import dump_object
 import runtime_capabilities
@@ -48,7 +46,6 @@ logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
 logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
 
 # disable output buffering,  This is necessary to get the shell 2>&1 and &| redirects to interleve correctly
-sys.stdout = io.TextIOWrapper(open(sys.stdout.fileno(), "wb", 0), write_through=True)
 
 
 def pytest_addoption(parser):

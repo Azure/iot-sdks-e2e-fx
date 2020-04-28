@@ -22,12 +22,6 @@ def blob_client_from_info(info):
     return BlobClient.from_blob_url(sas_url)
 
 
-async def move_blob_status(service):
-    while True:
-        status = await service.get_blob_upload_status()
-        print("status = {}".format(status))
-
-
 class BlobUploadTests(object):
     @pytest.fixture
     def blob_name(self):
@@ -77,9 +71,7 @@ class BlobUploadTests(object):
 
     @pytest.mark.supports_blob_upload
     @pytest.mark.it("Can be used to successfully upload a blob")
-    async def test_upload(self, client, service, blob_name, typical_blob_data):
-        # asyncio.ensure_future(move_blob_status(service))
-
+    async def test_upload(self, client, blob_name, typical_blob_data):
         info = await client.get_storage_info_for_blob(blob_name)
 
         blob_client = blob_client_from_info(info)
@@ -93,5 +85,3 @@ class BlobUploadTests(object):
         blob_data_copy = blob_client.download_blob().readall()
 
         assert blob_data_copy.decode() == typical_blob_data
-
-        # await asyncio.sleep(10)
