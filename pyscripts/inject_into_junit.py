@@ -1,4 +1,4 @@
-# Copyright (c) Microsoft. All rights reserved.
+#l Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 #
@@ -36,25 +36,26 @@ class InjectIntoJunit:
 
         xml = JUnitXml.fromfile(junit_file_name)
 
-        for testcase in xml:
-            if testcase:
-                class_name = testcase.classname
-                test_name = testcase.name
-                if testcase.system_out:
-                    testcase.system_err = testcase.system_out
+        for suite in xml:
+            for testcase in suite:
+                if testcase:
+                    class_name = testcase.classname
+                    test_name = testcase.name
+                    if testcase.system_out:
+                        testcase.system_err = testcase.system_out
 
-                    lines_for_junit = self.get_testcase_lines_from_log(
-                        log_file_lines, class_name, test_name
-                    )
-                    print(
-                        "TestCase: "
-                        + test_name
-                        + " : Injecting ("
-                        + str(len(lines_for_junit))
-                        + ") lines"
-                    )
-                    parsed_loglines = "\n".join(lines_for_junit)
-                    testcase.system_out = "\n" + parsed_loglines + "\n"
+                        lines_for_junit = self.get_testcase_lines_from_log(
+                            log_file_lines, class_name, test_name
+                        )
+                        print(
+                            "TestCase: "
+                            + test_name
+                            + " : Injecting ("
+                            + str(len(lines_for_junit))
+                            + ") lines"
+                        )
+                        parsed_loglines = "\n".join(lines_for_junit)
+                        testcase.system_out = "\n" + parsed_loglines + "\n"
 
         xml.write()
 
