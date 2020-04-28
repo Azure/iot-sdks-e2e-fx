@@ -172,8 +172,6 @@ class RegressionTests(object):
         if not client.settings.capabilities.new_python_reconnect:
             pytest.skip("waiting for python ReconnectStage changes")
 
-        assert 6 == 9
-
         await net_control.disconnect(drop_mechanism)
 
         with pytest.raises(Exception) as e:

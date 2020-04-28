@@ -10,4 +10,3 @@ class BaseClientTests(object):
     async def test_client_connect_disconnect(self, client):
         if client.capabilities.v2_connect_group:
             await client.connect2()
-        assert 6 == 9
