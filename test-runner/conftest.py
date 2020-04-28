@@ -45,8 +45,6 @@ logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
 )  # info level can leak credentials into the log
 logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
 
-# disable output buffering,  This is necessary to get the shell 2>&1 and &| redirects to interleve correctly
-
 
 def pytest_addoption(parser):
     parser.addoption(
