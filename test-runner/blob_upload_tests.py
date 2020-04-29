@@ -5,6 +5,7 @@
 import pytest
 import asyncio
 import utilities
+import json
 from horton_logging import logger
 from azure.storage.blob import BlobClient
 
@@ -20,6 +21,18 @@ def blob_client_from_info(info):
         info.host_name, info.container_name, info.blob_name, info.sas_token
     )
     return BlobClient.from_blob_url(sas_url)
+
+
+async def move_blob_status_into_eventhub(service, client):
+    """
+    get_blob_update_status() returns the status once, so we might receive status from
+    a different instance of this test that's running in parallel.  we copy the update
+    status into eventhub where it's available to any instance of this test.
+    """
+    while True:
+        status = await service.get_blob_upload_status()
+        print("status = {}".format(status))
+        await client.send_event(json.loads(str(status)))
 
 
 class BlobUploadTests(object):
@@ -71,17 +84,43 @@ class BlobUploadTests(object):
 
     @pytest.mark.supports_blob_upload
     @pytest.mark.it("Can be used to successfully upload a blob")
-    async def test_upload(self, client, blob_name, typical_blob_data):
-        info = await client.get_storage_info_for_blob(blob_name)
+    async def test_upload(
+        self, client, service, eventhub, blob_name, typical_blob_data
+    ):
+        await eventhub.connect()
 
-        blob_client = blob_client_from_info(info)
+        await asyncio.sleep(5)
 
-        blob_client.upload_blob(typical_blob_data)
-
-        await client.notify_blob_upload_status(
-            info.correlation_id, True, success_code, success_message
+        move_future = asyncio.ensure_future(
+            move_blob_status_into_eventhub(service, client)
         )
 
-        blob_data_copy = blob_client.download_blob().readall()
+        try:
+            info = await client.get_storage_info_for_blob(blob_name)
 
-        assert blob_data_copy.decode() == typical_blob_data
+            blob_client = blob_client_from_info(info)
+
+            blob_client.upload_blob(typical_blob_data)
+
+            await client.notify_blob_upload_status(
+                info.correlation_id, True, success_code, success_message
+            )
+
+            blob_data_copy = blob_client.download_blob().readall()
+
+            assert blob_data_copy.decode() == typical_blob_data
+
+            while True:
+                upload_status = await eventhub.wait_for_next_event(device_id=None)
+                if (
+                    "blobName" in upload_status
+                    and info.blob_name == upload_status["blobName"]
+                ):
+                    return
+        finally:
+            move_future.cancel()
+
+            try:
+                await move_future
+            except asyncio.CancelledError:
+                pass
