@@ -74,7 +74,8 @@ class EventHubApi:
         )
 
         async def on_event(partition_context, event):
-            logger("received {}".format(event))
+            # this receives all events.  they get filtered by device_id (if necessary) when
+            # pulled from the queue
             await self.received_events.put(event)
 
         self.listener_complete = Event()
@@ -124,7 +125,9 @@ class EventHubApi:
         while True:
             event = await self.received_events.get()
             if get_device_id_from_event(event) == device_id:
-                logger("EventHubApi: received event: {}".format(event.body_as_str()))
+                logger(
+                    "EventHubApi: received event: {}".format(event.body_as_str()[:80])
+                )
                 received = event.body_as_json()
                 if expected is not None:
                     if json_is_same(expected, received):
