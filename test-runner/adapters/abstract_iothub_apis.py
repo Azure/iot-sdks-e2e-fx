@@ -214,3 +214,7 @@ class AbstractServiceApi(ServiceConnectDisconnect, InvokeMethods):
     @abc.abstractmethod
     def send_c2d(self, device_id, message):
         pass
+
+    @abc.abstractmethod
+    def get_blob_upload_status(self):
+        pass

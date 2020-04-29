@@ -16,13 +16,13 @@ separator = "{} FINAL CLEANUP {} {}".format(dashes, "{}", dashes)
 
 
 @pytest.fixture
-def eventhub():
+async def eventhub(event_loop):
     eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
     eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
     yield eventhub
     logger(separator.format("eventhub"))
     try:
-        eventhub.disconnect_sync()
+        await eventhub.disconnect()
     except Exception as e:
         logger("exception disconnecting eventhub: {}".format(e))
 

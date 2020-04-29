@@ -1,19 +1,16 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-import time
+import asyncio
 import json
 import ast
 import random
-from azure.eventhub import EventHubClient
-from azure.eventhub.common import Offset
-from azure.eventhub.common import EventHubError
-from .. import adapter_config
-from ..decorators import emulate_async
-
-# our receive loop cycles through our 4 partitions, waiting for
-# RECEIVE_CYCLE_TIME seconds at each partition for a message to arrive
-RECEIVE_CYCLE_TIME = 0.25
+import datetime
+import threading
+from threading import Event
+from azure.eventhub.aio import EventHubConsumerClient
+from ..adapter_config import logger
+from . import eventhub_connection_string
 
 object_list = []
 
@@ -35,112 +32,108 @@ def json_is_same(a, b):
     return a == b
 
 
-def get_retry_time(x):
-    c = 2
-    cMin = 1
-    cMax = 30
-    ju = 0.5
-    jd = 0.25
-    return min(
-        cMin + (pow(2, x - 1) - 1) * random.uniform(c * (1 - jd), c * (1 + ju)), cMax
-    )
+def get_device_id_from_event(event):
+    return event.message.annotations["iothub-connection-device-id".encode()].decode()
 
 
 class EventHubApi:
     def __init__(self):
-        self.client = None
-        self.receivers = []
-        self.connection_string = None
+        self.consumer_client = None
+        self.iothub_connection_string = None
+        self.eventhub_connection_string = None
+        self.received_events = None
+        self.listener_future = None
+        self.listener_complete = None
 
     def create_from_connection_string_sync(self, connection_string):
-        self.connection_string = connection_string
+        self.iothub_connection_string = connection_string
+        self.eventhub_connection_string = eventhub_connection_string.convert_iothub_to_eventhub_conn_str(
+            connection_string
+        )
 
-    @emulate_async
-    def connect(self, offset="@latest"):
+    async def connect(self, offset=None):
+        logger(
+            "connect: thread={} {} loop={}".format(
+                threading.current_thread(),
+                id(threading.current_thread()),
+                id(asyncio.get_running_loop()),
+            )
+        )
+        if not offset:
+            offset = datetime.datetime.utcnow() - datetime.timedelta(seconds=10)
+
         global object_list
         if self not in object_list:
             object_list.append(self)
 
-        started = False
-        retry_iteration = 0
-        while not started:
-            adapter_config.logger("EventHubApi: connecting EventHubClient")
-            self.client = EventHubClient.from_iothub_connection_string(
-                self.connection_string
-            )
-            adapter_config.logger("EventHubApi: enabling EventHub telemetry")
-            # partition_ids = self.client.get_eventhub_info()["partition_ids"]
-            partition_ids = [0, 1, 2, 3]
-            self.receivers = []
-            for id in partition_ids:
-                adapter_config.logger(
-                    "EventHubApi: adding receiver for partition {}".format(id)
-                )
-                receiver = self.client.add_receiver(
-                    "$default", id, operation="/messages/events", offset=Offset(offset)
-                )
-                self.receivers.append(receiver)
+        self.received_events = asyncio.Queue()
 
-            adapter_config.logger("EventHubApi: starting client")
+        # Create a consumer client for the event hub.
+        self.consumer_client = EventHubConsumerClient.from_connection_string(
+            self.eventhub_connection_string, consumer_group="$Default"
+        )
 
+        async def on_event(partition_context, event):
+            # this receives all events.  they get filtered by device_id (if necessary) when
+            # pulled from the queue
+            await self.received_events.put(event)
+
+        self.listener_complete = Event()
+
+        async def listener():
             try:
-                self.client.run()
-                started = True
-            except EventHubError as e:
-                if e.message.startswith("ErrorCodes.ResourceLimitExceeded"):
-                    retry_iteration += 1
-                    retry_time = get_retry_time(retry_iteration)
-                    adapter_config.logger(
-                        "eventhub ResourceLimitExceeded.  Sleeping for {} seconds and trying again".format(
-                            retry_time
-                        )
-                    )
-                    self._close_eventhub_client()
-                    time.sleep(retry_time)
-                else:
-                    raise e
+                await self.consumer_client.receive(on_event, starting_position=offset)
+            finally:
+                self.listener_complete.set()
 
-            adapter_config.logger("EventHubApi: ready")
+        self.listener_future = asyncio.ensure_future(listener())
 
-    def _close_eventhub_client(self):
-        if self.client:
-            adapter_config.logger("_close_eventhub_client: stopping eventhub client")
-            self.receivers = []
-            self.client.stop()
-            adapter_config.logger("_close_eventhub_client: done stopping")
-            self.client = None
-        else:
-            adapter_config.logger("_close_eventhub_client: no client to stop")
+    async def _close_eventhub_client(self):
 
-    def disconnect_sync(self):
+        logger(
+            "close: thread={} {} loop={}".format(
+                threading.current_thread(),
+                id(threading.current_thread()),
+                id(asyncio.get_running_loop()),
+            )
+        )
+
+        if self.consumer_client:
+            logger("_close_eventhub_client: stopping consumer client")
+            await self.consumer_client.close()
+            logger("_close_eventhub_client: done stopping consumer client")
+            self.consumer_client = None
+
+        if self.listener_future:
+            logger("_close_eventhub_client: cancelling listener")
+            self.listener_future.cancel()
+            logger("_close_eventhub_client: waiting for listener to complete")
+            await self.listener_future
+            self.listener_complete.wait()
+            logger("_close_eventhub_client: listener is complete")
+            self.listener_complete = None
+
+    async def disconnect(self):
+        logger("async disconnect {}".format(object_list))
         if self in object_list:
             object_list.remove(self)
-            self._close_eventhub_client()
+            await self._close_eventhub_client()
 
-    #  30 second timeout was too small.  Bumping to 90.
-    @emulate_async
-    def wait_for_next_event(self, device_id, timeout=90, expected=None):
-        adapter_config.logger(
-            "EventHubApi: waiting for next event for {}".format(device_id)
-        )
-        start_time = time.time()
-        while (time.time() - start_time) < timeout:
-            for receiver in self.receivers:
-                batch = receiver.receive(max_batch_size=1, timeout=RECEIVE_CYCLE_TIME)
-                if batch and (batch[0].device_id.decode("ascii") == device_id):
-                    adapter_config.logger(
-                        "EventHubApi: received event: {}".format(batch[0].body_as_str())
-                    )
-                    received = batch[0].body_as_json()
-                    if expected is not None:
-                        if json_is_same(expected, received):
-                            adapter_config.logger(
-                                "EventHubApi: message received as expected"
-                            )
-                            return received
-                        else:
-                            adapter_config.logger(
-                                "EventHubApi: unexpected message.  skipping"
-                            )
-                    else:
+    async def wait_for_next_event(self, device_id, expected=None):
+        logger("EventHubApi: waiting for next event for {}".format(device_id))
+
+        while True:
+            event = await self.received_events.get()
+            if get_device_id_from_event(event) == device_id:
+                logger(
+                    "EventHubApi: received event: {}".format(event.body_as_str()[:80])
+                )
+                received = event.body_as_json()
+                if expected is not None:
+                    if json_is_same(expected, received):
+                        logger("EventHubApi: message received as expected")
                         return received
+                    else:
+                        logger("EventHubApi: unexpected message.  skipping")
+                else:
+                    return received
