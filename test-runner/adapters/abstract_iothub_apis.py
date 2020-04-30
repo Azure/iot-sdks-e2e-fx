@@ -8,32 +8,32 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class ServiceConnectDisconnect(object):
     @abc.abstractmethod
-    def connect_sync(self, connection_string):
+    def connect(self, connection_string):
         pass
 
     @abc.abstractmethod
-    def disconnect_sync(self):
+    def disconnect(self):
         pass
 
 
 @six.add_metaclass(abc.ABCMeta)
 class Connect(object):
     @abc.abstractmethod
-    def connect_sync(self, transport, connection_string, ca_certificate):
+    def connect(self, transport, connection_string, ca_certificate):
         pass
 
     @abc.abstractmethod
-    def disconnect_sync(self):
+    def disconnect(self):
         pass
 
     @abc.abstractmethod
-    def create_from_connection_string_sync(
+    def create_from_connection_string(
         self, transport, connection_string, ca_certificate
     ):
         pass
 
     @abc.abstractmethod
-    def create_from_x509_sync(self, transport, x509):
+    def create_from_x509(self, transport, x509):
         pass
 
     @abc.abstractmethod
@@ -49,18 +49,18 @@ class Connect(object):
         pass
 
     @abc.abstractmethod
-    def destroy_sync(self):
+    def destroy(self):
         pass
 
 
 @six.add_metaclass(abc.ABCMeta)
 class ConnectFromEnvironment(object):
     @abc.abstractmethod
-    def connect_from_environment_sync(self, transport):
+    def connect_from_environment(self, transport):
         pass
 
     @abc.abstractmethod
-    def create_from_environment_sync(self, transport):
+    def create_from_environment(self, transport):
         pass
 
 

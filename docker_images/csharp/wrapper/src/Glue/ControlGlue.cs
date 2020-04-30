@@ -42,7 +42,7 @@ namespace IO.Swagger.Controllers
                     security_messages = false,
                     v2_connect_group = false,
                     dropped_connection_tests = false,
-                    net_connect_app = false
+                    net_control_app = false
                 },
                 skip_list = new [] { "module_under_test_has_device_wrapper" },
             };

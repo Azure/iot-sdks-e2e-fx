@@ -11,101 +11,118 @@ from adapters import adapter_config
 from horton_settings import settings
 from horton_logging import logger
 
-dashes = "".join(("-" for _ in range(0, 30)))
-separator = "{} FINAL CLEANUP {} {}".format(dashes, "{}", dashes)
+
+def separator(message=""):
+    return message.center(132, "-")
 
 
 @pytest.fixture
 async def eventhub(event_loop):
     eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
-    eventhub.create_from_connection_string_sync(settings.eventhub.connection_string)
-    yield eventhub
-    logger(separator.format("eventhub"))
+    await eventhub.create_from_connection_string(settings.eventhub.connection_string)
     try:
-        await eventhub.disconnect()
-    except Exception as e:
-        logger("exception disconnecting eventhub: {}".format(e))
+        yield eventhub
+    finally:
+        logger(separator("eventhub finalizer"))
+        try:
+            await eventhub.disconnect()
+        except Exception as e:
+            logger("exception disconnecting eventhub: {}".format(e))
 
 
 @pytest.fixture
-def registry():
-    registry = connections.connect_registry_client()
-    yield registry
-    logger(separator.format("registry"))
+async def registry():
+    registry = await connections.connect_registry_client()
     try:
-        registry.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting registry: {}".format(e))
+        yield registry
+    finally:
+        logger(separator("registry finalizer"))
+        try:
+            await registry.disconnect()
+        except Exception as e:
+            logger("exception disconnecting registry: {}".format(e))
 
 
 @pytest.fixture
-def friend():
+async def friend():
     if settings.friend_module.adapter_address:
-        friend_module = connections.get_module_client(settings.friend_module)
-        yield friend_module
-        logger(separator.format("friend module"))
+        friend_module = await connections.get_module_client(settings.friend_module)
         try:
-            friend_module.disconnect_sync()
-        except Exception as e:
-            logger("exception disconnecting friend module: {}".format(e))
+            yield friend_module
+        finally:
+            logger(separator("friend finalizer"))
+            try:
+                await friend_module.disconnect()
+            except Exception as e:
+                logger("exception disconnecting friend module: {}".format(e))
     else:
         yield None
 
 
 @pytest.fixture
-def test_module():
-    test_module = connections.get_module_client(settings.test_module)
-    yield test_module
-    logger(separator.format("test module"))
+async def test_module():
+    test_module = await connections.get_module_client(settings.test_module)
     try:
-        test_module.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting test module: {}".format(e))
+        yield test_module
+    finally:
+        logger(separator("module finalizer"))
+        try:
+            await test_module.disconnect()
+        except Exception as e:
+            logger("exception disconnecting test module: {}".format(e))
 
 
 @pytest.fixture
-def leaf_device():
+async def leaf_device():
     if settings.leaf_device.adapter_address:
-        leaf_device = connections.get_device_client(settings.leaf_device)
-        yield leaf_device
-        logger(separator.format("leaf device"))
+        leaf_device = await connections.get_device_client(settings.leaf_device)
         try:
-            leaf_device.disconnect_sync()
-        except Exception as e:
-            logger("exception disconnecting leaf device: {}".format(e))
+            yield leaf_device
+        finally:
+            logger(separator("leaf_device finalizer"))
+            try:
+                await leaf_device.disconnect()
+            except Exception as e:
+                logger("exception disconnecting leaf device: {}".format(e))
     else:
         yield None
 
 
 @pytest.fixture
-def test_device():
-    test_device = connections.get_device_client(settings.test_device)
-    yield test_device
-    logger(separator.format("device"))
+async def test_device():
+    test_device = await connections.get_device_client(settings.test_device)
     try:
-        test_device.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting test device: {}".format(e))
+        yield test_device
+    finally:
+        logger(separator("test_device finalizer"))
+        try:
+            await test_device.disconnect()
+        except Exception as e:
+            logger("exception disconnecting test device: {}".format(e))
 
 
 @pytest.fixture
-def service():
-    service = connections.connect_service_client()
-    yield service
-    logger(separator.format("service"))
+async def service():
+    service = await connections.connect_service_client()
     try:
-        service.disconnect_sync()
-    except Exception as e:
-        logger("exception disconnecting service: {}".format(e))
+        yield service
+    finally:
+        logger(separator("service finalizer"))
+        try:
+            await service.disconnect()
+        except Exception as e:
+            logger("exception disconnecting service: {}".format(e))
 
 
 @pytest.fixture
-def net_control():
+async def net_control():
     api = getattr(settings.net_control, "api", None)
-    yield api
-    if api:
-        logger(separator.format("net_control"))
-        settings.net_control.api.reconnect_sync()
+    try:
+        yield api
+    finally:
+        if api:
+            logger(separator("net_control finalizer"))
+            await settings.net_control.api.reconnect()
 
 
 @pytest.fixture(

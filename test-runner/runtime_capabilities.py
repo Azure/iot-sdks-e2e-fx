@@ -21,7 +21,7 @@ class HortonCapabilities(object):
         self.security_messages = False
         self.v2_connect_group = False
         self.dropped_connection_tests = False
-        self.net_connect_app = False
+        self.net_control_app = False
         self.checks_for_leaks = False
         self.new_python_reconnect = False
         self.supports_blob_upload = False

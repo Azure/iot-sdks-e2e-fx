@@ -16,12 +16,9 @@ class NetApi(AbstractNetApi):
         self.rest_endpoint = GeneratedAsyncApi(hostname).net
         self.rest_endpoint.config.retry_policy.retries = 0
 
-        self.rest_endpoint_sync = GeneratedSyncApi(hostname).net
-        self.rest_endpoint_sync.config.retry_policy.retries = 0
-
     @log_entry_and_exit
-    def set_destination_sync(self, ip, transport):
-        self.rest_endpoint_sync.set_destination(
+    async def set_destination(self, ip, transport):
+        await self.rest_endpoint.set_destination(
             ip, transport, timeout=adapter_config.control_api_timeout
         )
 
@@ -34,10 +31,6 @@ class NetApi(AbstractNetApi):
     @log_entry_and_exit
     async def reconnect(self):
         await self.rest_endpoint.reconnect(timeout=adapter_config.control_api_timeout)
-
-    @log_entry_and_exit
-    def reconnect_sync(self):
-        self.rest_endpoint_sync.reconnect(timeout=adapter_config.control_api_timeout)
 
     @log_entry_and_exit
     async def disconnect_after_c2d(self, disconnect_type):

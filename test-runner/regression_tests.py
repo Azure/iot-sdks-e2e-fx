@@ -70,8 +70,8 @@ class RegressionTests(object):
         )
         cs_fields[field_name] = new_field_value
 
-        client.destroy_sync()
-        client.create_from_connection_string_sync(
+        await client.destroy()
+        await client.create_from_connection_string(
             client.settings.transport,
             connection_string.dictionary_to_connection_string(cs_fields),
             connections.get_ca_cert(client.settings),
@@ -100,8 +100,8 @@ class RegressionTests(object):
         )
         cs_fields[field_name] = new_field_value
 
-        client.destroy_sync()
-        client.create_from_connection_string_sync(
+        await client.destroy()
+        await client.create_from_connection_string(
             client.settings.transport,
             connection_string.dictionary_to_connection_string(cs_fields),
             connections.get_ca_cert(client.settings),

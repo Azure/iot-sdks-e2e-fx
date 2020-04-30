@@ -20,16 +20,16 @@ from ..abstract_iothub_apis import (
 
 class ServiceConnectDisconnect(object):
     @log_entry_and_exit(print_args=False)
-    def connect_sync(self, connection_string):
-        result = self.rest_endpoint_sync.connect(
+    async def connect(self, connection_string):
+        result = await self.rest_endpoint.connect(
             connection_string, timeout=adapter_config.default_api_timeout
         )
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    def disconnect_sync(self):
+    async def disconnect(self):
         if self.connection_id:
-            self.rest_endpoint_sync.disconnect(
+            await self.rest_endpoint.disconnect(
                 self.connection_id, timeout=adapter_config.default_api_timeout
             )
             self.connection_id = ""
@@ -37,8 +37,8 @@ class ServiceConnectDisconnect(object):
 
 class Connect(object):
     @log_entry_and_exit(print_args=False)
-    def connect_sync(self, transport, connection_string, ca_certificate):
-        result = self.rest_endpoint_sync.connect(
+    async def connect(self, transport, connection_string, ca_certificate):
+        result = await self.rest_endpoint.connect(
             transport,
             connection_string,
             ca_certificate=ca_certificate,
@@ -47,9 +47,9 @@ class Connect(object):
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    def disconnect_sync(self):
+    async def disconnect(self):
         if self.connection_id:
-            self.rest_endpoint_sync.disconnect(
+            await self.rest_endpoint.disconnect(
                 self.connection_id, timeout=adapter_config.default_api_timeout
             )
             self.connection_id = ""
@@ -57,10 +57,10 @@ class Connect(object):
             time.sleep(2)
 
     @log_entry_and_exit(print_args=False)
-    def create_from_connection_string_sync(
+    async def create_from_connection_string(
         self, transport, connection_string, ca_certificate
     ):
-        result = self.rest_endpoint_sync.create_from_connection_string(
+        result = await self.rest_endpoint.create_from_connection_string(
             transport,
             connection_string,
             ca_certificate=ca_certificate,
@@ -70,8 +70,8 @@ class Connect(object):
         self.connection_id = result.connection_id
 
     @log_entry_and_exit(print_args=False)
-    def create_from_x509_sync(self, transport, x509):
-        result = self.rest_endpoint_sync.create_from_x509(
+    async def create_from_x509(self, transport, x509):
+        result = await self.rest_endpoint.create_from_x509(
             transport, x509, timeout=adapter_config.default_api_timeout
         )
         assert not self.connection_id
@@ -103,9 +103,9 @@ class Connect(object):
             time.sleep(2)
 
     @log_entry_and_exit
-    def destroy_sync(self):
+    async def destroy(self):
         if self.connection_id:
-            self.rest_endpoint_sync.destroy(
+            await self.rest_endpoint.destroy(
                 self.connection_id, timeout=adapter_config.default_api_timeout
             )
             self.connection_id = ""
@@ -115,16 +115,16 @@ class Connect(object):
 
 class ConnectFromEnvironment(object):
     @log_entry_and_exit
-    def connect_from_environment_sync(self, transport):
-        result = self.rest_endpoint_sync.connect_from_environment(
+    async def connect_from_environment(self, transport):
+        result = await self.rest_endpoint.connect_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
         assert not self.connection_id
         self.connection_id = result.connection_id
 
     @log_entry_and_exit
-    def create_from_environment_sync(self, transport):
-        result = self.rest_endpoint_sync.create_from_environment(
+    async def create_from_environment(self, transport):
+        result = await self.rest_endpoint.create_from_environment(
             transport, timeout=adapter_config.default_api_timeout
         )
         assert not self.connection_id
@@ -370,9 +370,6 @@ class DeviceApi(
     AbstractDeviceApi,
 ):
     def __init__(self, hostname):
-        self.rest_endpoint_sync = GeneratedSyncApi(hostname).device
-        self.rest_endpoint_sync.config.retry_policy.retries = 0
-
         self.rest_endpoint = GeneratedAsyncApi(hostname).device
         self.rest_endpoint.config.retry_policy.retries = 0
 
@@ -391,9 +388,6 @@ class ModuleApi(
     AbstractModuleApi,
 ):
     def __init__(self, hostname):
-        self.rest_endpoint_sync = GeneratedSyncApi(hostname).module
-        self.rest_endpoint_sync.config.retry_policy.retries = 0
-
         self.rest_endpoint = GeneratedAsyncApi(hostname).module
         self.rest_endpoint.config.retry_policy.retries = 0
 
@@ -402,9 +396,6 @@ class ModuleApi(
 
 class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryApi):
     def __init__(self, hostname):
-        self.rest_endpoint_sync = GeneratedSyncApi(hostname).registry
-        self.rest_endpoint_sync.config.retry_policy.retries = 0
-
         self.rest_endpoint = GeneratedAsyncApi(hostname).registry
         self.rest_endpoint.config.retry_policy.retries = 0
 
@@ -413,9 +404,6 @@ class RegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin, AbstractRegistryA
 
 class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
     def __init__(self, hostname):
-        self.rest_endpoint_sync = GeneratedSyncApi(hostname).service
-        self.rest_endpoint_sync.config.retry_policy.retries = 0
-
         self.rest_endpoint = GeneratedAsyncApi(hostname).service
         self.rest_endpoint.config.retry_policy.retries = 0
 
