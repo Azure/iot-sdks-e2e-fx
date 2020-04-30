@@ -36,7 +36,7 @@ class ServiceApi(AbstractServiceApi):
 
     async def disconnect(self):
         if self.amqp_service_client:
-            await self.amqp_service_client.disconnec()
+            await self.amqp_service_client.disconnect()
             self.amqp_serice_client = None
         self.service = None
 
