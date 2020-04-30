@@ -20,3 +20,7 @@ class ControlApi(AbstractControlApi):
 
     def send_command_sync(self, cmd):
         internal_control_glue.send_command(cmd)
+
+    async def cleanup(self, cmd):
+        # BKTODO: this doesn't actually clean anything yet.  it needs to be fixed once we go full async and get rid of the weird internal stuff
+        pass
