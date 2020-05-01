@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionStatus(object):
-    def get_pipeline(self):
+    def _get_pipeline(self):
         try:
             return self.client._mqtt_pipeline
         except AttributeError:
@@ -23,7 +23,7 @@ class ConnectionStatus(object):
         self.connected_event = Event()
         self.disconnected_event = Event()
 
-        old_on_connected = self.get_pipeline().on_connected
+        old_on_connected = self._get_pipeline().on_connected
 
         def new_on_connected():
             logger.info("new_on_connected")
@@ -31,9 +31,9 @@ class ConnectionStatus(object):
             self.connected_event.set()
             old_on_connected()
 
-        self.get_pipeline().on_connected = new_on_connected
+        self._get_pipeline().on_connected = new_on_connected
 
-        old_on_disconnected = self.get_pipeline().on_disconnected
+        old_on_disconnected = self._get_pipeline().on_disconnected
 
         def new_on_disconnected():
             logger.info("new_on_disconnected")
@@ -41,16 +41,16 @@ class ConnectionStatus(object):
             self.disconnected_event.set()
             old_on_disconnected()
 
-        self.get_pipeline().on_disconnected = new_on_disconnected
+        self._get_pipeline().on_disconnected = new_on_disconnected
 
-    def get_connection_status(self):
+    def get_connection_status_sync(self):
         if self.connected:
             return "connected"
         else:
             return "disconnected"
 
-    def wait_for_connection_status_change(self, connection_status):
-        if self.get_connection_status() == connection_status:
+    def wait_for_connection_status_change_sync(self, connection_status):
+        if self.get_connection_status_sync() == connection_status:
             logger.info("Client is alredy {}.  Returning.".format(connection_status))
             return connection_status
 
@@ -64,4 +64,4 @@ class ConnectionStatus(object):
             self.connected_event.clear()
             self.connected_event.wait()
             logger.info("client is connected.  completing.")
-        return self.get_connection_status()
+        return self.get_connection_status_sync()
