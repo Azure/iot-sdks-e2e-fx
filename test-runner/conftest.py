@@ -5,6 +5,7 @@
 
 import pytest
 import pathlib
+import sys
 import adapters
 import logging
 import traceback
@@ -44,6 +45,26 @@ logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
 logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
+
+
+class Unbuffered(object):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
+
+
+sys.stdout = Unbuffered(sys.stdout)
+sys.stderr = Unbuffered(sys.stderr)
 
 
 def pytest_addoption(parser):
