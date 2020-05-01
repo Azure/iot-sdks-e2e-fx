@@ -77,7 +77,7 @@ class ConnectFromEnvironment(object):
 
     async def create_from_environment(self, transport_type):
 
-        internal_control_glue.set_sas_interval()
+        internal_control_glue.set_sas_interval_sync()
 
         kwargs = {}
         if transport_type == "mqttws":
