@@ -50,6 +50,8 @@ def create_glue_object(object_type, interface_type):
     else:
         object_type = "sync_" + object_type
 
+    logger.info("making {} object with {}".format(object_type, interface_type))
+
     if object_type == sync_device:
         logger.info("Creating DeviceGlue")
         obj = InternalDeviceGlueSync()
