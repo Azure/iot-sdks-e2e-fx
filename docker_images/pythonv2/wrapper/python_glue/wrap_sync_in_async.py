@@ -11,9 +11,13 @@ logger = logging.getLogger(__name__)
 
 # default executor is not sufficient since default threads == CPUx5 and
 # VMs will default to 1 CPU.
-emulate_async_executor = concurrent.futures.ThreadPoolExecutor(
-    max_workers=32, thread_name_prefix="emulate_async"
-)
+try:
+    emulate_async_executor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=32, thread_name_prefix="emulate_async"
+    )
+except TypeError:
+    # for py35
+    emulate_async_executor = concurrent.futures.ThreadPoolExecutor(max_workers=32)
 
 
 def get_running_loop():
