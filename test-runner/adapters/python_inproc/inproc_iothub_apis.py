@@ -223,4 +223,4 @@ class ModuleApi(
     AbstractModuleApi,
 ):
     def __init__(self):
-        self.glue = create_glue_object("device", "async_interface")
+        self.glue = create_glue_object("module", "async_interface")
