@@ -64,9 +64,13 @@ def create_glue_object(object_type, interface_type):
         obj = InternalModuleGlueAsync()
 
     if interface_type.startswith("async_"):
+        # async glue has some sync methods (connection_status.py) that need to be wrapped,
+        # so we call this for sync and async glue both
         logger.info("Wrapping sync methods in async facade")
         wrap_sync_in_async.wrap_object(obj)
-    if interface_type.startswith("sync_"):
+    if interface_type.startswith("sync_") and object_type.startswith("async_"):
+        # only wrap async in sync if we're using async glue.  sync glue doesn't have
+        # any async methods.
         logger.info("Wrapping async methods in sync facade")
         wrap_async_in_sync.wrap_object(obj)
 
