@@ -11,6 +11,7 @@ def logger(*args, **kwargs):
 
 def set_logger():
     # BKTODO: output to more than test_module
+    # BKTODO: control_api
     settings.test_module.wrapper_api = adapters.create_adapter(
         settings.test_module.adapter_address, "wrapper"
     )

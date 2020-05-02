@@ -3,7 +3,7 @@
 # full license information.
 from swagger_server.models.connect_response import ConnectResponse
 from swagger_server.models.event_body import EventBody
-from internal_iothub_glue import InternalModuleGlue
+from internal_glue_factory import create_glue_object
 import json
 import logging
 
@@ -20,115 +20,119 @@ class ModuleGlue:
         self.object_map[connection_id] = internal
         return ConnectResponse(connection_id)
 
-    def connect_from_environment(self, transport_type):
-        internal = InternalModuleGlue()
-        internal.connect_from_environment(transport_type)
+    def connect_from_environment_sync(self, transport_type):
+        internal = create_glue_object("module", "sync_interface")
+        internal.connect_from_environment_sync(transport_type)
         return self._return_connect_response(internal)
 
-    def connect(self, transport_type, connection_string, ca_certificate):
-        internal = InternalModuleGlue()
-        internal.connect(transport_type, connection_string, ca_certificate.cert)
+    def connect_sync(self, transport_type, connection_string, ca_certificate):
+        internal = create_glue_object("module", "sync_interface")
+        internal.connect_sync(transport_type, connection_string, ca_certificate.cert)
         return self._return_connect_response(internal)
 
-    def disconnect(self, connection_id):
+    def disconnect_sync(self, connection_id):
         logger.info("disconnecting " + connection_id)
         if connection_id in self.object_map:
             internal = self.object_map[connection_id]
-            internal.disconnect()
+            internal.disconnect_sync()
             del self.object_map[connection_id]
 
-    def create_from_connection_string(
+    def create_from_connection_string_sync(
         self, transport_type, connection_string, ca_certificate
     ):
-        internal = InternalModuleGlue()
-        internal.create_from_connection_string(
+        internal = create_glue_object("module", "sync_interface")
+        internal.create_from_connection_string_sync(
             transport_type, connection_string, ca_certificate.cert
         )
         return self._return_connect_response(internal)
 
-    def create_from_x509(self, transport_type, x509):
-        internal = InternalModuleGlue()
-        internal.create_from_x509(transport_type, x509)
+    def create_from_x509_sync(self, transport_type, x509):
+        internal = create_glue_object("module", "sync_interface")
+        internal.create_from_x509_sync(transport_type, x509)
         return self._return_connect_response(internal)
 
-    def create_from_environment(self, transport_type):
-        internal = InternalModuleGlue()
-        internal.create_from_environment(transport_type)
+    def create_from_environment_sync(self, transport_type):
+        internal = create_glue_object("module", "sync_interface")
+        internal.create_from_environment_sync(transport_type)
         return self._return_connect_response(internal)
 
-    def connect2(self, connection_id):
-        self.object_map[connection_id].connect2()
+    def connect2_sync(self, connection_id):
+        self.object_map[connection_id].connect2_sync()
 
-    def reconnect(self, connection_id, force_renew_password):
-        self.object_map[connection_id].reconnect(force_renew_password)
+    def reconnect_sync(self, connection_id, force_renew_password):
+        self.object_map[connection_id].reconnect_sync(force_renew_password)
 
-    def disconnect2(self, connection_id):
-        self.object_map[connection_id].disconnect2()
+    def disconnect2_sync(self, connection_id):
+        self.object_map[connection_id].disconnect2_sync()
 
-    def destroy(self, connection_id):
+    def destroy_sync(self, connection_id):
         logger.info("destroying " + connection_id)
         if connection_id in self.object_map:
             internal = self.object_map[connection_id]
-            internal.destroy()
+            internal.destroy_sync()
             del self.object_map[connection_id]
 
-    def enable_input_messages(self, connection_id):
-        self.object_map[connection_id].enable_input_messages()
+    def enable_input_messages_sync(self, connection_id):
+        self.object_map[connection_id].enable_input_messages_sync()
 
-    def enable_methods(self, connection_id):
-        self.object_map[connection_id].enable_methods()
+    def enable_methods_sync(self, connection_id):
+        self.object_map[connection_id].enable_methods_sync()
 
-    def enable_twin(self, connection_id):
-        self.object_map[connection_id].enable_twin()
+    def enable_twin_sync(self, connection_id):
+        self.object_map[connection_id].enable_twin_sync()
 
-    def send_event(self, connection_id, event_body):
-        self.object_map[connection_id].send_event(event_body)
+    def send_event_sync(self, connection_id, event_body):
+        self.object_map[connection_id].send_event_sync(event_body)
 
-    def wait_for_input_message(self, connection_id, input_name):
-        response = self.object_map[connection_id].wait_for_input_message(input_name)
+    def wait_for_input_message_sync(self, connection_id, input_name):
+        response = self.object_map[connection_id].wait_for_input_message_sync(
+            input_name
+        )
         return EventBody.from_dict(response)
 
-    def invoke_module_method(
+    def invoke_module_method_sync(
         self, connection_id, device_id, module_id, method_invoke_parameters
     ):
-        return self.object_map[connection_id].invoke_module_method(
+        return self.object_map[connection_id].invoke_module_method_sync(
             device_id, module_id, method_invoke_parameters
         )
 
-    def invoke_device_method(self, connection_id, device_id, method_invoke_parameters):
-        return self.object_map[connection_id].invoke_device_method(
+    def invoke_device_method_sync(
+        self, connection_id, device_id, method_invoke_parameters
+    ):
+        return self.object_map[connection_id].invoke_device_method_sync(
             device_id, method_invoke_parameters
         )
 
-    def wait_for_method_and_return_response(
+    def wait_for_method_and_return_response_sync(
         self, connection_id, method_name, request_and_response
     ):
-        self.object_map[connection_id].wait_for_method_and_return_response(
+        self.object_map[connection_id].wait_for_method_and_return_response_sync(
             method_name, request_and_response
         )
 
-    def send_output_event(self, connection_id, output_name, event_body):
-        self.object_map[connection_id].send_output_event(output_name, event_body)
+    def send_output_event_sync(self, connection_id, output_name, event_body):
+        self.object_map[connection_id].send_output_event_sync(output_name, event_body)
 
-    def wait_for_desired_property_patch(self, connection_id):
-        return self.object_map[connection_id].wait_for_desired_property_patch()
+    def wait_for_desired_property_patch_sync(self, connection_id):
+        return self.object_map[connection_id].wait_for_desired_property_patch_sync()
 
-    def get_twin(self, connection_id):
-        return self.object_map[connection_id].get_twin()
+    def get_twin_sync(self, connection_id):
+        return self.object_map[connection_id].get_twin_sync()
 
-    def send_twin_patch(self, connection_id, props):
-        self.object_map[connection_id].send_twin_patch(props)
+    def send_twin_patch_sync(self, connection_id, props):
+        self.object_map[connection_id].send_twin_patch_sync(props)
 
-    def get_connection_status(self, connection_id):
-        return self.object_map[connection_id].get_connection_status()
+    def get_connection_status_sync(self, connection_id):
+        return self.object_map[connection_id].get_connection_status_sync()
 
-    def wait_for_connection_status_change(self, connection_id, connection_status):
-        return self.object_map[connection_id].wait_for_connection_status_change(
+    def wait_for_connection_status_change_sync(self, connection_id, connection_status):
+        return self.object_map[connection_id].wait_for_connection_status_change_sync(
             connection_status
         )
 
-    def cleanup_resources(self):
+    def cleanup_resources_sync(self):
         listcopy = list(self.object_map.keys())
         for key in listcopy:
             logger.info("object {} not cleaned up".format(key))
-            self.disconnect(key)
+            self.disconnect_sync(key)

@@ -22,3 +22,7 @@ class AbstractControlApi:
     @abc.abstractmethod
     def send_command_sync(self, message):
         pass
+
+    @abc.abstractmethod
+    def cleanup(self):
+        pass

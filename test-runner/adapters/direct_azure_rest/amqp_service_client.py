@@ -34,7 +34,7 @@ def _build_iothub_amqp_endpoint(config):
 
 
 class AmqpServiceClient:
-    def connect_sync(self, service_connection_string):
+    async def connect(self, service_connection_string):
         self.config = connection_string_to_dictionary(service_connection_string)
         self.endpoint = _build_iothub_amqp_endpoint(self.config)
 
@@ -50,14 +50,14 @@ class AmqpServiceClient:
 
         adapter_config.logger("AMQP service client connected")
 
-    def disconnect_sync(self):
+    async def disconnect(self):
         if self.send_client:
-            self.send_client.close()
+            await self.send_client.close_async()
             self.send_client = None
             adapter_config.logger("AMQP send client disconnected")
 
         if self.blob_status_receive_client:
-            self.blob_status_receive_client.close()
+            await self.blob_status_receive_client.close_async()
             self.blob_status_receive_client = None
             adapter_config.logger("AMQP blob status receive client disconnected")
 

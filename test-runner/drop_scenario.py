@@ -49,14 +49,14 @@ class DropScenarioBaseClass(object):
         return settings.test_module.transport
 
     @pytest.fixture(autouse=True)
-    def reconnect_after_each_test(self, request, net_control):
+    async def reconnect_after_each_test(self, net_control):
         # if this test is going to drop packets, add a finalizer to make sure we always stop
-        # stop dropping it when we're done.  Calling reconnect_sync twice in a row is allowed.
-        def finalizer():
+        # stop dropping it when we're done.  Calling reconnect twice in a row is allowed.
+        try:
+            yield
+        finally:
             logger("in finalizer: no longer dropping packets")
-            net_control.reconnect_sync()
-
-        request.addfinalizer(finalizer)
+            await net_control.reconnect()
 
     async def start_dropping(
         self, *, net_control, drop_mechanism, test_module_transport

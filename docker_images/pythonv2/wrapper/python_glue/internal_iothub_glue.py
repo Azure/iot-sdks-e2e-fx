@@ -12,31 +12,25 @@ from azure.iot.device.common import mqtt_transport
 logger = logging.getLogger(__name__)
 
 
-try:
-    from internal_iothub_glue_async import (
-        InternalDeviceGlueAsync,
-        InternalModuleGlueAsync,
-    )
-except SyntaxError:
-    pass
-
 DEFAULT_KEEPALIVE = 8
 
 
 class Connect(ConnectionStatus):
-    def connect(self, transport_type, connection_string, cert):
+    def connect_sync(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
         self.client.connect()
 
-    def disconnect(self):
+    def disconnect_sync(self):
         # disconnect destroys the object.  We will never use it again
         logger.info("disconnecting")
-        self.destroy()
+        self.destroy_sync()
 
-    def create_from_connection_string(self, transport_type, connection_string, cert):
+    def create_from_connection_string_sync(
+        self, transport_type, connection_string, cert
+    ):
 
-        internal_control_glue.set_sas_interval()
+        internal_control_glue.set_sas_interval_sync()
 
         kwargs = {}
         if transport_type == "mqttws":
@@ -53,22 +47,22 @@ class Connect(ConnectionStatus):
         mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
-    def create_from_x509(self, transport_type, x509):
+    def create_from_x509_sync(self, transport_type, x509):
         # BKTODO
         pass
 
-    def connect2(self):
+    def connect2_sync(self):
         self.client.connect()
 
-    def reconnect(self, force_renew_password):
+    def reconnect_sync(self, force_renew_password):
         # BKTODO
         pass
 
-    def disconnect2(self):
+    def disconnect2_sync(self):
         # disconnect2 keeps the object around.  We might use it again
         self.client.disconnect()
 
-    def destroy(self):
+    def destroy_sync(self):
         if self.client:
             try:
                 self.client.disconnect()
@@ -77,14 +71,14 @@ class Connect(ConnectionStatus):
 
 
 class ConnectFromEnvironment(object):
-    def connect_from_environment(self, transport_type):
+    def connect_from_environment_sync(self, transport_type):
         logger.info("connecting from environment")
         self.create_from_environment(transport_type)
         self.client.connect()
 
-    def create_from_environment(self, transport_type):
+    def create_from_environment_sync(self, transport_type):
 
-        internal_control_glue.set_sas_interval()
+        internal_control_glue.set_sas_interval_sync()
 
         kwargs = {}
         if transport_type == "mqttws":
@@ -97,11 +91,11 @@ class ConnectFromEnvironment(object):
 
 
 class HandleMethods(object):
-    def enable_methods(self):
+    def enable_methods_sync(self):
         # Unnecessary, methods are enabled implicity when method operations are initiated.
         pass
 
-    def wait_for_method_and_return_response(self, methodName, requestAndResponse):
+    def wait_for_method_and_return_response_sync(self, methodName, requestAndResponse):
         # receive method request
         logger.info("Waiting for method request")
         request = self.client.receive_method_request(methodName)
@@ -137,34 +131,34 @@ class HandleMethods(object):
 
 
 class Twin(object):
-    def enable_twin(self):
+    def enable_twin_sync(self):
         pass
 
-    def wait_for_desired_property_patch(self):
+    def wait_for_desired_property_patch_sync(self):
         logger.info("Waiting for desired property patch")
         patch = self.client.receive_twin_desired_properties_patch()
         logger.info("patch received")
         logger.info(str(patch))
         return {"desired": patch}
 
-    def get_twin(self):
+    def get_twin_sync(self):
         logger.info("getting twin")
         twin = self.client.get_twin()
         logger.info("done getting twin")
         return twin
 
-    def send_twin_patch(self, twin):
+    def send_twin_patch_sync(self, twin):
         logger.info("setting reported property patch")
         self.client.patch_twin_reported_properties(twin.reported)
         logger.info("done setting reported properties")
 
 
 class C2d(object):
-    def enable_c2d(self):
+    def enable_c2d_sync(self):
         # Unnecessary, C2D messages are enabled implicitly when C2D operations are initiated.
         pass
 
-    def wait_for_c2d_message(self):
+    def wait_for_c2d_message_sync(self):
         logger.info("Waiting for c2d message")
         message = self.client.receive_message()
         logger.info("Message received")
@@ -172,7 +166,7 @@ class C2d(object):
 
 
 class Telemetry(object):
-    def send_event(self, event_body):
+    def send_event_sync(self, event_body):
         logger.info("sending event")
         self.client.send_message(
             convert.test_script_object_to_outgoing_message(event_body)
@@ -181,11 +175,11 @@ class Telemetry(object):
 
 
 class InputsAndOutputs(object):
-    def enable_input_messages(self):
+    def enable_input_messages_sync(self):
         # Unnecessary, input messages are enabled implicitly when input operations are initiated.
         pass
 
-    def wait_for_input_message(self, input_name):
+    def wait_for_input_message_sync(self, input_name):
         logger.info("Waiting for input message")
         message = self.client.receive_message_on_input(input_name)
         logger.info("Message received")
@@ -196,7 +190,7 @@ class InputsAndOutputs(object):
         logger.info("---")
         return converted
 
-    def send_output_event(self, output_name, event_body):
+    def send_output_event_sync(self, output_name, event_body):
         logger.info("sending output event")
         self.client.send_message_to_output(
             convert.test_script_object_to_outgoing_message(event_body), output_name
@@ -205,7 +199,7 @@ class InputsAndOutputs(object):
 
 
 class InvokeMethods(object):
-    def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
+    def invoke_module_method_sync(self, device_id, module_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
         method_response = self.client.invoke_method(
             device_id=device_id,
@@ -215,7 +209,7 @@ class InvokeMethods(object):
         logger.info("Method Invoked and response received.")
         return method_response
 
-    def invoke_device_method(self, device_id, method_invoke_parameters):
+    def invoke_device_method_sync(self, device_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
         method_response = self.client.invoke_method(
             device_id=device_id, method_params=method_invoke_parameters
@@ -225,10 +219,10 @@ class InvokeMethods(object):
 
 
 class BlobUpload(object):
-    def get_storage_info_for_blob(self, blob_name):
+    def get_storage_info_for_blob_sync(self, blob_name):
         return self.client.get_storage_info_for_blob(blob_name)
 
-    def notify_blob_upload_status(
+    def notify_blob_upload_status_sync(
         self, correlation_id, is_success, status_code, status_description
     ):
         self.client.notify_blob_upload_status(
@@ -240,15 +234,6 @@ class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry, BlobU
     def __init__(self):
         self.client_class = IoTHubDeviceClient
         self.client = None
-
-
-def InternalDeviceGlue():
-    if internal_control_glue.do_async:
-        logger.info("Creating InternalDeviceGlueAsync")
-        return InternalDeviceGlueAsync()
-    else:
-        logger.info("Creating InternalDeviceGlueSync")
-        return InternalDeviceGlueSync()
 
 
 class InternalModuleGlueSync(
@@ -264,12 +249,3 @@ class InternalModuleGlueSync(
     def __init__(self):
         self.client_class = IoTHubModuleClient
         self.client = None
-
-
-def InternalModuleGlue():
-    if internal_control_glue.do_async:
-        logger.info("Creating InternalModuleGlueAsync")
-        return InternalModuleGlueAsync()
-    else:
-        logger.info("Creating InternalModuleGlueSync")
-        return InternalModuleGlueSync()

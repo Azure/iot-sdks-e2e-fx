@@ -3,7 +3,6 @@
 # full license information.
 import logging
 import convert
-import async_helper
 import internal_control_glue
 from connection_status import ConnectionStatus
 from azure.iot.device import MethodResponse
@@ -16,19 +15,21 @@ DEFAULT_KEEPALIVE = 8
 
 
 class Connect(ConnectionStatus):
-    def connect(self, transport_type, connection_string, cert):
+    async def connect(self, transport_type, connection_string, cert):
         logger.info("connecting using " + transport_type)
         self.create_from_connection_string(transport_type, connection_string, cert)
-        async_helper.run_coroutine_sync(self.client.connect())
+        await self.client.connect()
 
-    def disconnect(self):
+    async def disconnect(self):
         logger.info("disconnecting")
         # disconnect destroys the object.  We will never use it again
-        self.destroy()
+        await self.destroy()
 
-    def create_from_connection_string(self, transport_type, connection_string, cert):
+    async def create_from_connection_string(
+        self, transport_type, connection_string, cert
+    ):
 
-        internal_control_glue.set_sas_interval()
+        internal_control_glue.set_sas_interval_sync()
 
         kwargs = {}
         if transport_type == "mqttws":
@@ -45,38 +46,38 @@ class Connect(ConnectionStatus):
         mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
-    def create_from_x509(self, transport_type, x509):
+    async def create_from_x509(self, transport_type, x509):
         # BKTODO
         pass
 
-    def connect2(self):
-        async_helper.run_coroutine_sync(self.client.connect())
+    async def connect2(self):
+        await self.client.connect()
 
-    def reconnect(self, force_renew_password):
+    async def reconnect(self, force_renew_password):
         # BKTODO
         pass
 
-    def disconnect2(self):
+    async def disconnect2(self):
         # disconnect2 keeps the object around.  We might use it again
-        async_helper.run_coroutine_sync(self.client.disconnect())
+        await self.client.disconnect()
 
-    def destroy(self):
+    async def destroy(self):
         if self.client:
             try:
-                async_helper.run_coroutine_sync(self.client.disconnect())
+                await self.client.disconnect()
             finally:
                 self.client = None
 
 
 class ConnectFromEnvironment(object):
-    def connect_from_environment(self, transport_type):
+    async def connect_from_environment(self, transport_type):
         logger.info("connecting from environment")
         self.create_from_environment(transport_type)
-        async_helper.run_coroutine_sync(self.client.connect())
+        await self.client.connect()
 
-    def create_from_environment(self, transport_type):
+    async def create_from_environment(self, transport_type):
 
-        internal_control_glue.set_sas_interval()
+        internal_control_glue.set_sas_interval_sync()
 
         kwargs = {}
         if transport_type == "mqttws":
@@ -88,16 +89,14 @@ class ConnectFromEnvironment(object):
 
 
 class HandleMethods(object):
-    def enable_methods(self):
+    async def enable_methods(self):
         # Unnecessary, methods are enabled implicity when method operations are initiated.
         pass
 
-    def wait_for_method_and_return_response(self, methodName, requestAndResponse):
+    async def wait_for_method_and_return_response(self, methodName, requestAndResponse):
         # receive method request
         logger.info("Waiting for method request")
-        request = async_helper.run_coroutine_sync(
-            self.client.receive_method_request(methodName)
-        )
+        request = await self.client.receive_method_request(methodName)
         logger.info("Method request received")
 
         # verify name and payload
@@ -125,120 +124,104 @@ class HandleMethods(object):
         response = MethodResponse(
             request_id=request.request_id, status=resp_status, payload=resp_payload
         )
-        async_helper.run_coroutine_sync(self.client.send_method_response(response))
+        await self.client.send_method_response(response)
         logger.info("Method response sent")
 
 
 class Twin(object):
-    def enable_twin(self):
+    async def enable_twin(self):
         pass
 
-    def wait_for_desired_property_patch(self):
+    async def wait_for_desired_property_patch(self):
         logger.info("Waiting for desired property patch")
-        patch = async_helper.run_coroutine_sync(
-            self.client.receive_twin_desired_properties_patch()
-        )
+        patch = await self.client.receive_twin_desired_properties_patch()
         logger.info("patch received")
         return {"desired": patch}
 
-    def get_twin(self):
+    async def get_twin(self):
         logger.info("getting twin")
-        twin = async_helper.run_coroutine_sync(self.client.get_twin())
+        twin = await self.client.get_twin()
         logger.info("done getting twin")
         return twin
 
-    def send_twin_patch(self, props):
+    async def send_twin_patch(self, props):
         logger.info("setting reported property patch")
-        async_helper.run_coroutine_sync(
-            self.client.patch_twin_reported_properties(props.to_dict()["reported"])
-        )
+        await self.client.patch_twin_reported_properties(props.to_dict()["reported"])
         logger.info("done setting reported properties")
 
 
 class C2d(object):
-    def enable_c2d(self):
+    async def enable_c2d(self):
         # Unnecessary, C2D messages are enabled implicitly when C2D operations are initiated.
         pass
 
-    def wait_for_c2d_message(self):
+    async def wait_for_c2d_message(self):
         logger.info("Waiting for c2d message")
-        message = async_helper.run_coroutine_sync(self.client.receive_message())
+        message = await self.client.receive_message()
         logger.info("Message received")
         return convert.incoming_message_to_test_script_object(message)
 
 
 class Telemetry(object):
-    def send_event(self, event_body):
+    async def send_event(self, event_body):
         logger.info("sending event")
-        async_helper.run_coroutine_sync(
-            self.client.send_message(
-                convert.test_script_object_to_outgoing_message(event_body)
-            )
+        await self.client.send_message(
+            convert.test_script_object_to_outgoing_message(event_body)
         )
         logger.info("send confirmation received")
 
 
 class InputsAndOutputs(object):
-    def enable_input_messages(self):
+    async def enable_input_messages(self):
         # Unnecessary, input messages are enabled implicitly when input operations are initiated.
         pass
 
-    def wait_for_input_message(self, input_name):
+    async def wait_for_input_message(self, input_name):
         logger.info("Waiting for input message")
-        message = async_helper.run_coroutine_sync(
-            self.client.receive_message_on_input(input_name)
-        )
+        message = await self.client.receive_message_on_input(input_name)
         logger.info("Message received")
         return convert.incoming_message_to_test_script_object(message)
 
-    def send_output_event(self, output_name, event_body):
+    async def send_output_event(self, output_name, event_body):
         logger.info("sending output event")
-        async_helper.run_coroutine_sync(
-            self.client.send_message_to_output(
-                convert.test_script_object_to_outgoing_message(event_body), output_name
-            )
+        await self.client.send_message_to_output(
+            convert.test_script_object_to_outgoing_message(event_body), output_name
         )
         logger.info("send confirmation received")
 
 
 class InvokeMethods(object):
-    def invoke_module_method(self, device_id, module_id, method_invoke_parameters):
+    async def invoke_module_method(
+        self, device_id, module_id, method_invoke_parameters
+    ):
         logger.info("Invoking a method on the module.")
-        method_response = async_helper.run_coroutine_sync(
-            self.client.invoke_method(
-                device_id=device_id,
-                module_id=module_id,
-                method_params=method_invoke_parameters,
-            )
+        method_response = await self.client.invoke_method(
+            device_id=device_id,
+            module_id=module_id,
+            method_params=method_invoke_parameters,
         )
         logger.info("Method Invoked and response received.")
         return method_response
 
-    def invoke_device_method(self, device_id, method_invoke_parameters):
+    async def invoke_device_method(self, device_id, method_invoke_parameters):
         logger.info("Invoking a method on the module.")
-        method_response = async_helper.run_coroutine_sync(
-            self.client.invoke_method(
-                device_id=device_id, method_params=method_invoke_parameters
-            )
+        method_response = await self.client.invoke_method(
+            device_id=device_id, method_params=method_invoke_parameters
         )
         logger.info("Method Invoked and response received.")
         return method_response
 
 
 class BlobUpload(object):
-    def get_storage_info_for_blob(self, blob_name):
-        info = async_helper.run_coroutine_sync(
-            self.client.get_storage_info_for_blob(blob_name)
-        )
+    async def get_storage_info_for_blob(self, blob_name):
+        info = await self.client.get_storage_info_for_blob(blob_name)
         return info
 
-    def notify_blob_upload_status(
+    async def notify_blob_upload_status(
         self, correlation_id, is_success, status_code, status_description
     ):
-        async_helper.run_coroutine_sync(
-            self.client.notify_blob_upload_status(
-                correlation_id, is_success, status_code, status_description
-            )
+        await self.client.notify_blob_upload_status(
+            correlation_id, is_success, status_code, status_description
         )
 
 
@@ -247,8 +230,6 @@ class InternalDeviceGlueAsync(Connect, HandleMethods, C2d, Telemetry, Twin, Blob
         self.client = None
         self.client_class = IoTHubDeviceClient
         self.connected = False
-        # make sure we have an event loop
-        async_helper.get_event_loop()
 
 
 class InternalModuleGlueAsync(
@@ -265,5 +246,3 @@ class InternalModuleGlueAsync(
         self.client = None
         self.client_class = IoTHubModuleClient
         self.connected = False
-        # make sure we have an event loop
-        async_helper.get_event_loop()

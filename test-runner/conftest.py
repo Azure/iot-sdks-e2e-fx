@@ -5,6 +5,7 @@
 
 import pytest
 import pathlib
+import sys
 import adapters
 import logging
 import traceback
@@ -44,6 +45,26 @@ logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
 logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
+
+
+class Unbuffered(object):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
+
+
+sys.stdout = Unbuffered(sys.stdout)
+sys.stderr = Unbuffered(sys.stderr)
 
 
 def pytest_addoption(parser):
@@ -283,25 +304,6 @@ def skip_unsupported_tests(items):
     )
 
 
-def configure_network_control():
-    if settings.test_module.capabilities.dropped_connection_tests:
-        if not settings.net_control.adapter_address:
-            settings.test_module.capabilities.dropped_connection_tests = False
-            settings.test_module.capabilities.net_connect_app = False
-            settings.test_module.skip_list.append("dropped_connection_tests")
-        else:
-            try:
-                settings.net_control.api = connections.get_net_control_api()
-            except Exception:
-                print(
-                    "network control server is unavailable.  Either start the server or set net_control.adapter_address to '' in _horton_settings.json"
-                )
-                settings.test_module.capabilities.dropped_connection_tests = False
-                settings.test_module.capabilities.net_connect_app = False
-                settings.test_module.skip_list.append("dropped_connection_tests")
-                settings.net_control.adapter_address = None
-
-
 def pytest_collection_modifyitems(config, items):
     print("")
 
@@ -325,8 +327,6 @@ def pytest_collection_modifyitems(config, items):
 
     if "stress" in config.getoption("--scenario"):
         set_sas_renewal()
-
-    configure_network_control()
 
     skip_unsupported_tests(items)
 

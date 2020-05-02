@@ -10,13 +10,9 @@ from autorest_service_apis.service20180630modified import (
 import connection_string
 import uuid
 
-object_list = []
-
 
 class RegistryApi(AbstractRegistryApi):
     def __init__(self):
-        global object_list
-        object_list.append(self)
         self.service = None
         self.service_connection_string = None
 
@@ -30,14 +26,14 @@ class RegistryApi(AbstractRegistryApi):
             "User-Agent": "azure-edge-e2e",
         }
 
-    def connect_sync(self, service_connection_string):
+    async def connect(self, service_connection_string):
         self.service_connection_string = service_connection_string
         host = connection_string.connection_string_to_dictionary(
             service_connection_string
         )["HostName"]
         self.service = IotHubGatewayServiceAPIs("https://" + host).service
 
-    def disconnect_sync(self):
+    async def disconnect(self):
         pass
 
     @emulate_async

@@ -30,14 +30,14 @@ ORIGINAL_DEFAULT_TOKEN_RENEWAL_MARGIN = (
 """
 
 
-def log_message(msg):
+def log_message_sync(msg):
     if isinstance(msg, dict) and "message" in msg:
         print(msg["message"])
     else:
         print(str(msg))
 
 
-def set_flags(flags):
+def set_flags_sync(flags):
     global do_async
     global sas_renewal_interval
 
@@ -50,7 +50,7 @@ def set_flags(flags):
         print("Setting sas_renewal_interval to {}".format(sas_renewal_interval))
 
 
-def get_capabilities():
+def get_capabilities_sync():
     reconnect_stage = pipeline_stages_base.ReconnectStage()
     new_python_reconnect = True if getattr(reconnect_stage, "state", None) else False
     caps = {
@@ -69,14 +69,14 @@ def get_capabilities():
     return caps
 
 
-def send_command(cmd):
+def send_command_sync(cmd):
     if cmd == "check_for_leaks":
         tracker.check_for_new_leaks()
     else:
         raise Exception("Unsupported Command")
 
 
-def set_sas_interval():
+def set_sas_interval_sync():
     """
     global sas_renewal_interval
     print("Using sas_renewal_interval of {}".format(sas_renewal_interval))

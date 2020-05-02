@@ -10,13 +10,9 @@ import connection_string
 import uuid
 from .amqp_service_client import AmqpServiceClient
 
-object_list = []
-
 
 class ServiceApi(AbstractServiceApi):
     def __init__(self):
-        global object_list
-        object_list.append(self)
         self.service = None
         self.service_connection_string = None
         self.amqp_service_client = None
@@ -31,16 +27,16 @@ class ServiceApi(AbstractServiceApi):
             "User-Agent": "azure-edge-e2e",
         }
 
-    def connect_sync(self, service_connection_string):
+    async def connect(self, service_connection_string):
         self.service_connection_string = service_connection_string
         host = connection_string.connection_string_to_dictionary(
             service_connection_string
         )["HostName"]
         self.service = IotHubGatewayServiceAPIs("https://" + host).service
 
-    def disconnect_sync(self):
+    async def disconnect(self):
         if self.amqp_service_client:
-            self.amqp_service_client.disconnect_sync()
+            await self.amqp_service_client.disconnect()
             self.amqp_serice_client = None
         self.service = None
 
@@ -62,11 +58,11 @@ class ServiceApi(AbstractServiceApi):
     async def send_c2d(self, device_id, message):
         if not self.amqp_service_client:
             self.amqp_service_client = AmqpServiceClient()
-            self.amqp_service_client.connect_sync(self.service_connection_string)
+            await self.amqp_service_client.connect(self.service_connection_string)
         await self.amqp_service_client.send_to_device(device_id, message)
 
     async def get_blob_upload_status(self):
         if not self.amqp_service_client:
             self.amqp_service_client = AmqpServiceClient()
-            self.amqp_service_client.connect_sync(self.service_connection_string)
+            await self.amqp_service_client.connect(self.service_connection_string)
         return await self.amqp_service_client.get_next_blob_status()

@@ -268,7 +268,7 @@ class StressTest(object):
                 logger("Received unexpected message: {}".format(received_message))
 
             if time_limit.is_test_done():
-                eventhub.disconnect_sync()
+                await eventhub.disconnect()
                 return
 
             if len(payloads):
@@ -276,7 +276,7 @@ class StressTest(object):
                     eventhub.wait_for_next_event(client.device_id)
                 )
 
-        eventhub.disconnect_sync()
+        await eventhub.disconnect()
 
     async def do_test_get_twin(self, *, client, registry, count, time_limit):
         await client.enable_twin()

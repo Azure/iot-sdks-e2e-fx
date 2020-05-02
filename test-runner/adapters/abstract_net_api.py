@@ -8,7 +8,7 @@ import abc
 @six.add_metaclass(abc.ABCMeta)
 class AbstractNetApi:
     @abc.abstractmethod
-    def set_destination_sync(self, ip, transport):
+    def set_destination(self, ip, transport):
         pass
 
     @abc.abstractmethod
@@ -17,10 +17,6 @@ class AbstractNetApi:
 
     @abc.abstractmethod
     def reconnect(self):
-        pass
-
-    @abc.abstractmethod
-    def reconnect_sync(self):
         pass
 
     @abc.abstractmethod

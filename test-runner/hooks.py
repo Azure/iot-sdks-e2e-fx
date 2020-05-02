@@ -5,6 +5,7 @@
 import adapters
 import pytest
 import traceback
+import connections
 from horton_settings import settings
 from horton_logging import logger
 from pytest_asyncio.plugin import wrap_in_sync
@@ -64,17 +65,31 @@ def pytest_pyfunc_call(pyfuncitem):
         logger(separator("TEST FAILED BACAUSE OF {}".format(e)))
 
 
+async def configure_net_control():
+    if settings.test_module.capabilities.net_control_app:
+        try:
+            settings.net_control.api = await connections.get_net_control_api()
+        except Exception:
+            print(
+                "network control server is unavailable.  Either start the server or set net_control.adapter_address to '' in _horton_settings.json"
+            )
+            settings.test_module.capabilities.net_control = False
+
+    if settings.net_control.api:
+        await settings.net_control.api.reconnect()
+
+
 async def session_init():
     print(separator("SESSION INIT"))
-    if settings.net_control.api:
-        settings.net_control.api.reconnect_sync()
+    await configure_net_control()
 
 
 async def session_teardown():
     print(separator("SESSION TEARDOWN"))
     logger("Preforming post-session cleanup")
     try:
-        adapters.cleanup_test_objects_sync()
+        pass
+        # BKTODO
     except Exception:
         logger("Exception in cleanup")
         logger(traceback.format_exc())
