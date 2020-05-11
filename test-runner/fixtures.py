@@ -52,7 +52,10 @@ async def friend():
         finally:
             logger(separator("friend finalizer"))
             try:
-                await friend_module.disconnect()
+                if friend_module.capabilities.v2_connect_group:
+                    await friend_module.destroy()
+                else:
+                    await friend_module.disconnect()
             except Exception as e:
                 logger("exception disconnecting friend module: {}".format(e))
     else:
@@ -67,7 +70,10 @@ async def test_module():
     finally:
         logger(separator("module finalizer"))
         try:
-            await test_module.disconnect()
+            if test_module.capabilities.v2_connect_group:
+                await test_module.destroy()
+            else:
+                await test_module.disconnect()
         except Exception as e:
             logger("exception disconnecting test module: {}".format(e))
 
@@ -81,7 +87,10 @@ async def leaf_device():
         finally:
             logger(separator("leaf_device finalizer"))
             try:
-                await leaf_device.disconnect()
+                if leaf_device.capabilities.v2_connect_group:
+                    await leaf_device.destroy()
+                else:
+                    await leaf_device.disconnect()
             except Exception as e:
                 logger("exception disconnecting leaf device: {}".format(e))
     else:
@@ -96,7 +105,10 @@ async def test_device():
     finally:
         logger(separator("test_device finalizer"))
         try:
-            await test_device.disconnect()
+            if test_device.capabilities.v2_connect_group:
+                await test_device.destroy()
+            else:
+                await test_device.disconnect()
         except Exception as e:
             logger("exception disconnecting test device: {}".format(e))
 
