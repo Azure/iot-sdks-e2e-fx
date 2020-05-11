@@ -35,8 +35,13 @@ def _dump_referrers(obj):
             print("  dict: {}".format(referrer))
             for sub_referrer in gc.get_referrers(referrer):
                 if sub_referrer != referrers:
-                    print("    used by: {}:{}".format(type(sub_referrer), sub_referrer))
-        elif not isinstance(referrer, type):
+                    if not inspect.ismodule(sub_referrer):
+                        print(
+                            "    used by: {}:{}".format(
+                                type(sub_referrer), sub_referrer
+                            )
+                        )
+        elif not isinstance(referrer, type) and not inspect.ismodule(referrer):
             print("  used by: {}:{}".format(type(referrer), referrer))
 
 
@@ -169,10 +174,17 @@ class LeakTracker(object):
                     len(all_tracked_objects)
                 )
             )
+            count = 0
             for obj in all_tracked_objects:
-                logger.error("LEAK: {}".format(obj))
-                _dump_referrers(obj)
+                count += 1
+                if count <= 100:
+                    logger.error("LEAK: {}".format(obj))
+                    _dump_referrers(obj)
                 self.previous_leaks.append(obj)
+            if count < len(all_tracked_objects):
+                logger.errer(
+                    "and {} more objects".format(len(all_tracked_objects) - count)
+                )
             assert False
         else:
             logger.info("No leaks")
