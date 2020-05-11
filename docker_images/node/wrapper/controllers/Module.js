@@ -240,7 +240,8 @@ module.exports.module_SendOutputEvent = function module_SendOutputEvent (req, re
 
 module.exports.module_WaitForConnectionStatusChange = function module_WaitForConnectionStatusChange (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
-  Module.module_WaitForConnectionStatusChange(connectionId)
+  var connectionStatus = req.swagger.params['connectionStatus'].value;
+  Module.module_WaitForConnectionStatusChange(connectionId,connectionStatus)
     .then(function (response) {
       utils.writeJson(res, response);
     })

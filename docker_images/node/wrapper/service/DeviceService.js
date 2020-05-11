@@ -1,6 +1,4 @@
 'use strict';
-// Added in merge
-/*jshint esversion: 6 */
 
 
 /**
@@ -182,6 +180,32 @@ exports.device_GetConnectionStatus = function(connectionId) {
 
 
 /**
+ * Get storage info for uploading into blob storage
+ *
+ * connectionId String Id for the connection
+ * blobName String name of blob for blob upload
+ * returns blobStorageInfo
+ **/
+exports.device_GetStorageInfoForBlob = function(connectionId,blobName) {
+  return new Promise(function(resolve, reject) {
+    var examples = {};
+    examples['application/json'] = {
+  "blobName" : "blobName",
+  "sasToken" : "sasToken",
+  "hostName" : "hostName",
+  "containerName" : "containerName",
+  "correlationId" : "correlationId"
+};
+    if (Object.keys(examples).length > 0) {
+      resolve(examples[Object.keys(examples)[0]]);
+    } else {
+      resolve();
+    }
+  });
+}
+
+
+/**
  * Get the device twin
  *
  * connectionId String Id for the connection
@@ -199,6 +223,23 @@ exports.device_GetTwin = function(connectionId) {
     } else {
       resolve();
     }
+  });
+}
+
+
+/**
+ * notify iothub about blob upload status
+ *
+ * connectionId String Id for the connection
+ * correlationId String correlation id for blob upload
+ * isSuccess Boolean True if blob upload was successful
+ * statusCode String status code for blob upload
+ * statusDescription String human readable descripton of the status for blob upload
+ * no response value expected for this operation
+ **/
+exports.device_NotifyBlobUploadStatus = function(connectionId,correlationId,isSuccess,statusCode,statusDescription) {
+  return new Promise(function(resolve, reject) {
+    resolve();
   });
 }
 
@@ -272,9 +313,10 @@ exports.device_WaitForC2dMessage = function(connectionId) {
  * wait for the current connection status to change and return the changed status
  *
  * connectionId String Id for the connection
+ * connectionStatus String Desired connection status
  * returns String
  **/
-exports.device_WaitForConnectionStatusChange = function(connectionId) {
+exports.device_WaitForConnectionStatusChange = function(connectionId,connectionStatus) {
   return new Promise(function(resolve, reject) {
     var examples = {};
     examples['application/json'] = "";
@@ -323,14 +365,4 @@ exports.device_WaitForMethodAndReturnResponse = function(connectionId,methodName
     resolve();
   });
 }
-
-// Added in merge 
-//
-// When updating this file, make sure the code below ends up in the new file.  This is how we
-// avoid changing the codegen code.  The real implementations are in the *Glue.js files, and we leave the
-// codegen stubs in here.  We replace all the codegen implementations with our new implementations
-// and then make sure we've replaced them all before exporting.
-//
-// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-module.exports = require('../glue/glueUtils').replaceExports(module.exports, '../glue/deviceGlue.js')
 

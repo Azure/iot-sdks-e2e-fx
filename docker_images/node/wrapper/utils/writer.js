@@ -1,7 +1,3 @@
-// Added in merge
-'use strict';
-/*jshint esversion: 6 */
-
 var ResponsePayload = function(code, payload) {
   this.code = code;
   this.payload = payload;
@@ -39,12 +35,7 @@ var writeJson = exports.writeJson = function(response, arg1, arg2) {
     // if no response code given, we default to 200
     code = 200;
   }
-  // Added check for includes("Error") in merge
-  if (payload && payload.constructor.name.includes("Error")) {
-      code = 500;
-      payload = payload.stack.toString();
-  }
-  else if(typeof payload === 'object') {
+  if(typeof payload === 'object') {
     payload = JSON.stringify(payload, null, 2);
   }
   response.writeHead(code, {'Content-Type': 'application/json'});

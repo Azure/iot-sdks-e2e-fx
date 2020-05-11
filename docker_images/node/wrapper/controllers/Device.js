@@ -129,9 +129,36 @@ module.exports.device_GetConnectionStatus = function device_GetConnectionStatus 
     });
 };
 
+module.exports.device_GetStorageInfoForBlob = function device_GetStorageInfoForBlob (req, res, next) {
+  var connectionId = req.swagger.params['connectionId'].value;
+  var blobName = req.swagger.params['blobName'].value;
+  Device.device_GetStorageInfoForBlob(connectionId,blobName)
+    .then(function (response) {
+      utils.writeJson(res, response);
+    })
+    .catch(function (response) {
+      utils.writeJson(res, response);
+    });
+};
+
 module.exports.device_GetTwin = function device_GetTwin (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
   Device.device_GetTwin(connectionId)
+    .then(function (response) {
+      utils.writeJson(res, response);
+    })
+    .catch(function (response) {
+      utils.writeJson(res, response);
+    });
+};
+
+module.exports.device_NotifyBlobUploadStatus = function device_NotifyBlobUploadStatus (req, res, next) {
+  var connectionId = req.swagger.params['connectionId'].value;
+  var correlationId = req.swagger.params['correlationId'].value;
+  var isSuccess = req.swagger.params['isSuccess'].value;
+  var statusCode = req.swagger.params['statusCode'].value;
+  var statusDescription = req.swagger.params['statusDescription'].value;
+  Device.device_NotifyBlobUploadStatus(connectionId,correlationId,isSuccess,statusCode,statusDescription)
     .then(function (response) {
       utils.writeJson(res, response);
     })
@@ -189,7 +216,8 @@ module.exports.device_WaitForC2dMessage = function device_WaitForC2dMessage (req
 
 module.exports.device_WaitForConnectionStatusChange = function device_WaitForConnectionStatusChange (req, res, next) {
   var connectionId = req.swagger.params['connectionId'].value;
-  Device.device_WaitForConnectionStatusChange(connectionId)
+  var connectionStatus = req.swagger.params['connectionStatus'].value;
+  Device.device_WaitForConnectionStatusChange(connectionId,connectionStatus)
     .then(function (response) {
       utils.writeJson(res, response);
     })
