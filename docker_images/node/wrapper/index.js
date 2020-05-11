@@ -20,6 +20,24 @@ var options = {
 var spec = fs.readFileSync(path.join(__dirname,'api/swagger.yaml'), 'utf8');
 var swaggerDoc = jsyaml.safeLoad(spec);
 
+// BEGIN code added in merge
+// Function to convert PascalCase to camelCase
+var toCamel = function(s) {
+    return s.charAt(0).toLowerCase() + s.slice(1)
+}
+
+// operationId values in the yaml are PascalCased, but the code generator
+// gave us functions that are camelCased.  Fix this up.
+var paths = swaggerDoc.paths
+Object.keys(paths).forEach(function(path) {
+  ['get', 'put', 'post', 'patch'].forEach(function(verb) {
+    if (paths[path][verb] && paths[path][verb].operationId) {
+      paths[path][verb].operationId = toCamel(paths[path][verb].operationId);
+    }
+  });
+}); 
+// END code added in merge
+
 // Initialize the Swagger middleware
 swaggerTools.initializeMiddleware(swaggerDoc, function (middleware) {
 
