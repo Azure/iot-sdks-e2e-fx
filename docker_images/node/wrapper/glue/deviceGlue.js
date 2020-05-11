@@ -253,10 +253,9 @@ exports.device_WaitForC2dMessage = function(connectionId) {
  * connectionId String Id for the connection
  * returns String
  **/
-exports.device_WaitForConnectionStatusChange = function(connectionId) {
-  return internalGlue.internal_WaitForConnectionStatusChange(objectCache, connectionId);
+exports.device_WaitForConnectionStatusChange = function(connectionId, connectionStatus) {
+  return internalGlue.internal_WaitForConnectionStatusChange(objectCache, connectionId, connectionStatus);
 }
-
 
 /**
  * Wait for the next desired property patch
@@ -267,4 +266,30 @@ exports.device_WaitForConnectionStatusChange = function(connectionId) {
 exports.device_WaitForDesiredPropertiesPatch = function(connectionId) {
   return internalGlue.internal_WaitForDesiredPropertiesPatch(objectCache, connectionId);
 }
+
+/**
+ * Get storage info for uploading into blob storage
+ *
+ * connectionId String Id for the connection
+ * blobName String name of blob for blob upload
+ * returns blobStorageInfo
+ **/
+exports.device_GetStorageInfoForBlob = function(connectionId,blobName) {
+  return internalGlue.internal_GetStorageInfoForBlob(objectCache, connectionId, blobName);
+}
+
+/**
+ * notify iothub about blob upload status
+ *
+ * connectionId String Id for the connection
+ * correlationId String correlation id for blob upload
+ * isSuccess Boolean True if blob upload was successful
+ * statusCode String status code for blob upload
+ * statusDescription String human readable descripton of the status for blob upload
+ * no response value expected for this operation
+ **/
+exports.device_NotifyBlobUploadStatus = function(connectionId,correlationId,isSuccess,statusCode,statusDescription) {
+  return internalGlue.internal_NotifyBlobUploadStatus(objectCache, connectionId, correlationId, isSuccess, statusCode, statusDescription);
+}
+
 

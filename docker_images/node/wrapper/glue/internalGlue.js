@@ -296,7 +296,7 @@ exports.internal_SendEvent = function(objectCache, connectionId,eventBody) {
  * connectionId String Id for the connection
  * returns String
  **/
-exports.internal_WaitForConnectionStatusChange = function(objectCache, connectionId) {
+exports.internal_WaitForConnectionStatusChange = function(objectCache, connectionId, connectionStatus) {
   return new Promise(function(resolve, reject) {
     glueUtils.returnFailure(reject);
   });
@@ -323,5 +323,35 @@ exports.internal_WaitForDesiredPropertiesPatch = function(objectCache, connectio
     });
   });
 }
+
+/**
+ * Get storage info for uploading into blob storage
+ *
+ * connectionId String Id for the connection
+ * blobName String name of blob for blob upload
+ * returns blobStorageInfo
+ **/
+exports.internal_GetStorageInfoForBlob = function(connectionId,blobName) {
+  return new Promise(function(resolve, reject) {
+    glueUtils.returnFailure(reject);
+  });
+}
+
+/**
+ * notify iothub about blob upload status
+ *
+ * connectionId String Id for the connection
+ * correlationId String correlation id for blob upload
+ * isSuccess Boolean True if blob upload was successful
+ * statusCode String status code for blob upload
+ * statusDescription String human readable descripton of the status for blob upload
+ * no response value expected for this operation
+ **/
+exports.internal_NotifyBlobUploadStatus = function(connectionId,correlationId,isSuccess,statusCode,statusDescription) {
+  return new Promise(function(resolve, reject) {
+    glueUtils.returnFailure(reject);
+  });
+}
+
 
 
