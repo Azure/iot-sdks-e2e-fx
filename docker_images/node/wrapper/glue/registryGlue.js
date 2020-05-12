@@ -62,8 +62,14 @@ exports.registry_Disconnect = function(connectionId) {
  * returns Object
  **/
 exports.registry_GetDeviceTwin = function(connectionId,deviceId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+  debug(`registry_GetDeviceTwin called with ${connectionId}, ${deviceId}`);
+  return glueUtils.makePromise('registry_GetDeviceTwin', function(callback) {
+    var registry = objectCache.getObject(connectionId);
+    debug(`calling Registry.getTwin`);
+    registry.getTwin(deviceId, function(err, result) {
+      glueUtils.debugFunctionResult('registry.getTwin', err);
+      callback(err, result["properties"]);
+    });
   });
 }
 

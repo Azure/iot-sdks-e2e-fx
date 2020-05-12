@@ -75,6 +75,7 @@ exports.control_GetCapabilities = function() {
     debug("returning capabilities");
     var caps = {
       'flags': {
+        'v2_connect_group': true
       },
       'skip_list': []
     };
@@ -108,9 +109,7 @@ exports.control_LogMessage = function(msg) {
  * no response value expected for this operation
  **/
 exports.control_SendCommand = function(cmd) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl()
 }
 
 
@@ -121,8 +120,6 @@ exports.control_SendCommand = function(cmd) {
  * no response value expected for this operation
  **/
 exports.control_SetFlags = function(flags) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl()
 }
 

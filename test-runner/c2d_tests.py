@@ -21,7 +21,7 @@ class C2dTests(object):
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
         await asyncio.sleep(2)  # wait for receive pipeline to finish setting up
 
-        await service.send_c2d(client.device_id, json.dumps(test_payload))
+        await service.send_c2d(client.device_id, test_payload)
 
         received_message = await test_input_future
         assert received_message.body == test_payload

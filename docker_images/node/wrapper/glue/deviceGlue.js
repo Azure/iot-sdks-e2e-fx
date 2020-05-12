@@ -23,27 +23,7 @@ var objectCache = new NamedObjectCache();
  * returns connectResponse
  **/
 exports.device_Connect = function(transportType,connectionString,caCertificate) {
-  debug(`device_Connect called with transport ${transportType}`);
-  return glueUtils.makePromise('device_Connect', function(callback) {
-    var client = Client.fromConnectionString(connectionString, glueUtils.transportFromType(transportType));
-    glueUtils.setOptionalCert(client, caCertificate, function(err) {
-      glueUtils.debugFunctionResult('glueUtils.setOptionalCert', err);
-      if (err) {
-        callback(err);
-      } else {
-        debug('calling client.open');
-        client.open(function(err) {
-          glueUtils.debugFunctionResult('client.open', err);
-          if (err) {
-            callback(err);
-          } else {
-            var connectionId = objectCache.addObject('DeviceClient', client);
-            callback(null, {connectionId: connectionId});
-          }
-        });
-      }
-    });
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -67,11 +47,32 @@ exports.device_Connect2 = function(connectionId) {
  * returns connectResponse
  **/
 exports.device_CreateFromConnectionString = function(transportType,connectionString,caCertificate) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+  debug(`device_CreateFromConnectionString called with transport ${transportType}`);
+  
+  return new Promise((resolve, reject) => {  
+    debug("enter ccs");
+    resolve(Client.fromConnectionString(connectionString, glueUtils.transportFromType(transportType)));
+    debug("exit ccs")
+  })
+  .then((client) => {
+    debug("then")
+    if (caCertificate && caCertificate.cert) {
+      return client.setOptions({
+        ca: caCertificate.cert
+      })
+      .then(() => client);
+    } else {
+      debug("else")
+      return client
+    }
+  })
+  .then((client) => {
+    debug("adding")
+    const connectionId = objectCache.addObject('DeviceClient', client);
+    debug(`added $connectionId`)
+    return {"connectionId": connectionId}; 
   });
 }
-
 
 /**
  * Create a device client from X509 credentials
@@ -81,9 +82,7 @@ exports.device_CreateFromConnectionString = function(transportType,connectionStr
  * returns connectResponse
  **/
 exports.device_CreateFromX509 = function(transportType,x509) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -94,9 +93,7 @@ exports.device_CreateFromX509 = function(transportType,x509) {
  * no response value expected for this operation
  **/
 exports.device_Destroy = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Destroy(objectCache, connectionId);
 }
 
 
@@ -107,7 +104,7 @@ exports.device_Destroy = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_Disconnect = function(connectionId) {
-    return internalGlue.internal_Disconnect(objectCache, connectionId);
+  return internalGlue.internal_Disconnect(objectCache, connectionId);
 }
 
 
@@ -118,7 +115,7 @@ exports.device_Disconnect = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_Disconnect2 = function(connectionId) {
-  return internalGlue.internal_Disconnect(objectCache, connectionId);
+  return internalGlue.internal_Disconnect2(objectCache, connectionId);
 }
 
 
@@ -230,7 +227,7 @@ exports.device_WaitForMethodAndReturnResponse = function(connectionId,methodName
  * no response value expected for this operation
  **/
 exports.device_SendEvent = function(connectionId,eventBody) {
-  return internalGlue.internal_SendEvent(objectCache, eventBody);
+  return internalGlue.internal_SendEvent(objectCache, connectionId, eventBody);
 }
 
 
@@ -241,8 +238,20 @@ exports.device_SendEvent = function(connectionId,eventBody) {
  * returns String
  **/
 exports.device_WaitForC2dMessage = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+  debug(`device_WaitForC2dMessage called with ${connectionId}`);
+  return glueUtils.makePromise('device_WaitForC2dMessage', function(callback) {
+    var client = objectCache.getObject(connectionId)
+    var handler = function(msg) {
+      client.complete(msg, function(err) {
+        debug(`received $msg`);
+        glueUtils.debugFunctionResult('client.complete', err);
+        callback(null, {
+          body: JSON.parse(msg.getBytes().toString('ascii'))
+        });
+      });
+      client.removeListener('message', handler);
+    }
+    client.on('message', handler);
   });
 }
 

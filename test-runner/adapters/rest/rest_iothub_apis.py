@@ -414,7 +414,7 @@ class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
         await self.rest_endpoint.send_c2d(
             self.connection_id,
             device_id,
-            event_body,
+            EventBody(body=event_body),
             timeout=adapter_config.default_api_timeout,
         )
 

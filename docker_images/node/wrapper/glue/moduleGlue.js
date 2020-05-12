@@ -101,9 +101,7 @@ exports.module_ConnectFromEnvironment = function(transportType) {
  * returns connectResponse
  **/
 exports.module_CreateFromConnectionString = function(transportType,connectionString,caCertificate) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -114,9 +112,7 @@ exports.module_CreateFromConnectionString = function(transportType,connectionStr
  * returns connectResponse
  **/
 exports.module_CreateFromEnvironment = function(transportType) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
