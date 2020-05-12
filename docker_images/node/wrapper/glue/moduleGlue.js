@@ -71,6 +71,15 @@ exports.module_CreateFromConnectionString = function(transportType,connectionStr
  * returns connectResponse
  **/
 exports.module_CreateFromEnvironment = function(transportType) {
+  debug(`module_CreateFromEnvironment called with transport ${transportType}`);
+  
+  return new Promise((resolve, reject) => {  
+    resolve(ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType)));
+  })
+  .then((client) => {
+    const connectionId = objectCache.addObject('ModuleClient', client);
+    return {"connectionId": connectionId};
+  });
 }
 
 

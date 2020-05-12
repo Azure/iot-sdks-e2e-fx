@@ -40,8 +40,7 @@ var callbackForSecondEventOnly = function(object, eventName, cb) {
  */
 var getModuleOrDeviceTwin = function(objectCache, connectionId, callback) {
   var client = objectCache.getObject(connectionId);
-  // cheat: use internal member.  We should really call getTwin the first time
-  // and cache the value in this code rather than relying on internal implementations.
+  // cheat: use internal member.  
   if (client._twin) {
     callback(null, client._twin);
   } else {
@@ -78,7 +77,6 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
  * no response value expected for this operation
  **/
 exports.internal_Connect2 = function(objectCache, connectionId) {
-  debug(`connect $connectionId`)
   return objectCache.getObject(connectionId).open();
 }
 
@@ -90,10 +88,16 @@ exports.internal_Connect2 = function(objectCache, connectionId) {
  * no response value expected for this operation
  **/
 exports.internal_Destroy = function(objectCache, connectionId) {
+  debug(`Destroying ${connectionId}`);
   return objectCache.getObject(connectionId).close()
-  .finally(() => {
+  .then(() => {
     objectCache.removeObject(connectionId);
-  });
+  })
+  .catch((reason) => {
+    // node8 doesn't have finally, so we catch until we stop supporting it. 
+    objectCache.removeObject(connectionId);
+    throw(reason);
+  })
 }
 
 
