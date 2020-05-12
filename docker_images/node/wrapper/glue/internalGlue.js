@@ -49,6 +49,27 @@ var getModuleOrDeviceTwin = function(objectCache, connectionId, callback) {
   }
 }
 
+exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, transportType, connectionString, caCertificate) {
+  debug(`internal_CreateFromConnectionString called with transport ${transportType}`);
+  
+  return new Promise((resolve, reject) => {  
+    resolve(clientCtor.fromConnectionString(connectionString, glueUtils.transportFromType(transportType)));
+  })
+  .then((client) => {
+    if (caCertificate && caCertificate.cert) {
+      return client.setOptions({
+        ca: caCertificate.cert
+      })
+      .then(() => client);
+    } else {
+      return client
+    }
+  })
+  .then((client) => {
+    const connectionId = objectCache.addObject('DeviceClient', client);
+    return {"connectionId": connectionId};
+  });
+}
 
 /**
  * Connect the client

@@ -47,31 +47,7 @@ exports.device_Connect2 = function(connectionId) {
  * returns connectResponse
  **/
 exports.device_CreateFromConnectionString = function(transportType,connectionString,caCertificate) {
-  debug(`device_CreateFromConnectionString called with transport ${transportType}`);
-  
-  return new Promise((resolve, reject) => {  
-    debug("enter ccs");
-    resolve(Client.fromConnectionString(connectionString, glueUtils.transportFromType(transportType)));
-    debug("exit ccs")
-  })
-  .then((client) => {
-    debug("then")
-    if (caCertificate && caCertificate.cert) {
-      return client.setOptions({
-        ca: caCertificate.cert
-      })
-      .then(() => client);
-    } else {
-      debug("else")
-      return client
-    }
-  })
-  .then((client) => {
-    debug("adding")
-    const connectionId = objectCache.addObject('DeviceClient', client);
-    debug(`added $connectionId`)
-    return {"connectionId": connectionId}; 
-  });
+  return internalGlue.internal_CreateFromConnectionString(objectCache, Client, transportType, connectionString, caCertificate);
 }
 
 /**
