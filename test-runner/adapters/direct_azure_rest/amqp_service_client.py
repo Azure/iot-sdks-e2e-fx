@@ -3,20 +3,12 @@
 # full license information.
 
 import logging
-import os
-import sys
-from base64 import b64encode, b64decode
-from hashlib import sha256
-from hmac import HMAC
-from time import time
 from uuid import uuid4
 import json
 from .. import adapter_config
-from urllib.parse import quote, quote_plus, urlencode
+from urllib.parse import quote_plus
 from connection_string import connection_string_to_dictionary, generate_auth_token
-
 import uamqp
-from uamqp import utils, errors
 
 logger = logging.getLogger(__name__)
 

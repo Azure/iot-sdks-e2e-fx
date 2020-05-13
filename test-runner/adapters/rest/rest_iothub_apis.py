@@ -3,7 +3,6 @@
 # full license information.
 import json
 import time
-from .generated.e2erestapi import AzureIOTEndToEndTestWrapperRestApi as GeneratedSyncApi
 from .generated.e2erestapi.aio import (
     AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
 )

@@ -1,12 +1,10 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-import json
 import pytest
 import asyncio
 import datetime
 from twin_tests import wait_for_reported_properties_update
-from horton_settings import settings
 from horton_logging import logger
 import sample_content
 
