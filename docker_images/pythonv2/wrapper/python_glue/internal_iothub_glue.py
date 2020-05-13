@@ -17,14 +17,10 @@ DEFAULT_KEEPALIVE = 8
 
 class Connect(ConnectionStatus):
     def connect_sync(self, transport_type, connection_string, cert):
-        logger.info("connecting using " + transport_type)
-        self.create_from_connection_string(transport_type, connection_string, cert)
-        self.client.connect()
+        assert False
 
     def disconnect_sync(self):
-        # disconnect destroys the object.  We will never use it again
-        logger.info("disconnecting")
-        self.destroy_sync()
+        assert False
 
     def create_from_connection_string_sync(
         self, transport_type, connection_string, cert
@@ -72,9 +68,7 @@ class Connect(ConnectionStatus):
 
 class ConnectFromEnvironment(object):
     def connect_from_environment_sync(self, transport_type):
-        logger.info("connecting from environment")
-        self.create_from_environment(transport_type)
-        self.client.connect()
+        assert False
 
     def create_from_environment_sync(self, transport_type):
 

@@ -349,9 +349,10 @@ exports.module_SendOutputEvent = function(connectionId,outputName,eventBody) {
  * wait for the current connection status to change and return the changed status
  *
  * connectionId String Id for the connection
+ * connectionStatus String Desired connection status
  * returns String
  **/
-exports.module_WaitForConnectionStatusChange = function(connectionId) {
+exports.module_WaitForConnectionStatusChange = function(connectionId,connectionStatus) {
   return new Promise(function(resolve, reject) {
     var examples = {};
     examples['application/json'] = "";

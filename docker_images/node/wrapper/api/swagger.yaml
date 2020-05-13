@@ -1,25 +1,19 @@
 ---
 swagger: "2.0"
 info:
-  description: "REST API definition for End-to-end testing of the Azure IoT SDKs.\
-    \  All SDK APIs that are tested by our E2E tests need to be defined in this file.\
-    \  This file takes some liberties with the API definitions.  In particular, response\
-    \ schemas are undefined, and error responses are also undefined."
   version: "1.0.0"
   title: "Azure IOT End-to-End Test Wrapper Rest Api"
 tags:
 - name: "control"
   description: "Control APIs that aren't tied to any specific SDK"
-- name: "module"
-  description: "ModuleClient APIs"
 - name: "device"
   description: "DeviceClient APIs"
+- name: "module"
+  description: "ModuleClient APIs"
 - name: "service"
   description: "ServiceClient APIs"
 - name: "registry"
   description: "registry APIs"
-- name: "net"
-  description: "network control APIs"
 schemes:
 - "https"
 produces:
@@ -103,34 +97,48 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "Control"
-  /registry/connect:
+  /device/connect/{transportType}:
     put:
       tags:
-      - "registry"
-      summary: "Connect to registry"
-      description: "Connect to the Azure IoTHub registry.  More specifically, the\
-        \ SDK saves the connection string that is passed in for future use."
-      operationId: "Registry_Connect"
+      - "device"
+      summary: "Connect to the azure IoT Hub as a device"
+      operationId: "Device_Connect"
+      consumes:
+      - "application/json"
       parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
       - name: "connectionString"
         in: "query"
         description: "connection string"
         required: true
         type: "string"
+      - in: "body"
+        name: "caCertificate"
+        required: false
+        schema:
+          $ref: "#/definitions/certificate"
       responses:
         200:
           description: "OK"
           schema:
             $ref: "#/definitions/connectResponse"
-      x-swagger-router-controller: "Registry"
-  /registry/{connectionId}/disconnect/:
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/disconnect:
     put:
       tags:
-      - "registry"
-      summary: "Disconnect from the registry"
-      description: "Disconnects from the Azure IoTHub registry.  More specifically,\
-        \ closes all connections and cleans up all resources for the active connection"
-      operationId: "Registry_Disconnect"
+      - "device"
+      summary: "Disconnect the device"
+      operationId: "Device_Disconnect"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -140,13 +148,174 @@ paths:
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "Registry"
-  /registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}:
-    get:
+      x-swagger-router-controller: "Device"
+  /device/createFromConnectionString/{transportType}:
+    put:
       tags:
-      - "registry"
-      summary: "gets the module twin for the given deviceid and moduleid"
-      operationId: "Registry_GetModuleTwin"
+      - "device"
+      summary: "Create a device client from a connection string"
+      operationId: "Device_CreateFromConnectionString"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - name: "connectionString"
+        in: "query"
+        description: "connection string"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "caCertificate"
+        required: false
+        schema:
+          $ref: "#/definitions/certificate"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "Device"
+  /device/createFromX509/{transportType}:
+    put:
+      tags:
+      - "device"
+      summary: "Create a device client from X509 credentials"
+      operationId: "Device_CreateFromX509"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - in: "body"
+        name: "X509"
+        required: true
+        schema:
+          type: "object"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/connect2:
+    put:
+      tags:
+      - "device"
+      summary: "Connect the device"
+      operationId: "Device_Connect2"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/reconnect:
+    put:
+      tags:
+      - "device"
+      summary: "Reconnect the device"
+      operationId: "Device_Reconnect"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "forceRenewPassword"
+        in: "query"
+        description: "True to force SAS renewal"
+        required: false
+        type: "boolean"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/disconnect2:
+    put:
+      tags:
+      - "device"
+      summary: "Disconnect the device"
+      operationId: "Device_Disconnect2"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/destroy:
+    put:
+      tags:
+      - "device"
+      summary: "Disconnect and destroy the device client"
+      operationId: "Device_Destroy"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/enableMethods:
+    put:
+      tags:
+      - "device"
+      summary: "Enable methods"
+      operationId: "Device_EnableMethods"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/waitForMethodAndReturnResponse/{methodName}:
+    put:
+      tags:
+      - "device"
+      summary: "Wait for a method call, verify the request, and return the response."
+      description: "This is a workaround to deal with SDKs that only have method call\
+        \ operations that are sync.  This function responds to the method with the\
+        \ payload of this function, and then returns the method parameters.  Real-world\
+        \ implemenatations would never do this, but this is the only same way to write\
+        \ our test code right now (because the method handlers for C, Java, and probably\
+        \ Python all return the method response instead of supporting an async method\
+        \ call)"
+      operationId: "Device_WaitForMethodAndReturnResponse"
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -155,25 +324,42 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
-      - name: "deviceId"
+      - name: "methodName"
         in: "path"
+        description: "name of the method to handle"
         required: true
         type: "string"
-      - name: "moduleId"
+      - in: "body"
+        name: "requestAndResponse"
+        required: true
+        schema:
+          $ref: "#/definitions/methodRequestAndResponse"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/enableC2dMessages:
+    put:
+      tags:
+      - "device"
+      summary: "Enable c2d messages"
+      operationId: "Device_EnableC2dMessages"
+      parameters:
+      - name: "connectionId"
         in: "path"
+        description: "Id for the connection"
         required: true
         type: "string"
       responses:
         200:
           description: "OK"
-          schema:
-            $ref: "#/definitions/twin"
-      x-swagger-router-controller: "Registry"
-    patch:
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/event:
+    put:
       tags:
-      - "registry"
-      summary: "update the module twin for the given deviceId and moduleId"
-      operationId: "Registry_PatchModuleTwin"
+      - "device"
+      summary: "Send an event"
+      operationId: "Device_SendEvent"
       consumes:
       - "application/json"
       parameters:
@@ -182,12 +368,82 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
-      - name: "deviceId"
+      - in: "body"
+        name: "eventBody"
+        required: true
+        schema:
+          $ref: "#/definitions/eventBody"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/c2dMessage:
+    get:
+      tags:
+      - "device"
+      summary: "Wait for a c2d message"
+      operationId: "Device_WaitForC2dMessage"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
         in: "path"
+        description: "Id for the connection"
         required: true
         type: "string"
-      - name: "moduleId"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/eventBody"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/enableTwin:
+    put:
+      tags:
+      - "device"
+      summary: "Enable device twins"
+      operationId: "Device_EnableTwin"
+      parameters:
+      - name: "connectionId"
         in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/twin:
+    get:
+      tags:
+      - "device"
+      summary: "Get the device twin"
+      operationId: "Device_GetTwin"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/twin"
+      x-swagger-router-controller: "Device"
+    patch:
+      tags:
+      - "device"
+      summary: "Updates the device twin"
+      operationId: "Device_PatchTwin"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
         required: true
         type: "string"
       - in: "body"
@@ -198,13 +454,13 @@ paths:
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "Registry"
-  /registry/{connectionId}/deviceTwin/{deviceId}:
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/twinDesiredPropPatch:
     get:
       tags:
-      - "registry"
-      summary: "gets the device twin for the given deviceid"
-      operationId: "Registry_GetDeviceTwin"
+      - "device"
+      summary: "Wait for the next desired property patch"
+      operationId: "Device_WaitForDesiredPropertiesPatch"
       produces:
       - "application/json"
       parameters:
@@ -213,22 +469,19 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
-      - name: "deviceId"
-        in: "path"
-        required: true
-        type: "string"
       responses:
         200:
           description: "OK"
           schema:
             $ref: "#/definitions/twin"
-      x-swagger-router-controller: "Registry"
-    patch:
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/connectionStatus:
+    get:
       tags:
-      - "registry"
-      summary: "update the device twin for the given deviceId"
-      operationId: "Registry_PatchDeviceTwin"
-      consumes:
+      - "device"
+      summary: "get the current connection status"
+      operationId: "Device_GetConnectionStatus"
+      produces:
       - "application/json"
       parameters:
       - name: "connectionId"
@@ -236,19 +489,102 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
-      - name: "deviceId"
-        in: "path"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "twin"
-        required: true
-        schema:
-          $ref: "#/definitions/twin"
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "Registry"
+          schema:
+            type: "string"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/connectionStatusChange:
+    get:
+      tags:
+      - "device"
+      summary: "wait for the current connection status to change and return the changed\
+        \ status"
+      operationId: "Device_WaitForConnectionStatusChange"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "connectionStatus"
+        in: "query"
+        description: "Desired connection status"
+        required: true
+        type: "string"
+        enum:
+        - "connected"
+        - "disconnected"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "string"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/storageInfoForBlob:
+    get:
+      tags:
+      - "device"
+      summary: "Get storage info for uploading into blob storage"
+      operationId: "Device_GetStorageInfoForBlob"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "blobName"
+        in: "query"
+        description: "name of blob for blob upload"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/blobStorageInfo"
+      x-swagger-router-controller: "Device"
+  /device/{connectionId}/blobUploadStatus:
+    put:
+      tags:
+      - "device"
+      summary: "notify iothub about blob upload status"
+      operationId: "Device_NotifyBlobUploadStatus"
+      parameters:
+      - name: "connectionId"
+        in: "path"
+        description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "correlationId"
+        in: "query"
+        description: "correlation id for blob upload"
+        required: true
+        type: "string"
+      - name: "isSuccess"
+        in: "query"
+        description: "True if blob upload was successful"
+        required: true
+        type: "boolean"
+      - name: "statusCode"
+        in: "query"
+        description: "status code for blob upload"
+        required: true
+        type: "string"
+      - name: "statusDescription"
+        in: "query"
+        description: "human readable descripton of the status for blob upload"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+      x-swagger-router-controller: "Device"
   /module/connect/{transportType}:
     put:
       tags:
@@ -805,6 +1141,14 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
+      - name: "connectionStatus"
+        in: "query"
+        description: "Desired connection status"
+        required: true
+        type: "string"
+        enum:
+        - "connected"
+        - "disconnected"
       responses:
         200:
           description: "OK"
@@ -942,48 +1286,34 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "Service"
-  /device/connect/{transportType}:
+  /registry/connect:
     put:
       tags:
-      - "device"
-      summary: "Connect to the azure IoT Hub as a device"
-      operationId: "Device_Connect"
-      consumes:
-      - "application/json"
+      - "registry"
+      summary: "Connect to registry"
+      description: "Connect to the Azure IoTHub registry.  More specifically, the\
+        \ SDK saves the connection string that is passed in for future use."
+      operationId: "Registry_Connect"
       parameters:
-      - name: "transportType"
-        in: "path"
-        description: "Transport to use"
-        required: true
-        type: "string"
-        enum:
-        - "amqp"
-        - "amqpws"
-        - "mqtt"
-        - "mqttws"
-        - "http"
       - name: "connectionString"
         in: "query"
         description: "connection string"
         required: true
         type: "string"
-      - in: "body"
-        name: "caCertificate"
-        required: false
-        schema:
-          $ref: "#/definitions/certificate"
       responses:
         200:
           description: "OK"
           schema:
             $ref: "#/definitions/connectResponse"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/disconnect:
+      x-swagger-router-controller: "Registry"
+  /registry/{connectionId}/disconnect/:
     put:
       tags:
-      - "device"
-      summary: "Disconnect the device"
-      operationId: "Device_Disconnect"
+      - "registry"
+      summary: "Disconnect from the registry"
+      description: "Disconnects from the Azure IoTHub registry.  More specifically,\
+        \ closes all connections and cleans up all resources for the active connection"
+      operationId: "Registry_Disconnect"
       parameters:
       - name: "connectionId"
         in: "path"
@@ -993,241 +1323,13 @@ paths:
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/createFromConnectionString/{transportType}:
-    put:
-      tags:
-      - "device"
-      summary: "Create a device client from a connection string"
-      operationId: "Device_CreateFromConnectionString"
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "transportType"
-        in: "path"
-        description: "Transport to use"
-        required: true
-        type: "string"
-        enum:
-        - "amqp"
-        - "amqpws"
-        - "mqtt"
-        - "mqttws"
-        - "http"
-      - name: "connectionString"
-        in: "query"
-        description: "connection string"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "caCertificate"
-        required: false
-        schema:
-          $ref: "#/definitions/certificate"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            $ref: "#/definitions/connectResponse"
-      x-swagger-router-controller: "Device"
-  /device/createFromX509/{transportType}:
-    put:
-      tags:
-      - "device"
-      summary: "Create a device client from X509 credentials"
-      operationId: "Device_CreateFromX509"
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "transportType"
-        in: "path"
-        description: "Transport to use"
-        required: true
-        type: "string"
-        enum:
-        - "amqp"
-        - "amqpws"
-        - "mqtt"
-        - "mqttws"
-        - "http"
-      - in: "body"
-        name: "X509"
-        required: true
-        schema:
-          type: "object"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            $ref: "#/definitions/connectResponse"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/connect2:
-    put:
-      tags:
-      - "device"
-      summary: "Connect the device"
-      operationId: "Device_Connect2"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/reconnect:
-    put:
-      tags:
-      - "device"
-      summary: "Reconnect the device"
-      operationId: "Device_Reconnect"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      - name: "forceRenewPassword"
-        in: "query"
-        description: "True to force SAS renewal"
-        required: false
-        type: "boolean"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/disconnect2:
-    put:
-      tags:
-      - "device"
-      summary: "Disconnect the device"
-      operationId: "Device_Disconnect2"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/destroy:
-    put:
-      tags:
-      - "device"
-      summary: "Disconnect and destroy the device client"
-      operationId: "Device_Destroy"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/enableMethods:
-    put:
-      tags:
-      - "device"
-      summary: "Enable methods"
-      operationId: "Device_EnableMethods"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/waitForMethodAndReturnResponse/{methodName}:
-    put:
-      tags:
-      - "device"
-      summary: "Wait for a method call, verify the request, and return the response."
-      description: "This is a workaround to deal with SDKs that only have method call\
-        \ operations that are sync.  This function responds to the method with the\
-        \ payload of this function, and then returns the method parameters.  Real-world\
-        \ implemenatations would never do this, but this is the only same way to write\
-        \ our test code right now (because the method handlers for C, Java, and probably\
-        \ Python all return the method response instead of supporting an async method\
-        \ call)"
-      operationId: "Device_WaitForMethodAndReturnResponse"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      - name: "methodName"
-        in: "path"
-        description: "name of the method to handle"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "requestAndResponse"
-        required: true
-        schema:
-          $ref: "#/definitions/methodRequestAndResponse"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/enableC2dMessages:
-    put:
-      tags:
-      - "device"
-      summary: "Enable c2d messages"
-      operationId: "Device_EnableC2dMessages"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/event:
-    put:
-      tags:
-      - "device"
-      summary: "Send an event"
-      operationId: "Device_SendEvent"
-      consumes:
-      - "application/json"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "eventBody"
-        required: true
-        schema:
-          $ref: "#/definitions/eventBody"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/c2dMessage:
+      x-swagger-router-controller: "Registry"
+  /registry/{connectionId}/moduleTwin/{deviceId}/{moduleId}:
     get:
       tags:
-      - "device"
-      summary: "Wait for a c2d message"
-      operationId: "Device_WaitForC2dMessage"
+      - "registry"
+      summary: "gets the module twin for the given deviceid and moduleid"
+      operationId: "Registry_GetModuleTwin"
       produces:
       - "application/json"
       parameters:
@@ -1236,40 +1338,12 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            $ref: "#/definitions/eventBody"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/enableTwin:
-    put:
-      tags:
-      - "device"
-      summary: "Enable device twins"
-      operationId: "Device_EnableTwin"
-      parameters:
-      - name: "connectionId"
+      - name: "deviceId"
         in: "path"
-        description: "Id for the connection"
         required: true
         type: "string"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/twin:
-    get:
-      tags:
-      - "device"
-      summary: "Get the device twin"
-      operationId: "Device_GetTwin"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "connectionId"
+      - name: "moduleId"
         in: "path"
-        description: "Id for the connection"
         required: true
         type: "string"
       responses:
@@ -1277,18 +1351,26 @@ paths:
           description: "OK"
           schema:
             $ref: "#/definitions/twin"
-      x-swagger-router-controller: "Device"
+      x-swagger-router-controller: "Registry"
     patch:
       tags:
-      - "device"
-      summary: "Updates the device twin"
-      operationId: "Device_PatchTwin"
+      - "registry"
+      summary: "update the module twin for the given deviceId and moduleId"
+      operationId: "Registry_PatchModuleTwin"
       consumes:
       - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
         description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "moduleId"
+        in: "path"
         required: true
         type: "string"
       - in: "body"
@@ -1299,19 +1381,23 @@ paths:
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/twinDesiredPropPatch:
+      x-swagger-router-controller: "Registry"
+  /registry/{connectionId}/deviceTwin/{deviceId}:
     get:
       tags:
-      - "device"
-      summary: "Wait for the next desired property patch"
-      operationId: "Device_WaitForDesiredPropertiesPatch"
+      - "registry"
+      summary: "gets the device twin for the given deviceid"
+      operationId: "Registry_GetDeviceTwin"
       produces:
       - "application/json"
       parameters:
       - name: "connectionId"
         in: "path"
         description: "Id for the connection"
+        required: true
+        type: "string"
+      - name: "deviceId"
+        in: "path"
         required: true
         type: "string"
       responses:
@@ -1319,14 +1405,13 @@ paths:
           description: "OK"
           schema:
             $ref: "#/definitions/twin"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/connectionStatus:
-    get:
+      x-swagger-router-controller: "Registry"
+    patch:
       tags:
-      - "device"
-      summary: "get the current connection status"
-      operationId: "Device_GetConnectionStatus"
-      produces:
+      - "registry"
+      summary: "update the device twin for the given deviceId"
+      operationId: "Registry_PatchDeviceTwin"
+      consumes:
       - "application/json"
       parameters:
       - name: "connectionId"
@@ -1334,127 +1419,19 @@ paths:
         description: "Id for the connection"
         required: true
         type: "string"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            type: "string"
-      x-swagger-router-controller: "Device"
-  /device/{connectionId}/connectionStatusChange:
-    get:
-      tags:
-      - "device"
-      summary: "wait for the current connection status to change and return the changed\
-        \ status"
-      operationId: "Device_WaitForConnectionStatusChange"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "connectionId"
-        in: "path"
-        description: "Id for the connection"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "OK"
-          schema:
-            type: "string"
-      x-swagger-router-controller: "Device"
-  /net/setDestination/{ip}/{transportType}:
-    put:
-      tags:
-      - "net"
-      summary: "Set destination for net disconnect ops"
-      operationId: "Net_SetDestination"
-      parameters:
-      - name: "ip"
+      - name: "deviceId"
         in: "path"
         required: true
         type: "string"
-      - name: "transportType"
-        in: "path"
-        description: "Transport to use"
+      - in: "body"
+        name: "twin"
         required: true
-        type: "string"
-        enum:
-        - "amqp"
-        - "amqpws"
-        - "mqtt"
-        - "mqttws"
-        - "http"
+        schema:
+          $ref: "#/definitions/twin"
       responses:
         200:
           description: "OK"
-      x-swagger-router-controller: "Net"
-  /net/disconnect/{disconnectType}:
-    put:
-      tags:
-      - "net"
-      summary: "Simulate a network disconnection"
-      operationId: "Net_Disconnect"
-      parameters:
-      - name: "disconnectType"
-        in: "path"
-        description: "disconnect method for dropped connection tests"
-        required: true
-        type: "string"
-        enum:
-        - "DROP"
-        - "REJECT"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Net"
-  /net/reconnect:
-    put:
-      tags:
-      - "net"
-      summary: "Reconnect the network after a simulated network disconnection"
-      operationId: "Net_Reconnect"
-      parameters: []
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Net"
-  /net/disconnectAfterC2d/{disconnectType}:
-    put:
-      tags:
-      - "net"
-      summary: "Simulate a disconnect after the next C2D transfer"
-      operationId: "Net_DisconnectAfterC2d"
-      parameters:
-      - name: "disconnectType"
-        in: "path"
-        description: "disconnect method for dropped connection tests"
-        required: true
-        type: "string"
-        enum:
-        - "DROP"
-        - "REJECT"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Net"
-  /net/disconnectAfterD2c/{disconnectType}:
-    put:
-      tags:
-      - "net"
-      summary: "Simulate a disconnect after the next D2C transfer"
-      operationId: "Net_DisconnectAfterD2c"
-      parameters:
-      - name: "disconnectType"
-        in: "path"
-        description: "disconnect method for dropped connection tests"
-        required: true
-        type: "string"
-        enum:
-        - "DROP"
-        - "REJECT"
-      responses:
-        200:
-          description: "OK"
-      x-swagger-router-controller: "Net"
+      x-swagger-router-controller: "Registry"
 definitions:
   logMessage:
     type: "object"
@@ -1463,6 +1440,13 @@ definitions:
         type: "string"
         description: "text of message"
     description: "message from the test script to output to the log"
+  certificate:
+    type: "object"
+    properties:
+      cert:
+        type: "string"
+        description: "unique identifier for this connection"
+    description: "certificate in the body of a message"
   connectResponse:
     type: "object"
     properties:
@@ -1472,28 +1456,23 @@ definitions:
     description: "result of a connection to a service, device, or module client"
     example:
       connectionId: "connectionId"
-  twin:
+  methodRequestAndResponse:
     type: "object"
     properties:
-      desired:
+      requestPayload:
         type: "object"
-        description: "desired properties"
+        description: "payload for the request that arrived from the service.  Used\
+          \ to verify that the correct request arrived."
         properties: {}
-      reported:
+      responsePayload:
         type: "object"
-        description: "reported properties"
+        description: "payload for the response to return to the service.  Used to\
+          \ verify that the correct request arrived."
         properties: {}
-    description: "device twin or module twin"
-    example:
-      desired: "{}"
-      reported: "{}"
-  certificate:
-    type: "object"
-    properties:
-      cert:
-        type: "string"
-        description: "unique identifier for this connection"
-    description: "certificate in the body of a message"
+      statusCode:
+        type: "integer"
+        description: "status code to return to the service"
+    description: "parameters and response for a sync method call"
   eventBody:
     type: "object"
     properties:
@@ -1514,23 +1493,46 @@ definitions:
       horton_flags: "{}"
       attributes: "{}"
       body: "{}"
-  methodRequestAndResponse:
+  twin:
     type: "object"
     properties:
-      requestPayload:
+      desired:
         type: "object"
-        description: "payload for the request that arrived from the service.  Used\
-          \ to verify that the correct request arrived."
+        description: "desired properties"
         properties: {}
-      responsePayload:
+      reported:
         type: "object"
-        description: "payload for the response to return to the service.  Used to\
-          \ verify that the correct request arrived."
+        description: "reported properties"
         properties: {}
-      statusCode:
-        type: "integer"
-        description: "status code to return to the service"
-    description: "parameters and response for a sync method call"
+    description: "device twin or module twin"
+    example:
+      desired: "{}"
+      reported: "{}"
+  blobStorageInfo:
+    type: "object"
+    properties:
+      blobName:
+        type: "string"
+        description: "name of blob to upload"
+      containerName:
+        type: "string"
+        description: "name of container in the azure storage host to upload into"
+      correlationId:
+        type: "string"
+        description: "correlation id to use for upload"
+      hostName:
+        type: "string"
+        description: "name of azure storage host"
+      sasToken:
+        type: "string"
+        description: "sas token to use to authenticate with azure storage host"
+    description: "storage info for blob upload"
+    example:
+      blobName: "blobName"
+      sasToken: "sasToken"
+      hostName: "hostName"
+      containerName: "containerName"
+      correlationId: "correlationId"
   methodInvoke:
     type: "object"
     properties:
