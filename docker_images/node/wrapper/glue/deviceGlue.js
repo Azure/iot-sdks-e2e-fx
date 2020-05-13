@@ -23,7 +23,27 @@ var objectCache = new NamedObjectCache();
  * returns connectResponse
  **/
 exports.device_Connect = function(transportType,connectionString,caCertificate) {
-  return glueUtils.returnNotImpl();
+  debug(`device_Connect called with transport ${transportType}`);
+  return glueUtils.makePromise('device_Connect', function(callback) {
+    var client = Client.fromConnectionString(connectionString, glueUtils.transportFromType(transportType));
+    glueUtils.setOptionalCert(client, caCertificate, function(err) {
+      glueUtils.debugFunctionResult('glueUtils.setOptionalCert', err);
+      if (err) {
+        callback(err);
+      } else {
+        debug('calling client.open');
+        client.open(function(err) {
+          glueUtils.debugFunctionResult('client.open', err);
+          if (err) {
+            callback(err);
+          } else {
+            var connectionId = objectCache.addObject('DeviceClient', client);
+            callback(null, {connectionId: connectionId});
+          }
+        });
+      }
+    });
+  });
 }
 
 

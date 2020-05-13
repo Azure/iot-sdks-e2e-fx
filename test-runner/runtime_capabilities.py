@@ -10,7 +10,7 @@ hardcoded_skip_list = {
     "c": ["module_under_test_has_device_wrapper"],
 }
 
-language_has_full_device_client = ("pythonv2", "node")
+language_has_full_device_client = ("pythonv2",)
 language_has_leaf_device_client = ("node",)
 language_has_service_client = ("node", "csharp", "java", "c")
 
