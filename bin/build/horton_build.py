@@ -80,7 +80,7 @@ def build_image(tags):
         dockerfile = "Dockerfile"
 
     run_docker_command(
-        "docker build --tag {tag} --file {path}/{dockerfile} {build_arg_string} {cache_from_string} {path}".format(
+        "docker build --tag {tag} --file {path}/{dockerfile} {build_arg_string} {cache_from_string} {path}/..".format(
             tag=tags.docker_image_name,
             dockerfile=dockerfile,
             build_arg_string=build_arg_string,
