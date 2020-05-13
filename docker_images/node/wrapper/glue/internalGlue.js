@@ -49,6 +49,27 @@ var getModuleOrDeviceTwin = function(objectCache, connectionId, callback) {
   }
 }
 
+exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, transportType, connectionString, caCertificate) {
+  debug(`internal_CreateFromConnectionString called with transport ${transportType}`);
+  
+  return new Promise((resolve, reject) => {  
+    resolve(clientCtor.fromConnectionString(connectionString, glueUtils.transportFromType(transportType)));
+  })
+  .then((client) => {
+    if (caCertificate && caCertificate.cert) {
+      return client.setOptions({
+        ca: caCertificate.cert
+      })
+      .then(() => client);
+    } else {
+      return client
+    }
+  })
+  .then((client) => {
+    const connectionId = objectCache.addObject('DeviceClient', client);
+    return {"connectionId": connectionId};
+  });
+}
 
 /**
  * Connect the client
@@ -57,9 +78,7 @@ var getModuleOrDeviceTwin = function(objectCache, connectionId, callback) {
  * no response value expected for this operation
  **/
 exports.internal_Connect2 = function(objectCache, connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return objectCache.getObject(connectionId).open();
 }
 
 
@@ -70,9 +89,16 @@ exports.internal_Connect2 = function(objectCache, connectionId) {
  * no response value expected for this operation
  **/
 exports.internal_Destroy = function(objectCache, connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  debug(`Destroying ${connectionId}`);
+  return objectCache.getObject(connectionId).close()
+  .then(() => {
+    objectCache.removeObject(connectionId);
+  })
+  .catch((reason) => {
+    // node8 doesn't have finally, so we catch until we stop supporting it. 
+    objectCache.removeObject(connectionId);
+    throw(reason);
+  })
 }
 
 
@@ -83,20 +109,7 @@ exports.internal_Destroy = function(objectCache, connectionId) {
  * no response value expected for this operation
  **/
 exports.internal_Disconnect = function(objectCache, connectionId) {
-  debug(`internal_Disconnect called with ${connectionId}`);
-  return glueUtils.makePromise('internal_Disconnect', function(callback) {
-    var client = objectCache.removeObject(connectionId);
-    if (!client) {
-      debug(`${connectionId} already closed.`);
-      callback();
-    } else {
-      debug('calling client.close');
-      client.close(function(err) {
-        glueUtils.debugFunctionResult('client.close', err);
-        callback(err);
-      });
-    }
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -107,9 +120,7 @@ exports.internal_Disconnect = function(objectCache, connectionId) {
  * no response value expected for this operation
  **/
 exports.internal_Disconnect2 = function(objectCache, connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return objectCache.getObject(connectionId).close();
 }
 
 
@@ -156,9 +167,7 @@ exports.internal_EnableTwin = function(objectCache, connectionId) {
  * returns String
  **/
 exports.internal_GetConnectionStatus = function(objectCache, connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -224,9 +233,7 @@ exports.internal_PatchTwin = function(objectCache, connectionId,props) {
  * no response value expected for this operation
  **/
 exports.internal_Reconnect = function(objectCache, connectionId,forceRenewPassword) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -297,9 +304,7 @@ exports.internal_SendEvent = function(objectCache, connectionId,eventBody) {
  * returns String
  **/
 exports.internal_WaitForConnectionStatusChange = function(objectCache, connectionId, connectionStatus) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -332,9 +337,7 @@ exports.internal_WaitForDesiredPropertiesPatch = function(objectCache, connectio
  * returns blobStorageInfo
  **/
 exports.internal_GetStorageInfoForBlob = function(connectionId,blobName) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 /**
@@ -348,9 +351,7 @@ exports.internal_GetStorageInfoForBlob = function(connectionId,blobName) {
  * no response value expected for this operation
  **/
 exports.internal_NotifyBlobUploadStatus = function(connectionId,correlationId,isSuccess,statusCode,statusDescription) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 

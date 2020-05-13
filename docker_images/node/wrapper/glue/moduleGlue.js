@@ -24,28 +24,7 @@ var objectCache = new NamedObjectCache();
  * returns connectResponse
  **/
 exports.module_Connect = function(transportType,connectionString,caCertificate) {
-  debug(`module_Connect called`);
-  return glueUtils.makePromise('module_Connect', function(callback) {
-    var client = ModuleClient.fromConnectionString(connectionString, glueUtils.transportFromType(transportType));
-    var connectionId = objectCache.addObject('moduleClient', client);
-    glueUtils.setOptionalCert(client, caCertificate, function(err) {
-      glueUtils.debugFunctionResult('glueUtils.setOptionalCert', err);
-      if (err) {
-        callback(err);
-      } else {
-        debug('calling moduleClient.open');
-        client.open(function(err) {
-          glueUtils.debugFunctionResult('client.open', err);
-          if (err) {
-            objectCache.removeObject(connectionId);
-            callback(err);
-          } else {
-            callback(null, {connectionId: connectionId});
-          }
-        });
-      }
-    });
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -67,27 +46,7 @@ exports.module_Connect2 = function(connectionId) {
  * returns connectResponse
  **/
 exports.module_ConnectFromEnvironment = function(transportType) {
-  debug(`module_ConnectFromEnvironment called`);
-
-  return glueUtils.makePromise('module_ConnectFromEnvironment', function(callback) {
-    ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType), function(err, client) {
-      glueUtils.debugFunctionResult('ModuleClient.fromEnvironment', err);
-      if (err) {
-        callback(err);
-      } else {
-        debug('calling moduleClient.open');
-        client.open(function(err) {
-          glueUtils.debugFunctionResult('client.open', err);
-          if (err) {
-            callback(err);
-          } else {
-            var connectionId = objectCache.addObject('moduleClient', client);
-            callback(null, {connectionId: connectionId});
-          }
-        });
-      }
-    });
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -101,9 +60,7 @@ exports.module_ConnectFromEnvironment = function(transportType) {
  * returns connectResponse
  **/
 exports.module_CreateFromConnectionString = function(transportType,connectionString,caCertificate) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_CreateFromConnectionString(objectCache, ModuleClient, transportType, connectionString, caCertificate);
 }
 
 
@@ -114,8 +71,14 @@ exports.module_CreateFromConnectionString = function(transportType,connectionStr
  * returns connectResponse
  **/
 exports.module_CreateFromEnvironment = function(transportType) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+  debug(`module_CreateFromEnvironment called with transport ${transportType}`);
+  
+  return new Promise((resolve, reject) => {  
+    resolve(ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType)));
+  })
+  .then((client) => {
+    const connectionId = objectCache.addObject('ModuleClient', client);
+    return {"connectionId": connectionId};
   });
 }
 
@@ -128,9 +91,7 @@ exports.module_CreateFromEnvironment = function(transportType) {
  * returns connectResponse
  **/
 exports.module_CreateFromX509 = function(transportType,x509) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
