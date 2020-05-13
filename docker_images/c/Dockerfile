@@ -3,7 +3,6 @@ FROM ubuntu:18.04
 RUN apt update \
   && apt install --fix-missing --no-install-recommends   -y \
     build-essential \
-    vim.tiny \
     cmake \
     curl \
     libcurl4-openssl-dev \
@@ -53,13 +52,13 @@ RUN git clone https://github.com/$HORTON_REPO .
 RUN git submodule update --init
 
 # copy the wrapper over and move restbed in place
-COPY wrapper /wrapper
+COPY c/wrapper /wrapper
 WORKDIR /wrapper/deps
 RUN if [ -d restbed ]; then rm -r restbed; fi
 RUN ln -s /restbed .
 
 # and prebuild
-COPY ./prebuild.sh /
+COPY c/prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
@@ -69,7 +68,7 @@ WORKDIR /sdk
 RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
 
-COPY ./patchfile /
+COPY c/patchfile /
 # our base image might have some files checked out.  revert these.
 RUN git reset HEAD && git checkout && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
@@ -77,7 +76,7 @@ RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 # must update submodules after applying the patch
 RUN git submodule update --init
 
-COPY ./rebuild.sh /
+COPY c/rebuild.sh /
 RUN /rebuild.sh
 
 ENTRYPOINT ["/wrapper/build/edge_e2e_rest_server"]

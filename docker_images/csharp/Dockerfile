@@ -2,8 +2,6 @@ FROM microsoft/dotnet:2.2-sdk
 
 RUN apt update \
   && apt install --fix-missing -y \
-    rsync \
-    vim \
     git \
     curl \
     unzip \
@@ -32,13 +30,13 @@ ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
-COPY wrapper/src/*.csproj /wrapper/src/
+COPY csharp/wrapper/src/*.csproj /wrapper/src/
 workdir /wrapper/src
 RUN dotnet restore
 
-COPY wrapper /wrapper
+COPY csharp/wrapper /wrapper
 
-COPY ./prebuild.sh /
+COPY csharp/prebuild.sh /
 RUN /prebuild.sh
 
 
@@ -49,12 +47,12 @@ ARG HORTON_COMMIT_SHA
 RUN git pull 
 RUN git checkout $HORTON_COMMIT_SHA
 
-COPY ./patchfile /
+COPY csharp/patchfile /
 # our base image might have some files checked out.  revert these.
 RUN git reset HEAD && git checkout && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
-COPY ./rebuild.sh /
+COPY csharp/rebuild.sh /
 run /rebuild.sh
 
 WORKDIR /app

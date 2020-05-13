@@ -82,6 +82,6 @@ steps:
 
 - script:
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
-    python $(Horton.FrameworkRoot)/docker_images/pythonv2/net_control/main.py &
+    python $(Horton.FrameworkRoot)/docker_images/net_control_app/main.py &
   displayName: 'start net control app'
   condition: and(always(), ne(variables['skipTest'],'yes'), eq(variables['pythonInproc'], 'yes'))
