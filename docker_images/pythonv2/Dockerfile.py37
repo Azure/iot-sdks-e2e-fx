@@ -2,7 +2,6 @@ from python:3.7.2-alpine3.9
 
 RUN apk add \
     git \
-    vim \
     iptables \
     g++ cmake make openssl-dev
 
@@ -13,12 +12,12 @@ RUN git config --global user.email "you@example.com" \
 EXPOSE 8080 8040
 
 # wrapper requirements almost never change.  Install those first.
-WORKDIR /net_control
-copy ./net_control .
+WORKDIR /net_control_app
+COPY ./net_control_app .
 RUN pip install -r requirements.txt
 
 WORKDIR /wrapper
-COPY ./wrapper/requirements.txt .
+COPY pythonv2/wrapper/requirements.txt .
 RUN pip install -r requirements.txt
 
 # Install uamqp for azure-iot-hub
@@ -29,7 +28,7 @@ ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
-COPY ./prebuild.sh /
+COPY pythonv2/prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
@@ -39,16 +38,16 @@ WORKDIR /sdk
 RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
 
-COPY ./patchfile /
+COPY pythonv2/patchfile /
 # our base image might have some files checked out.  revert these.
 RUN git reset HEAD && git checkout && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
-COPY ./rebuild.sh /
+COPY pythonv2/rebuild.sh /
 RUN /rebuild.sh
 
 WORKDIR /wrapper
-COPY ./wrapper .
+COPY pythonv2/wrapper .
 
 RUN pip install -r requirements.txt
 RUN python setup.py install

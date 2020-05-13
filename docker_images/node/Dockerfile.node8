@@ -17,14 +17,14 @@ EXPOSE 8080
 
 # copy wrapper first.  This changes rarely.
 workdir /src/wrapper
-copy ./wrapper .
+COPY node/wrapper .
 
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
 WORKDIR /src/sdk
 RUN git clone https://github.com/$HORTON_REPO .
-COPY ./prebuild.sh /
-COPY ./fixLerna.js /
+COPY node/prebuild.sh /
+COPY node/fixLerna.js /
 RUN /prebuild.sh
 RUN git checkout *package-lock.json
 
@@ -36,12 +36,12 @@ WORKDIR /src/sdk
 RUN git pull 
 RUN git checkout $HORTON_COMMIT_SHA
 
-COPY ./patchfile /
+COPY node/patchfile /
 # our base image might have some files checked out.  revert these.
 RUN git reset HEAD && git checkout && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
-COPY ./rebuild.sh /
+COPY node/rebuild.sh /
 RUN /rebuild.sh
 
 ENTRYPOINT ["/usr/local/bin/node", "/src/wrapper/index.js"]
