@@ -109,20 +109,7 @@ exports.internal_Destroy = function(objectCache, connectionId) {
  * no response value expected for this operation
  **/
 exports.internal_Disconnect = function(objectCache, connectionId) {
-  debug(`internal_Disconnect called with ${connectionId}`);
-  return glueUtils.makePromise('internal_Disconnect', function(callback) {
-    var client = objectCache.removeObject(connectionId);
-    if (!client) {
-      debug(`${connectionId} already closed.`);
-      callback();
-    } else {
-      debug('calling client.close');
-      client.close(function(err) {
-        glueUtils.debugFunctionResult('client.close', err);
-        callback(err);
-      });
-    }
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
