@@ -3,19 +3,12 @@
 # full license information.
 
 import logging
-import os
-import sys
-from base64 import b64encode, b64decode
-from hashlib import sha256
-from hmac import HMAC
-from time import time
 from uuid import uuid4
+import json
 from .. import adapter_config
-from urllib.parse import quote, quote_plus, urlencode
+from urllib.parse import quote_plus
 from connection_string import connection_string_to_dictionary, generate_auth_token
-
 import uamqp
-from uamqp import utils, errors
 
 logger = logging.getLogger(__name__)
 
@@ -62,15 +55,15 @@ class AmqpServiceClient:
             adapter_config.logger("AMQP blob status receive client disconnected")
 
     async def send_to_device(self, device_id, message):
-        msg_content = message
+        msg_content = json.dumps(message)
         app_properties = {}
         msg_props = uamqp.message.MessageProperties()
         msg_props.to = "/devices/{}/messages/devicebound".format(device_id)
         msg_props.message_id = str(uuid4())
-        message = uamqp.Message(
+        amqp_message = uamqp.Message(
             msg_content, properties=msg_props, application_properties=app_properties
         )
-        await self.send_client.send_message_async(message)
+        await self.send_client.send_message_async(amqp_message)
         adapter_config.logger("AMQP service client sent: {}".format(message))
 
     async def get_next_blob_status(self):

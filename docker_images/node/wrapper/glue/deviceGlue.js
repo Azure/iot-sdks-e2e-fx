@@ -67,11 +67,8 @@ exports.device_Connect2 = function(connectionId) {
  * returns connectResponse
  **/
 exports.device_CreateFromConnectionString = function(transportType,connectionString,caCertificate) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_CreateFromConnectionString(objectCache, Client, transportType, connectionString, caCertificate);
 }
-
 
 /**
  * Create a device client from X509 credentials
@@ -81,9 +78,7 @@ exports.device_CreateFromConnectionString = function(transportType,connectionStr
  * returns connectResponse
  **/
 exports.device_CreateFromX509 = function(transportType,x509) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -94,9 +89,7 @@ exports.device_CreateFromX509 = function(transportType,x509) {
  * no response value expected for this operation
  **/
 exports.device_Destroy = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_Destroy(objectCache, connectionId);
 }
 
 
@@ -107,7 +100,7 @@ exports.device_Destroy = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_Disconnect = function(connectionId) {
-    return internalGlue.internal_Disconnect(objectCache, connectionId);
+  return internalGlue.internal_Disconnect(objectCache, connectionId);
 }
 
 
@@ -118,7 +111,7 @@ exports.device_Disconnect = function(connectionId) {
  * no response value expected for this operation
  **/
 exports.device_Disconnect2 = function(connectionId) {
-  return internalGlue.internal_Disconnect(objectCache, connectionId);
+  return internalGlue.internal_Disconnect2(objectCache, connectionId);
 }
 
 
@@ -230,7 +223,7 @@ exports.device_WaitForMethodAndReturnResponse = function(connectionId,methodName
  * no response value expected for this operation
  **/
 exports.device_SendEvent = function(connectionId,eventBody) {
-  return internalGlue.internal_SendEvent(objectCache, eventBody);
+  return internalGlue.internal_SendEvent(objectCache, connectionId, eventBody);
 }
 
 
@@ -241,8 +234,20 @@ exports.device_SendEvent = function(connectionId,eventBody) {
  * returns String
  **/
 exports.device_WaitForC2dMessage = function(connectionId) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+  debug(`device_WaitForC2dMessage called with ${connectionId}`);
+  return glueUtils.makePromise('device_WaitForC2dMessage', function(callback) {
+    var client = objectCache.getObject(connectionId)
+    var handler = function(msg) {
+      client.complete(msg, function(err) {
+        debug(`received $msg`);
+        glueUtils.debugFunctionResult('client.complete', err);
+        callback(null, {
+          body: JSON.parse(msg.getBytes().toString('ascii'))
+        });
+      });
+      client.removeListener('message', handler);
+    }
+    client.on('message', handler);
   });
 }
 

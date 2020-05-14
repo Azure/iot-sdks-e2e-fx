@@ -3,7 +3,6 @@
 # full license information.
 import json
 import time
-from .generated.e2erestapi import AzureIOTEndToEndTestWrapperRestApi as GeneratedSyncApi
 from .generated.e2erestapi.aio import (
     AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
 )
@@ -414,7 +413,7 @@ class ServiceApi(ServiceConnectDisconnect, InvokeMethods, AbstractServiceApi):
         await self.rest_endpoint.send_c2d(
             self.connection_id,
             device_id,
-            event_body,
+            EventBody(body=event_body),
             timeout=adapter_config.default_api_timeout,
         )
 

@@ -101,9 +101,7 @@ exports.module_ConnectFromEnvironment = function(transportType) {
  * returns connectResponse
  **/
 exports.module_CreateFromConnectionString = function(transportType,connectionString,caCertificate) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return internalGlue.internal_CreateFromConnectionString(objectCache, ModuleClient, transportType, connectionString, caCertificate);
 }
 
 
@@ -114,8 +112,14 @@ exports.module_CreateFromConnectionString = function(transportType,connectionStr
  * returns connectResponse
  **/
 exports.module_CreateFromEnvironment = function(transportType) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
+  debug(`module_CreateFromEnvironment called with transport ${transportType}`);
+  
+  return new Promise((resolve, reject) => {  
+    resolve(ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType)));
+  })
+  .then((client) => {
+    const connectionId = objectCache.addObject('ModuleClient', client);
+    return {"connectionId": connectionId};
   });
 }
 
@@ -128,9 +132,7 @@ exports.module_CreateFromEnvironment = function(transportType) {
  * returns connectResponse
  **/
 exports.module_CreateFromX509 = function(transportType,x509) {
-  return new Promise(function(resolve, reject) {
-    glueUtils.returnFailure(reject);
-  });
+  return glueUtils.returnNotImpl();
 }
 
 

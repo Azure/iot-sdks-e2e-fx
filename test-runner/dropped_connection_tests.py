@@ -1,12 +1,10 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-import json
 import pytest
 import asyncio
 import datetime
 from twin_tests import wait_for_reported_properties_update
-from horton_settings import settings
 from horton_logging import logger
 import sample_content
 
@@ -93,7 +91,7 @@ class DroppedConnectionTestsC2d(object):
         await asyncio.sleep(30)  # long time necessary to let subscribe happen
         logger("transport connected.  Sending C2D")
 
-        await service.send_c2d(client.device_id, json.dumps(payload))
+        await service.send_c2d(client.device_id, payload)
 
         logger("C2D sent.  Waiting for response")
 
@@ -111,7 +109,7 @@ class DroppedConnectionTestsC2d(object):
         await client.enable_c2d()
 
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
-        await service.send_c2d(client.device_id, json.dumps(payload))
+        await service.send_c2d(client.device_id, payload)
         received_message = await test_input_future
         assert received_message.body == payload
 
@@ -122,7 +120,7 @@ class DroppedConnectionTestsC2d(object):
         test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
         await after_api_call()
 
-        await service.send_c2d(client.device_id, json.dumps(payload))
+        await service.send_c2d(client.device_id, payload)
 
         logger("Awaiting input")
         received_message = await test_input_future

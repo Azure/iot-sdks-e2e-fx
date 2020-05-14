@@ -11,6 +11,8 @@ var Amqp = require('azure-iot-device-amqp').Amqp;
 var AmqpWs = require('azure-iot-device-amqp').AmqpWs;
 var Http = require('azure-iot-device-http').Http;
 
+const returnNotImpl = () => Promise.reject(respondWithCode(500, "function not implimented"));
+
 /**
  * return failure to the caller, passing the appropriate information back.
  *
@@ -194,7 +196,7 @@ var replaceExports = function(oldExports, filename) {
 
 
 module.exports = {
-  returnFailure: returnFailure,
+  returnNotImpl: returnNotImpl,
   rethrowException: rethrowException,
   debugFunctionResult: debugFunctionResult,
   makePromise: makePromise,

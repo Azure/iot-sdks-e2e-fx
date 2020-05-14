@@ -118,7 +118,7 @@ exports.service_SendC2d = function(connectionId,deviceId,eventBody) {
   return glueUtils.makePromise('service_SendC2d', function(callback) {
     var client = objectCache.getObject(connectionId);
     debug(`calling ServiceClient.send`);
-    client.send(deviceId, new Message(eventBody.body), function(err, result) {
+    client.send(deviceId, new Message(JSON.stringify(eventBody.body)), function(err, result) {
       glueUtils.debugFunctionResult('ServiceClient.send', err);
       callback(err, result);
     });
