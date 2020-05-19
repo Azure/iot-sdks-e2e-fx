@@ -197,10 +197,10 @@ class PerfTest(object):
 
     @pytest.mark.timeout(7300)
     async def test_perf_longhaul(self, client):
-        duration = 7200
-        events_per = 20
-        max_threads = 20
-        max_latency = 60
+        duration = 600
+        events_per = 3
+        max_threads = 600
+        max_latency = 600
 
         threads, latency = await self.do_test_multithreaded(
             client, events_per, duration, max_threads, max_latency
