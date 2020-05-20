@@ -8,9 +8,9 @@ jobs:
     vmImage: 'Ubuntu 16.04'
   strategy:
     matrix:
-        node6:  { variant: node6 }
+        #node6:  { variant: node6 }
         node8:  { variant: node8 }
-        node10:  { variant: node10 }
+        # node10:  { variant: node10 }
         # c:      { language: c }
         # java:   { language: java }
         # csharp: { language: csharp }
@@ -52,14 +52,14 @@ jobs:
       # python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
       # python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
       
-      node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub_module }
-      node6_mqtt_edgehub_module:    { suite: node6_mqtt_edgehub_module }
-      node6_mqttws_iothub_module:   { suite: node6_mqttws_iothub_module }
-      node6_mqttws_edgehub_module:  { suite: node6_mqttws_edgehub_module }
-      node6_amqp_iothub_module:     { suite: node6_amqp_iothub_module }
-      node6_amqp_edgehub_module:    { suite: node6_amqp_edgehub_module }
-      node6_amqpws_iothub_module:   { suite: node6_amqpws_iothub_module }
-      node6_amqpws_edgehub_module:  { suite: node6_amqpws_edgehub_module }
+      # node6_mqtt_iothub_module:     { suite: node6_mqtt_iothub_module }
+      # node6_mqtt_edgehub_module:    { suite: node6_mqtt_edgehub_module }
+      # node6_mqttws_iothub_module:   { suite: node6_mqttws_iothub_module }
+      # node6_mqttws_edgehub_module:  { suite: node6_mqttws_edgehub_module }
+      # node6_amqp_iothub_module:     { suite: node6_amqp_iothub_module }
+      # node6_amqp_edgehub_module:    { suite: node6_amqp_edgehub_module }
+      # node6_amqpws_iothub_module:   { suite: node6_amqpws_iothub_module }
+      # node6_amqpws_edgehub_module:  { suite: node6_amqpws_edgehub_module }
 
       node8_mqtt_iothub_module:     { suite: node8_mqtt_iothub_module }
       node8_mqtt_edgehub_module:    { suite: node8_mqtt_edgehub_module }
@@ -70,14 +70,14 @@ jobs:
       node8_amqpws_iothub_module:   { suite: node8_amqpws_iothub_module }
       node8_amqpws_edgehub_module:  { suite: node8_amqpws_edgehub_module }
 
-      node10_mqtt_iothub_module:    { suite: node10_mqtt_iothub_module }
-      node10_mqtt_edgehub_module:   { suite: node10_mqtt_edgehub_module }
-      node10_mqttws_iothub_module:  { suite: node10_mqttws_iothub_module }
-      node10_mqttws_edgehub_module: { suite: node10_mqttws_edgehub_module }
-      node10_amqp_iothub_module:    { suite: node10_amqp_iothub_module }
-      node10_amqp_edgehub_module:   { suite: node10_amqp_edgehub_module }
-      node10_amqpws_iothub_module:  { suite: node10_amqpws_iothub_module }
-      node10_amqpws_edgehub_module: { suite: node10_amqpws_edgehub_module }
+      # node10_mqtt_iothub_module:    { suite: node10_mqtt_iothub_module }
+      # node10_mqtt_edgehub_module:   { suite: node10_mqtt_edgehub_module }
+      # node10_mqttws_iothub_module:  { suite: node10_mqttws_iothub_module }
+      # node10_mqttws_edgehub_module: { suite: node10_mqttws_edgehub_module }
+      # node10_amqp_iothub_module:    { suite: node10_amqp_iothub_module }
+      # node10_amqp_edgehub_module:   { suite: node10_amqp_edgehub_module }
+      # node10_amqpws_iothub_module:  { suite: node10_amqpws_iothub_module }
+      # node10_amqpws_edgehub_module: { suite: node10_amqpws_edgehub_module }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
