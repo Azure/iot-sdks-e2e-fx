@@ -180,7 +180,7 @@ exports.module_EnableInputMessages = function(connectionId) {
   return glueUtils.makePromise('module_EnableInputMessages', function(callback) {
     var client = objectCache.getObject(connectionId);
     client.on('inputMessage', function() {
-      deug("got one");
+      debug("got one");
     });
     callback();
   });
