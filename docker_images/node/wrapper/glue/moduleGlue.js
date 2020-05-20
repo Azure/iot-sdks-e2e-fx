@@ -178,10 +178,8 @@ exports.module_Disconnect2 = function(connectionId) {
 exports.module_EnableInputMessages = function(connectionId) {
   debug(`module_EnableInputMessages called with ${connectionId}`);
   return glueUtils.makePromise('module_EnableInputMessages', function(callback) {
-    var client = objectCache.getObject(connectionId);
-    client.on('inputMessage', function() {
-      debug("got one");
-    });
+    var client = objectCache.getObject(connectionId)
+    client.on('inputMessage', function() {});
     callback();
   });
 }
@@ -377,12 +375,10 @@ exports.module_WaitForDesiredPropertiesPatch = function(connectionId) {
  * returns String
  **/
 exports.module_WaitForInputMessage = function(connectionId,inputName) {
-  debug(`XXmodule_WaitForInputMessage called with ${connectionId}, ${inputName}`);
+  debug(`module_WaitForInputMessage called with ${connectionId}, ${inputName}`);
   return glueUtils.makePromise('module_WaitForInputMessage', function(callback) {
-    debug(`YYmodule_WaitForInputMessage called with ${connectionId}, ${inputName}`);
     var client = objectCache.getObject(connectionId)
     var handler = function(receivedInputName, msg) {
-      debug(`ZZmodule_WaitForInputMessage called with ${connectionId}, ${inputName} ${receivedInputName}`);
       if (inputName === '*') {
         client.complete(msg, function(err) {
           glueUtils.debugFunctionResult('client.complete', err);
