@@ -81,7 +81,7 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
 exports.internal_Connect2 = function(objectCache, connectionId) {
   return objectCache.getObject(connectionId).open();
 }
-
+ 
 
 /**
  * Disonnect and destroy the client
@@ -94,10 +94,12 @@ exports.internal_Destroy = function(objectCache, connectionId) {
   return objectCache.getObject(connectionId).close()
   .then(() => {
     objectCache.removeObject(connectionId);
+    debug("removed");
   })
   .catch((reason) => {
     // node8 doesn't have finally, so we catch until we stop supporting it. 
     objectCache.removeObject(connectionId);
+    debug("removed and throwing");
     throw(reason);
   })
 }
