@@ -12,7 +12,7 @@ from horton_logging import logger
 input_name_from_friend = "fromFriend"
 output_name_to_friend = "toFriend"
 
-sleep_time_for_listener_start = 3
+sleep_time_for_listener_start = 10
 
 telemetry_output_name = "telemetry"
 
@@ -61,6 +61,9 @@ class InputOutputTests(object):
     async def test_inputoutput_friend_to_module_routing(
         self, client, friend, output_name_to_test_client
     ):
+        # BKTODO node amqp bug
+        await client.connect2()
+
         payload = sample_content.make_message_payload()
 
         await client.enable_input_messages()
@@ -83,10 +86,10 @@ class InputOutputTests(object):
     async def test_inputoutput_module_test_to_friend_and_back(
         self, client, friend, input_name_from_test_client, output_name_to_test_client
     ):
+
         payload = sample_content.make_message_payload()
         payload_2 = sample_content.make_message_payload()
 
-        await client.enable_input_messages()
         await friend.enable_input_messages()
 
         test_input_future = asyncio.ensure_future(

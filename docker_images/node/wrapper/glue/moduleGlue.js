@@ -24,7 +24,28 @@ var objectCache = new NamedObjectCache();
  * returns connectResponse
  **/
 exports.module_Connect = function(transportType,connectionString,caCertificate) {
-  return glueUtils.returnNotImpl();
+  debug(`module_Connect called`);
+  return glueUtils.makePromise('module_Connect', function(callback) {
+    var client = ModuleClient.fromConnectionString(connectionString, glueUtils.transportFromType(transportType));
+    var connectionId = objectCache.addObject('moduleClient', client);
+    glueUtils.setOptionalCert(client, caCertificate, function(err) {
+      glueUtils.debugFunctionResult('glueUtils.setOptionalCert', err);
+      if (err) {
+        callback(err);
+      } else {
+        debug('calling moduleClient.open');
+        client.open(function(err) {
+          glueUtils.debugFunctionResult('client.open', err);
+          if (err) {
+            objectCache.removeObject(connectionId);
+            callback(err);
+          } else {
+            callback(null, {connectionId: connectionId});
+          }
+        });
+      }
+    });
+  });
 }
 
 
@@ -46,7 +67,27 @@ exports.module_Connect2 = function(connectionId) {
  * returns connectResponse
  **/
 exports.module_ConnectFromEnvironment = function(transportType) {
-  return glueUtils.returnNotImpl();
+  debug(`module_ConnectFromEnvironment called`);
+
+  return glueUtils.makePromise('module_ConnectFromEnvironment', function(callback) {
+    ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType), function(err, client) {
+      glueUtils.debugFunctionResult('ModuleClient.fromEnvironment', err);
+      if (err) {
+        callback(err);
+      } else {
+        debug('calling moduleClient.open');
+        client.open(function(err) {
+          glueUtils.debugFunctionResult('client.open', err);
+          if (err) {
+            callback(err);
+          } else {
+            var connectionId = objectCache.addObject('moduleClient', client);
+            callback(null, {connectionId: connectionId});
+          }
+        });
+      }
+    });
+  });
 }
 
 
@@ -137,8 +178,10 @@ exports.module_Disconnect2 = function(connectionId) {
 exports.module_EnableInputMessages = function(connectionId) {
   debug(`module_EnableInputMessages called with ${connectionId}`);
   return glueUtils.makePromise('module_EnableInputMessages', function(callback) {
-    var client = objectCache.getObject(connectionId)
-    client.on('inputMessage', function() {});
+    var client = objectCache.getObject(connectionId);
+    client.on('inputMessage', function() {
+      deug("got one");
+    });
     callback();
   });
 }
@@ -334,10 +377,12 @@ exports.module_WaitForDesiredPropertiesPatch = function(connectionId) {
  * returns String
  **/
 exports.module_WaitForInputMessage = function(connectionId,inputName) {
-  debug(`module_WaitForInputMessage called with ${connectionId}, ${inputName}`);
+  debug(`XXmodule_WaitForInputMessage called with ${connectionId}, ${inputName}`);
   return glueUtils.makePromise('module_WaitForInputMessage', function(callback) {
+    debug(`YYmodule_WaitForInputMessage called with ${connectionId}, ${inputName}`);
     var client = objectCache.getObject(connectionId)
     var handler = function(receivedInputName, msg) {
+      debug(`ZZmodule_WaitForInputMessage called with ${connectionId}, ${inputName} ${receivedInputName}`);
       if (inputName === '*') {
         client.complete(msg, function(err) {
           glueUtils.debugFunctionResult('client.complete', err);
