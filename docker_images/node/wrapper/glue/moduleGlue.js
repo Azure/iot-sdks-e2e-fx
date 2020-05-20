@@ -104,6 +104,7 @@ exports.module_CreateFromConnectionString = function(transportType,connectionStr
   return internalGlue.internal_CreateFromConnectionString(objectCache, ModuleClient, transportType, connectionString, caCertificate);
 }
 
+var _exports = {}
 
 /**
  * Create a module client using the EdgeHub environment
@@ -111,7 +112,7 @@ exports.module_CreateFromConnectionString = function(transportType,connectionStr
  * transportType String Transport to use
  * returns connectResponse
  **/
-exports.module_CreateFromEnvironment = function(transportType) {
+_exports.module_CreateFromEnvironment = function(transportType) {
   debug(`module_CreateFromEnvironment called with transport ${transportType}`);
   
   return new Promise((resolve, reject) => {  
@@ -122,6 +123,23 @@ exports.module_CreateFromEnvironment = function(transportType) {
     return {"connectionId": connectionId};
   });
 }
+
+exports.module_CreateFromEnvironment = function(transportType) {
+  debug(`module_XXnnectFromEnvironment called`);
+
+  return glueUtils.makePromise('moduleXonnectFromEnvironment', function(callback) {
+    ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType), function(err, client) {
+      glueUtils.debugFunctionResult('ModuleClient.fromEnvironment', err);
+      if (err) {
+        callback(err);
+      } else {
+        var connectionId = objectCache.addObject('moduleClient', client);
+        callback(null, {connectionId: connectionId});
+      }
+    });
+  });
+}
+
 
 
 /**

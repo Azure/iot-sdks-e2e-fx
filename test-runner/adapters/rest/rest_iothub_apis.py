@@ -82,6 +82,7 @@ class Connect(object):
             await self.rest_endpoint.connect2(
                 self.connection_id, timeout=adapter_config.default_api_timeout
             )
+            adapter_config.logger("connect done")
 
     @log_entry_and_exit
     async def reconnect(self, force_password_renewal=False):
