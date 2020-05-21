@@ -4,7 +4,6 @@
 
 import pytest
 import asyncio
-import utilities
 import sample_content
 from horton_logging import logger
 
@@ -67,7 +66,7 @@ class InputOutputTests(object):
         payload = sample_content.make_message_payload()
 
         await client.enable_input_messages()
-        await asyncio.sleep(10)
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         test_input_future = asyncio.ensure_future(
             client.wait_for_input_event(input_name_from_friend)
@@ -92,8 +91,8 @@ class InputOutputTests(object):
         payload_2 = sample_content.make_message_payload()
 
         await friend.enable_input_messages()
-        await module.enable_input_messages()
-        await asyncio.sleep(10)
+        await client.enable_input_messages()
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         test_input_future = asyncio.ensure_future(
             client.wait_for_input_event(input_name_from_friend)
