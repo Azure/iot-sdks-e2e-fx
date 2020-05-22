@@ -30,7 +30,7 @@ jobs:
 
   strategy:
     matrix:
-      node8_amqp_iothub_module:              { suite: node8_amqp_iothub_module }
+      node8_amqp_iothub_module_and_device:              { suite: node8_amqp_iothub_module_and_device }
       node8_amqpws_edgehub_module:           { suite: node8_amqpws_edgehub_module }
       node8_mqttws_edgehub_module:           { suite: node8_mqttws_edgehub_module }
       c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
