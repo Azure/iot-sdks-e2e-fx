@@ -11,7 +11,7 @@ from horton_logging import logger
 input_name_from_friend = "fromFriend"
 output_name_to_friend = "toFriend"
 
-sleep_time_for_listener_start = 10
+sleep_time_for_listener_start = 3
 
 telemetry_output_name = "telemetry"
 
@@ -85,7 +85,6 @@ class InputOutputTests(object):
     async def test_inputoutput_module_test_to_friend_and_back(
         self, client, friend, input_name_from_test_client, output_name_to_test_client
     ):
-
         payload = sample_content.make_message_payload()
         payload_2 = sample_content.make_message_payload()
 
