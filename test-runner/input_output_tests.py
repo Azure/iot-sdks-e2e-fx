@@ -60,12 +60,11 @@ class InputOutputTests(object):
     async def test_inputoutput_friend_to_module_routing(
         self, client, friend, output_name_to_test_client
     ):
-        # BKTODO node amqp bug
-        await client.connect2()
-
         payload = sample_content.make_message_payload()
 
         await client.enable_input_messages()
+
+        # BKTODO Node bug.  Can't have overlapped register ops with AMQP
         await asyncio.sleep(sleep_time_for_listener_start)
 
         test_input_future = asyncio.ensure_future(
@@ -92,6 +91,8 @@ class InputOutputTests(object):
 
         await friend.enable_input_messages()
         await client.enable_input_messages()
+
+        # BKTODO Node bug.  Can't have overlapped register ops with AMQP
         await asyncio.sleep(sleep_time_for_listener_start)
 
         test_input_future = asyncio.ensure_future(
