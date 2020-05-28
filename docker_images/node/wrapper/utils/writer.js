@@ -1,6 +1,7 @@
 // Added in merge
 'use strict';
 /*jshint esversion: 6 */
+var debug = require('debug')('azure-iot-e2e:node')
 
 var ResponsePayload = function(code, payload) {
   this.code = code;
@@ -41,8 +42,10 @@ var writeJson = exports.writeJson = function(response, arg1, arg2) {
   }
   // Added check for includes("Error") in merge
   if (payload && payload.constructor.name.includes("Error")) {
-      code = 500;
-      payload = payload.stack.toString();
+    debug("returning 500: " + payload); 
+    debug(payload.stack.toString());
+    code = 500;
+    payload = payload.stack.toString();
   }
   else if(typeof payload === 'object') {
     payload = JSON.stringify(payload, null, 2);
