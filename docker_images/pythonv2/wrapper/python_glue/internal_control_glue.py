@@ -4,27 +4,27 @@
 import logging
 import leak_check
 from azure.iot.device.common.pipeline import pipeline_stages_base
-
-from azure.iot.device.iothub.auth import base_renewable_token_authentication_provider
+from azure.iot.device.iothub import abstract_clients
 
 logger = logging.getLogger(__name__)
 
 do_async = False
 sas_renewal_interval = None
 
+
 tracker = leak_check.LeakTracker()
 tracker.add_tracked_module("azure.iot.device")
 tracker.set_baseline()
 
-# Length of time, in seconds, that a SAS token is valid for.
-ORIGINAL_DEFAULT_TOKEN_VALIDITY_PERIOD = (
-    base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD
-)
 
-# Length of time, in seconds, before a token expires that we want to begin renewing it.
-ORIGINAL_DEFAULT_TOKEN_RENEWAL_MARGIN = (
-    base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN
-)
+# Length of time, in seconds, that a SAS token is valid for.
+try:
+    ORIGINAL_DEFAULT_SAS_TTL = abstract_clients.DEFAULT_SAS_TTL
+except AttributeError:
+    ORIGINAL_DEFAULT_SAS_TTL = 0
+
+# SAS renewal margin.  currently hardcoded
+DEFAULT_SAS_MARGIN = 120
 
 
 def log_message_sync(msg):
@@ -78,14 +78,6 @@ def set_sas_interval_sync():
     global sas_renewal_interval
     print("Using sas_renewal_interval of {}".format(sas_renewal_interval))
     if sas_renewal_interval:
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD = (
-            sas_renewal_interval
-        )
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN = 10
+        abstract_clients.DEFAULT_SAS_TTL = sas_renewal_interval + DEFAULT_SAS_MARGIN
     else:
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD = (
-            ORIGINAL_DEFAULT_TOKEN_VALIDITY_PERIOD
-        )
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN = (
-            ORIGINAL_DEFAULT_TOKEN_RENEWAL_MARGIN
-        )
+        abstract_clients.DEFAULT_SAS_TTL = ORIGINAL_DEFAULT_SAS_TTL
