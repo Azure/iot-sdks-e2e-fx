@@ -37,11 +37,18 @@ class SampleAverage(object):
         self.lock = threading.Lock()
         self.total = 0
         self.sample_count = 0
+        self.max = 0
 
     def add_sample(self, sample):
         with self.lock:
             self.sample_count += 1
             self.total += sample
+            if sample > self.max:
+                self.max = sample
+
+    def get_max(self):
+        with self.lock:
+            return self.max
 
     def get_average(self):
         with self.lock:
@@ -59,6 +66,9 @@ class InstanceCounter(contextlib.AbstractContextManager):
     def __enter__(self):
         with self.lock:
             self.instance_count += 1
+            logger(
+                "enter: {} count at {}".format(self.object_type, self.instance_count)
+            )
             if self.instance_count > self.max_instances:
                 self.max_instances = self.instance_count
             self.at_zero.clear()
@@ -66,7 +76,7 @@ class InstanceCounter(contextlib.AbstractContextManager):
     def __exit__(self, *args):
         with self.lock:
             self.instance_count -= 1
-            logger("{} count at {}".format(self.object_type, self.instance_count))
+            logger("exit: {} count at {}".format(self.object_type, self.instance_count))
             if self.instance_count == 0:
                 self.at_zero.set()
 
@@ -128,7 +138,9 @@ class PerfTest(object):
             latency = LatencyMeasurement()
             with message_counter:
                 with latency:
+                    logger("start send")
                     await client.send_event(sample_content.make_message_payload())
+                    logger("end send")
             average_latency.add_sample(latency.get_latency())
             if max_latency and latency.get_latency() > max_latency:
                 raise Exception(
@@ -179,15 +191,16 @@ class PerfTest(object):
 
         logger("{} threads max".format(thread_counter.get_max()))
         logger("Average latency {} seconds".format(average_latency.get_average()))
+        logger("Max latency {} seconds".format(average_latency.get_max()))
 
         return thread_counter.get_max(), average_latency.get_average()
 
     @pytest.mark.timeout(7300)
     async def test_perf_longhaul(self, client):
-        duration = 7200
-        events_per = 20
-        max_threads = 60
-        max_latency = 60
+        duration = 600
+        events_per = 3
+        max_threads = 600
+        max_latency = 600
 
         threads, latency = await self.do_test_multithreaded(
             client, events_per, duration, max_threads, max_latency

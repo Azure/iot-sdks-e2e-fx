@@ -2,14 +2,13 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-import adapters
+import asyncio
 import pytest
 import traceback
 import connections
 from horton_settings import settings
 from horton_logging import logger
 from pytest_asyncio.plugin import wrap_in_sync
-import pprint
 
 
 def separator(message=""):
@@ -100,9 +99,11 @@ async def session_teardown():
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtestloop(session):
-    wrap_in_sync(session_init)()
 
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    wrap_in_sync(session_init, loop)()
     try:
         yield
     finally:
-        wrap_in_sync(session_teardown)()
+        wrap_in_sync(session_teardown, loop)()
+        loop.close()

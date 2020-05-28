@@ -67,6 +67,7 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
   })
   .then((client) => {
     const connectionId = objectCache.addObject('DeviceClient', client);
+    debug(`connectoion id ${connectionId}`);
     return {"connectionId": connectionId};
   });
 }

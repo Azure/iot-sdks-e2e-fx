@@ -4,7 +4,6 @@
 
 import pytest
 import asyncio
-import utilities
 import sample_content
 from horton_logging import logger
 
@@ -65,6 +64,9 @@ class InputOutputTests(object):
 
         await client.enable_input_messages()
 
+        # BKTODO Node bug.  Can't have overlapped register ops with AMQP
+        await asyncio.sleep(sleep_time_for_listener_start)
+
         test_input_future = asyncio.ensure_future(
             client.wait_for_input_event(input_name_from_friend)
         )
@@ -86,8 +88,11 @@ class InputOutputTests(object):
         payload = sample_content.make_message_payload()
         payload_2 = sample_content.make_message_payload()
 
-        await client.enable_input_messages()
         await friend.enable_input_messages()
+        await client.enable_input_messages()
+
+        # BKTODO Node bug.  Can't have overlapped register ops with AMQP
+        await asyncio.sleep(sleep_time_for_listener_start)
 
         test_input_future = asyncio.ensure_future(
             client.wait_for_input_event(input_name_from_friend)
