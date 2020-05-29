@@ -68,8 +68,12 @@ def get_capabilities_sync():
 
 def send_command_sync(cmd):
     if cmd == "check_for_leaks":
-        # tracker.check_for_new_leaks()
-        pass
+        # If you temporarily comment this out, uncomment the log line so you don't spend
+        # many hours tracking down bug that should have been caught here when you  don't
+        # remember that you commented this out.
+        # Not that this has ever happened to me.
+        tracker.check_for_new_leaks()
+        # logger("NOT CHECCKING FOR LEAKS")
     else:
         raise Exception("Unsupported Command")
 
