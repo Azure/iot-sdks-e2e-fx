@@ -4,7 +4,6 @@
 import logging
 import leak_check
 from azure.iot.device.common.pipeline import pipeline_stages_base
-from azure.iot.device.iothub import abstract_clients
 
 logger = logging.getLogger(__name__)
 
@@ -15,13 +14,6 @@ sas_renewal_interval = None
 tracker = leak_check.LeakTracker()
 tracker.add_tracked_module("azure.iot.device")
 tracker.set_baseline()
-
-
-# Length of time, in seconds, that a SAS token is valid for.
-try:
-    ORIGINAL_DEFAULT_SAS_TTL = abstract_clients.DEFAULT_SAS_TTL
-except AttributeError:
-    ORIGINAL_DEFAULT_SAS_TTL = 0
 
 # SAS renewal margin.  currently hardcoded
 DEFAULT_SAS_MARGIN = 120
@@ -43,8 +35,12 @@ def set_flags_sync(flags):
     if "test_async" in flags:
         do_async = flags["test_async"]
     if "sas_renewal_interval" in flags:
-        sas_renewal_interval = flags["sas_renewal_interval"]
-        print("Setting sas_renewal_interval to {}".format(sas_renewal_interval))
+        sas_renewal_interval = flags["sas_renewal_interval"] + DEFAULT_SAS_MARGIN
+        print(
+            "Setting sas_renewal_interval to {} + a margin of {} ".format(
+                sas_renewal_interval, DEFAULT_SAS_MARGIN
+            )
+        )
 
 
 def get_capabilities_sync():
@@ -76,12 +72,3 @@ def send_command_sync(cmd):
         # logger("NOT CHECCKING FOR LEAKS")
     else:
         raise Exception("Unsupported Command")
-
-
-def set_sas_interval_sync():
-    global sas_renewal_interval
-    print("Using sas_renewal_interval of {}".format(sas_renewal_interval))
-    if sas_renewal_interval:
-        abstract_clients.DEFAULT_SAS_TTL = sas_renewal_interval + DEFAULT_SAS_MARGIN
-    else:
-        abstract_clients.DEFAULT_SAS_TTL = ORIGINAL_DEFAULT_SAS_TTL
