@@ -4,10 +4,7 @@
 import pytest
 import connections
 import adapters
-import json
-import utilities
 import sample_content
-from adapters import adapter_config
 from horton_settings import settings
 from horton_logging import logger
 
@@ -111,6 +108,8 @@ async def test_device():
                 await test_device.disconnect()
         except Exception as e:
             logger("exception disconnecting test device: {}".format(e))
+        finally:
+            logger("done with test device finalizer")
 
 
 @pytest.fixture

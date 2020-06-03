@@ -25,12 +25,12 @@ class Connect(ConnectionStatus):
     def create_from_connection_string_sync(
         self, transport_type, connection_string, cert
     ):
-
-        internal_control_glue.set_sas_interval_sync()
-
         kwargs = {}
+
         if transport_type == "mqttws":
             kwargs["websockets"] = True
+        if internal_control_glue.sas_renewal_interval:
+            kwargs["sastoken_ttl"] = internal_control_glue.sas_renewal_interval
 
         if "GatewayHostName" in connection_string:
             self.client = self.client_class.create_from_connection_string(
@@ -71,12 +71,12 @@ class ConnectFromEnvironment(object):
         assert False
 
     def create_from_environment_sync(self, transport_type):
-
-        internal_control_glue.set_sas_interval_sync()
-
         kwargs = {}
+
         if transport_type == "mqttws":
             kwargs["websockets"] = True
+        if internal_control_glue.sas_renewal_interval:
+            kwargs["sastoken_ttl"] = internal_control_glue.sas_renewal_interval
 
         self.client = self.client_class.create_from_edge_environment(**kwargs)
 

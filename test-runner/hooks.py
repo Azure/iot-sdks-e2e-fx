@@ -46,6 +46,7 @@ def pytest_runtest_teardown(item, nextitem):
     if settings.test_module.capabilities.checks_for_leaks:
         logger(separator("checking for leaks"))
         settings.test_module.wrapper_api.send_command_sync("check_for_leaks")
+        logger(separator("done checking for leaks"))
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

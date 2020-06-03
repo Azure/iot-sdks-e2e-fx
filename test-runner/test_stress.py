@@ -19,7 +19,7 @@ from horton_logging import logger
 pytestmark = pytest.mark.asyncio
 
 # how long to test for
-test_run_time = datetime.timedelta(days=0, hours=3, minutes=0)
+test_run_time = datetime.timedelta(days=0, hours=2, minutes=0)
 
 # maximum extra time to add to timeout.
 max_timeout_overage = datetime.timedelta(minutes=15)

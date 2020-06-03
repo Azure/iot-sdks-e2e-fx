@@ -3,31 +3,20 @@
 # full license information.
 import logging
 import leak_check
-from azure.iot.device import IoTHubModuleClient
 from azure.iot.device.common.pipeline import pipeline_stages_base
-
-# from azure.iot.device.iothub.auth import base_renewable_token_authentication_provider
 
 logger = logging.getLogger(__name__)
 
 do_async = False
 sas_renewal_interval = None
 
+
 tracker = leak_check.LeakTracker()
 tracker.add_tracked_module("azure.iot.device")
 tracker.set_baseline()
 
-"""
-# Length of time, in seconds, that a SAS token is valid for.
-ORIGINAL_DEFAULT_TOKEN_VALIDITY_PERIOD = (
-    base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD
-)
-
-# Length of time, in seconds, before a token expires that we want to begin renewing it.
-ORIGINAL_DEFAULT_TOKEN_RENEWAL_MARGIN = (
-    base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN
-)
-"""
+# SAS renewal margin.  currently hardcoded
+DEFAULT_SAS_MARGIN = 120
 
 
 def log_message_sync(msg):
@@ -46,8 +35,12 @@ def set_flags_sync(flags):
     if "test_async" in flags:
         do_async = flags["test_async"]
     if "sas_renewal_interval" in flags:
-        sas_renewal_interval = flags["sas_renewal_interval"]
-        print("Setting sas_renewal_interval to {}".format(sas_renewal_interval))
+        sas_renewal_interval = flags["sas_renewal_interval"] + DEFAULT_SAS_MARGIN
+        print(
+            "Setting sas_renewal_interval to {} + a margin of {} ".format(
+                sas_renewal_interval, DEFAULT_SAS_MARGIN
+            )
+        )
 
 
 def get_capabilities_sync():
@@ -71,26 +64,11 @@ def get_capabilities_sync():
 
 def send_command_sync(cmd):
     if cmd == "check_for_leaks":
+        # If you temporarily comment this out, uncomment the log line so you don't spend
+        # many hours tracking down bug that should have been caught here when you  don't
+        # remember that you commented this out.
+        # Not that this has ever happened to me.
         tracker.check_for_new_leaks()
+        # logger.info("NOT CHECCKING FOR LEAKS")
     else:
         raise Exception("Unsupported Command")
-
-
-def set_sas_interval_sync():
-    """
-    global sas_renewal_interval
-    print("Using sas_renewal_interval of {}".format(sas_renewal_interval))
-    if sas_renewal_interval:
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD = (
-            sas_renewal_interval
-        )
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN = 10
-    else:
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_VALIDITY_PERIOD = (
-            ORIGINAL_DEFAULT_TOKEN_VALIDITY_PERIOD
-        )
-        base_renewable_token_authentication_provider.DEFAULT_TOKEN_RENEWAL_MARGIN = (
-            ORIGINAL_DEFAULT_TOKEN_RENEWAL_MARGIN
-        )
-    """
-    pass
