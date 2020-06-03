@@ -35,6 +35,8 @@ namespace IO.Swagger
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
+                // added 1 line
+                .UseUrls("http://*:80")
                 .Build();
     }
 }

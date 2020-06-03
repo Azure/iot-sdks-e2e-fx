@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.2-sdk
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1
 
 RUN apt update \
   && apt install --fix-missing -y \
@@ -13,6 +13,9 @@ RUN git config --global user.email "you@example.com" \
 
 EXPOSE 80/tcp
 EXPOSE 22/tcp
+
+# install aspnetcore 2.2 runtime
+RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 2.2 -Runtime aspnetcore
 
 # get ready for ssh keys
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys
@@ -56,4 +59,4 @@ COPY csharp/rebuild.sh /
 run /rebuild.sh
 
 WORKDIR /app
-ENTRYPOINT ["dotnet", "IO.Swagger.dll"]
+ENTRYPOINT ["/root/.dotnet/dotnet", "IO.Swagger.dll"]
