@@ -68,7 +68,7 @@ def send_command_sync(cmd):
         # many hours tracking down bug that should have been caught here when you  don't
         # remember that you commented this out.
         # Not that this has ever happened to me.
-        # tracker.check_for_new_leaks()
-        logger.info("NOT CHECCKING FOR LEAKS")
+        tracker.check_for_new_leaks()
+        # logger.info("NOT CHECCKING FOR LEAKS")
     else:
         raise Exception("Unsupported Command")
