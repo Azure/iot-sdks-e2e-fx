@@ -14,7 +14,7 @@ jobs:
         # c:      { language: c }
         # java:   { language: java }
         # csharp: { language: csharp }
-        # py27:   { variant: py27 }
+        py27:   { variant: py27 }
         # py35:   { variant: py35 }
         # py36:   { variant: py36 }
         # py37:   { variant: py37 }
@@ -40,7 +40,7 @@ jobs:
       # csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
       # csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
       # py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
-      # py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
+      py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
       # py35_mqtt_edgehub_module:                     { suite: py35_mqtt_edgehub_module }
       # py36_mqtt_iothub_module_and_device:           { suite: py36_mqtt_iothub_module_and_device }
       # py37_mqtt_iothub_module_and_device_async:     { suite: py37_mqtt_iothub_module_and_device_async }
