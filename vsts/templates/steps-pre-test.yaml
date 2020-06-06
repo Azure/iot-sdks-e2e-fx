@@ -11,28 +11,28 @@ parameters:
   deployment_type: ''
   
 steps:
-- script: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
+- bash: $(Horton.FrameworkRoot)/scripts/setup/setup-iotedge.sh
   displayName: 'Install iotedge packages'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- script: |
+- bash: |
     docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
   displayName: 'docker login'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
+- bash: |
     docker pull ${{ parameters.image_testMod }} || docker pull ${{ parameters.image_testMod }}
   displayName: 'pre-cache test image'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: |
+- bash: |
     ( docker pull ${{ parameters.image_edgeAgent }} || docker pull ${{ parameters.image_edgeAgent }} ) &&
     ( docker pull ${{ parameters.image_edgeHub }} || docker pull ${{ parameters.image_edgeHub }} ) &&
     ( docker pull ${{ parameters.image_friendmod }} || docker pull ${{ parameters.image_friendmod }} )
   displayName: 'pre-cache edge images'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- script: 
+- bash: 
     $(Horton.FrameworkRoot)/bin/horton deploy ${{ parameters.deployment_type }} image ${{ parameters.image_testMod }}
   displayName: 'Create new identites and deploy containers'
   env:
@@ -59,28 +59,28 @@ steps:
   displayName: 'Verify testMod deployment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: 
+- bash: 
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
     python pyscripts/ensure_container.py testMod
   displayName: 'Verify that testMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script:
+- bash:
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
     python pyscripts/ensure_container.py friendMod
   displayName: 'Verify that friendMod is responding'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- script: sleep 30
+- bash: sleep 30
   displayName: 'give edgeHub 30 seconds to start up'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
   
-- script: 
+- bash: 
     $(Horton.FrameworkRoot)/bin/horton get_credentials
   displayName: 'Get credentials'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script:
+- bash:
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
     python $(Horton.FrameworkRoot)/docker_images/net_control_app/main.py &
   displayName: 'start net control app'

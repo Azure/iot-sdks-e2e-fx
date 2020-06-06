@@ -1,5 +1,5 @@
 steps:
-- script: |
+- bash: |
     mkdir $(Horton.FrameworkRoot) &&
     cd $(Horton.FrameworkRoot) &&
     git clone https://github.com/Azure/iot-sdks-e2e-fx . &&

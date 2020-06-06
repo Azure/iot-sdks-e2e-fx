@@ -6,7 +6,7 @@ parameters:
 
 steps:
 
-- script: |
+- bash: |
     rm -r $(Horton.FrameworkRoot)/results
     mkdir $(Horton.FrameworkRoot)/results &&
     source $(Horton.FrameworkRoot)/bin/activate_horton &&

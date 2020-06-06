@@ -2,7 +2,7 @@ parameters:
   langauge: ''
 
 steps:
-- script: |
+- bash: |
     $(Horton.FrameworkRoot)/scripts/tag-lkg.sh ${{ parameters.language }} vsts-${BUILD_BUILDID}
   displayName: "tag LKG ${{ parameters.language }}"
   env: 

@@ -230,7 +230,7 @@ steps:
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- script: source $(Horton.FrameworkRoot)/bin/activate_horton
+- bash: source $(Horton.FrameworkRoot)/bin/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 

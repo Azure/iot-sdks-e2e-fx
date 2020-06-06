@@ -4,7 +4,7 @@ parameters:
   deployment_type: ''
 
 steps:
-- script:
+- bash:
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
     $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.deployment_type }} $(Build.SourcesDirectory)/results ${{ parameters.log_folder_name }}
   displayName: 'Fetch logs'
@@ -30,7 +30,7 @@ steps:
     ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
-- script:
+- bash:
     $(Horton.FrameworkRoot)/bin/horton undeploy
   displayName: 'remove devices'
   env:
