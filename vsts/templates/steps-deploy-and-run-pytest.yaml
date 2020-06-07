@@ -238,9 +238,9 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - bash: 
-    echo f=$(Horton.FrameworkRoot) |
-    ls $(Horton.FrameworkRoot) |
-    source $(Horton.FrameworkRoot)/bin/activate_horton
+    echo f=${HORTON_FRAMEWORKROOT} |
+    ls ${HORTON_FRAMEWORKROOT} |
+    source ${HORTON_FRAMEWORKROOT}/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
