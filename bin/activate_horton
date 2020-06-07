@@ -51,7 +51,16 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     colorecho $_green "Horton environment created"
 
     colorecho $_yellow "activating horton environment"
-    source ${script_dir}/_virtualenv/horton/bin/activate
+    echo script_dir is ${script_dir}
+    echo ---- s
+    ls -al ${script_dir}
+    echo ----s/v
+    ls -al ${script_dir}/_virtualenv
+    echo ----s/v/h
+    ls -al ${script_dir}/_virtualenv/horton
+    echo ----s/v/h/b/
+    ls -al ${script_dir}/_virtualenv/horton/bin
+    echo ----
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
     colorecho $_yellow "installing required python libraries"
