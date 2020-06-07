@@ -23,8 +23,14 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     if [ $? -eq 0 ]; then
       python --version
 
-      ret=`python -c 'import sys; print("%i" % (sys.hexversion>0x03070000))'`
-      if [ $ret -eq 1 ]; then
+      ret=$(echo "import sys; print(sys.hexversion>0x3070000)" | python | sed -e 's/[\r\n]//g')
+      echo ret="_${ret}_"
+      if [ $? -ne 0 ]; then
+        colorecho $_red "Error getting python version"
+	return 1
+      fi
+
+      if [[ $ret == "True" ]]; then
         colorecho $_yellow "Python3.7+ is already installed"
         needpython=0
       fi
@@ -44,6 +50,8 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     fi
 
     colorecho $_yellow "Creating virtual evnronment"
+
+    # If using WSL, we need to pass the winodws path when creating the virtual env
     virtual_env_root="${script_dir}/_virtualenv/horton/"
     which wslpath
     if [ $? -eq 0 ]; then
@@ -52,11 +60,23 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
 	echo "passing ${virtual_env_root} to virtualenv for environment creation"
     fi
 
-    echo python3 -m virtualenv ${virtual_env_root}
+    echo python3 -m virtualenv ${virtual_env_root} --prompt="Horton"
     python -m virtualenv ${virtual_env_root}
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
 
     colorecho $_green "Horton environment created"
+
+    if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
+      # Using Windows python from bash pyts shortcuts in Scripts instead of bin.  Fix this up.
+      colorecho $_yelow "Fixing WSL python shortcut"
+
+      ln -s ${script_dir}/_virtualenv/horton/Scripts ${script_dir}/_virtualenv/horton/bin
+      [ $? -eq 0 ] || { colorecho $_red "ln Scripts bin failed"; return 1; }
+
+      # need path otherwise WSL under mobaxterm fails
+      /usr/bin/dos2unix ${script_dir}/_virtualenv/horton/bin/activate 
+      [ $? -eq 0 ] || { colorecho $_red "dos2unix failed or not installed"; return 1; }
+    fi
 
     colorecho $_yellow "activating horton environment"
     source ${script_dir}/_virtualenv/horton/bin/activate
