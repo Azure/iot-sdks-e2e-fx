@@ -1,7 +1,7 @@
 steps:
 - bash: |
     source ${HORTON_FRAMEWORKROOT}/bin/activate_horton &&
-    cd $(Build.SourcesDirectory) &&
+    cd ${BUILD_SOURCESDIRECTORY} &&
     python env_setup.py --no_dev
   displayName: "Register python repo"
   condition: and(succeeded(), ne(variables['Build.SourcesDirectory'], variables['Horton.FrameworkRoot']), eq(variables['pythonInproc'], 'yes'))
