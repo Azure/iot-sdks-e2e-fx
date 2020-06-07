@@ -13,14 +13,6 @@ pushd $root_dir
 
 source "$root_dir/scripts/colorecho.sh"
 
-virtual_env_root="${script_dir}/_virtualenv/horton/"
-which wslpath
-if [ $? -eq 0 ]; then
-    colorecho $_yellow "Runnin under WSL."
-    virtual_env_root=$(wslpath -w ${virtual_env_root})
-fi
-colorecho $_yellow "virtual_env_root is ${virtual_env_root}"
-
 if [ ! -e ${virtual_env_root}/bin/activate ]; then
     colorecho $_yellow "Initializing horton environment"
 
@@ -52,6 +44,14 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
     fi
 
     colorecho $_yellow "Creating virtual evnronment"
+    virtual_env_root="${script_dir}/_virtualenv/horton/"
+    which wslpath
+    if [ $? -eq 0 ]; then
+        colorecho $_yellow "Runnin under WSL."
+        virtual_env_root=$(wslpath -w ${virtual_env_root})
+	echo "passing ${virtual_env_root} to virtualenv for environment creation"
+    fi
+
     echo python3 -m virtualenv ${virtual_env_root}
     python -m virtualenv ${virtual_env_root}
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
