@@ -121,7 +121,7 @@ steps:
     versionSpec: '3.7'
     architecture: $(architecture)
 
-- bash: source $(Horton.FrameworkRoot)/bin/activate_horton
+- bash: source ${HORTON_FRAMEWORKROOT}/bin/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
@@ -160,7 +160,7 @@ steps:
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - bash: |
-    $(Horton.FrameworkRoot)/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
+    ${HORTON_FRAMEWORKROOT}/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)

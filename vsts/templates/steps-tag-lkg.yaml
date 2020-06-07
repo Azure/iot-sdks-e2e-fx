@@ -3,7 +3,7 @@ parameters:
 
 steps:
 - bash: |
-    $(Horton.FrameworkRoot)/scripts/tag-lkg.sh ${{ parameters.language }} vsts-${BUILD_BUILDID}
+    ${HORTON_FRAMEWORKROOT}/scripts/tag-lkg.sh ${{ parameters.language }} vsts-${BUILD_BUILDID}
   displayName: "tag LKG ${{ parameters.language }}"
   env: 
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
