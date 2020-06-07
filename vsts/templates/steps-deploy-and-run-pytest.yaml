@@ -240,7 +240,7 @@ steps:
 - bash: 
     echo f=${HORTON_FRAMEWORKROOT} |
     ls ${HORTON_FRAMEWORKROOT} |
-    source ${HORTON_FRAMEWORKROOT}/activate_horton
+    source ${HORTON_FRAMEWORKROOT}/bin/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
