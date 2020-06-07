@@ -157,6 +157,11 @@ steps:
       $TestArgs=$TestArgs + " --python_inproc"
     }
 
+    $UsesDocker = "yes"
+    if (($PythonInproc -eq "yes") -and ($Scenario.Contains("iothub"))) {
+      $UsesDocker = "no"
+    }
+
     if ($env:AGENT_JOBNAME -ne "Job") {
       $LogFolderName=$env:AGENT_JOBNAME.replace(" + ","").replace(" ","_")
     } else {
@@ -192,6 +197,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=imageTestMod]${ImageTestMod}"
     Write-Host "##vso[task.setvariable variable=deploymentType]${DeploymentType}"
     Write-Host "##vso[task.setvariable variable=pythonInproc]${PythonInproc}"
+    Write-Host "##vso[task.setvariable variable=usesDocker]${UsesDocker}"
 
     Write-Host "Architecture=${Architecture}"
     Write-Host "Language=${Language}"
@@ -208,6 +214,7 @@ steps:
     Write-Host "ImageTestMod=${ImageTestMod}"
     Write-Host "DeploymentType=${DeploymentType}"
     Write-Host "PythonInproc=${PythonInproc}"
+    Write-Host "UsesDocker=${UsesDocker}"
 
 
   displayName: Custom task execution logic

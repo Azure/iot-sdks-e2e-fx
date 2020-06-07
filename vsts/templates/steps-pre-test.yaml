@@ -23,7 +23,7 @@ steps:
 - bash: |
     docker pull ${{ parameters.image_testMod }} || docker pull ${{ parameters.image_testMod }}
   displayName: 'pre-cache test image'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
 - bash: |
     ( docker pull ${{ parameters.image_edgeAgent }} || docker pull ${{ parameters.image_edgeAgent }} ) &&
@@ -57,13 +57,13 @@ steps:
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 testMod ${{ parameters.image_testMod }}
   displayName: 'Verify testMod deployment'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
 - bash: 
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
     python pyscripts/ensure_container.py testMod
   displayName: 'Verify that testMod is responding'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
 - bash:
     source $(Horton.FrameworkRoot)/bin/activate_horton &&
