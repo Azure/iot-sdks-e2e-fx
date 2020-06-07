@@ -13,7 +13,15 @@ pushd $root_dir
 
 source "$root_dir/scripts/colorecho.sh"
 
-if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
+virtual_env_root="${script_dir}/_virtualenv/horton/"
+which wslpath
+if [ $? -eq 0 ]; then
+    colorecho $_yellow "Runnin under WSL."
+    virtual_env_root=$(wslpath -w ${virtual_env_root})
+fi
+colorecho $_yellow "virtual_env_root is ${virtual_env_root}"
+
+if [ ! -e ${virtual_env_root}/bin/activate ]; then
     colorecho $_yellow "Initializing horton environment"
 
     # Make sure we're running python 3.7 or higher
@@ -44,23 +52,14 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     fi
 
     colorecho $_yellow "Creating virtual evnronment"
-    echo python3 -m virtualenv ${script_dir}/_virtualenv/horton/
-    python -m virtualenv ${root_dir}/bin/_virtualenv/horton/
+    echo python3 -m virtualenv ${virtual_env_root}
+    python -m virtualenv ${virtual_env_root}
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
 
     colorecho $_green "Horton environment created"
 
     colorecho $_yellow "activating horton environment"
-    echo script_dir is ${script_dir}
-    echo ---- s
-    ls -al ${script_dir}
-    echo ----s/v
-    ls -al ${script_dir}/_virtualenv
-    echo ----s/v/h
-    ls -al ${script_dir}/_virtualenv/horton
-    echo ----s/v/h/b/
-    ls -al ${script_dir}/_virtualenv/horton/bin
-    echo ----
+    source ${virtual_env_root}/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
     colorecho $_yellow "installing required python libraries"
@@ -71,7 +70,7 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
 
 else
-    source ${script_dir}/_virtualenv/horton/bin/activate
+    source ${virtual_env_root}/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 fi
 
