@@ -13,7 +13,7 @@ pushd $root_dir
 
 source "$root_dir/scripts/colorecho.sh"
 
-if [ ! -e ${virtual_env_root}/bin/activate ]; then
+if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     colorecho $_yellow "Initializing horton environment"
 
     # Make sure we're running python 3.7 or higher
@@ -59,7 +59,7 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
     colorecho $_green "Horton environment created"
 
     colorecho $_yellow "activating horton environment"
-    source ${virtual_env_root}/bin/activate
+    source ${script_dir}/_virtualenv/horton/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
     colorecho $_yellow "installing required python libraries"
@@ -70,7 +70,7 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
     [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
 
 else
-    source ${virtual_env_root}/bin/activate
+    source ${script_dir}/_virtualenv/horton/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 fi
 
