@@ -237,7 +237,10 @@ steps:
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
-- bash: source $(Horton.FrameworkRoot)/bin/activate_horton
+- bash: 
+    echo f=$(Horton.FrameworkRoot) |
+    ls $(Horton.FrameworkRoot) |
+    source $(Horton.FrameworkRoot)/bin/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
