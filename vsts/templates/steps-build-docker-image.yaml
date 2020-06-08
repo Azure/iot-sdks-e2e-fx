@@ -121,11 +121,11 @@ steps:
     versionSpec: '3.7'
     architecture: $(architecture)
 
-- script: source $(Horton.FrameworkRoot)/bin/activate_horton
+- bash: source ${HORTON_FRAMEWORKROOT}/bin/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-- script: |
+- bash: |
     cd ${BUILD_SOURCESDIRECTORY} &&
     echo "saving patch from ${CommitToPass} to HEAD" &&
     git diff -p origin/${CommitToPass} --binary > ${AGENT_BUILDDIRECTORY}/patchfile &&
@@ -154,13 +154,13 @@ steps:
       eq(variables['IsPr'],'yes')
       )
 
-- script: |
+- bash: |
     docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
   displayName: 'docker login'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-- script: |
-    $(Horton.FrameworkRoot)/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
+- bash: |
+    ${HORTON_FRAMEWORKROOT}/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)

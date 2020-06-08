@@ -6,12 +6,12 @@ parameters:
 
 steps:
 
-- script: |
-    rm -r $(Horton.FrameworkRoot)/results
-    mkdir $(Horton.FrameworkRoot)/results &&
-    source $(Horton.FrameworkRoot)/bin/activate_horton &&
-    cd $(Horton.FrameworkRoot)/test-runner &&
-    python3 -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --junitxml=$(Build.SourcesDirectory)/results/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
+- bash: |
+    rm -r ${HORTON_FRAMEWORKROOT}/results
+    mkdir ${HORTON_FRAMEWORKROOT}/results &&
+    source ${HORTON_FRAMEWORKROOT}/bin/activate_horton &&
+    cd ${HORTON_FRAMEWORKROOT}/test-runner &&
+    python -u -m pytest -v --scenario ${{ parameters.scenario }} --transport=${{ parameters.transport }} --junitxml=${BUILD_SOURCESDIRECTORY}/results/TEST-${{ parameters.log_folder_name }}.xml -o junit_suite_name=${{ parameters.log_folder_name }} ${{ parameters.extra_args }}
   displayName: 'Run pytest'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
   env:

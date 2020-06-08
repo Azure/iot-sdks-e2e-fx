@@ -19,12 +19,18 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     # Make sure we're running python 3.7 or higher
     colorecho $_yellow "checking for python 3.7+"
     needpython=1
-    which python3
+    which python
     if [ $? -eq 0 ]; then
-      python3 --version
+      python --version
 
-      ret=`python3 -c 'import sys; print("%i" % (sys.hexversion>0x03070000))'`
-      if [ $ret -eq 1 ]; then
+      ret=$(echo "import sys; print(sys.hexversion>0x3070000)" | python | sed -e 's/[\r\n]//g')
+      echo ret="_${ret}_"
+      if [ $? -ne 0 ]; then
+        colorecho $_red "Error getting python version"
+	return 1
+      fi
+
+      if [[ $ret == "True" ]]; then
         colorecho $_yellow "Python3.7+ is already installed"
         needpython=0
       fi
@@ -35,27 +41,42 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
        return 1
     fi
 
-    colorecho $_yellow "Checking for pip3"
-    which pip3
-    if [ $? -ne 0 ]; then
-       colorecho $_red "Pip3 is required.  Please install and re-run"
-       return 1
-    fi
-
     colorecho $_yellow "Installing virtualenv python libraries"
-    python3 -m pip -q install --user virtualenv
+    python -m pip -q install --user virtualenv
     if [ $? -ne 0 ]; then 
         colorecho $_yellow "user path not accepted.  Installing globally"
-        python3 -m pip -q install virtualenv
+        python -m pip -q install virtualenv
         [ $? -eq 0 ] || { colorecho $_red "pip install requirements.txt failed"; return 1; }
     fi
 
     colorecho $_yellow "Creating virtual evnronment"
-    echo python3 -m virtualenv ${script_dir}/_virtualenv/horton/
-    python3 -m virtualenv ${root_dir}/bin/_virtualenv/horton/
+
+    # If using WSL, we need to pass the winodws path when creating the virtual env
+    virtual_env_root="${script_dir}/_virtualenv/horton/"
+    which wslpath
+    if [ $? -eq 0 ]; then
+        colorecho $_yellow "Runnin under WSL."
+        virtual_env_root=$(wslpath -w ${virtual_env_root})
+	echo "passing ${virtual_env_root} to virtualenv for environment creation"
+    fi
+
+    echo python3 -m virtualenv ${virtual_env_root} --prompt="Horton"
+    python -m virtualenv ${virtual_env_root}
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
 
     colorecho $_green "Horton environment created"
+
+    if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
+      # Using Windows python from bash pyts shortcuts in Scripts instead of bin.  Fix this up.
+      colorecho $_yelow "Fixing WSL python shortcut"
+
+      ln -s ${script_dir}/_virtualenv/horton/Scripts ${script_dir}/_virtualenv/horton/bin
+      [ $? -eq 0 ] || { colorecho $_red "ln Scripts bin failed"; return 1; }
+
+      # need path otherwise WSL under mobaxterm fails
+      /usr/bin/dos2unix ${script_dir}/_virtualenv/horton/bin/activate 
+      [ $? -eq 0 ] || { colorecho $_red "dos2unix failed or not installed"; return 1; }
+    fi
 
     colorecho $_yellow "activating horton environment"
     source ${script_dir}/_virtualenv/horton/bin/activate

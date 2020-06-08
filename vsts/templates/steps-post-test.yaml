@@ -4,9 +4,9 @@ parameters:
   deployment_type: ''
 
 steps:
-- script:
-    source $(Horton.FrameworkRoot)/bin/activate_horton &&
-    $(Horton.FrameworkRoot)/scripts/fetch-logs.sh ${{ parameters.deployment_type }} $(Build.SourcesDirectory)/results ${{ parameters.log_folder_name }}
+- bash:
+    source ${HORTON_FRAMEWORKROOT}/bin/activate_horton &&
+    ${HORTON_FRAMEWORKROOT}/scripts/fetch-logs.sh ${{ parameters.deployment_type }} $(Build.SourcesDirectory)/results ${{ parameters.log_folder_name }}
   displayName: 'Fetch logs'
   condition: and(always(), ne(variables['skipTest'],'yes'), ne(variables['pythonInproc'], 'yes'))
 
@@ -30,8 +30,8 @@ steps:
     ArtifactName: 'Result for $(Build.DefinitionName) $(Build.BuildId)'
   condition: and(always(), ne(variables['skipTest'],'yes'))
 
-- script:
-    $(Horton.FrameworkRoot)/bin/horton undeploy
+- bash:
+    ${HORTON_FRAMEWORKROOT}/bin/horton undeploy
   displayName: 'remove devices'
   env:
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
