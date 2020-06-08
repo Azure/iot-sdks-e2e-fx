@@ -45,7 +45,7 @@ steps:
 
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton deploy ${{ parameters.deployment_type }} python_inproc
-  displayName: 'Create new identites and deploy containers (in-proc)'
+  displayName: 'Create new identites (in-proc)'
   env:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
