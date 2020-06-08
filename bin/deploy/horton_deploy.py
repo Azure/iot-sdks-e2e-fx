@@ -13,9 +13,8 @@ import os
 testMod_host_port = 8099
 
 
-def deploy_for_iotedge(testMod_image, pull=True):
-    if pull:
-        utilities.pull_docker_image(testMod_image)
+def deploy_for_iotedge(testMod_image):
+    utilities.pull_docker_image(testMod_image)
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
@@ -61,9 +60,8 @@ def deploy_for_iotedge(testMod_image, pull=True):
     )
 
 
-def deploy_for_iothub(testMod_image, pull=True):
-    if pull:
-        utilities.pull_docker_image(testMod_image)
+def deploy_for_iothub(testMod_image):
+    utilities.pull_docker_image(testMod_image)
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
@@ -122,12 +120,6 @@ def set_command_args(parser):
         type=str,
         choices=["iothub", "iotedge"],
         help="type of deployment",
-    )
-    parser.add_argument(
-        "--no_pull",
-        dest="no_pull",
-        action="store_true",
-        help="do not pull docker image",
     )
 
     target_subparsers = parser.add_subparsers(dest="target")
@@ -199,9 +191,9 @@ def handle_command_args(args):
                 image = "{}/{}".format(repo_addr, image)
 
     if args.deployment_type == "iothub":
-        deploy_for_iothub(image, pull=not args.no_pull)
+        deploy_for_iothub(image)
     elif args.deployment_type == "iotedge":
-        deploy_for_iotedge(image, pull=not args.no_pull)
+        deploy_for_iotedge(image)
 
 
 if __name__ == "__main__":

@@ -33,15 +33,26 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - bash: 
-    ${HORTON_FRAMEWORKROOT}/bin/horton deploy $(deployFlags) ${{ parameters.deployment_type }} image ${{ parameters.image_testMod }}
-  displayName: 'Create new identites and deploy containers'
+    ${HORTON_FRAMEWORKROOT}/bin/horton deploy ${{ parameters.deployment_type }} image ${{ parameters.image_testMod }}
+  displayName: 'Create new identites and deploy containers (docker)'
   env:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
     IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'))
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables('usesDocker','yes')))
+
+- bash: 
+    ${HORTON_FRAMEWORKROOT}/bin/horton deploy ${{ parameters.deployment_type }} python_inproc
+  displayName: 'Create new identites and deploy containers (in-proc)'
+  env:
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
+    IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    IOTHUB_E2E_CONNECTION_STRING: $(IOTHUB-E2E-CONNECTION-STRING)
+    IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables('usesDocker','no')), eq(variables('pythonInproc'), 'yes'))
 
 - powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 edgeHub ${{ parameters.image_edgeHub }}
   displayName: 'Verify edgeHub deployment'
