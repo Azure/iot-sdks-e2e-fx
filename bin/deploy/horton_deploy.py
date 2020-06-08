@@ -13,8 +13,9 @@ import os
 testMod_host_port = 8099
 
 
-def deploy_for_iotedge(testMod_image):
-    utilities.pull_docker_image(testMod_image)
+def deploy_for_iotedge(testMod_image, pull=True):
+    if pull:
+        utilities.pull_docker_image(testMod_image)
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
@@ -46,7 +47,9 @@ def deploy_for_iotedge(testMod_image):
     settings.leaf_device.object_type = "leaf_device"
 
     settings.net_control.test_destination = host
-    settings.net_control.adapter_address = "http://localhost:{}".format(settings.net_control.host_port)
+    settings.net_control.adapter_address = "http://localhost:{}".format(
+        settings.net_control.host_port
+    )
 
     edge_deployment.set_config_yaml()
     edge_deployment.restart_iotedge()
@@ -58,8 +61,9 @@ def deploy_for_iotedge(testMod_image):
     )
 
 
-def deploy_for_iothub(testMod_image):
-    utilities.pull_docker_image(testMod_image)
+def deploy_for_iothub(testMod_image, pull=True):
+    if pull:
+        utilities.pull_docker_image(testMod_image)
     utilities.remove_old_instances()
 
     settings.horton.image = testMod_image
@@ -96,9 +100,13 @@ def deploy_for_iothub(testMod_image):
         utilities.create_docker_container(settings.test_module)
 
     if testMod_image == utilities.PYTHON_INPROC:
-        settings.net_control.adapter_address = "http://localhost:{}".format(settings.net_control.container_port)
+        settings.net_control.adapter_address = "http://localhost:{}".format(
+            settings.net_control.container_port
+        )
     else:
-        settings.net_control.adapter_address = "http://localhost:{}".format(settings.net_control.host_port)
+        settings.net_control.adapter_address = "http://localhost:{}".format(
+            settings.net_control.host_port
+        )
 
     settings.save()
 
@@ -115,6 +123,7 @@ def set_command_args(parser):
         choices=["iothub", "iotedge"],
         help="type of deployment",
     )
+    parser.add_argument("--no_pull", dest="no_pull", action="store_true")
 
     target_subparsers = parser.add_subparsers(dest="target")
 
@@ -185,9 +194,9 @@ def handle_command_args(args):
                 image = "{}/{}".format(repo_addr, image)
 
     if args.deployment_type == "iothub":
-        deploy_for_iothub(image)
+        deploy_for_iothub(image, pull=not args.no_pull)
     elif args.deployment_type == "iotedge":
-        deploy_for_iotedge(image)
+        deploy_for_iotedge(image, pull=not args.no_pull)
 
 
 if __name__ == "__main__":

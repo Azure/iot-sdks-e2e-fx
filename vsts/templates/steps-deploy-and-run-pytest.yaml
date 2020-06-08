@@ -19,6 +19,8 @@ steps:
 
     $SkipTest="no"
     $PythonInproc="no"
+    $UsesDocker = "yes"
+    $DeployFlags = ""
 
     Write-Host "Configuring test suite=$env:Suite"
 
@@ -157,9 +159,9 @@ steps:
       $TestArgs=$TestArgs + " --python_inproc"
     }
 
-    $UsesDocker = "yes"
     if (($PythonInproc -eq "yes") -and ($Scenario.Contains("iothub"))) {
       $UsesDocker = "no"
+      $DeployFlags = $DeployFlags + " --no_pull"
     }
 
     if ($env:AGENT_JOBNAME -ne "Job") {
@@ -198,6 +200,7 @@ steps:
     Write-Host "##vso[task.setvariable variable=deploymentType]${DeploymentType}"
     Write-Host "##vso[task.setvariable variable=pythonInproc]${PythonInproc}"
     Write-Host "##vso[task.setvariable variable=usesDocker]${UsesDocker}"
+    Write-Host "##vso[task.setvariable variable=deployFlags]${DeployFlags}"
 
     Write-Host "Architecture=${Architecture}"
     Write-Host "Language=${Language}"
@@ -215,6 +218,7 @@ steps:
     Write-Host "DeploymentType=${DeploymentType}"
     Write-Host "PythonInproc=${PythonInproc}"
     Write-Host "UsesDocker=${UsesDocker}"
+    Write-Host "DeployFlags=${DeployFlags}"
 
 
   displayName: Custom task execution logic
