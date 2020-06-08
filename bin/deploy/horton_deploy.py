@@ -123,7 +123,12 @@ def set_command_args(parser):
         choices=["iothub", "iotedge"],
         help="type of deployment",
     )
-    parser.add_argument("--no_pull", dest="no_pull", action="store_true")
+    parser.add_argument(
+        "--no_pull",
+        dest="no_pull",
+        action="store_true",
+        help="do not pull docker image",
+    )
 
     target_subparsers = parser.add_subparsers(dest="target")
 
