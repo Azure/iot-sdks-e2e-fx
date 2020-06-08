@@ -19,6 +19,7 @@ def deploy_for_iotedge(testMod_image):
 
     settings.horton.image = testMod_image
     settings.horton.language = utilities.get_language_from_image_name(testMod_image)
+    settings.horton.is_windows = utilities.is_windows()
 
     settings.iotedge.hostname = utilities.get_computer_name()
     device_id_base = utilities.get_random_device_name()
@@ -45,10 +46,13 @@ def deploy_for_iotedge(testMod_image):
     settings.leaf_device.container_name = settings.test_module.container_name
     settings.leaf_device.object_type = "leaf_device"
 
-    settings.net_control.test_destination = host
-    settings.net_control.adapter_address = "http://localhost:{}".format(
-        settings.net_control.host_port
-    )
+    if settings.horton.is_windows:
+        settings.net_control.adapter_address = None
+    else:
+        settings.net_control.test_destination = host
+        settings.net_control.adapter_address = "http://localhost:{}".format(
+            settings.net_control.host_port
+        )
 
     edge_deployment.set_config_yaml()
     edge_deployment.restart_iotedge()
@@ -66,6 +70,7 @@ def deploy_for_iothub(testMod_image):
 
     settings.horton.image = testMod_image
     settings.horton.language = utilities.get_language_from_image_name(testMod_image)
+    settings.horton.is_windows = utilities.is_windows()
 
     device_id_base = utilities.get_random_device_name()
 
@@ -92,19 +97,22 @@ def deploy_for_iothub(testMod_image):
         settings.test_module.device_id, settings.test_module.module_id
     )
 
-    settings.net_control.test_destination = host
+    if settings.horton.is_windows:
+        settings.net_control.adapter_address = None
+    else:
+        settings.net_control.test_destination = host
+
+        if settings.horton.image == utilities.PYTHON_INPROC:
+            settings.net_control.adapter_address = "http://localhost:{}".format(
+                settings.net_control.container_port
+            )
+        else:
+            settings.net_control.adapter_address = "http://localhost:{}".format(
+                settings.net_control.host_port
+            )
 
     if testMod_image != utilities.PYTHON_INPROC:
         utilities.create_docker_container(settings.test_module)
-
-    if testMod_image == utilities.PYTHON_INPROC:
-        settings.net_control.adapter_address = "http://localhost:{}".format(
-            settings.net_control.container_port
-        )
-    else:
-        settings.net_control.adapter_address = "http://localhost:{}".format(
-            settings.net_control.host_port
-        )
 
     settings.save()
 
