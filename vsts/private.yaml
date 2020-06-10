@@ -85,8 +85,6 @@ jobs:
 - job: "test_linux_python_inproc"
   pool:
       vmImage: 'Ubuntu 18.04'
-  dependsOn:
-    - "build_linux_amd64"
   strategy:
     matrix:
       python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
