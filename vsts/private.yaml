@@ -85,8 +85,6 @@ jobs:
 - job: "test_linux_python_inproc"
   pool:
       vmImage: 'Ubuntu 18.04'
-  dependsOn:
-    - "build_linux_amd64"
   strategy:
     matrix:
       python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
@@ -98,7 +96,6 @@ jobs:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
-      # testcase: '-k friend_to_mod'
 
 - job: "test_windows_python_inproc"
   pool:
@@ -112,4 +109,3 @@ jobs:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
-      # testcase: '-k friend_to_mod'

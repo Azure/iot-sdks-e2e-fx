@@ -179,6 +179,10 @@ steps:
     if ( -not (IsEmpty($env:ForcedImage)) ) {
       $TestImageTag=$env:ForcedImageTag
     }
+    if ($PythonInproc == "yes") {
+      $TestImageTag="lkg"
+    }
+
     $ImageTestMod = $env:IOTHUB_E2E_REPO_ADDRESS + "/" + ${Language} + "-e2e-v3:" + ${TestImageTag}
 
     $Architecture=GetArchitecture
