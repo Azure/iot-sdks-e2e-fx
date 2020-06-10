@@ -1,8 +1,11 @@
 'use strict';
+// added in merge
+/*jshint esversion: 6 */
 
 var fs = require('fs'),
     path = require('path'),
-    http = require('http');
+    http = require('http'),
+    spawn = require('child_process').spawn;
 
 var app = require('connect')();
 var swaggerTools = require('swagger-tools');
@@ -36,6 +39,13 @@ Object.keys(paths).forEach(function(path) {
     }
   });
 }); 
+
+// spawn net watcher
+
+const net_control_app = spawn('python', ['/net_control_app/main.py']);
+net_control_app.stdout.on('data', (data) => {  console.log(`net_control_app: ${data}`);});
+net_control_app.stderr.on('data', (data) => {  console.log(`net_control_app: ${data}`);});
+
 // END code added in merge
 
 // Initialize the Swagger middleware

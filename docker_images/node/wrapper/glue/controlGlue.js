@@ -75,7 +75,9 @@ exports.control_GetCapabilities = function() {
     debug("returning capabilities");
     var caps = {
       'flags': {
-        'v2_connect_group': true
+        'v2_connect_group': true,
+        'net_control_app': true,
+        "dropped_connection_tests": true
       },
       'skip_list': []
     };
