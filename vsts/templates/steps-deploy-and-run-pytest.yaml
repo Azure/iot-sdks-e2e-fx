@@ -179,7 +179,7 @@ steps:
     if ( -not (IsEmpty($env:ForcedImage)) ) {
       $TestImageTag=$env:ForcedImageTag
     }
-    if ($PythonInproc == "yes") {
+    if ($PythonInproc -eq "yes") {
       $TestImageTag="lkg"
     }
 
