@@ -71,7 +71,7 @@ def skip_if_no_net_control():
     """
     Skip the test if we don't have a net_control API
     """
-    if not settings.net_control.adapter_address:
+    if not settings.net_control.api:
         pytest.skip()
 
 
