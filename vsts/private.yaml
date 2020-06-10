@@ -96,7 +96,6 @@ jobs:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
-      # testcase: '-k friend_to_mod'
 
 - job: "test_windows_python_inproc"
   pool:
@@ -110,4 +109,3 @@ jobs:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
-      # testcase: '-k friend_to_mod'
