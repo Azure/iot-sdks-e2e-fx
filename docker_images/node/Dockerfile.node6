@@ -3,7 +3,16 @@ FROM node:6.17.0-stretch-slim
 RUN apt update \
   && apt install --fix-missing -y \
     git \
+    python \
+    python-pip \
+    iptables \
   && apt clean
+
+RUN pip install --upgrade pip 
+
+WORKDIR /net_control_app
+COPY ./net_control_app .
+RUN pip install -r requirements.txt
 
 RUN npm install lerna -g
 
