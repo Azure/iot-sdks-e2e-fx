@@ -66,7 +66,6 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
     }
   })
   .then((client) => {
-    client.setOptions({'keepalive': 10});
     const connectionId = objectCache.addObject('DeviceClient', client);
     debug(`connectoion id ${connectionId}`);
     return {"connectionId": connectionId};
