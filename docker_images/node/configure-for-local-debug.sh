@@ -24,10 +24,10 @@ cp sdk/lerna.json .
 node fixLerna.js
 [ $? -eq 0 ] || { echo "fixLerna.js failed"; exit 1; }
 
-lerna bootstrap --scope iot-sdk-device-client-rest-api --include-filtered-dependencies --hoist
+lerna bootstrap --scope iot-sdk-device-client-rest-api --include-dependencies --hoist
 [ $? -eq 0 ] || { echo "lerna bootstrap failed"; exit 1; }
 
-lerna run build --scope iot-sdk-device-client-rest-api --include-filtered-dependencies
+lerna run build --scope iot-sdk-device-client-rest-api --include-dependencies
 [ $? -eq 0 ] || { echo "lerna run build failed"; exit 1; }
 
 echo "success"
