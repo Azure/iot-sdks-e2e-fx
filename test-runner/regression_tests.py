@@ -404,3 +404,19 @@ class RegressionTests(object):
             with pytest.raises(Exception):
                 await send_future
         logger("all sends failed")
+
+    @pytest.mark.it("Doesn't fail if subscrbing to c2d twice")
+    async def test_regression_c2d_enable_twice(self, client, service):
+        limitations.only_run_test_on_iothub_device(client)
+
+        test_payload = sample_content.make_message_payload()
+
+        await client.enable_c2d()
+        await client.enable_c2d()
+        test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
+        await asyncio.sleep(2)  # wait for receive pipeline to finish setting up
+
+        await service.send_c2d(client.device_id, test_payload)
+
+        received_message = await test_input_future
+        assert received_message.body == test_payload
