@@ -7,6 +7,9 @@ var Message = require('azure-iot-device').Message;
 var debug = require('debug')('azure-iot-e2e:node')
 var glueUtils = require('./glueUtils');
 
+# PINGREQ/PINGACK every 10 seconds
+const defaultPingInterval = 10;
+
 /**
  * Create an event handler which calls the callback for the second event only.  Used
  * like EventEmitter.Once(), only it returns the second event and then removes itself.
@@ -58,11 +61,15 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
   .then((client) => {
     if (caCertificate && caCertificate.cert) {
       return client.setOptions({
-        ca: caCertificate.cert
+        ca: caCertificate.cert,
+        keepalive: defaultPingInterval
       })
       .then(() => client);
     } else {
-      return client
+      return client.setOptions({
+        keepalive:defaultPingInterval
+      })
+      .then(() => client);
     }
   })
   .then((client) => {
@@ -100,30 +107,6 @@ exports.internal_Destroy = function(objectCache, connectionId) {
     objectCache.removeObject(connectionId);
     throw(reason);
   })
-}
-
-
-/**
- * Disconnect the client
- *
- * connectionId String Id for the connection
- * no response value expected for this operation
- **/
-exports.internal_Disconnect = function(objectCache, connectionId) {
-  debug(`internal_Disconnect called with ${connectionId}`);
-  return glueUtils.makePromise('internal_Disconnect', function(callback) {
-    var client = objectCache.removeObject(connectionId);
-    if (!client) {
-      debug(`${connectionId} already closed.`);
-      callback();
-    } else {
-      debug('calling client.close');
-      client.close(function(err) {
-        glueUtils.debugFunctionResult('client.close', err);
-        callback(err);
-      });
-    }
-  });
 }
 
 
