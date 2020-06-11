@@ -80,7 +80,9 @@ exports.module_CreateFromEnvironment = function(transportType) {
     resolve(ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType)));
   })
   .then((client) => {
-    client._transport._mqtt._options.keepalive = defaultPingInterval;
+    if (client && client._transport && client._transport._mqtt) {
+      client._transport._mqtt._options.keepalive = defaultPingInterval;
+    }
     const connectionId = objectCache.addObject('ModuleClient', client);
     return {"connectionId": connectionId};
   });

@@ -420,3 +420,20 @@ class RegressionTests(object):
 
         received_message = await test_input_future
         assert received_message.body == test_payload
+
+    @pytest.mark.it("Lets us have a short keepalive interval")
+    @pytest.mark.timeout(45)
+    async def test_keepalive_interval(self, client, net_control, drop_mechanism):
+        # We want the keepalive to be low to make these tests fast.  This
+        # test is marked with a 45 second timeout.  Keepalive should be closer 
+        # to 10 seconds, so 45 to connect and notice the drop should be enough
+        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.skip_if_no_net_control()
+
+        await client.connect2()
+
+        await net_control.disconnect(drop_mechanism)
+        await client.wait_for_connection_status_change("disconnected")
+
+        await net_control.reconnect()
+
