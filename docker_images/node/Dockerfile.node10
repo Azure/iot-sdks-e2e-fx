@@ -8,13 +8,9 @@ RUN apt update \
     iptables \
   && apt clean
 
-RUN pip install --upgrade pip 
-
-WORKDIR /net_control_app
-COPY ./net_control_app .
-RUN pip install -r requirements.txt
-
 RUN npm install lerna -g
+
+RUN pip install --upgrade pip 
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
@@ -24,18 +20,28 @@ env DEBUG=rhea*,azure*
 EXPOSE 9229
 EXPOSE 8080
 
-# copy wrapper first.  This changes rarely.
-workdir /src/wrapper
-COPY node/wrapper .
+WORKDIR /net_control_app
+COPY ./net_control_app .
+RUN pip install -r requirements.txt
 
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
 WORKDIR /src/sdk
 RUN git clone https://github.com/$HORTON_REPO .
+
+# grab package.json so we can run lerna bootstrap before we grab the full wrpper
+workdir /src/wrapper
+COPY node/wrapper/package.json .
+
+WORKDIR /src/sdk
 COPY node/prebuild.sh /
 COPY node/fixLerna.js /
 RUN /prebuild.sh
 RUN git checkout *package-lock.json
+
+# now grab the full wrapper.
+workdir /src/wrapper
+COPY node/wrapper .
 
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME

@@ -25,10 +25,10 @@ if errorlevel 1 ( echo cp lerna.json failed && exit /b 1 )
 node fixLerna.js
 if errorlevel 1 ( echo fixLerna.js failed && exit /b 1 )
 
-call lerna bootstrap  --scope iot-sdk-device-client-rest-api --include-filtered-dependencies
+call lerna bootstrap  --scope iot-sdk-device-client-rest-api --include-dependencies
 if errorlevel 1 ( echo lerna bootstrap failed && exit /b 1 )
 
-call lerna run build --scope iot-sdk-device-client-rest-api --include-filtered-dependencies
+call lerna run build --scope iot-sdk-device-client-rest-api --include-dependencies
 if errorlevel 1 ( echo lerna run build failed && exit /b 1 )
 
 echo success!
