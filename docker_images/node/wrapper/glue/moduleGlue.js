@@ -10,7 +10,7 @@ var glueUtils = require('./glueUtils');
 var NamedObjectCache = require('./NamedObjectCache');
 var internalGlue = require('./internalGlue')
 
-# PINGREQ/PINGACK every 10 seconds
+// PINGREQ/PINGACK every 10 seconds
 const defaultPingInterval = 10;
 
 /**
@@ -84,7 +84,7 @@ exports.module_CreateFromEnvironment = function(transportType) {
       keepalive: defaultPingInterval
     })
     .then(() => client);
-  }
+  })
   .then((client) => {
     const connectionId = objectCache.addObject('ModuleClient', client);
     return {"connectionId": connectionId};

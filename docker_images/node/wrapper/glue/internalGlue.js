@@ -7,7 +7,7 @@ var Message = require('azure-iot-device').Message;
 var debug = require('debug')('azure-iot-e2e:node')
 var glueUtils = require('./glueUtils');
 
-# PINGREQ/PINGACK every 10 seconds
+// PINGREQ/PINGACK every 10 seconds
 const defaultPingInterval = 10;
 
 /**
