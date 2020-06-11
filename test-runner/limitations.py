@@ -78,3 +78,8 @@ def skip_if_no_net_control():
 def only_run_test_on_iotedge_module(client):
     if client.settings.object_type != "iotedge_module":
         pytest.skip()
+
+
+def only_run_test_on_iothub_device(client):
+    if client.settings.object_type != "iothub_device":
+        pytest.skip()
