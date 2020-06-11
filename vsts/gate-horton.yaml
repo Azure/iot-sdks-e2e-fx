@@ -15,7 +15,6 @@ jobs:
         py27:   { variant: py27 }
         py35:   { variant: py35 }
         py38:   { variant: py38 }
-
   steps:
   - template: templates/steps-build-docker-image.yaml
     parameters:
@@ -27,7 +26,6 @@ jobs:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
     - "build_linux_amd64"
-
   strategy:
     matrix:
       node8_amqp_iothub_module_and_device:              { suite: node8_amqp_iothub_module_and_device }
@@ -46,13 +44,31 @@ jobs:
       py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
       py27_mqtt_edgehub_module_quick_drop:          { suite: py27_mqtt_edgehub_module_quick_drop }
       py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
-      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
-      python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
-      python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
-      python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
-
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
 
+- job: "test_linux_python_inproc"
+  pool:
+      vmImage: 'Ubuntu 18.04'
+  strategy:
+    matrix:
+      python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
+      python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      suite: $(suite)
+
+- job: "test_windows_python_inproc"
+  pool:
+      vmImage: 'windows-latest'
+  strategy:
+    matrix:
+      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
+      python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      suite: $(suite)
