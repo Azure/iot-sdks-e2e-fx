@@ -66,7 +66,6 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
     }
   })
   .then((client) => {
-    client.setOptions({'keepalive': 10});
     const connectionId = objectCache.addObject('DeviceClient', client);
     debug(`connectoion id ${connectionId}`);
     return {"connectionId": connectionId};
@@ -175,14 +174,6 @@ exports.internal_EnableTwin = function(objectCache, connectionId) {
 }
 
 
-var getConnectionStatus = function(objectCache, connectionId) {
-  var client = objectCache.getObject(connectionId);
-  if (client && client._transport && client._transport._fsm && client._transport._fsm.state === 'connected') {
-    return 'connected';
-  } else {
-    return 'disconnected';
-  }
-}
 /**
  * get the current connection status
  *
@@ -190,9 +181,7 @@ var getConnectionStatus = function(objectCache, connectionId) {
  * returns String
  **/
 exports.internal_GetConnectionStatus = function(objectCache, connectionId) {
-  return new Promise((resolve, reject) => {
-    resolve(JSON.stringify(getConnectionStatus(objectCache, connectionId)));
-  });
+  return glueUtils.returnNotImpl();
 }
 
 
@@ -329,17 +318,7 @@ exports.internal_SendEvent = function(objectCache, connectionId,eventBody) {
  * returns String
  **/
 exports.internal_WaitForConnectionStatusChange = function(objectCache, connectionId, connectionStatus) {
-  return new Promise((resolve, reject) => {
-    var checkStatus = () => {
-      var cs = getConnectionStatus(objectCache, connectionId);
-      if (cs === connectionStatus) {
-        resolve(JSON.stringify(connectionStatus));
-      } else {
-        setTimeout(checkStatus, 500);
-      }
-    }
-    checkStatus();
-  });
+  return glueUtils.returnNotImpl();
 }
 
 

@@ -60,7 +60,7 @@ class RegressionTests(object):
     async def test_regression_connect_fails_with_corrupt_connection_string(
         self, client, field_name, new_field_value
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
 
         if not limitations.uses_shared_key_auth(client):
             pytest.skip("client is not using shared key auth")
@@ -88,7 +88,7 @@ class RegressionTests(object):
     async def test_regression_send_message_fails_with_corrupt_connection_string(
         self, client, field_name, new_field_value
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
 
         if not limitations.uses_shared_key_auth(client):
             pytest.skip("client is not using shared key auth")
@@ -113,7 +113,7 @@ class RegressionTests(object):
 
     @pytest.mark.it("fails to send messages over 256 kb in size")
     async def test_regression_send_message_fails_with_message_over_256K(self, client):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
 
         big_payload = sample_content.make_message_payload(size=257 * 1024)
 
@@ -125,7 +125,7 @@ class RegressionTests(object):
     async def test_regression_send_output_message_fails_with_message_over_256K(
         self, client
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.only_run_test_on_iotedge_module(client)
 
         big_payload = sample_content.make_message_payload(size=257 * 1024)
@@ -142,7 +142,7 @@ class RegressionTests(object):
     async def test_regression_send_message_big_message_doesnt_break_client(
         self, client, eventhub
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
 
         big_payload = sample_content.make_message_payload(size=257 * 1024)
         small_payload = sample_content.make_message_payload()
@@ -167,7 +167,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_fail_first_connection(
         self, net_control, client, drop_mechanism
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
         if not client.settings.capabilities.new_python_reconnect:
             pytest.skip("waiting for python ReconnectStage changes")
@@ -185,7 +185,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_fail_first_send_event(
         self, net_control, client, drop_mechanism
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
         if not client.settings.capabilities.new_python_reconnect:
             pytest.skip("waiting for python ReconnectStage changes")
@@ -205,7 +205,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_retry_second_connection(
         self, net_control, client, drop_mechanism
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
 
         await client.connect2()
@@ -227,7 +227,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_retry_second_send_event(
         self, net_control, client, drop_mechanism, eventhub
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
 
         await client.connect2()
@@ -259,7 +259,7 @@ class RegressionTests(object):
     async def test_regression_bad_connection_retry_multiple_connections(
         self, net_control, client, drop_mechanism
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
 
         await client.connect2()
@@ -285,7 +285,7 @@ class RegressionTests(object):
     async def test_regression_autoconnect_without_calling_connect(
         self, net_control, client, drop_mechanism
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
         if not client.settings.capabilities.new_python_reconnect:
             pytest.skip("waiting for python ReconnectStage changes")
@@ -312,7 +312,7 @@ class RegressionTests(object):
         payloads = []
         send_futures = []
 
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
         if not client.settings.capabilities.new_python_reconnect:
             pytest.skip("waiting for python ReconnectStage changes")
@@ -368,7 +368,7 @@ class RegressionTests(object):
         payloads = []
         send_futures = []
 
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, "pythonv2")
         limitations.skip_if_no_net_control()
         if not client.settings.capabilities.new_python_reconnect:
             pytest.skip("waiting for python ReconnectStage changes")
@@ -404,19 +404,3 @@ class RegressionTests(object):
             with pytest.raises(Exception):
                 await send_future
         logger("all sends failed")
-
-    @pytest.mark.it("Doesn't fail if subscrbing to c2d twice")
-    async def test_regression_c2d_enable_twice(self, client, service):
-        limitations.only_run_test_on_iothub_device(client)
-
-        test_payload = sample_content.make_message_payload()
-
-        await client.enable_c2d()
-        await client.enable_c2d()
-        test_input_future = asyncio.ensure_future(client.wait_for_c2d_message())
-        await asyncio.sleep(2)  # wait for receive pipeline to finish setting up
-
-        await service.send_c2d(client.device_id, test_payload)
-
-        received_message = await test_input_future
-        assert received_message.body == test_payload

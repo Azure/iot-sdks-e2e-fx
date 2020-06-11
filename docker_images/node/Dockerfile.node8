@@ -1,21 +1,9 @@
 FROM node:8.15.1-alpine
 
 RUN apk add \
-    python \
-    py-pip \
-    iptables \
     git
 
-RUN pip install --upgrade pip 
-
-WORKDIR /net_control_app
-COPY ./net_control_app .
-RUN pip install -r requirements.txt
-
-# https://github.com/npm/uid-number/issues/3#issuecomment-291362937
-RUN npm config set unsafe-perm true \
-    && npm install lerna -g \
-    && npm config set unsafe-perm false
+RUN npm install lerna -g
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
@@ -37,6 +25,7 @@ COPY node/prebuild.sh /
 COPY node/fixLerna.js /
 RUN /prebuild.sh
 RUN git checkout *package-lock.json
+
 
 # phase 2: grab the code we want to test and rebuild
 ARG HORTON_COMMIT_NAME
