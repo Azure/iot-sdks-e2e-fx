@@ -80,12 +80,7 @@ exports.module_CreateFromEnvironment = function(transportType) {
     resolve(ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType)));
   })
   .then((client) => {
-    return client.setOptions({
-      keepalive: defaultPingInterval
-    })
-    .then(() => client);
-  })
-  .then((client) => {
+    client._transport._options.keepalive = defaultPingInterval;
     const connectionId = objectCache.addObject('ModuleClient', client);
     return {"connectionId": connectionId};
   });
