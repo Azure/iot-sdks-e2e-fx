@@ -40,7 +40,7 @@ logging.getLogger("paho").setLevel(level=logging.DEBUG)
 logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
-logging.getLogger("azure.iot.device").setLevel(level=logging.WARNING)
+logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
 
 
 class Unbuffered(object):
