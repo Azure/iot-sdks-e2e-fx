@@ -8,8 +8,15 @@ import datetime
 import math
 import sample_content
 import threading
-import contextlib
 from horton_logging import logger
+from measurement import (
+    MeasureActiveObjects,
+    MeasureLatency,
+    ReportAverage,
+    ReportCount,
+    ReportMax,
+    ReportGroup,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -32,83 +39,14 @@ class ExcThread(threading.Thread):
             self.exc = e
 
 
-class SampleAverage(object):
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.total = 0
-        self.sample_count = 0
-        self.max = 0
-
-    def add_sample(self, sample):
-        with self.lock:
-            self.sample_count += 1
-            self.total += sample
-            if sample > self.max:
-                self.max = sample
-
-    def get_max(self):
-        with self.lock:
-            return self.max
-
-    def get_average(self):
-        with self.lock:
-            return self.total / self.sample_count
-
-
-class InstanceCounter(contextlib.AbstractContextManager):
-    def __init__(self, object_type):
-        self.instance_count = 0
-        self.max_instances = 0
-        self.lock = threading.Lock()
-        self.object_type = object_type
-        self.at_zero = threading.Event()
-
-    def __enter__(self):
-        with self.lock:
-            self.instance_count += 1
-            logger(
-                "enter: {} count at {}".format(self.object_type, self.instance_count)
-            )
-            if self.instance_count > self.max_instances:
-                self.max_instances = self.instance_count
-            self.at_zero.clear()
-
-    def __exit__(self, *args):
-        with self.lock:
-            self.instance_count -= 1
-            logger("exit: {} count at {}".format(self.object_type, self.instance_count))
-            if self.instance_count == 0:
-                self.at_zero.set()
-
-    def wait_for_zero(self):
-        self.at_zero.wait()
-
-    def get_max(self):
-        with self.lock:
-            return self.max_instances
-
-    def get_count(self):
-        with self.lock:
-            return self.instance_count
-
-
-class LatencyMeasurement(contextlib.AbstractContextManager):
-    def __init__(self):
-        self.start_time = None
-        self.end_time = None
-
-    def __enter__(self):
-        self.start_time = datetime.datetime.now()
-
-    def __exit__(self, *args):
-        self.end_time = datetime.datetime.now()
-
-    def get_latency(self):
-        return (self.end_time - self.start_time).total_seconds()
-
-
 class PerfTest(object):
-    async def test_throughput(self, client):
+    async def test_perf_simple_throughput(self, client):
+        """
+        Send a large number of messsages all at once and measure how many messages
+        can be sent per second.  This can be used to establish a theoretical maximum for
+        our library, though the number of messages per second reported by this function
+        is higher than typical because of burst effects.
+        """
         count = 2500
 
         payloads = [sample_content.make_message_payload() for x in range(0, count)]
@@ -125,37 +63,69 @@ class PerfTest(object):
             )
         )
 
-    async def do_test_multithreaded(
+        # Arbitrary goal based on experimental evidence.  The goal of this assert is to
+        # flag gigantic performance drops.  Experimentally, 46 is typical.  For this assert,
+        # even 30 would be acceptable
+        assert mps > 40
+
+    async def do_test_perf_send_event(
         self, client, events_per, duration, max_threads=None, max_latency=None
     ):
+        """
+        Helper function to send a huge quantity of events at a regular cadence
+        (x messages every second) to ensure that the library can keep up with demand.
+        """
         threads = []
 
-        message_counter = InstanceCounter("Message")
-        thread_counter = InstanceCounter("Thread")
-        average_latency = SampleAverage()
+        # these two ContextManager objects are used to measure current and maximum
+        # outstanding messages and running threads.
+        message_counter = MeasureActiveObjects(name="message")
+        thread_counter = MeasureActiveObjects(name="thread")
+        # This object is used to measure send_event latency and report on a number
+        # of metrics.
+        latency_reports = ReportGroup(
+            "latency",
+            reports=[
+                ReportAverage("send_event latency"),
+                ReportMax("send_event latency"),
+                ReportCount("send_event latency > 1s", lambda x: x >= 1),
+                ReportCount("send_event latency > 5s", lambda x: x >= 5),
+            ],
+        )
 
         async def send_single():
-            latency = LatencyMeasurement()
+            """
+            Send a single event with latency measurement.  Fail if the latency is too high.
+            """
             with message_counter:
+                latency = MeasureLatency()
                 with latency:
                     logger("start send")
                     await client.send_event(sample_content.make_message_payload())
                     logger("end send")
-            average_latency.add_sample(latency.get_latency())
+                latency_reports.add_sample(latency.get_latency())
             if max_latency and latency.get_latency() > max_latency:
                 raise Exception(
                     "max latency exceeded: {}".format(latency.get_latency())
                 )
 
         def threadproc():
+            """
+            Thread that gets spun up once per second.  It sends x events in parallel
+            and fails if any of those send_event operations fail.
+            """
             with thread_counter:
-
-                if max_threads and thread_counter.get_count() > max_threads:
+                if max_threads and thread_counter.get_current_count() > max_threads:
                     raise Exception(
-                        "thread limit exceeded: {}".format(thread_counter.get_count())
+                        "thread limit exceeded: {}".format(
+                            thread_counter.get_current_count()
+                        )
                     )
 
-                async def main():
+                async def send_and_gather():
+                    """
+                    Send x events.  If any of those operations  fail, raise an exception.
+                    """
                     results = await asyncio.gather(
                         *[send_single() for i in range(0, events_per)]
                     )
@@ -164,15 +134,13 @@ class PerfTest(object):
                         if isinstance(result, Exception):
                             raise result
 
-                asyncio.run(main())
+                asyncio.run(send_and_gather())
 
-        for i in range(0, duration):
-            t = ExcThread(target=threadproc)
-            t.start()
-            threads.append(t)
-
-            await asyncio.sleep(1)
-
+        def prune_thread_list():
+            # After spinning up each new thread, we go through all the old threads and see if
+            # they're done.  If one is done and it fails, we raise the exception.  If one is
+            # done and it does not fail, we remove it from our list of "active threads"
+            nonlocal threads
             old_threads = threads
             threads = []
             for t in old_threads:
@@ -181,28 +149,60 @@ class PerfTest(object):
                 elif t.exc:
                     raise (t.exc)
 
+        for i in range(0, duration):
+            # This is our main loop.  We spin up a new thread once per second.  We use ExcThread
+            # instead of threading.Thread because we need to know if anything in our thread
+            # raised an exception
+            t = ExcThread(target=threadproc)
+            t.start()
+            threads.append(t)
+
+            await asyncio.sleep(1)
+
+            prune_thread_list()
+
         logger(
-            "events_per = {} messages left = {}".format(
-                events_per, message_counter.get_count()
+            "Done sending.  Waiting for all events to finish sending.  outstanding events = {}".format(
+                message_counter.get_current_count()
             )
         )
 
+        # Just because we finished spinning up all our threads, it doesn't mean we're done.
+        # we have to wait for our threads to all finish.
         thread_counter.wait_for_zero()
+        prune_thread_list()
+        assert len(threads) == 0
 
-        logger("{} threads max".format(thread_counter.get_max()))
-        logger("Average latency {} seconds".format(average_latency.get_average()))
-        logger("Max latency {} seconds".format(average_latency.get_max()))
+        thread_counter.print_report()
+        message_counter.print_report()
+        latency_reports.print_report()
 
-        return thread_counter.get_max(), average_latency.get_average()
+        return (thread_counter.get_max(), message_counter.get_max())
 
     @pytest.mark.timeout(7300)
-    async def test_perf_longhaul(self, client):
-        duration = 7200
-        events_per = 3
-        max_threads = 600
-        max_latency = 600
+    async def test_perf_send_event_longhaul(self, client):
+        """
+        Run a linghaul test to validate that send_event can keep up with a consistent
+        and regular cadence of events.  This tests an arbitrary time period, with an arbitrary
+        number of messages sent every second and it verifies two things:
 
-        threads, latency = await self.do_test_multithreaded(
+        1. The send_event latency doesn't go too high
+        2. The maximum number of running threads doesn't go too high.
+
+        Both of these factors can indicae a slowdown in sending.
+
+        The choice for events_per_second is arbitray baased on the results from
+        test_perf_measure_send_event_capacity.  That test indicates that we can maintain
+        21 messages-per-second for 30 seconds, so this test choses 15 messages per second
+        but runs it for 2 hours.
+        """
+
+        duration = 7200
+        events_per = 15
+        max_threads = 5
+        max_latency = 11
+
+        threads = await self.do_test_perf_send_event(
             client, events_per, duration, max_threads, max_latency
         )
 
@@ -213,7 +213,12 @@ class PerfTest(object):
             )
         )
 
-    async def test_multithreaded(self, client):
+    async def test_perf_measure_send_event_capacity(self, client):
+        """
+        Test for a theoretical maximum messages-per-second cadence that the library
+        can maintain.  This test only runs for a short time (30 seconds right now), so
+        the actual maximum cadence will likely be slower when tested over long periods.
+        """
         duration = 30
         first = 1
         last = 60
@@ -226,24 +231,28 @@ class PerfTest(object):
             while first <= last and not found:
                 midpoint = (first + last) // 2
                 logger("running with {} events per batch".format(midpoint))
-                threads, latency = await self.do_test_multithreaded(
+                threads, events = await self.do_test_perf_send_event(
                     client, midpoint, duration
                 )
                 results.append(
-                    {"evens_per": midpoint, "max_threads": threads, "latency": latency}
+                    {
+                        "evens_per": midpoint,
+                        "max_threads": threads,
+                        "max_events": events,
+                    }
                 )
                 if threads != 1:
                     logger(
-                        "FAILED with {} events per second ({},{})".format(
-                            midpoint, threads, latency
+                        "FAILED with {} events per second (threads={}, events={})".format(
+                            midpoint, threads, events
                         )
                     )
                     assert midpoint < smallest_failure
                     smallest_failure = midpoint
                 else:
                     logger(
-                        "SUCCEEDED with {} events per second ({},{})".format(
-                            midpoint, threads, latency
+                        "SUCCEEDED with {} events per second (threads={}, events={})".format(
+                            midpoint, threads, events
                         )
                     )
                     assert midpoint > biggest_success
