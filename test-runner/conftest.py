@@ -4,20 +4,16 @@
 
 
 import pytest
-import pathlib
 import sys
-import adapters
 import logging
-import traceback
 from adapters import adapter_config
 from dump_object import dump_object
 import runtime_capabilities
 import scenarios
-import connections
 from distutils.version import LooseVersion
-from horton_logging import logger, set_logger
+from horton_logging import set_logger
 from horton_settings import settings
-from fixtures import (
+from fixtures import (  # noqa: F401
     eventhub,
     registry,
     friend,
@@ -28,7 +24,7 @@ from fixtures import (
     net_control,
     telemetry_payload,
 )
-from hooks import (
+from hooks import (  # noqa: F401
     pytest_runtest_logstart,
     pytest_runtest_logfinish,
     pytest_runtest_teardown,
