@@ -3,13 +3,18 @@
 import json
 import datetime
 import re
+import threading
 
 
 class SimpleObject(object):
-    pass
+    def __init__(self):
+        self._lock = threading.Lock()
 
 
 class DictionaryObject(object):
+    def __init__(self):
+        self._lock = threading.Lock()
+
     @classmethod
     def from_dict(cls, dict_object):
         """

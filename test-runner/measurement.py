@@ -89,7 +89,7 @@ class ReportMax(object):
             logger("{} max: {}".format(self.name, self.max))
 
 
-class MeasureActiveObjects(contextlib.AbstractContextManager):
+class MeasureRunningCodeBlock(contextlib.AbstractContextManager):
     def __init__(self, name, reports=[]):
         self.current_count = 0
         self.lock = threading.Lock()
@@ -142,3 +142,18 @@ class MeasureLatency(contextlib.AbstractContextManager):
 
     def get_latency(self):
         return (self.end_time - self.start_time).total_seconds()
+
+
+class MeasureSimpleCount(object):
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.count = 0
+
+    def increment(self):
+        with self.lock:
+            self.count += 1
+            return self.count
+
+    def get_count(self):
+        with self.lock:
+            return self.count

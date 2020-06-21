@@ -7,36 +7,21 @@ import asyncio
 import datetime
 import math
 import sample_content
-import threading
 from horton_logging import logger
 from measurement import (
-    MeasureActiveObjects,
+    MeasureRunningCodeBlock,
     MeasureLatency,
     ReportAverage,
     ReportCount,
     ReportMax,
     ReportGroup,
 )
+from exc_thread import ExcThread
 
 pytestmark = pytest.mark.asyncio
 
 # per-test-case timeout for this module
 test_timeout = 900
-
-
-class ExcThread(threading.Thread):
-    def __init__(self, target, args=None):
-        self.args = args if args else []
-        self.target = target
-        self.exc = None
-        threading.Thread.__init__(self)
-
-    def run(self):
-        try:
-            self.target(*self.args)
-        except Exception as e:
-            # self.exc =sys.exc_info()
-            self.exc = e
 
 
 class PerfTest(object):
@@ -79,8 +64,8 @@ class PerfTest(object):
 
         # these two ContextManager objects are used to measure current and maximum
         # outstanding messages and running threads.
-        message_counter = MeasureActiveObjects(name="message")
-        thread_counter = MeasureActiveObjects(name="thread")
+        message_counter = MeasureRunningCodeBlock(name="message")
+        thread_counter = MeasureRunningCodeBlock(name="thread")
         # This object is used to measure send_event latency and report on a number
         # of metrics.
         latency_reports = ReportGroup(
