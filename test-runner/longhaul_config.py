@@ -11,18 +11,18 @@ class Progress(SimpleObject):
 
         self.index = 0
         self.status = "new"
-        self.start_time = datetime.datetime()
-        self.total_duration = datetime.datetime()
-        self.elapsed_time = datetime.datetime()
-        self.finish_time = datetime.datetime()
+        self.start_time = datetime.datetime.min
+        self.total_duration = datetime.timedelta(0)
+        self.elapsed_time = datetime.timedelta(0)
+        self.finish_time = datetime.datetime.min
         self.memory_used = 0.0
         self.active_objects = 0
         self.ops_completed = 0
         self.ops_in_progress = 0
         self.ops_waiting_to_initiate = 0
         self.ops_waiting_to_complete = 0
-        self.slow_initiate_ops = 0
-        self.slow_complete_ops = 0
+        self.ops_slow_initiate = 0
+        self.ops_slow_complete = 0
 
     def update(
         self,
@@ -30,17 +30,19 @@ class Progress(SimpleObject):
         ops_in_progress=None,
         ops_waiting_to_initiate=None,
         ops_waiting_to_complete=None,
+        ops_slow_initiate=None,
+        ops_slow_complete=None,
     ):
         with self._lock:
 
             now = datetime.datetime.now()
-            if self.start_time == datetime.datetime():
+            if self.start_time == datetime.datetime.min:
                 self.start_time = now
                 self.finish_time = now + self.total_duration
             self.elapsed_time = now - self.start_time
 
             # BKTODO: this returns the gc info for the pytest process.  move this to the process under test
-            counts = gc.get_counts()
+            counts = gc.get_count()
             self.active_objects = counts[0] + counts[1] + counts[2]
 
             if ops_completed is not None:
@@ -51,6 +53,10 @@ class Progress(SimpleObject):
                 self.ops_waiting_to_initiate = ops_waiting_to_initiate
             if ops_waiting_to_complete is not None:
                 self.ops_waiting_to_complete = ops_waiting_to_complete
+            if ops_slow_initiate is not None:
+                self.ops_slow_initiate = ops_slow_initiate
+            if ops_slow_complete is not None:
+                self.ops_slow_complete = ops_slow_complete
 
     def to_dict(self):
         with self._lock:
@@ -84,6 +90,8 @@ class FeatureConfig(SimpleObject):
         self.enabled = False
         self.interval = 0
         self.ops_per_interval = 0
+        self.slow_init_threshold = datetime.timedelta(0)
+        self.slow_complete_threshold = datetime.timedelta(0)
 
 
 class TestConfig(SimpleObject):
@@ -97,11 +105,11 @@ class TestConfig(SimpleObject):
 class FeatureStats(SimpleObject):
     def __init__(self):
         super(FeatureStats, self).__init__()
-        self.complete_ops = 0
-        self.outstanding_ops = 0
-        self.failed_ops = 0
-        self.slow_init_ops = 0
-        self.slow_complete_ops = 0
+        self.ops_completed = 0
+        self.ops_in_progress = 0
+        self.ops_failed = 0
+        self.ops_slow_initiate = 0
+        self.ops_slow_complete = 0
 
 
 class TestStats(SimpleObject):
@@ -141,6 +149,7 @@ class ReportedTestProperties(DictionaryObject):
         self.sdk = Sdk()
         self.test_config = TestConfig()
         self.test_stats = TestStats()
+        self.progress = Progress()
 
 
 ReportedTestProperties._defaults = ReportedTestProperties()

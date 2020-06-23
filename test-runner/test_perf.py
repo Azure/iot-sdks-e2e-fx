@@ -100,11 +100,9 @@ class PerfTest(object):
             and fails if any of those send_event operations fail.
             """
             with thread_counter:
-                if max_threads and thread_counter.get_current_count() > max_threads:
+                if max_threads and thread_counter.get_count() > max_threads:
                     raise Exception(
-                        "thread limit exceeded: {}".format(
-                            thread_counter.get_current_count()
-                        )
+                        "thread limit exceeded: {}".format(thread_counter.get_count())
                     )
 
                 async def send_and_gather():
@@ -148,7 +146,7 @@ class PerfTest(object):
 
         logger(
             "Done sending.  Waiting for all events to finish sending.  outstanding events = {}".format(
-                message_counter.get_current_count()
+                message_counter.get_count()
             )
         )
 

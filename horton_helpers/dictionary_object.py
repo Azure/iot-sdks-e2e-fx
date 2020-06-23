@@ -30,7 +30,11 @@ class DictionaryObject(object):
                     setattr(native_object, key, native_value)
                     fill_native_object_from_dict(native_value, dict_value)
                 elif _is_scalar(dict_value):
-                    setattr(native_object, key, dict_value)
+                    old_native_value = getattr(native_object, key, None)
+                    if _is_tostring_object(old_native_value):
+                        _set_tostring_attr(native_object, key, dict_value)
+                    else:
+                        setattr(native_object, key, dict_value)
                 else:
                     raise ValueError(
                         "{} must be a dictionary, string, or scalar value".format(key)
@@ -56,6 +60,11 @@ class DictionaryObject(object):
         """
         convert this object to a dict
         """
+
+        try:
+            defaults = defaults or type(self)._defaults
+        except AttributeError:
+            pass
 
         def dict_from_native_object(native_object, default_object):
             dict_object = {}
@@ -111,11 +120,21 @@ def _get_attribute_names(obj):
 
 
 def _is_tostring_object(x):
-    return type(x) in [datetime.timedelta]
+    return type(x) in [datetime.timedelta, datetime.datetime]
 
 
 def _is_scalar(x):
     return type(x) in [int, bool, str, type(None), float]
+
+
+def _set_tostring_attr(obj, key, value):
+    old_value = getattr(obj, key)
+    if type(old_value) == datetime.timedelta:
+        setattr(obj, key, string_to_timedelta(value))
+    elif type(old_value) == datetime.datetime:
+        setattr(obj, key, datetime.datetime.fromisoformat(value))
+    else:
+        raise ValueError()
 
 
 def string_to_timedelta(s):

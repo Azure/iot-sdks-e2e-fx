@@ -11,6 +11,9 @@ fake_dict_string_value = "fourty-two"
 fake_dict_boolean_value = True
 fake_dict_none_value = None
 fake_dict_timedelta_value = datetime.timedelta(hours=2)
+fake_dict_datetime_value = datetime.datetime(
+    year=1984, month=12, day=31, hour=14, minute=32, second=17
+)
 
 fake_sub_integer_value = 52
 fake_sub_float_value = 52.52
@@ -18,6 +21,9 @@ fake_sub_string_value = "fifty-two"
 fake_sub_boolean_value = False
 fake_sub_none_value = None
 fake_sub_timedelta_value = datetime.timedelta(hours=12)
+fake_sub_datetime_value = datetime.datetime(
+    year=1994, month=11, day=30, hour=13, minute=12, second=12
+)
 
 fake_sub_sub_value = 62
 
@@ -29,7 +35,8 @@ class FakeSubObject(SimpleObject):
         self.sub_string_value = None
         self.sub_boolean_value = None
         self.sub_none_value = None
-        self.sub_timedelta_value = None
+        self.sub_timedelta_value = datetime.timedelta(0)
+        self.sub_datetime_value = datetime.datetime.min
 
     def populate(self):
         self.sub_integer_value = fake_sub_integer_value
@@ -38,6 +45,7 @@ class FakeSubObject(SimpleObject):
         self.sub_boolean_value = fake_sub_boolean_value
         self.sub_none_value = fake_sub_none_value
         self.sub_timedelta_value = fake_sub_timedelta_value
+        self.sub_datetime_value = fake_sub_datetime_value
 
 
 class FakeDictionaryObject(DictionaryObject):
@@ -48,7 +56,8 @@ class FakeDictionaryObject(DictionaryObject):
         self.dict_string_avlue = None
         self.dict_boolean_value = None
         self.dict_none_value = None
-        self.dict_timedelta_value = None
+        self.dict_timedelta_value = datetime.timedelta(0)
+        self.dict_datetime_value = datetime.datetime.min
 
     def populate(self):
         self.sub_object.populate()
@@ -58,6 +67,7 @@ class FakeDictionaryObject(DictionaryObject):
         self.dict_boolean_value = fake_dict_boolean_value
         self.dict_none_value = fake_dict_none_value
         self.dict_timedelta_value = fake_dict_timedelta_value
+        self.dict_datetime_value = fake_dict_datetime_value
 
 
 @pytest.mark.describe("DictionaryObject to_dict method")
@@ -107,6 +117,7 @@ class TestDictionaryObjectToDict(object):
         assert d["dict_boolean_value"] == fake_dict_boolean_value
         assert d["dict_none_value"] == fake_dict_none_value
         assert d["dict_timedelta_value"] == str(fake_dict_timedelta_value)
+        assert d["dict_datetime_value"] == str(fake_dict_datetime_value)
 
     @pytest.mark.it("serializes scalar values in sub objects")
     def test_serializes_sub_scalars(self, native_object):
@@ -118,6 +129,7 @@ class TestDictionaryObjectToDict(object):
         assert d["sub_object"]["sub_boolean_value"] == fake_sub_boolean_value
         assert d["sub_object"]["sub_none_value"] == fake_sub_none_value
         assert d["sub_object"]["sub_timedelta_value"] == str(fake_sub_timedelta_value)
+        assert d["sub_object"]["sub_datetime_value"] == str(fake_sub_datetime_value)
 
     @pytest.mark.it("recurses past the second level")
     def test_recurses(self, native_object):
@@ -249,6 +261,7 @@ class TestDictionaryObjectFromDict(object):
             "dict_boolean_value": fake_dict_boolean_value,
             "dict_none_value": fake_dict_none_value,
             "dict_timedelta_value": str(fake_dict_timedelta_value),
+            "dict_datetime_value": str(fake_dict_datetime_value),
             "sub_object": {
                 "sub_integer_value": fake_sub_integer_value,
                 "sub_float_value": fake_sub_float_value,
@@ -256,6 +269,7 @@ class TestDictionaryObjectFromDict(object):
                 "sub_boolean_value": fake_sub_boolean_value,
                 "sub_none_value": fake_sub_none_value,
                 "sub_timedelta_value": str(fake_sub_timedelta_value),
+                "sub_datetime_value": str(fake_sub_datetime_value),
             },
         }
 
@@ -345,6 +359,16 @@ class TestDictionaryObjectFromDict(object):
         assert obj.sub_object.sub.sub.level == 2
         assert type(obj.sub_object.sub.sub.sub) == SimpleObject
         assert obj.sub_object.sub.sub.sub.level == 3
+
+    @pytest.mark.it(
+        "converts datetime and timedelta values according to the destination type"
+    )
+    def test_converts_values_according_to_destination_type(self, dict_object):
+        obj = FakeDictionaryObject.from_dict(dict_object)
+        assert type(obj.dict_datetime_value) == datetime.datetime
+        assert type(obj.dict_timedelta_value) == datetime.timedelta
+        assert type(obj.sub_object.sub_datetime_value) == datetime.datetime
+        assert type(obj.sub_object.sub_timedelta_value) == datetime.timedelta
 
 
 class TestStringToTimedelta(object):
