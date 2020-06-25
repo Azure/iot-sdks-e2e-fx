@@ -161,11 +161,9 @@ class C2d(object):
 
 class Telemetry(object):
     def send_event_sync(self, event_body):
-        logger.info("sending event")
         self.client.send_message(
             convert.test_script_object_to_outgoing_message(event_body)
         )
-        logger.info("send confirmation received")
 
 
 class InputsAndOutputs(object):

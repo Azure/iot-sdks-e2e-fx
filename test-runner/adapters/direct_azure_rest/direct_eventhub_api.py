@@ -2,12 +2,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import asyncio
-import json
 import ast
-import random
 import datetime
 import threading
-from threading import Event
 from azure.eventhub.aio import EventHubConsumerClient
 from ..adapter_config import logger
 from . import eventhub_connection_string
@@ -50,7 +47,7 @@ class EventHubApi:
 
     async def connect(self, offset=None):
         logger(
-            "connect: thread={} {} loop={}".format(
+            "EventHubApi: connect: thread={} {} loop={}".format(
                 threading.current_thread(),
                 id(threading.current_thread()),
                 id(asyncio.get_running_loop()),
@@ -76,10 +73,12 @@ class EventHubApi:
 
         self.listener_future = asyncio.ensure_future(listener())
 
+        logger("EventHubApi: Listener Created")
+
     async def _close_eventhub_client(self):
 
         logger(
-            "close: thread={} {} loop={}".format(
+            "EventHubApi: close: thread={} {} loop={}".format(
                 threading.current_thread(),
                 id(threading.current_thread()),
                 id(asyncio.get_running_loop()),
@@ -87,15 +86,17 @@ class EventHubApi:
         )
 
         if self.consumer_client:
-            logger("_close_eventhub_client: stopping consumer client")
+            logger("EventHubApi: _close_eventhub_client: stopping consumer client")
             await self.consumer_client.close()
-            logger("_close_eventhub_client: done stopping consumer client")
+            logger("EventHubApi: _close_eventhub_client: done stopping consumer client")
             self.consumer_client = None
 
         if self.listener_future:
-            logger("_close_eventhub_client: cancelling listener")
+            logger("EventHubApi: _close_eventhub_client: cancelling listener")
             self.listener_future.cancel()
-            logger("_close_eventhub_client: waiting for listener to complete")
+            logger(
+                "EventHubApi: _close_eventhub_client: waiting for listener to complete"
+            )
             try:
                 await self.listener_future
             except asyncio.CancelledError:
@@ -103,7 +104,7 @@ class EventHubApi:
             logger("_close_eventhub_client: listener is complete")
 
     async def disconnect(self):
-        logger("async disconnect")
+        logger("EventHubApi: async disconnect")
         await self._close_eventhub_client()
 
     async def wait_for_next_event(self, device_id, expected=None):
@@ -112,7 +113,6 @@ class EventHubApi:
         while True:
             event = await self.received_events.get()
             if not device_id:
-                print("--" + str(event.body_as_json()))
                 return event.body_as_json()
             elif get_device_id_from_event(event) == device_id:
                 logger(
@@ -127,3 +127,5 @@ class EventHubApi:
                         logger("EventHubApi: unexpected message.  skipping")
                 else:
                     return received
+            else:
+                logger("EventHubApi: event not for me received")

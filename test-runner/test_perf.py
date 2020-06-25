@@ -7,36 +7,21 @@ import asyncio
 import datetime
 import math
 import sample_content
-import threading
 from horton_logging import logger
 from measurement import (
-    MeasureActiveObjects,
+    MeasureRunningCodeBlock,
     MeasureLatency,
     ReportAverage,
     ReportCount,
     ReportMax,
     ReportGroup,
 )
+from exc_thread import ExcThread
 
 pytestmark = pytest.mark.asyncio
 
 # per-test-case timeout for this module
 test_timeout = 900
-
-
-class ExcThread(threading.Thread):
-    def __init__(self, target, args=None):
-        self.args = args if args else []
-        self.target = target
-        self.exc = None
-        threading.Thread.__init__(self)
-
-    def run(self):
-        try:
-            self.target(*self.args)
-        except Exception as e:
-            # self.exc =sys.exc_info()
-            self.exc = e
 
 
 class PerfTest(object):
@@ -65,8 +50,8 @@ class PerfTest(object):
 
         # Arbitrary goal based on experimental evidence.  The goal of this assert is to
         # flag gigantic performance drops.  Experimentally, 46 is typical.  For this assert,
-        # even 30 would be acceptable
-        assert mps > 40
+        # even 25 would be acceptable
+        assert mps > 25
 
     async def do_test_perf_send_event(
         self, client, events_per, duration, max_threads=None, max_latency=None
@@ -79,8 +64,8 @@ class PerfTest(object):
 
         # these two ContextManager objects are used to measure current and maximum
         # outstanding messages and running threads.
-        message_counter = MeasureActiveObjects(name="message")
-        thread_counter = MeasureActiveObjects(name="thread")
+        message_counter = MeasureRunningCodeBlock(name="message")
+        thread_counter = MeasureRunningCodeBlock(name="thread")
         # This object is used to measure send_event latency and report on a number
         # of metrics.
         latency_reports = ReportGroup(
@@ -115,11 +100,9 @@ class PerfTest(object):
             and fails if any of those send_event operations fail.
             """
             with thread_counter:
-                if max_threads and thread_counter.get_current_count() > max_threads:
+                if max_threads and thread_counter.get_count() > max_threads:
                     raise Exception(
-                        "thread limit exceeded: {}".format(
-                            thread_counter.get_current_count()
-                        )
+                        "thread limit exceeded: {}".format(thread_counter.get_count())
                     )
 
                 async def send_and_gather():
@@ -163,7 +146,7 @@ class PerfTest(object):
 
         logger(
             "Done sending.  Waiting for all events to finish sending.  outstanding events = {}".format(
-                message_counter.get_current_count()
+                message_counter.get_count()
             )
         )
 
@@ -221,7 +204,7 @@ class PerfTest(object):
         """
         duration = 30
         first = 1
-        last = 60
+        last = 100
         biggest_success = 0
         smallest_failure = last + 1
         found = False
@@ -271,7 +254,7 @@ class PerfTest(object):
             logger("smallest_failure = {} events per second".format(smallest_failure))
             logger("INDIVIDUAL RESULTS:")
             for res in results:
-                logger(res)
+                logger(str(res))
 
 
 @pytest.mark.testgroup_edgehub_module_2h_stress

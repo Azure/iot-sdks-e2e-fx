@@ -40,7 +40,8 @@ logging.getLogger("paho").setLevel(level=logging.DEBUG)
 logging.getLogger("adapters.direct_azure_rest.amqp_service_client").setLevel(
     level=logging.WARNING
 )  # info level can leak credentials into the log
-logging.getLogger("azure.iot.device").setLevel(level=logging.DEBUG)
+logging.getLogger("azure.iot.device").setLevel(level=logging.ERROR)
+logging.getLogger("azure.eventhub").setLevel(level=logging.DEBUG)
 
 
 class Unbuffered(object):
@@ -196,6 +197,7 @@ def set_python_inproc():
 
 
 def set_sas_renewal():
+    return
     if settings.test_module.device_id:
         settings.test_module.wrapper_api.set_flags_sync({"sas_renewal_interval": 60})
     if settings.test_device.device_id:
