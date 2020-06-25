@@ -257,8 +257,8 @@ class PerfTest(object):
                 logger(str(res))
 
 
-@pytest.mark.testgroup_edgehub_module_2h_stress
-@pytest.mark.testgroup_iothub_module_2h_stress
+@pytest.mark.testgroup_edgehub_module_stress
+@pytest.mark.testgroup_iothub_module_stress
 @pytest.mark.describe("Module Client Perf")
 @pytest.mark.timeout(test_timeout)
 class TestModuleClientPerf(PerfTest):
@@ -267,7 +267,7 @@ class TestModuleClientPerf(PerfTest):
         return test_module
 
 
-@pytest.mark.testgroup_iothub_device_2h_stress
+@pytest.mark.testgroup_iothub_device_stress
 @pytest.mark.describe("Device Client Perf")
 @pytest.mark.timeout(test_timeout)
 class TestDeviceClientPerf(PerfTest):

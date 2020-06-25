@@ -290,7 +290,7 @@ class LongHaulTest(object):
             await reporter
 
 
-@pytest.mark.testgroup_iothub_device_2h_stress
+@pytest.mark.testgroup_iothub_device_stress
 @pytest.mark.describe("Device Client Long Run")
 class TestDeviceClientLongHaul(LongHaulTest):
     @pytest.fixture
@@ -298,7 +298,7 @@ class TestDeviceClientLongHaul(LongHaulTest):
         return test_device
 
 
-@pytest.mark.testgroup_iothub_module_2h_stress
+@pytest.mark.testgroup_iothub_module_stress
 @pytest.mark.describe("Device Client Long Run")
 class TestModuleClientLongHaul(LongHaulTest):
     @pytest.fixture
