@@ -50,8 +50,8 @@ class PerfTest(object):
 
         # Arbitrary goal based on experimental evidence.  The goal of this assert is to
         # flag gigantic performance drops.  Experimentally, 46 is typical.  For this assert,
-        # even 30 would be acceptable
-        assert mps > 40
+        # even 25 would be acceptable
+        assert mps > 25
 
     async def do_test_perf_send_event(
         self, client, events_per, duration, max_threads=None, max_latency=None
@@ -204,7 +204,7 @@ class PerfTest(object):
         """
         duration = 30
         first = 1
-        last = 60
+        last = 100
         biggest_success = 0
         smallest_failure = last + 1
         found = False
@@ -254,7 +254,7 @@ class PerfTest(object):
             logger("smallest_failure = {} events per second".format(smallest_failure))
             logger("INDIVIDUAL RESULTS:")
             for res in results:
-                logger(res)
+                logger(str(res))
 
 
 @pytest.mark.testgroup_edgehub_module_2h_stress

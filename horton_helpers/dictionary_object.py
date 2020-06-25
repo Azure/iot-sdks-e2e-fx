@@ -88,9 +88,7 @@ class DictionaryObject(object):
                 elif isinstance(native_value, object):
                     new_value = dict_from_native_object(native_value, default_value)
                     if new_value:
-                        dict_object[name] = dict_from_native_object(
-                            native_value, default_value
-                        )
+                        dict_object[name] = new_value
                 else:
                     raise ValueError(
                         "{} must be a scalar value or an object".format(name)

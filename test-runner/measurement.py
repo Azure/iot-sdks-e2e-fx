@@ -5,6 +5,8 @@
 import datetime
 import threading
 import contextlib
+import statistics
+import collections
 from horton_logging import logger
 
 
@@ -56,8 +58,40 @@ class ReportAverage(object):
             )
 
 
+Stats = collections.namedtuple("stats", "mean fiftieth_percentile slow")
+
+
+class GatherStatistics(object):
+    def __init__(self, name, slowness_threshold=None):
+        self.lock = threading.Lock()
+        self.name = name
+        self.slowness_threshold = slowness_threshold
+        self.slow = 0
+        self.samples = []
+
+    def add_sample(self, sample):
+        with self.lock:
+            self.samples.append(sample)
+            if sample > self.slowness_threshold:
+                self.slow += 1
+
+    def get_stats(self):
+        with self.lock:
+            if len(self.samples):
+                self.samples.sort()
+                mean = statistics.mean(self.samples)
+                fiftieth_percentile = statistics.median_grouped(
+                    self.samples, interval=0.01
+                )
+                return Stats(
+                    mean=mean, fiftieth_percentile=fiftieth_percentile, slow=self.slow
+                )
+            else:
+                return Stats(mean=0.0, fiftieth_percentile=0.0, slow=0.0)
+
+
 class ReportCount(object):
-    def __init__(self, name, logger=logger, test_function=lambda x: True):
+    def __init__(self, name, test_function=lambda x: True, logger=logger):
         self.lock = threading.Lock()
         self.name = name
         self.test_function = test_function
@@ -100,7 +134,7 @@ class ReportMax(object):
 
 
 class MeasureRunningCodeBlock(contextlib.AbstractContextManager):
-    def __init__(self, name, logger=logger, reports=[]):
+    def __init__(self, name, reports=[], logger=logger):
         self.count = 0
         self.lock = threading.Lock()
         self.name = name
@@ -152,7 +186,7 @@ class MeasureLatency(contextlib.AbstractContextManager):
         self.end_time = datetime.datetime.now()
 
     def get_latency(self):
-        return self.end_time - self.start_time
+        return (self.end_time - self.start_time).total_seconds()
 
 
 class MeasureSimpleCount(object):

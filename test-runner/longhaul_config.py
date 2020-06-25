@@ -5,7 +5,22 @@ import gc
 from dictionary_object import SimpleObject, DictionaryObject
 
 
-class Progress(SimpleObject):
+class OpStats(SimpleObject):
+    def __init__(self):
+        super(OpStats, self).__init__()
+        self.ops_completed = 0
+        self.ops_failed = 0
+        self.ops_waiting_to_send = 0
+        self.ops_waiting_to_complete = 0
+        self.ops_slow_send = 0
+        self.ops_slow_send_and_receive = 0
+        self.mean_send_latency = 0.0
+        self.fiftieth_percentile_send_latency = 0.0
+        self.mean_send_and_receive_latency = 0.0
+        self.fiftieth_percentile_send_and_receive_latency = 0.0
+
+
+class Progress(OpStats):
     def __init__(self):
         super(Progress, self).__init__()
 
@@ -14,49 +29,19 @@ class Progress(SimpleObject):
         self.start_time = datetime.datetime.min
         self.total_duration = datetime.timedelta(0)
         self.elapsed_time = datetime.timedelta(0)
-        self.finish_time = datetime.datetime.min
         self.memory_used = 0.0
         self.active_objects = 0
-        self.ops_completed = 0
-        self.ops_in_progress = 0
-        self.ops_waiting_to_initiate = 0
-        self.ops_waiting_to_complete = 0
-        self.ops_slow_initiate = 0
-        self.ops_slow_complete = 0
 
-    def update(
-        self,
-        ops_completed=None,
-        ops_in_progress=None,
-        ops_waiting_to_initiate=None,
-        ops_waiting_to_complete=None,
-        ops_slow_initiate=None,
-        ops_slow_complete=None,
-    ):
+    def update(self,):
         with self._lock:
-
             now = datetime.datetime.now()
             if self.start_time == datetime.datetime.min:
                 self.start_time = now
-                self.finish_time = now + self.total_duration
             self.elapsed_time = now - self.start_time
 
             # BKTODO: this returns the gc info for the pytest process.  move this to the process under test
             counts = gc.get_count()
             self.active_objects = counts[0] + counts[1] + counts[2]
-
-            if ops_completed is not None:
-                self.ops_completed = ops_completed
-            if ops_in_progress is not None:
-                self.ops_in_progress = ops_in_progress
-            if ops_waiting_to_initiate is not None:
-                self.ops_waiting_to_initiate = ops_waiting_to_initiate
-            if ops_waiting_to_complete is not None:
-                self.ops_waiting_to_complete = ops_waiting_to_complete
-            if ops_slow_initiate is not None:
-                self.ops_slow_initiate = ops_slow_initiate
-            if ops_slow_complete is not None:
-                self.ops_slow_complete = ops_slow_complete
 
     def to_dict(self):
         with self._lock:
@@ -69,19 +54,6 @@ class Platform(SimpleObject):
         super(Platform, self).__init__()
         self.os = ""
         self.framework_version = ""
-        self.heap_size = 0.0
-
-
-class Sdk(SimpleObject):
-    def __init__(self):
-        super(Sdk, self).__init__()
-        self.languate = ""
-        self.version = ""
-        self.install_source = ""
-        self.source_repo = ""
-        self.source_branch = ""
-        self.source_pr = ""
-        self.SourceCommit = ""
 
 
 class FeatureConfig(SimpleObject):
@@ -90,8 +62,11 @@ class FeatureConfig(SimpleObject):
         self.enabled = False
         self.interval = 0
         self.ops_per_interval = 0
-        self.slow_init_threshold = datetime.timedelta(0)
-        self.slow_complete_threshold = datetime.timedelta(0)
+        self.slow_send_threshold = datetime.timedelta(0)
+        self.slow_send_and_receive_threshold = datetime.timedelta(0)
+        self.max_slow_send_allowed = 0
+        self.max_slow_send_and_receive_allowed = 0
+        self.max_fail_allowed = 0
 
 
 class TestConfig(SimpleObject):
@@ -102,20 +77,10 @@ class TestConfig(SimpleObject):
         self.d2c = FeatureConfig()
 
 
-class FeatureStats(SimpleObject):
-    def __init__(self):
-        super(FeatureStats, self).__init__()
-        self.ops_completed = 0
-        self.ops_in_progress = 0
-        self.ops_failed = 0
-        self.ops_slow_initiate = 0
-        self.ops_slow_complete = 0
-
-
 class TestStats(SimpleObject):
     def __init__(self):
         super(TestStats, self).__init__()
-        self.d2c = FeatureStats()
+        self.d2c = OpStats()
 
 
 class Telemetry(DictionaryObject):
@@ -146,7 +111,6 @@ class ReportedTestProperties(DictionaryObject):
     def __init__(self):
         super(ReportedTestProperties, self).__init__()
         self.platform = Platform()
-        self.sdk = Sdk()
         self.test_config = TestConfig()
         self.test_stats = TestStats()
         self.progress = Progress()
