@@ -5,14 +5,21 @@
 import datetime
 import threading
 import contextlib
+import statistics
+import collections
 from horton_logging import logger
 
 
+def null_logger(*args, **kwargs):
+    pass
+
+
 class ReportGroup(object):
-    def __init__(self, name, reports):
+    def __init__(self, name, reports, logger=logger):
         self.lock = threading.Lock()
         self.name = name
         self.reports = reports
+        self.logger = logger or null_logger
 
     def add_sample(self, sample):
         with self.lock:
@@ -21,16 +28,17 @@ class ReportGroup(object):
 
     def print_report(self):
         with self.lock:
-            logger("{} reports:".format(self.name))
-            logger("-----------")
+            self.logger("{} reports:".format(self.name))
+            self.logger("-----------")
             for report in self.reports:
                 report.print_report()
 
 
 class ReportAverage(object):
-    def __init__(self, name):
+    def __init__(self, name, logger=logger):
         self.lock = threading.Lock()
         self.name = name
+        self.logger = logger or null_logger
         self.total = 0
         self.sample_count = 0
 
@@ -45,14 +53,49 @@ class ReportAverage(object):
 
     def print_report(self):
         with self.lock:
-            logger("{} average: {}".format(self.name, self.total / self.sample_count))
+            self.logger(
+                "{} average: {}".format(self.name, self.total / self.sample_count)
+            )
+
+
+Stats = collections.namedtuple("stats", "mean fiftieth_percentile slow")
+
+
+class GatherStatistics(object):
+    def __init__(self, name, slowness_threshold=None):
+        self.lock = threading.Lock()
+        self.name = name
+        self.slowness_threshold = slowness_threshold
+        self.slow = 0
+        self.samples = []
+
+    def add_sample(self, sample):
+        with self.lock:
+            self.samples.append(sample)
+            if sample > self.slowness_threshold:
+                self.slow += 1
+
+    def get_stats(self):
+        with self.lock:
+            if len(self.samples):
+                self.samples.sort()
+                mean = statistics.mean(self.samples)
+                fiftieth_percentile = statistics.median_grouped(
+                    self.samples, interval=0.01
+                )
+                return Stats(
+                    mean=mean, fiftieth_percentile=fiftieth_percentile, slow=self.slow
+                )
+            else:
+                return Stats(mean=0.0, fiftieth_percentile=0.0, slow=0.0)
 
 
 class ReportCount(object):
-    def __init__(self, name, test_function=lambda x: True):
+    def __init__(self, name, test_function=lambda x: True, logger=logger):
         self.lock = threading.Lock()
         self.name = name
         self.test_function = test_function
+        self.logger = logger or null_logger
         self.count = 0
 
     def add_sample(self, sample):
@@ -66,13 +109,14 @@ class ReportCount(object):
 
     def print_report(self):
         with self.lock:
-            logger("{} count: {}".format(self.name, self.count))
+            self.logger("{} count: {}".format(self.name, self.count))
 
 
 class ReportMax(object):
-    def __init__(self, name):
+    def __init__(self, name, logger=logger):
         self.lock = threading.Lock()
         self.name = name
+        self.logger = logger or null_logger
         self.max = 0
 
     def add_sample(self, sample):
@@ -86,38 +130,39 @@ class ReportMax(object):
 
     def print_report(self):
         with self.lock:
-            logger("{} max: {}".format(self.name, self.max))
+            self.logger("{} max: {}".format(self.name, self.max))
 
 
-class MeasureActiveObjects(contextlib.AbstractContextManager):
-    def __init__(self, name, reports=[]):
-        self.current_count = 0
+class MeasureRunningCodeBlock(contextlib.AbstractContextManager):
+    def __init__(self, name, reports=[], logger=logger):
+        self.count = 0
         self.lock = threading.Lock()
         self.name = name
+        self.logger = logger or null_logger
         self.at_zero = threading.Event()
         self.reports = [ReportMax(name)] + reports
 
     def __enter__(self):
         with self.lock:
-            self.current_count += 1
+            self.count += 1
             for report in self.reports:
-                report.add_sample(self.current_count)
-            logger("enter: {} count at {}".format(self.name, self.current_count))
+                report.add_sample(self.count)
+            self.logger("enter: {} count at {}".format(self.name, self.count))
             self.at_zero.clear()
 
     def __exit__(self, *args):
         with self.lock:
-            self.current_count -= 1
-            logger("exit: {} count at {}".format(self.name, self.current_count))
-            if self.current_count == 0:
+            self.count -= 1
+            self.logger("exit: {} count at {}".format(self.name, self.count))
+            if self.count == 0:
                 self.at_zero.set()
 
     def wait_for_zero(self):
         self.at_zero.wait()
 
-    def get_current_count(self):
+    def get_count(self):
         with self.lock:
-            return self.current_count
+            return self.count
 
     def get_max(self):
         with self.lock:
@@ -142,3 +187,18 @@ class MeasureLatency(contextlib.AbstractContextManager):
 
     def get_latency(self):
         return (self.end_time - self.start_time).total_seconds()
+
+
+class MeasureSimpleCount(object):
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.count = 0
+
+    def increment(self):
+        with self.lock:
+            self.count += 1
+            return self.count
+
+    def get_count(self):
+        with self.lock:
+            return self.count
