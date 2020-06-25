@@ -402,9 +402,9 @@ class StressTest(object):
             await run_method_call_test(source=client, destination=leaf_device)
 
 
-@pytest.mark.testgroup_edgehub_module_2h_stress
-@pytest.mark.testgroup_iothub_module_2h_stress
-@pytest.mark.describe("Module Client 2 Hour Stress")
+@pytest.mark.testgroup_edgehub_module_stress
+@pytest.mark.testgroup_iothub_module_stress
+@pytest.mark.describe("Module Client Stress")
 @pytest.mark.timeout(test_timeout)
 class TestModuleClient2HourStress(StressTest):
     @pytest.fixture
@@ -412,8 +412,8 @@ class TestModuleClient2HourStress(StressTest):
         return test_module
 
 
-@pytest.mark.testgroup_iothub_device_2h_stress
-@pytest.mark.describe("Device Client 2 Hour Stress")
+@pytest.mark.testgroup_iothub_device_stress
+@pytest.mark.describe("Device Client Stress")
 @pytest.mark.timeout(test_timeout)
 class TestDeviceClient2HourStress(StressTest):
     @pytest.fixture

@@ -82,14 +82,14 @@ steps:
     } elseif ($env:Suite.Contains("edgehub_module_full_drop")) {
         $Scenario="edgehub_module_full_drop"
         $DeploymentType="iotedge"
-    } elseif ($env:Suite.Contains("edgehub_module_2h_stress")) {
-        $Scenario="edgehub_module_2h_stress"
+    } elseif ($env:Suite.Contains("edgehub_module_stress")) {
+        $Scenario="edgehub_module_stress"
         $DeploymentType="iotedge"
-    } elseif ($env:Suite.Contains("iothub_module_2h_stress")) {
-        $Scenario="iothub_module_2h_stress"
+    } elseif ($env:Suite.Contains("iothub_module_stress")) {
+        $Scenario="iothub_module_stress"
         $DeploymentType="iothub"
-    } elseif ($env:Suite.Contains("iothub_device_2h_stress")) {
-        $Scenario="iothub_device_2h_stress"
+    } elseif ($env:Suite.Contains("iothub_device_stress")) {
+        $Scenario="iothub_device_stress"
         $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("iothub_module_and_device")) {
         $Scenario="iothub_module_and_device"
