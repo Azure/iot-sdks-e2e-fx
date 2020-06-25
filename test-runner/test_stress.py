@@ -156,10 +156,10 @@ class StressTest(object):
             except Exception as e:
                 logger("chaos_function stopped because of {}: {}".format(type(e), e))
                 time_limit.error = e
-				
-			finallty:
-	            logger("CHAOS: final reconnect")
-	            await net_control.reconnect()
+
+            finally:
+                logger("CHAOS: final reconnect")
+                await net_control.reconnect()
 
         chaos_future = asyncio.ensure_future(chaos_function())
 
