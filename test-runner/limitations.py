@@ -39,7 +39,7 @@ def _verify_and_make_set(var, allowed_values):
     Turn a string or a list into a set so we can use set operations
     """
     if isinstance(var, str):
-        var = (var,)
+        var = set([var])
     elif isinstance(var, list):
         var = set(var)
     elif isinstance(var, set):
