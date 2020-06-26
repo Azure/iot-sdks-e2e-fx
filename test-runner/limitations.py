@@ -4,7 +4,8 @@
 import pytest
 from horton_settings import settings
 
-all_languages = ["pythonv2", "c", "csharp", "java", "node"]
+all_languages = ("pythonv2", "c", "csharp", "java", "node")
+all_transports = ("amqp", "amqpws", "mqtt", "mqttws")
 
 
 def get_maximum_telemetry_message_size(client):
@@ -33,6 +34,25 @@ def can_always_overlap_telemetry_messages(client):
         return True
 
 
+def _verify_and_make_set(var, allowed_values):
+    """
+    Turn a string or a list into a set so we can use set operations
+    """
+    if isinstance(var, str):
+        var = (var,)
+    elif isinstance(var, list):
+        var = set(var)
+    elif isinstance(var, set):
+        pass
+    else:
+        raise ValueError("invalid type")
+
+    if (set & allowed_values) != set:
+        raise ValueError("invalid value")
+
+    return set
+
+
 def uses_shared_key_auth(client):
     """
     return True if the client supports shared key auth
@@ -44,27 +64,24 @@ def only_run_test_for(client, languages):
     """
     only run the test for the given language(s)
     """
-    if isinstance(languages, str):
-        languages = (languages,)
-    for language in languages:
-        if language not in all_languages:
-            raise ValueError("Language {} is invalid".format(language))
-        if client.settings.language == language:
-            return
-    pytest.skip()
+    languages = _verify_and_make_set(languages, all_languages)
+
+    if client.settings.language not in languages:
+        pytest.skip()
 
 
-def skip_test_for(client, languages):
+def skip_test_for(client, languages, transports=all_transports):
     """
     skip the test for the given language(s)
     """
-    if isinstance(languages, str):
-        languages = (languages,)
-    for language in languages:
-        if language not in all_languages:
-            raise ValueError("Language {} is invalid".format(language))
-        if client.settings.language == language:
-            pytest.skip()
+    languages = _verify_and_make_set(languages, all_languages)
+    transports = _verify_and_make_set(transports, all_transports)
+
+    if (
+        client.settings.language in languages
+        and client.settings.transport in transports
+    ):
+        pytest.skip()
 
 
 def skip_if_no_net_control():

@@ -99,9 +99,6 @@ steps:
         $DeploymentType="iothub"
     } elseif ($env:Suite.Contains("iothub_device")) {
         $DeploymentType="iothub"
-    } elseif ($env:Suite.Contains("edgehub_module_fi")) {
-        $Scenario="edgehub_module_fi"
-        $DeploymentType="iotedge"
     } elseif ($env:Suite.Contains("edgehub_module")) {
         $Scenario="edgehub_module"
         $DeploymentType="iotedge"
@@ -128,7 +125,7 @@ steps:
 
     # Skip tests based on SDK transport support
     if ($Language -eq "c") {
-      if (($Scenario -eq "edgehub_module") -or ($Scenario -eq "edgehub_module_fi")) {
+      if ($Scenario -eq "edgehub_module") {
         if (($Transport -eq "amqp") -or ($Transport -eq "amqpws")) {
           $SkipTest="yes"
         }

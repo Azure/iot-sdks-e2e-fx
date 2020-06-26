@@ -60,14 +60,10 @@ std::string ControlGlue::GetCapabilities()
     return "{ " \
             "\"flags\": { " \
                 "\"supports_async\": false, " \
-                "\"security_messages\" : false, " \
                 "\"v2_connect_group\" : false, " \
                 "\"dropped_connection_tests\" : false, " \
                 "\"net_control_app\" : false " \
-            "}, " \
-                "\"skip_list\": [" \
-                "\"module_under_test_has_device_wrapper\" " \
-            "] " \
+            "} " \
         "} ";
 }
 

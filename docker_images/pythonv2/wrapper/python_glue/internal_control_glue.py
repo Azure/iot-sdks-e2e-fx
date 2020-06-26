@@ -49,15 +49,13 @@ def get_capabilities_sync():
     caps = {
         "flags": {
             "supports_async": True,
-            "security_messages": True,
             "v2_connect_group": True,
             "dropped_connection_tests": True,
             "net_control_app": True,
             "checks_for_leaks": True,
             "new_python_reconnect": new_python_reconnect,
             "supports_blob_upload": True,
-        },
-        "skip_list": [],
+        }
     }
     return caps
 

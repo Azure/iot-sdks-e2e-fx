@@ -28,8 +28,7 @@ public class ControlGlue
     public void getCapabilities(Handler<AsyncResult<Object>> handler)
     {
         JsonObject caps = new JsonObject("{"+
-                "\"flags\": {},"+
-                "\"skip_list\": [\"module_under_test_has_device_wrapper\"]" +
+                "\"flags\": {}"+
                 "}");
         handler.handle(Future.succeededFuture(caps));
     }

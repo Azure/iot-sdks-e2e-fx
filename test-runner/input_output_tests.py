@@ -6,6 +6,7 @@ import pytest
 import asyncio
 import sample_content
 from horton_logging import logger
+import limitations
 
 
 input_name_from_friend = "fromFriend"
@@ -25,18 +26,17 @@ class InputOutputTests(object):
     def input_name_from_test_client(self, client):
         return "from" + client.module_id
 
-    @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can connect, enable input messages, and disconnect")
     async def test_inputoutput_connect_enable_input_messages_disconnect(self, client):
         await client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
         await asyncio.sleep(2)
 
-    @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send an output message which gets routed to another module")
     async def test_inputoutput_module_to_friend_routing(
         self, client, friend, input_name_from_test_client
     ):
+        limitations.skip_test_for(languages="c", transports=["amqp", "amqpws"])
         payload = sample_content.make_message_payload()
 
         await friend.enable_input_messages()
@@ -55,11 +55,13 @@ class InputOutputTests(object):
         logger("received message")
         assert received_message.body == payload
 
-    @pytest.mark.receivesInputMessages
     @pytest.mark.it("Can receive an input message which is routed from another module")
     async def test_inputoutput_friend_to_module_routing(
         self, client, friend, output_name_to_test_client
     ):
+        limitations.skip_test_for(
+            languages="c", transports=["amqp", "amqpws", "mqttws"]
+        )
         payload = sample_content.make_message_payload()
 
         await client.enable_input_messages()
@@ -77,14 +79,16 @@ class InputOutputTests(object):
         received_message = await test_input_future
         assert received_message.body == payload
 
-    @pytest.mark.callsSendOutputEvent
-    @pytest.mark.receivesInputMessages
     @pytest.mark.it(
         "Can send a message that gets routed to a friend and then receive a message in reply"
     )
     async def test_inputoutput_module_test_to_friend_and_back(
         self, client, friend, input_name_from_test_client, output_name_to_test_client
     ):
+        limitations.skip_test_for(
+            languages="c", transports=["amqp", "amqpws", "mqttws"]
+        )
+
         payload = sample_content.make_message_payload()
         payload_2 = sample_content.make_message_payload()
 
@@ -112,9 +116,10 @@ class InputOutputTests(object):
         received_message = await test_input_future
         assert received_message.body == payload_2
 
-    @pytest.mark.callsSendOutputEvent
     @pytest.mark.it("Can send a message that gets routed to eventhub")
     async def test_inputoutput_module_output_routed_upstream(self, client, eventhub):
+        limitations.skip_test_for(languages="c", transports=["amqp", "amqpws"])
+
         payload = sample_content.make_message_payload()
 
         # start listening before we send

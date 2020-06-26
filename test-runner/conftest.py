@@ -105,10 +105,6 @@ def pytest_addoption(parser):
     )
 
 
-skip_for_c_amqp = set(["receivesInputMessages", "callsSendOutputEvent"])
-
-skip_for_c_mqttws = set(["receivesInputMessages"])
-
 skip_for_c_connection_string = set(
     ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"]
 )
@@ -277,29 +273,11 @@ def skip_unsupported_tests(items):
                 skip_for_c_connection_string,
                 "it isn't implemented in the c wrapper with connection strings",
             )
-        if settings.test_module.transport.startswith("amqp"):
-            skip_tests_by_marker(
-                items,
-                skip_for_c_amqp,
-                "it isn't implemented in the c wrapper with amqp",
-            )
-        if settings.test_module.transport.startswith("mqttws"):
-            skip_tests_by_marker(
-                items,
-                skip_for_c_mqttws,
-                "it isn't implemented in the c wrapper with mqtt-ws",
-            )
 
     if settings.test_module.adapter_address == "python_inproc":
         skip_tests_by_marker(
             items, skip_for_python_inproc, "It isn't implemented for inproc python"
         )
-
-    skip_tests_by_marker(
-        items,
-        settings.test_module.skip_list,
-        "it isn't implemented in the {} wrapper".format(settings.test_module.language),
-    )
 
 
 def pytest_collection_modifyitems(config, items):
