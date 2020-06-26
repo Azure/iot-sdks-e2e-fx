@@ -15,8 +15,6 @@ pytestmark = pytest.mark.asyncio
 @pytest.mark.testgroup_iothub_device_client
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.testgroup_edgehub_module_client
-@pytest.mark.v2_connect_group
-@pytest.mark.dropped_connection_tests
 @pytest.mark.timeout(timeouts.generic_test_timeout)
 class TestNetworkDisconnectMechanism(object):
     @pytest.fixture(

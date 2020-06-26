@@ -4,8 +4,8 @@
 
 import pytest
 import json
-import multiprocessing
 import asyncio
+import limitations
 from utilities import next_integer, next_random_string
 from horton_logging import logger
 
@@ -76,37 +76,37 @@ async def run_method_call_test(source, destination):
 
 
 class BaseReceiveMethodCallTests(object):
-    @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from the IoTHub service")
     @pytest.mark.it("Can connect, enable methods, and disconnect")
     async def test_module_client_connect_enable_methods_disconnect(self, client):
         await client.enable_methods()
 
 
-# BKTODO remove marks like receivesMethodCalls
 class ReceiveMethodCallFromServiceTests(BaseReceiveMethodCallTests):
-    @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from the IoTHub service")
     async def test_method_call_invoked_from_service(self, client, service):
         await run_method_call_test(source=service, destination=client)
 
 
 class ReceiveMethodCallFromModuleTests(BaseReceiveMethodCallTests):
-    @pytest.mark.receivesMethodCalls
     @pytest.mark.it("Can receive a method call from an EdgeHub module")
     async def test_method_call_invoked_from_friend(self, client, friend):
         await run_method_call_test(source=friend, destination=client)
 
 
 class InvokeMethodCallOnModuleTests(object):
-    @pytest.mark.invokesModuleMethodCalls
     @pytest.mark.it("Can invoke a method call on an EdgeHub module")
     async def test_method_call_invoked_on_friend(self, client, friend):
+        if limitations.uses_shared_key_auth(client):
+            limitations.skip_test_for(client, ["pythonv2", "c"])
+
         await run_method_call_test(source=client, destination=friend)
 
 
 class InvokeMethodCallOnLeafDeviceTests(object):
-    @pytest.mark.invokesDeviceMethodCalls
     @pytest.mark.it("Can invoke a method call on an EdgeHub leaf device")
     async def test_method_call_invoked_on_leaf_device(self, client, leaf_device):
+        if limitations.uses_shared_key_auth(client):
+            limitations.skip_test_for(client, ["pythonv2", "c"])
+
         await run_method_call_test(source=client, destination=leaf_device)

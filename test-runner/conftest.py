@@ -105,10 +105,6 @@ def pytest_addoption(parser):
     )
 
 
-skip_for_c_amqp = set(["receivesInputMessages", "callsSendOutputEvent"])
-
-skip_for_c_mqttws = set(["receivesInputMessages"])
-
 skip_for_c_connection_string = set(
     ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"]
 )
@@ -205,10 +201,7 @@ def set_sas_renewal():
 
 
 def set_async():
-    if (
-        settings.test_module.device_id
-        and settings.test_module.capabilities.supports_async
-    ):
+    if settings.test_module.device_id:
         settings.test_module.wrapper_api.set_flags_sync({"test_async": True})
     else:
         raise Exception("--async specified, but test module does not support async")
@@ -268,40 +261,6 @@ def only_include_scenario_tests(items, scenario_name):
     remove_tests_not_in_marker_list(items, markers)
 
 
-def skip_unsupported_tests(items):
-    if settings.test_module.language == "c":
-        print("Using C wrapper")
-        if settings.test_module.connection_type.startswith("connection_string"):
-            skip_tests_by_marker(
-                items,
-                skip_for_c_connection_string,
-                "it isn't implemented in the c wrapper with connection strings",
-            )
-        if settings.test_module.transport.startswith("amqp"):
-            skip_tests_by_marker(
-                items,
-                skip_for_c_amqp,
-                "it isn't implemented in the c wrapper with amqp",
-            )
-        if settings.test_module.transport.startswith("mqttws"):
-            skip_tests_by_marker(
-                items,
-                skip_for_c_mqttws,
-                "it isn't implemented in the c wrapper with mqtt-ws",
-            )
-
-    if settings.test_module.adapter_address == "python_inproc":
-        skip_tests_by_marker(
-            items, skip_for_python_inproc, "It isn't implemented for inproc python"
-        )
-
-    skip_tests_by_marker(
-        items,
-        settings.test_module.skip_list,
-        "it isn't implemented in the {} wrapper".format(settings.test_module.language),
-    )
-
-
 def pytest_collection_modifyitems(config, items):
     print("")
 
@@ -325,8 +284,6 @@ def pytest_collection_modifyitems(config, items):
 
     if "stress" in config.getoption("--scenario"):
         set_sas_renewal()
-
-    skip_unsupported_tests(items)
 
     if getattr(config, "_origargs", None):
         adapter_config.logger("HORTON: starting run: {}".format(config._origargs))

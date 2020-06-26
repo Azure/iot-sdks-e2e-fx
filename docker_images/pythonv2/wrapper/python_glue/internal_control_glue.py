@@ -3,7 +3,6 @@
 # full license information.
 import logging
 import leak_check
-from azure.iot.device.common.pipeline import pipeline_stages_base
 
 logger = logging.getLogger(__name__)
 
@@ -44,20 +43,12 @@ def set_flags_sync(flags):
 
 
 def get_capabilities_sync():
-    reconnect_stage = pipeline_stages_base.ReconnectStage()
-    new_python_reconnect = True if getattr(reconnect_stage, "state", None) else False
     caps = {
         "flags": {
-            "supports_async": True,
-            "security_messages": True,
             "v2_connect_group": True,
-            "dropped_connection_tests": True,
             "net_control_app": True,
             "checks_for_leaks": True,
-            "new_python_reconnect": new_python_reconnect,
-            "supports_blob_upload": True,
-        },
-        "skip_list": [],
+        }
     }
     return caps
 
