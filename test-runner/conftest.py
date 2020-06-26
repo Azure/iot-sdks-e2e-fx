@@ -261,22 +261,6 @@ def only_include_scenario_tests(items, scenario_name):
     remove_tests_not_in_marker_list(items, markers)
 
 
-def skip_unsupported_tests(items):
-    if settings.test_module.language == "c":
-        print("Using C wrapper")
-        if settings.test_module.connection_type.startswith("connection_string"):
-            skip_tests_by_marker(
-                items,
-                skip_for_c_connection_string,
-                "it isn't implemented in the c wrapper with connection strings",
-            )
-
-    if settings.test_module.adapter_address == "python_inproc":
-        skip_tests_by_marker(
-            items, skip_for_python_inproc, "It isn't implemented for inproc python"
-        )
-
-
 def pytest_collection_modifyitems(config, items):
     print("")
 
@@ -300,8 +284,6 @@ def pytest_collection_modifyitems(config, items):
 
     if "stress" in config.getoption("--scenario"):
         set_sas_renewal()
-
-    skip_unsupported_tests(items)
 
     if getattr(config, "_origargs", None):
         adapter_config.logger("HORTON: starting run: {}".format(config._origargs))
