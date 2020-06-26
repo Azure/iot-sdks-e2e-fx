@@ -282,6 +282,7 @@ class RegressionTests(object):
         self, net_control, client, drop_mechanism
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.skip_test_for(client, "node", ["mqtt", "mqttws"])
         limitations.skip_if_no_net_control()
 
         payload = sample_content.make_message_payload()
@@ -307,6 +308,7 @@ class RegressionTests(object):
         send_futures = []
 
         limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.skip_test_for(client, "node", ["mqtt", "mqttws"])
         limitations.skip_if_no_net_control()
 
         logger("connecting")
