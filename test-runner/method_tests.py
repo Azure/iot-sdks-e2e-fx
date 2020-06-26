@@ -98,7 +98,7 @@ class InvokeMethodCallOnModuleTests(object):
     @pytest.mark.it("Can invoke a method call on an EdgeHub module")
     async def test_method_call_invoked_on_friend(self, client, friend):
         if limitations.uses_shared_key_auth(client):
-            limitations.skip_test_for(["python", "c"])
+            limitations.skip_test_for(client, ["python", "c"])
 
         await run_method_call_test(source=client, destination=friend)
 
@@ -107,6 +107,6 @@ class InvokeMethodCallOnLeafDeviceTests(object):
     @pytest.mark.it("Can invoke a method call on an EdgeHub leaf device")
     async def test_method_call_invoked_on_leaf_device(self, client, leaf_device):
         if limitations.uses_shared_key_auth(client):
-            limitations.skip_test_for(["python", "c"])
+            limitations.skip_test_for(client, ["python", "c"])
 
         await run_method_call_test(source=client, destination=leaf_device)
