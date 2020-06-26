@@ -4,8 +4,8 @@
 import pytest
 from horton_settings import settings
 
-all_languages = ("pythonv2", "c", "csharp", "java", "node")
-all_transports = ("amqp", "amqpws", "mqtt", "mqttws")
+all_languages = set(["pythonv2", "c", "csharp", "java", "node"])
+all_transports = set(["amqp", "amqpws", "mqtt", "mqttws"])
 
 
 def get_maximum_telemetry_message_size(client):
@@ -47,10 +47,10 @@ def _verify_and_make_set(var, allowed_values):
     else:
         raise ValueError("invalid type")
 
-    if (set & allowed_values) != set:
+    if (var & allowed_values) != var:
         raise ValueError("invalid value")
 
-    return set
+    return var
 
 
 def uses_shared_key_auth(client):
