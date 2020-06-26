@@ -169,8 +169,6 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_if_no_net_control()
-        if not client.settings.capabilities.new_python_reconnect:
-            pytest.skip("waiting for python ReconnectStage changes")
 
         await net_control.disconnect(drop_mechanism)
 
@@ -187,8 +185,6 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_if_no_net_control()
-        if not client.settings.capabilities.new_python_reconnect:
-            pytest.skip("waiting for python ReconnectStage changes")
 
         await net_control.disconnect(drop_mechanism)
 
@@ -287,8 +283,6 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_if_no_net_control()
-        if not client.settings.capabilities.new_python_reconnect:
-            pytest.skip("waiting for python ReconnectStage changes")
 
         payload = sample_content.make_message_payload()
         await client.send_event(payload)
@@ -314,8 +308,6 @@ class RegressionTests(object):
 
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_if_no_net_control()
-        if not client.settings.capabilities.new_python_reconnect:
-            pytest.skip("waiting for python ReconnectStage changes")
 
         logger("connecting")
         await client.connect2()
@@ -370,8 +362,6 @@ class RegressionTests(object):
 
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_if_no_net_control()
-        if not client.settings.capabilities.new_python_reconnect:
-            pytest.skip("waiting for python ReconnectStage changes")
 
         logger("connecting")
         await client.connect2()
@@ -426,7 +416,7 @@ class RegressionTests(object):
     @pytest.mark.timeout(45)
     async def test_keepalive_interval(self, client, net_control, drop_mechanism):
         # We want the keepalive to be low to make these tests fast.  This
-        # test is marked with a 45 second timeout.  Keepalive should be closer 
+        # test is marked with a 45 second timeout.  Keepalive should be closer
         # to 10 seconds, so 45 to connect and notice the drop should be enough
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_if_no_net_control()
@@ -437,4 +427,3 @@ class RegressionTests(object):
         await client.wait_for_connection_status_change("disconnected")
 
         await net_control.reconnect()
-

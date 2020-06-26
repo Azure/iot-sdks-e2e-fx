@@ -14,7 +14,6 @@ class HortonCapabilities(object):
         self.v2_connect_group = False
         self.net_control_app = False
         self.checks_for_leaks = False
-        self.new_python_reconnect = False
 
 
 def collect_capabilities(horton_object):
