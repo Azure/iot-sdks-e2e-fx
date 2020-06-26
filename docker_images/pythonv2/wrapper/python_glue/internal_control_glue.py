@@ -49,7 +49,6 @@ def get_capabilities_sync():
     caps = {
         "flags": {
             "v2_connect_group": True,
-            "dropped_connection_tests": True,
             "net_control_app": True,
             "checks_for_leaks": True,
             "new_python_reconnect": new_python_reconnect,
