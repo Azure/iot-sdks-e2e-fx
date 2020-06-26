@@ -38,7 +38,6 @@ namespace IO.Swagger.Controllers
             {
                 flags = new
                 {
-                    supports_async = false,
                     v2_connect_group = false,
                     dropped_connection_tests = false,
                     net_control_app = false

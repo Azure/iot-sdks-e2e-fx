@@ -11,13 +11,11 @@ language_has_service_client = ("node", "csharp", "java", "c")
 
 class HortonCapabilities(object):
     def __init__(self):
-        self.supports_async = False
         self.v2_connect_group = False
         self.dropped_connection_tests = False
         self.net_control_app = False
         self.checks_for_leaks = False
         self.new_python_reconnect = False
-        self.supports_blob_upload = False
 
 
 def collect_capabilities(horton_object):
@@ -35,15 +33,6 @@ def collect_capabilities(horton_object):
             flags = caps["flags"]
             for flag_name in flags:
                 setattr(horton_object.capabilities, flag_name, flags[flag_name])
-            horton_object.skip_list = list(caps["skip_list"])
-        else:
-            horton_object.skip_list = []
-
-        for flag_name in dir(horton_object.capabilities):
-            value = getattr(horton_object.capabilities, flag_name)
-            if not callable(value):
-                if not value:
-                    horton_object.skip_list.append(flag_name)
 
 
 def collect_all_capabilities():

@@ -48,13 +48,11 @@ def get_capabilities_sync():
     new_python_reconnect = True if getattr(reconnect_stage, "state", None) else False
     caps = {
         "flags": {
-            "supports_async": True,
             "v2_connect_group": True,
             "dropped_connection_tests": True,
             "net_control_app": True,
             "checks_for_leaks": True,
             "new_python_reconnect": new_python_reconnect,
-            "supports_blob_upload": True,
         }
     }
     return caps

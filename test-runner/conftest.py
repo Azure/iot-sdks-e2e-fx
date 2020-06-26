@@ -201,10 +201,7 @@ def set_sas_renewal():
 
 
 def set_async():
-    if (
-        settings.test_module.device_id
-        and settings.test_module.capabilities.supports_async
-    ):
+    if settings.test_module.device_id:
         settings.test_module.wrapper_api.set_flags_sync({"test_async": True})
     else:
         raise Exception("--async specified, but test module does not support async")

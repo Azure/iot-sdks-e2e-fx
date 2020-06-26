@@ -6,8 +6,8 @@ import pytest
 import asyncio
 import utilities
 import json
-from horton_logging import logger
 from azure.storage.blob import BlobClient
+import limitations
 
 invalid_correlation_id = "Mjk5OTA0MjAyMjQ0X2YwMDE2ODJiLWMyOTItNGZiNi04MjUzLTZhZDQzZTI2ODIzMV9BRjRWU1BNNFNZQzJYWThGMFBSV09XS0VXUk9SOUFUUFJSSUVFVVZXU1Q4Vk1BMUUxWE84UjJUMFpVSVdCMVVVX3ZlcjIuMAo=="
 success_code = 200
@@ -21,6 +21,9 @@ def blob_client_from_info(info):
         info.host_name, info.container_name, info.blob_name, info.sas_token
     )
     return BlobClient.from_blob_url(sas_url)
+
+
+languages_that_support_blob_upload = set(["pythonv2"])
 
 
 async def move_blob_status_into_eventhub(service, client):
@@ -44,17 +47,19 @@ class BlobUploadTests(object):
     def typical_blob_data(self):
         return utilities.next_random_string("typical_blob", length=257)
 
-    @pytest.mark.supports_blob_upload
     @pytest.mark.it("Fails updating status for invalid correlation id")
     async def test_blob_invalid_correlation_id(self, client):
+        limitations.only_run_test_for(languages_that_support_blob_upload)
+
         with pytest.raises(Exception):
             await client.notify_blob_upload_status(
                 invalid_correlation_id, True, success_code, success_message
             )
 
-    @pytest.mark.supports_blob_upload
     @pytest.mark.it("Can report a failed blob upload")
     async def test_failed_blob_upload(self, client, blob_name):
+        limitations.only_run_test_for(languages_that_support_blob_upload)
+
         info = await client.get_storage_info_for_blob(blob_name)
 
         assert info.additional_properties is not None
@@ -68,9 +73,10 @@ class BlobUploadTests(object):
             info.correlation_id, False, failure_code, failure_message
         )
 
-    @pytest.mark.supports_blob_upload
     @pytest.mark.it("Fails to report success if noting was uploaded")
     async def test_success_without_upload(self, client, blob_name):
+        limitations.only_run_test_for(languages_that_support_blob_upload)
+
         info = await client.get_storage_info_for_blob(blob_name)
 
         with pytest.raises(Exception):
@@ -82,11 +88,12 @@ class BlobUploadTests(object):
             info.correlation_id, False, 400, "failed upload"
         )
 
-    @pytest.mark.supports_blob_upload
     @pytest.mark.it("Can be used to successfully upload a blob")
     async def test_upload(
         self, client, service, eventhub, blob_name, typical_blob_data
     ):
+        limitations.only_run_test_for(languages_that_support_blob_upload)
+
         await eventhub.connect()
 
         await asyncio.sleep(5)
