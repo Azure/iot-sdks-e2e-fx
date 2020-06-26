@@ -5,7 +5,6 @@
 scenarios = {
     "edgehub_module": ["testgroup_edgehub_module_client"],
     "iothub_module": ["testgroup_iothub_module_client"],
-    "edgehub_module_fi": ["testgroup_edgehub_fault_injection"],
     "iothub_module_and_device": [
         "testgroup_iothub_module_client",
         "testgroup_iothub_device_client",
