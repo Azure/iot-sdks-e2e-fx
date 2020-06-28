@@ -10,7 +10,7 @@ if [ "${BASH_SOURCE-}" = "$0" ]; then
     exit  33
 fi
 
-pushd
+pushd .
 
 RUNTIME=3.7.7
 
