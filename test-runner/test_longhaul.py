@@ -37,7 +37,7 @@ desired_node_config = {
             "slow_send_threshold": "0:00:02",
             "slow_send_and_receive_threshold": "0:00:05",
         },
-        "total_duration": "0:05:00",
+        "total_duration": "0:00:30",
     }
 }
 
@@ -95,7 +95,7 @@ class LongHaulOp(object):
 
             self.count_completed.increment()
         except Exception:
-            self.count_errors.increment()
+            self.count_failed.increment()
             raise ()
 
         finally:
@@ -236,6 +236,12 @@ class LongHaulTest(object):
 
                 await self.update_test_status(test_report.test_status)
 
+                if (
+                    test_report.test_status.ops_failed
+                    > test_config.max_allowed_failures
+                ):
+                    raise Exception("failure count exceeded maximum allowed")
+
                 all_tasks.update(await runner.schedule_one_interval())
 
                 logger("before sleep: {} tasks in list".format(len(all_tasks)))
@@ -287,6 +293,8 @@ class LongHaulTest(object):
         if test_status.start_time == datetime.datetime.min:
             test_status.start_time = now
         self.elapsed_time = now - test_status.start_time
+
+        test_status.ops_failed = test_status.d2c.ops_failed
 
         # BKTODO: this returns the gc info for the pytest process.  move this to the process under test
         counts = gc.get_count()

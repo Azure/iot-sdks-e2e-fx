@@ -27,7 +27,7 @@ class TestConfig(SimpleObject):
         self.total_duration = datetime.timedelta()
         self.stats_window_op_count = 100
         self.timeout_interval = datetime.timedelta(minutes=2)
-        self.max_fail_count = 1
+        self.max_allowed_failures = 0
         self.d2c = OpConfig()
 
 
@@ -53,6 +53,7 @@ class TestStatus(SimpleObject):
         self.elapsed_time = datetime.timedelta(0)
         self.memory_used = 0.0
         self.active_objects = 0
+        self.ops_failed = 0
 
         self.d2c = OpStatus()
 
