@@ -29,6 +29,8 @@ def _deploy_net_control(host):
         settings.net_control.adapter_address = None
     else:
         settings.net_control.test_destination = host
+        settings.net_control.host_port = 8140
+        settings.net_control.container_port = 8040
 
         if settings.horton.image == utilities.PYTHON_INPROC:
             settings.net_control.adapter_address = "http://localhost:{}".format(
@@ -42,7 +44,7 @@ def _deploy_net_control(host):
 
 def deploy_for_iotedge(test_image):
 
-    _deploy_common()
+    _deploy_common(test_image)
 
     settings.iotedge.hostname = utilities.get_computer_name()
 
@@ -79,13 +81,11 @@ def deploy_for_iotedge(test_image):
         )
     )
 
-
-def depoloy_for_iotcentral(test_image):
-    pass
+    settings.save()
 
 
 def deploy_for_iothub(test_image):
-    _deploy_common()
+    _deploy_common(test_image)
 
     host = connection_string_to_sas_token(settings.iothub.connection_string)["host"]
     print("Creating new device on hub {}".format(host))
@@ -131,7 +131,7 @@ def set_command_args(parser):
         help="type of deployment",
     )
 
-    target_subparsers = parser.add_subparsers(dest="target")
+    target_subparsers = parser.add_subparsers(dest="target", required=True)
 
     image_parser = target_subparsers.add_parser("image", help="deploy image")
     image_parser.add_argument("image_name", type=str, help="image name")

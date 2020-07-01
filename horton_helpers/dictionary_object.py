@@ -10,11 +10,19 @@ class SimpleObject(object):
     def __init__(self):
         self._lock = threading.Lock()
 
+    def _get_attribute_names(self):
+        """
+        return all public attribute names for this object.  Excludes all callables and all
+        attributes that start wth an underscore.
+        """
+        return [
+            i
+            for i in dir(self)
+            if not i.startswith("_") and not callable(getattr(self, i))
+        ]
 
-class DictionaryObject(object):
-    def __init__(self):
-        self._lock = threading.Lock()
 
+class DictionaryObject(SimpleObject):
     @classmethod
     def from_dict(cls, dict_object):
         """
@@ -80,7 +88,7 @@ class DictionaryObject(object):
 
         def dict_from_native_object(native_object, default_object):
             dict_object = {}
-            for name in _get_attribute_names(native_object):
+            for name in native_object._get_attribute_names():
 
                 default_value = None
                 if default_object:
@@ -117,16 +125,6 @@ class DictionaryObject(object):
 
         with open(filename, "w") as outfile:
             json.dump(dict_object, outfile, indent=2)
-
-
-def _get_attribute_names(obj):
-    """
-    return all public attribute names for this object.  Excludes all callables and all
-    attributes that start wth an underscore.
-    """
-    return [
-        i for i in dir(obj) if not i.startswith("_") and not callable(getattr(obj, i))
-    ]
 
 
 def _is_tostring_object(x):
