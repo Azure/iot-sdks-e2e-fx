@@ -18,10 +18,6 @@ function failure {
   exit 1
 }
 
-header $_cyan "installing powershell"
-$script_dir/setup-powershell.sh
-[ $? -eq 0 ] ||  failure "setup-powershell failed"
-
 header $_cyan "installing moby"
 $script_dir/setup-moby.sh
 [ $? -eq 0 ] || failure "setup-moby failed"
