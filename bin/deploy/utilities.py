@@ -146,6 +146,7 @@ def remove_old_instances():
     remove_instance(settings.iotedge)
     remove_instance(settings.test_device)
     remove_instance(settings.leaf_device)
+    remove_instance(settings.longhaul_control_device)
 
 
 def pull_docker_image(image):

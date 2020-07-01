@@ -2,7 +2,6 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information
 import os
 import json
-import inspect
 from pathlib import Path
 
 horton_settings_file_name = str(
@@ -83,6 +82,7 @@ class HortonSettings:
         self.friend_module = HortonModuleSettings("friend_module")
         self.leaf_device = HortonDeviceSettings("leaf_device")
         self.test_device = HortonDeviceSettings("test_device")
+        self.perf_control_device = HortonDeviceSettings("perf_control_device")
 
         self.net_control = HortonSettingsObject()
         self.net_control.name = "net_control"
@@ -101,6 +101,7 @@ class HortonSettings:
             self.test_device,
             self.net_control,
             self.horton,
+            self.perf_control_device,
         ]
 
     def load(self):

@@ -63,6 +63,8 @@ def deploy_for_iotedge(testMod_image):
         )
     )
 
+    settings.save()
+
 
 def deploy_for_iothub(testMod_image):
     utilities.pull_docker_image(testMod_image)
@@ -117,6 +119,10 @@ def deploy_for_iothub(testMod_image):
     settings.save()
 
 
+def add_longhaul_control_device():
+    pass
+
+
 def get_description():
     return "deploy containers for testing"
 
@@ -128,6 +134,9 @@ def set_command_args(parser):
         type=str,
         choices=["iothub", "iotedge"],
         help="type of deployment",
+    )
+    parser.add_argument(
+        "--longhaul", type=bool, action="store_tue", help="set for longhaul testing"
     )
 
     target_subparsers = parser.add_subparsers(dest="target")

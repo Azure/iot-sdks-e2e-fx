@@ -22,7 +22,11 @@ def populate_credentials():
     if settings.iotedge.device_id:
         settings.iotedge.ca_cert_base64 = get_edge_ca_cert_base64()
 
-    for device in (settings.leaf_device, settings.test_device):
+    for device in (
+        settings.leaf_device,
+        settings.test_device,
+        settings.longhaul_control_device,
+    ):
         if device.device_id:
             if device.connection_type.startswith("connection_string"):
                 device.connection_string = iothub_service_helper.get_device_connection_string(
