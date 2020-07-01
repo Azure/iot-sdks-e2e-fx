@@ -80,7 +80,7 @@ class LongHaulOp(object):
                 op_id = self.next_message_id.increment()
 
                 # BKTODO: maybe only one update? Yes, but is this the right palce?
-                await self.update_stats()
+                await self.update_op_status()
                 with self.count_sending, measure_send_latency:
                     await self.do_send(op_id)
 
@@ -99,7 +99,7 @@ class LongHaulOp(object):
             raise ()
 
         finally:
-            await self.update_stats()
+            await self.update_op_status()
 
     async def schedule_one_interval(self):
         return set(
@@ -109,47 +109,27 @@ class LongHaulOp(object):
             ]
         )
 
-    async def update_progress(self):
-        # BKTODO, combine and update
-        now = datetime.datetime.now()
-        if self.start_time == datetime.datetime.min:
-            self.start_time = now
-        self.elapsed_time = now - self.start_time
-
-        # BKTODO: this returns the gc info for the pytest process.  move this to the process under test
-        counts = gc.get_count()
-        self.active_objects = counts[0] + counts[1] + counts[2]
-
-    async def update_stats(self):
-        # BKTODO: get this all in one place
+    async def update_op_status(self):
         send_stats = self.gather_send_stats.get_stats()
         send_and_receive_stats = self.gather_send_and_receive_stats.get_stats()
 
-        self.stats.ops_completed = self.count_completed.get_count()
-        self.stats.ops_failed = self.count_failed.get_count()
-        self.stats.ops_waiting_to_send = self.count_sending.get_count()
-        self.stats.ops_waiting_to_complete = self.count_completing.get_count()
-        self.stats.ops_slow_send = send_stats.slow
-        self.stats.ops_slow_send_and_receive = send_and_receive_stats.slow
-        self.stats.mean_send_latency = send_stats.mean
-        self.stats.mean_send_and_receive_latency = send_and_receive_stats.mean
-
-        self.progress.ops_completed = self.count_completed.get_count()
-        self.progress.ops_failed = self.count_failed.get_count()
-        self.progress.ops_waiting_to_send = self.count_sending.get_count()
-        self.progress.ops_waiting_to_complete = self.count_completing.get_count()
-        self.progress.ops_slow_send = send_stats.slow
-        self.progress.ops_slow_send_and_receive = send_and_receive_stats.slow
-        self.progress.mean_send_latency = send_stats.mean
-        self.progress.mean_send_and_receive_latency = send_and_receive_stats.mean
+        self.op_status.ops_completed = self.count_completed.get_count()
+        self.op_status.ops_failed = self.count_failed.get_count()
+        self.op_status.ops_waiting_to_send = self.count_sending.get_count()
+        self.op_status.ops_waiting_to_complete = self.count_completing.get_count()
+        self.op_status.ops_slow_send = send_stats.slow
+        self.op_status.ops_slow_send_and_receive = send_and_receive_stats.slow
+        self.op_status.mean_send_latency = send_stats.mean
+        self.op_status.mean_send_and_receive_latency = send_and_receive_stats.mean
 
 
 class LongHaulOpD2c(LongHaulOp):
     def __init__(self, test_config, test_status, client, eventhub):
-        super(LongHaulOpD2c, self).__init__(test_config, test_status)
+        super(LongHaulOpD2c, self).__init__(test_config.d2c, test_status.d2c)
 
         self.client = client
         self.eventhub = eventhub
+        self.test_status = test_status
 
         self.next_message_id = MeasureSimpleCount()
 
@@ -161,8 +141,6 @@ class LongHaulOpD2c(LongHaulOp):
         telemetry = Telemetry()
         telemetry.test_status = self.test_status
 
-        # BKTODO when this scales, this needs to happen somewhere else.
-        await self.update_stats()
         await self.client.send_event(telemetry.to_dict(op_id))
 
     async def do_receive(self, op_id):
@@ -198,7 +176,6 @@ class LongHaulOpD2c(LongHaulOp):
             else:
                 self.mid_list[mid] = message_received
 
-            # BKtODO: is self.mid_list_lock held too long?
             # see if the previous listener is done.
             if self.listener and self.listener.done():
                 # call result() to force an exception if the listener had one
@@ -245,9 +222,7 @@ class LongHaulTest(object):
                 await asyncio.sleep(5)  # todo: make configurable.
 
         # BKTODO: maybe just pass in test_config and test_report and let the runner decide what to use?
-        runner = LongHaulOpD2c(
-            test_config.d2c, test_report.test_status.d2c, client, eventhub
-        )
+        runner = LongHaulOpD2c(test_config, test_report.test_status, client, eventhub)
 
         try:
             reporter = asyncio.create_task(report_loop())
@@ -259,11 +234,12 @@ class LongHaulTest(object):
                 or test_report.test_status.elapsed_time == datetime.timedelta(0)
             ):
 
+                await self.update_test_status(test_report.test_status)
+
                 all_tasks.update(await runner.schedule_one_interval())
 
                 logger("before sleep: {} tasks in list".format(len(all_tasks)))
 
-                # BKtODO: other intervals besides 1, interleave ops with different intervals
                 wait_time = MeasureLatency()
                 interval_time = 1
                 with wait_time:
@@ -288,7 +264,7 @@ class LongHaulTest(object):
 
                 all_tasks = pending
 
-            logger("XX wsiting for runner to finish")
+            logger("XX waiting for runner to finish")
             await runner.finish()
 
             logger("XX gathering all tasks")
@@ -305,6 +281,16 @@ class LongHaulTest(object):
             logger("XX Stopping the reporter")
             stop_reporter = True
             await reporter
+
+    async def update_test_status(self, test_status):
+        now = datetime.datetime.now()
+        if test_status.start_time == datetime.datetime.min:
+            test_status.start_time = now
+        self.elapsed_time = now - test_status.start_time
+
+        # BKTODO: this returns the gc info for the pytest process.  move this to the process under test
+        counts = gc.get_count()
+        test_status.active_objects = counts[0] + counts[1] + counts[2]
 
 
 @pytest.mark.testgroup_iothub_device_stress

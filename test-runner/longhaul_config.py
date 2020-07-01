@@ -62,6 +62,7 @@ class Telemetry(DictionaryObject):
         super(Telemetry, self).__init__()
         self.op_id = 0
         self.test_status = TestStatus()
+        self.lock_attributes()
 
     def to_dict(self, op_id):
         with self._lock:
@@ -76,6 +77,7 @@ class DesiredTestProperties(DictionaryObject):
     def __init__(self):
         super(DesiredTestProperties, self).__init__()
         self.test_config = TestConfig()
+        self.lock_attributes()
 
 
 DesiredTestProperties._defaults = DesiredTestProperties()
@@ -87,6 +89,7 @@ class ReportedTestProperties(DictionaryObject):
         self.platform = Platform()
         self.test_config = TestConfig()
         self.test_status = TestStatus()
+        self.lock_attributes()
 
 
 ReportedTestProperties._defaults = ReportedTestProperties()
