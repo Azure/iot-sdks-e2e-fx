@@ -21,6 +21,23 @@ class DictionaryObject(object):
         convert a dictionary to a native object of this type
         """
         native_object = cls()
+        native_object.fill_from_dict(dict_object)
+        return native_object
+
+    @classmethod
+    def from_file(cls, filename):
+        """
+        read a file containing a dict in json format and convert it into a native object of this type
+        """
+        with open(filename) as json_file:
+            dict_object = json.load(json_file)
+
+        return cls.from_dict(dict_object)
+
+    def fill_from_dict(self, dict_object):
+        """
+        Fill an object with data in a dictionary
+        """
 
         def fill_native_object_from_dict(native_object, dict_object):
             for key in dict_object:
@@ -40,21 +57,16 @@ class DictionaryObject(object):
                         "{} must be a dictionary, string, or scalar value".format(key)
                     )
 
-        fill_native_object_from_dict(native_object, dict_object)
-        return native_object
+        fill_native_object_from_dict(self, dict_object)
 
-    @classmethod
-    def from_file(cls, filename):
+    def fill_from_file(self, filename):
         """
-        read a file containing a dict in json format and convert it into a native object of this type
+        Read a file with JSON and fill this object with the data in the file
         """
-        try:
-            with open(filename) as json_file:
-                data = json.load(json_file)
-        except FileNotFoundError:
-            data = {}
+        with open(filename) as json_file:
+            dict_object = json.load(json_file)
 
-        return cls.from_dict(data)
+        self.fill_from_dict(dict_object)
 
     def to_dict(self, defaults=None):
         """
