@@ -105,7 +105,7 @@ class LongHaulOp(object):
         return set(
             [
                 asyncio.create_task(self.run_one_op())
-                for _ in range(0, self.config.ops_per_interval)
+                for _ in range(0, self.op_config.ops_per_interval)
             ]
         )
 
@@ -163,7 +163,6 @@ class LongHaulOpD2c(LongHaulOp):
 
         # BKTODO when this scales, this needs to happen somewhere else.
         await self.update_stats()
-        telemetry.progress.update()
         await self.client.send_event(telemetry.to_dict(op_id))
 
     async def do_receive(self, op_id):
@@ -226,8 +225,7 @@ class LongHaulTest(object):
 
         test_report = ReportedTestProperties()
         test_report.test_config = test_config
-        test_report.progress.total_duration = test_config.total_duration
-        test_report.progress.status = "running"
+        test_report.test_status.status = "running"
 
         stop_reporter = False
 
@@ -248,11 +246,7 @@ class LongHaulTest(object):
 
         # BKTODO: maybe just pass in test_config and test_report and let the runner decide what to use?
         runner = LongHaulOpD2c(
-            test_config.d2c,
-            test_report.test_stats.d2c,
-            test_report.progress,
-            client,
-            eventhub,
+            test_config.d2c, test_report.test_status.d2c, client, eventhub
         )
 
         try:
@@ -260,8 +254,9 @@ class LongHaulTest(object):
             all_tasks = set()
 
             while (
-                test_report.progress.elapsed_time < test_report.progress.total_duration
-                or test_report.progress.elapsed_time == datetime.timedelta(0)
+                test_report.test_status.elapsed_time
+                < test_report.test_config.total_duration
+                or test_report.test_status.elapsed_time == datetime.timedelta(0)
             ):
 
                 all_tasks.update(await runner.schedule_one_interval())
@@ -300,10 +295,10 @@ class LongHaulTest(object):
             await asyncio.gather(*all_tasks)
 
             logger("XX marking as complete")
-            test_report.progress.status = "completed"
+            test_report.test_status.status = "completed"
 
         except Exception:
-            test_report.progress.status = "failed"
+            test_report.test_status.status = "failed"
             raise
 
         finally:
