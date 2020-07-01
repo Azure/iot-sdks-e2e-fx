@@ -8,13 +8,45 @@ import threading
 
 class SimpleObject(object):
     def __init__(self):
+        self._attributes_locked = False
         self._lock = threading.Lock()
 
+    def _get_attribute_names(self):
+        """
+        return all public attribute names for this object.  Excludes all callables and all
+        attributes that start wth an underscore.
+        """
+        return [
+            i
+            for i in dir(self)
+            if not i.startswith("_") and not callable(getattr(self, i))
+        ]
 
-class DictionaryObject(object):
-    def __init__(self):
-        self._lock = threading.Lock()
+    def lock_attributes(self):
+        """
+        Lock attributes.  When an object has its attributes locked, you can't add any dynamic
+        attributes to the object.
+        """
+        self._attributes_locked = True
+        for name in self._get_attribute_names():
+            sub = getattr(self, name)
+            if isinstance(sub, SimpleObject):
+                sub.lock_attributes()
 
+    def __setattr__(self, name, value):
+        if (
+            hasattr(self, name)
+            or not hasattr(self, "_attributes_locked")
+            or not self._attributes_locked
+        ):
+            super(SimpleObject, self).__setattr__(name, value)
+        else:
+            raise AttributeError(
+                "attribute {} does not exist on {}".format(name, type(self))
+            )
+
+
+class DictionaryObject(SimpleObject):
     @classmethod
     def from_dict(cls, dict_object):
         """
@@ -68,7 +100,7 @@ class DictionaryObject(object):
 
         def dict_from_native_object(native_object, default_object):
             dict_object = {}
-            for name in _get_attribute_names(native_object):
+            for name in native_object._get_attribute_names():
 
                 default_value = None
                 if default_object:
@@ -105,16 +137,6 @@ class DictionaryObject(object):
 
         with open(filename, "w") as outfile:
             json.dump(dict_object, outfile, indent=2)
-
-
-def _get_attribute_names(obj):
-    """
-    return all public attribute names for this object.  Excludes all callables and all
-    attributes that start wth an underscore.
-    """
-    return [
-        i for i in dir(obj) if not i.startswith("_") and not callable(getattr(obj, i))
-    ]
 
 
 def _is_tostring_object(x):

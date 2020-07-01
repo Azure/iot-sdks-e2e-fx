@@ -9,6 +9,7 @@ import threading
 import six
 import abc
 import datetime
+import gc
 
 from longhaul_config import Telemetry, DesiredTestProperties, ReportedTestProperties
 from measurement import (
@@ -21,6 +22,11 @@ from horton_logging import logger
 
 pytestmark = pytest.mark.asyncio
 
+# BKTODO:
+# fail on timeout
+# limit number of fails
+# add control to stop test
+
 
 desired_node_config = {
     "test_config": {
@@ -31,7 +37,6 @@ desired_node_config = {
             "slow_send_threshold": "0:00:02",
             "slow_send_and_receive_threshold": "0:00:05",
         },
-        "scenario": "test_longhaul_d2c_simple",
         "total_duration": "0:05:00",
     }
 }
@@ -39,10 +44,9 @@ desired_node_config = {
 
 @six.add_metaclass(abc.ABCMeta)
 class LongHaulOp(object):
-    def __init__(self, config, stats, progress):
-        self.config = config
-        self.stats = stats
-        self.progress = progress
+    def __init__(self, op_config, op_status):
+        self.op_config = op_config
+        self.op_status = op_status
 
         self.count_sending = MeasureRunningCodeBlock("sending", logger=None)
         self.count_completing = MeasureRunningCodeBlock("completing", logger=None)
@@ -52,16 +56,50 @@ class LongHaulOp(object):
 
         self.gather_send_stats = GatherStatistics(
             "send latency",
-            slowness_threshold=config.slow_send_threshold.total_seconds(),
+            slowness_threshold=op_config.slow_send_threshold.total_seconds(),
         )
         self.gather_send_and_receive_stats = GatherStatistics(
             "send and receive latency",
-            slowness_threshold=config.slow_send_and_receive_threshold.total_seconds(),
+            slowness_threshold=op_config.slow_send_and_receive_threshold.total_seconds(),
         )
 
     @abc.abstractmethod
-    async def run_one_op(self):
+    async def do_send(self, op_id):
         pass
+
+    @abc.abstractmethod
+    async def do_receive(self, op_id):
+        pass
+
+    async def run_one_op(self):
+        try:
+            measure_send_latency = MeasureLatency()
+            measure_send_and_receive_latency = MeasureLatency()
+
+            with measure_send_and_receive_latency:
+                op_id = self.next_message_id.increment()
+
+                # BKTODO: maybe only one update? Yes, but is this the right palce?
+                await self.update_stats()
+                with self.count_sending, measure_send_latency:
+                    await self.do_send(op_id)
+
+                self.gather_send_stats.add_sample(measure_send_latency.get_latency())
+
+                with self.count_completing:
+                    await self.do_receive(op_id)
+
+            self.gather_send_and_receive_stats.add_sample(
+                measure_send_and_receive_latency.get_latency()
+            )
+
+            self.count_completed.increment()
+        except Exception:
+            self.count_errors.increment()
+            raise ()
+
+        finally:
+            await self.update_stats()
 
     async def schedule_one_interval(self):
         return set(
@@ -70,6 +108,17 @@ class LongHaulOp(object):
                 for _ in range(0, self.config.ops_per_interval)
             ]
         )
+
+    async def update_progress(self):
+        # BKTODO, combine and update
+        now = datetime.datetime.now()
+        if self.start_time == datetime.datetime.min:
+            self.start_time = now
+        self.elapsed_time = now - self.start_time
+
+        # BKTODO: this returns the gc info for the pytest process.  move this to the process under test
+        counts = gc.get_count()
+        self.active_objects = counts[0] + counts[1] + counts[2]
 
     async def update_stats(self):
         # BKTODO: get this all in one place
@@ -83,11 +132,7 @@ class LongHaulOp(object):
         self.stats.ops_slow_send = send_stats.slow
         self.stats.ops_slow_send_and_receive = send_and_receive_stats.slow
         self.stats.mean_send_latency = send_stats.mean
-        self.stats.fiftieth_percentile_send_latency = send_stats.fiftieth_percentile
         self.stats.mean_send_and_receive_latency = send_and_receive_stats.mean
-        self.stats.fiftieth_percentile_send_and_receive_latency = (
-            send_and_receive_stats.fiftieth_percentile
-        )
 
         self.progress.ops_completed = self.count_completed.get_count()
         self.progress.ops_failed = self.count_failed.get_count()
@@ -96,16 +141,12 @@ class LongHaulOp(object):
         self.progress.ops_slow_send = send_stats.slow
         self.progress.ops_slow_send_and_receive = send_and_receive_stats.slow
         self.progress.mean_send_latency = send_stats.mean
-        self.progress.fiftieth_percentile_send_latency = send_stats.fiftieth_percentile
         self.progress.mean_send_and_receive_latency = send_and_receive_stats.mean
-        self.progress.fiftieth_percentile_send_and_receive_latency = (
-            send_and_receive_stats.fiftieth_percentile
-        )
 
 
 class LongHaulOpD2c(LongHaulOp):
-    def __init__(self, config, stats, progress, client, eventhub):
-        super(LongHaulOpD2c, self).__init__(config, stats, progress)
+    def __init__(self, test_config, test_status, client, eventhub):
+        super(LongHaulOpD2c, self).__init__(test_config, test_status)
 
         self.client = client
         self.eventhub = eventhub
@@ -116,37 +157,17 @@ class LongHaulOpD2c(LongHaulOp):
         self.mid_list_lock = threading.Lock()
         self.listener = None
 
-    async def run_one_op(self):
+    async def do_send(self, op_id):
+        telemetry = Telemetry()
+        telemetry.test_status = self.test_status
 
-        measure_send_latency = MeasureLatency()
-        measure_send_and_receive_latency = MeasureLatency()
-
-        with measure_send_and_receive_latency:
-            horton_mid = self.next_message_id.increment()
-
-            with self.count_sending, measure_send_latency:
-                await self.update_stats()
-
-                telemetry = Telemetry()
-                telemetry.progress = self.progress
-
-                # BKTODO when this scales, this needs to happen somewhere else.
-                await self.update_stats()
-                telemetry.progress.update()
-                await self.client.send_event(telemetry.to_dict(horton_mid))
-            self.gather_send_stats.add_sample(measure_send_latency.get_latency())
-
-            with self.count_completing:
-                await self.update_stats()
-                await self.wait_for_completion(horton_mid)
-
-        self.gather_send_and_receive_stats.add_sample(
-            measure_send_and_receive_latency.get_latency()
-        )
-
-        self.count_completed.increment()
-
+        # BKTODO when this scales, this needs to happen somewhere else.
         await self.update_stats()
+        telemetry.progress.update()
+        await self.client.send_event(telemetry.to_dict(op_id))
+
+    async def do_receive(self, op_id):
+        await self.wait_for_completion(op_id)
 
     async def listen_on_eventhub(self):
         while True:
@@ -157,8 +178,8 @@ class LongHaulOpD2c(LongHaulOp):
             except (AttributeError, TypeError):
                 pass
 
-            if isinstance(message, dict) and "horton_mid" in message:
-                mid = message["horton_mid"]
+            if isinstance(message, dict) and "op_id" in message:
+                mid = message["op_id"]
                 with self.mid_list_lock:
                     if mid in self.mid_list:
                         if isinstance(self.mid_list[mid], asyncio.Future):
@@ -178,6 +199,7 @@ class LongHaulOpD2c(LongHaulOp):
             else:
                 self.mid_list[mid] = message_received
 
+            # BKtODO: is self.mid_list_lock held too long?
             # see if the previous listener is done.
             if self.listener and self.listener.done():
                 # call result() to force an exception if the listener had one
