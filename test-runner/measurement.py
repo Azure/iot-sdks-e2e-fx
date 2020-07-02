@@ -81,7 +81,6 @@ class GatherStatistics(object):
     def get_stats(self):
         with self.lock:
             if len(self.samples):
-                self.samples.sort()
                 mean = statistics.mean(self.samples)
                 return Stats(mean=mean, slow=self.slow)
             else:
