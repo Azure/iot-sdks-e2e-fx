@@ -18,7 +18,7 @@ def get_ca_cert(settings_object):
         return {}
 
 
-async def get_module_client(settings_object):
+async def _get_module_client(settings_object):
     """
     get a module client for the given settings object
     """
@@ -51,7 +51,7 @@ async def get_module_client(settings_object):
     return client
 
 
-async def get_device_client(settings_object):
+async def _get_device_client(settings_object):
     """
     get a device client for the given settings object
     """
@@ -77,19 +77,18 @@ async def get_device_client(settings_object):
     return client
 
 
-async def get_client(settings_object):
+async def _get_eventhub_client():
     """
-    get a client object for the givving settings object
+    get an eventhub client that we can use to watch telemetry operations
     """
-    if settings_object.object_type in ["iothub_device", "leaf_device"]:
-        return await get_device_client(settings_object)
-    elif settings_object.object_type in ["iothub_module", "iotedge_module"]:
-        return await get_module_client(settings_object)
-    else:
-        assert "invalid object_type: {}".format(settings_object.object_type)
+    client = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
+    await client.create_from_connection_string(settings.eventhub.connection_string)
+    client.settings = settings.eventhub
+    client.settings.client = client
+    return client
 
 
-async def connect_registry_client():
+async def _get_registry_client():
     """
     connect the module client for the Registry implementation we're using return the client object
     """
@@ -100,7 +99,7 @@ async def connect_registry_client():
     return client
 
 
-async def connect_service_client():
+async def _get_service_client():
     """
     connect the module client for the ServiceClient implementation we're using return the client object
     """
@@ -120,3 +119,21 @@ async def get_net_control_api():
         settings.net_control.test_destination, settings.test_module.transport
     )
     return api
+
+
+async def get_client(settings_object):
+    """
+    get a client object for the givving settings object
+    """
+    if settings_object.object_type in ["iothub_device", "leaf_device"]:
+        return await _get_device_client(settings_object)
+    elif settings_object.object_type in ["iothub_module", "iotedge_module"]:
+        return await _get_module_client(settings_object)
+    elif settings_object.object_type == "iothub_registry":
+        return await _get_registry_client()
+    elif settings_object.object_type == "iothub_service":
+        return await _get_service_client()
+    elif settings_object.object_type == "eventhub":
+        return await _get_eventhub_client()
+    else:
+        assert "invalid object_type: {}".format(settings_object.object_type)

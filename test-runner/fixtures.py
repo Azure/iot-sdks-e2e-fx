@@ -3,7 +3,6 @@
 # full license information.
 import pytest
 import connections
-import adapters
 import sample_content
 from horton_settings import settings
 from horton_logging import logger
@@ -24,7 +23,10 @@ async def cleanup_client(settings_object):
     if settings_object.client:
         logger(separator("{} finalizer".format(settings_object.name)))
         try:
-            if settings_object.client.capabilities.v2_connect_group:
+            if (
+                hasattr(settings_object.client, "capabilities")
+                and settings_object.client.capabilities.v2_connect_group
+            ):
                 await settings_object.client.destroy()
             else:
                 await settings_object.client.disconnect()
@@ -38,98 +40,70 @@ async def cleanup_client(settings_object):
 
 @pytest.fixture
 async def eventhub(event_loop):
-    eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
-    await eventhub.create_from_connection_string(settings.eventhub.connection_string)
-    try:
-        yield eventhub
-    finally:
-        logger(separator("eventhub finalizer"))
-        try:
-            await eventhub.disconnect()
-        except Exception as e:
-            logger("exception disconnecting eventhub: {}".format(e))
+    # we need the event_loop fixture so pytest_async creates the event loop before celling this.
+    # Otherwise we get errors realted to mis-matched event loops when cleaning up this object.
+    obj = settings.eventhub
+    yield await get_client(obj)
+    await cleanup_client(obj)
 
 
 @pytest.fixture
 async def registry():
-    registry = await connections.connect_registry_client()
-    try:
-        yield registry
-    finally:
-        logger(separator("registry finalizer"))
-        try:
-            await registry.disconnect()
-        except Exception as e:
-            logger("exception disconnecting registry: {}".format(e))
+    obj = settings.registry
+    yield await get_client(obj)
+    await cleanup_client(obj)
+
+
+@pytest.fixture
+async def service():
+    obj = settings.service
+    yield await get_client(obj)
+    await cleanup_client(obj)
 
 
 @pytest.fixture
 async def friend():
     obj = settings.friend_module
-    try:
-        yield await get_client(obj)
-    finally:
-        await cleanup_client(obj)
+    yield await get_client(obj)
+    await cleanup_client(obj)
 
 
 @pytest.fixture
 async def test_module():
     obj = settings.test_module
-    try:
-        yield await get_client(obj)
-    finally:
-        await cleanup_client(obj)
+    yield await get_client(obj)
+    await cleanup_client(obj)
 
 
 @pytest.fixture
 async def leaf_device():
     obj = settings.leaf_device
-    try:
-        yield await get_client(obj)
-    finally:
-        await cleanup_client(obj)
+    yield await get_client(obj)
+    await cleanup_client(obj)
 
 
 @pytest.fixture
 async def test_device():
     obj = settings.test_device
-    try:
-        yield await get_client(obj)
-    finally:
-        await cleanup_client(obj)
+    yield await get_client(obj)
+    await cleanup_client(obj)
 
 
 @pytest.fixture
 async def longhaul_control_device():
     obj = settings.longhaul_control_device
-    try:
-        yield await get_client(obj)
-    finally:
-        await cleanup_client(obj)
-
-
-@pytest.fixture
-async def service():
-    service = await connections.connect_service_client()
-    try:
-        yield service
-    finally:
-        logger(separator("service finalizer"))
-        try:
-            await service.disconnect()
-        except Exception as e:
-            logger("exception disconnecting service: {}".format(e))
+    yield await get_client(obj)
+    await cleanup_client(obj)
 
 
 @pytest.fixture
 async def net_control():
     api = getattr(settings.net_control, "api", None)
-    try:
-        yield api
-    finally:
-        if api:
-            logger(separator("net_control finalizer"))
-            await settings.net_control.api.reconnect()
+    yield api
+
+    if api:
+        logger(separator("net_control finalizer"))
+        await settings.net_control.api.reconnect()
 
 
 @pytest.fixture(

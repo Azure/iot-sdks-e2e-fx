@@ -217,18 +217,21 @@ def add_service_settings():
     settings.eventhub.connection_string = settings.iothub.connection_string
     settings.eventhub.adapter_address = "direct_rest"
     settings.eventhub.client = None
+    settings.eventhub.object_type = "eventhub"
 
     settings.registry = ServiceSettings()
     settings.registry.name = "registry"
     settings.registry.connection_string = settings.iothub.connection_string
     settings.registry.adapter_address = settings.test_module.adapter_address
     settings.registry.client = None
+    settings.registry.object_type = "iothub_registry"
 
     settings.service = ServiceSettings()
     settings.service.name = "service"
     settings.service.connection_string = settings.iothub.connection_string
     settings.service.adapter_address = settings.test_module.adapter_address
     settings.service.client = None
+    settings.service.object_type = "iothub_service"
 
 
 def adjust_surfaces_for_missing_implementations():
