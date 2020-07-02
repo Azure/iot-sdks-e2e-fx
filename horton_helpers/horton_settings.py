@@ -107,6 +107,7 @@ class HortonSettings(DictionaryObject):
         self.friend_module = HortonModuleSettings("friend_module")
         self.leaf_device = HortonDeviceSettings("leaf_device")
         self.test_device = HortonDeviceSettings("test_device")
+        self.longhaul_control_device = HortonDeviceSettings("longhaul_control_device")
         self.net_control = NetControl()
 
         self._objects = [
@@ -118,6 +119,7 @@ class HortonSettings(DictionaryObject):
             self.test_device,
             self.net_control,
             self.horton,
+            self.longhaul_control_device,
         ]
 
     def load_deprecated_environment_variables(self):

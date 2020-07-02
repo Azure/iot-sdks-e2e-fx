@@ -8,6 +8,7 @@ import threading
 
 class SimpleObject(object):
     def __init__(self):
+        self._attributes_locked = False
         self._lock = threading.Lock()
 
     def _get_attribute_names(self):
@@ -20,6 +21,29 @@ class SimpleObject(object):
             for i in dir(self)
             if not i.startswith("_") and not callable(getattr(self, i))
         ]
+
+    def lock_attributes(self):
+        """
+        Lock attributes.  When an object has its attributes locked, you can't add any dynamic
+        attributes to the object.
+        """
+        self._attributes_locked = True
+        for name in self._get_attribute_names():
+            sub = getattr(self, name)
+            if isinstance(sub, SimpleObject):
+                sub.lock_attributes()
+
+    def __setattr__(self, name, value):
+        if (
+            hasattr(self, name)
+            or not hasattr(self, "_attributes_locked")
+            or not self._attributes_locked
+        ):
+            super(SimpleObject, self).__setattr__(name, value)
+        else:
+            raise AttributeError(
+                "attribute {} does not exist on {}".format(name, type(self))
+            )
 
 
 class DictionaryObject(SimpleObject):

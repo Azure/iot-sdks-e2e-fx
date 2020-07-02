@@ -77,6 +77,18 @@ async def get_device_client(settings_object):
     return client
 
 
+async def get_client(settings_object):
+    """
+    get a client object for the givving settings object
+    """
+    if settings_object.object_type in ["iothub_device", "leaf_device"]:
+        return await get_device_client(settings_object)
+    elif settings_object.object_type in ["iothub_module", "iotedge_module"]:
+        return await get_module_client(settings_object)
+    else:
+        assert "invalid object_type: {}".format(settings_object.object_type)
+
+
 async def connect_registry_client():
     """
     connect the module client for the Registry implementation we're using return the client object

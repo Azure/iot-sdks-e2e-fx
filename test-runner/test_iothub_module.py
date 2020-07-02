@@ -60,5 +60,3 @@ class TestIoTHubModuleNetworkGlitchClientDisconnected(
     dropped_connection_tests.DroppedConnectionIoTHubModuleTests,
 ):
     pass
-
-

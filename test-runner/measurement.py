@@ -58,36 +58,33 @@ class ReportAverage(object):
             )
 
 
-Stats = collections.namedtuple("stats", "mean fiftieth_percentile slow")
+Stats = collections.namedtuple("stats", "mean slow")
 
 
 class GatherStatistics(object):
-    def __init__(self, name, slowness_threshold=None):
+    def __init__(self, name, window_count=None, slowness_threshold=None):
         self.lock = threading.Lock()
         self.name = name
         self.slowness_threshold = slowness_threshold
         self.slow = 0
         self.samples = []
+        self.window_count = window_count
 
     def add_sample(self, sample):
         with self.lock:
             self.samples.append(sample)
             if sample > self.slowness_threshold:
                 self.slow += 1
+            if self.window_count:
+                self.samples = self.samples[-self.window_count :]
 
     def get_stats(self):
         with self.lock:
             if len(self.samples):
-                self.samples.sort()
                 mean = statistics.mean(self.samples)
-                fiftieth_percentile = statistics.median_grouped(
-                    self.samples, interval=0.01
-                )
-                return Stats(
-                    mean=mean, fiftieth_percentile=fiftieth_percentile, slow=self.slow
-                )
+                return Stats(mean=mean, slow=self.slow)
             else:
-                return Stats(mean=0.0, fiftieth_percentile=0.0, slow=0.0)
+                return Stats(mean=0.0, slow=0.0)
 
 
 class ReportCount(object):
@@ -186,7 +183,10 @@ class MeasureLatency(contextlib.AbstractContextManager):
         self.end_time = datetime.datetime.now()
 
     def get_latency(self):
-        return (self.end_time - self.start_time).total_seconds()
+        if self.start_time and self.end_time:
+            return (self.end_time - self.start_time).total_seconds()
+        else:
+            return 0
 
 
 class MeasureSimpleCount(object):

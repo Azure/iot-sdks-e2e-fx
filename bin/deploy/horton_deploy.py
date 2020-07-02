@@ -89,6 +89,7 @@ def deploy_for_iothub(test_image):
 
     host = connection_string_to_sas_token(settings.iothub.connection_string)["host"]
     print("Creating new device on hub {}".format(host))
+
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
     settings.test_device.device_id = settings.horton.id_base + "_test_device"
@@ -118,6 +119,22 @@ def deploy_for_iothub(test_image):
     settings.save()
 
 
+def add_longhaul_control_device():
+    iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
+
+    settings.longhaul_control_device.device_id = (
+        settings.horton.id_base + "_longhaul_control_device"
+    )
+    settings.longhaul_control_device.connection_type = "connection_string"
+    settings.longhaul_control_device.object_type = "iothub_device"
+    utilities.set_args_from_image(
+        settings.longhaul_control_device, utilities.PYTHON_INPROC
+    )
+    iothub_service_helper.create_device(settings.longhaul_control_device.device_id)
+
+    settings.save()
+
+
 def get_description():
     return "deploy containers for testing"
 
@@ -129,6 +146,9 @@ def set_command_args(parser):
         type=str,
         choices=["iothub", "iotedge"],
         help="type of deployment",
+    )
+    parser.add_argument(
+        "--longhaul", action="store_true", help="set for longhaul testing"
     )
 
     target_subparsers = parser.add_subparsers(dest="target", required=True)
@@ -203,6 +223,9 @@ def handle_command_args(args):
         deploy_for_iothub(image)
     elif args.deployment_type == "iotedge":
         deploy_for_iotedge(image)
+
+    if args.longhaul:
+        add_longhaul_control_device()
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@ fake_sub_sub_value = 62
 
 class FakeSubObject(SimpleObject):
     def __init__(self):
+        super(FakeSubObject, self).__init__()
         self.sub_integer_value = None
         self.sub_float_value = None
         self.sub_string_value = None
@@ -50,6 +51,7 @@ class FakeSubObject(SimpleObject):
 
 class FakeDictionaryObject(DictionaryObject):
     def __init__(self):
+        super(FakeDictionaryObject, self).__init__()
         self.sub_object = FakeSubObject()
         self.dict_integer_value = None
         self.dict_float_value = None
@@ -386,3 +388,36 @@ class TestStringToTimedelta(object):
     def tests_converts_correctly(self, s):
         td = string_to_timedelta(s)
         assert str(td) == s
+
+
+@pytest.mark.describe("lock_attributes method")
+class TestLockAttributes(object):
+    @pytest.fixture
+    def three_level_object(self):
+        obj = FakeDictionaryObject()
+        obj.sub_object.sub_object = FakeSubObject()
+        return obj
+
+    @pytest.mark.it(
+        "Causes new attributes on this objec and all sub objects to raise exceptions"
+    )
+    def test_raises(self, three_level_object):
+        three_level_object.lock_attributes()
+
+        with pytest.raises(AttributeError):
+            three_level_object.new_attr = 1
+
+        with pytest.raises(AttributeError):
+            three_level_object.sub_object.new_attr = 1
+
+        with pytest.raises(AttributeError):
+            three_level_object.sub_object.sub_object.new_attr = 1
+
+    @pytest.mark.it(
+        "Does not cause existing attributes on this objec and all sub objects to raise exceptions"
+    )
+    def test_does_not_raise(self, three_level_object):
+        three_level_object.lock_attributes()
+        three_level_object.dict_integer_value = 1
+        three_level_object.sub_object.sub_integer_value = 1
+        three_level_object.sub_object.sub_object.sub_integer_value = 1
