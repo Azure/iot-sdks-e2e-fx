@@ -12,7 +12,12 @@ import datetime
 import gc
 
 from longhaul_config import Telemetry, DesiredTestProperties, ReportedTestProperties
-from measurement import TrackCount, TrackMax, MeasureRunningCodeBlock, MeasureLatency
+from measurement import (
+    TrackCount,
+    TrackMax,
+    MeasureRunningCodeBlock,
+    MeasureLatency,
+)
 from horton_logging import logger
 
 pytestmark = pytest.mark.asyncio
@@ -37,20 +42,27 @@ desired_node_config = {
 
 @six.add_metaclass(abc.ABCMeta)
 class LongHaulOp(object):
-    def __init__(self, *, test_config, test_status, op_config, op_status):
-        self.test_config = test_config
-        self.test_statuxs = test_status
+    def __init__(self, *, test_config, op_config, op_status):
         self.op_config = op_config
         self.op_status = op_status
+        self.test_config = test_config
 
         self.count_sending = MeasureRunningCodeBlock("sending", logger=None)
         self.count_completing = MeasureRunningCodeBlock("completing", logger=None)
 
-        self.count_completed = TrackCount()
-        self.count_failed = TrackCount()
+        self.count_completed = MeasureSimpleCount()
+        self.count_failed = MeasureSimpleCount()
 
-        self.track_max_send_latency = TrackMax()
-        self.track_max_send_and_receive_latency = TrackMax()
+        self.gather_send_stats = GatherStatistics(
+            "send latency",
+            slowness_threshold=op_config.slow_send_threshold.total_seconds(),
+            window_count=test_config.stats_window_op_count,
+        )
+        self.gather_send_and_receive_stats = GatherStatistics(
+            "send and receive latency",
+            slowness_threshold=op_config.slow_send_and_receive_threshold.total_seconds(),
+            window_count=test_config.stats_window_op_count,
+        )
 
     @abc.abstractmethod
     async def do_send(self, op_id):
@@ -61,10 +73,8 @@ class LongHaulOp(object):
         pass
 
     async def run_one_op(self):
-        measure_send_latency = MeasureLatency(tracker=self.track_max_send_latency)
-        measure_send_and_receive_latency = MeasureLatency(
-            tracker=self.track_max_send_and_receive_latency
-        )
+        measure_send_latency = MeasureLatency()
+        measure_send_and_receive_latency = MeasureLatency()
 
         with measure_send_and_receive_latency:
             op_id = self.next_message_id.increment()
@@ -72,10 +82,17 @@ class LongHaulOp(object):
             with self.count_sending, measure_send_latency:
                 await self.do_send(op_id)
 
+            self.gather_send_stats.add_sample(measure_send_latency.get_latency())
+
             with self.count_completing:
                 await self.do_receive(op_id)
 
+        self.gather_send_and_receive_stats.add_sample(
+            measure_send_and_receive_latency.get_latency()
+        )
+
         self.count_completed.increment()
+        await self.update_op_status()
 
     async def schedule_one_interval(self):
         return set(
@@ -88,20 +105,33 @@ class LongHaulOp(object):
             ]
         )
 
+    async def update_op_status(self):
+        send_stats = self.gather_send_stats.get_stats()
+        send_and_receive_stats = self.gather_send_and_receive_stats.get_stats()
+
+        self.op_status.ops_completed = self.count_completed.get_count()
+        self.op_status.ops_failed = self.count_failed.get_count()
+        self.op_status.ops_waiting_to_send = self.count_sending.get_count()
+        self.op_status.ops_waiting_to_complete = self.count_completing.get_count()
+        self.op_status.ops_slow_send = send_stats.slow
+        self.op_status.ops_slow_send_and_receive = send_and_receive_stats.slow
+        self.op_status.mean_send_latency = send_stats.mean
+        self.op_status.mean_send_and_receive_latency = send_and_receive_stats.mean
+
 
 class LongHaulOpD2c(LongHaulOp):
-    def __init__(self, *, test_config, test_status, client, eventhub):
+    def __init__(self, test_config, test_status, client, eventhub):
         super(LongHaulOpD2c, self).__init__(
             test_config=test_config,
-            test_status=test_status,
             op_config=test_config.d2c,
             op_status=test_status.d2c,
         )
 
         self.client = client
         self.eventhub = eventhub
+        self.test_status = test_status
 
-        self.next_message_id = TrackCount()
+        self.next_message_id = MeasureSimpleCount()
 
         self.mid_list = {}
         self.mid_list_lock = threading.Lock()
