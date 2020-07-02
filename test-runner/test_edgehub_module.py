@@ -70,5 +70,3 @@ class TestEdgeHubModuleNetworkGlitchClientDisconnected(
     dropped_connection_tests.DroppedConnectionEdgeHubModuleTests,
 ):
     pass
-
-

@@ -17,6 +17,7 @@ class OpConfig(SimpleObject):
         self.enabled = False
         self.interval = 0
         self.ops_per_interval = 0
+        self.stats_window_op_count = 100
         self.slow_send_threshold = datetime.timedelta(0)
         self.slow_send_and_receive_threshold = datetime.timedelta(0)
 
@@ -25,7 +26,6 @@ class TestConfig(SimpleObject):
     def __init__(self):
         super(TestConfig, self).__init__()
         self.total_duration = datetime.timedelta()
-        self.stats_window_op_count = 100
         self.timeout_interval = datetime.timedelta(minutes=2)
         self.max_allowed_failures = 0
         self.d2c = OpConfig()

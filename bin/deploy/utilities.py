@@ -149,7 +149,7 @@ def remove_old_instances():
     remove_instance(settings.leaf_device)
     remove_instance(settings.net_control)
     remove_instance(settings.horton)
-	remove_instance(settings.longhaul_control_device)
+    remove_instance(settings.longhaul_control_device)
 
 
 def pull_docker_image(image):

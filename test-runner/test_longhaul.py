@@ -57,10 +57,12 @@ class LongHaulOp(object):
         self.gather_send_stats = GatherStatistics(
             "send latency",
             slowness_threshold=op_config.slow_send_threshold.total_seconds(),
+            window_count=op_config.stats_window_op_count,
         )
         self.gather_send_and_receive_stats = GatherStatistics(
             "send and receive latency",
             slowness_threshold=op_config.slow_send_and_receive_threshold.total_seconds(),
+            window_count=op_config.stats_window_op_count,
         )
 
     @abc.abstractmethod
@@ -292,7 +294,7 @@ class LongHaulTest(object):
         now = datetime.datetime.now()
         if test_status.start_time == datetime.datetime.min:
             test_status.start_time = now
-        self.elapsed_time = now - test_status.start_time
+        test_status.elapsed_time = now - test_status.start_time
 
         test_status.ops_failed = test_status.d2c.ops_failed
 

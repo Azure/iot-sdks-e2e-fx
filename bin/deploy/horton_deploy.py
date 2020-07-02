@@ -135,7 +135,7 @@ def set_command_args(parser):
         help="type of deployment",
     )
     parser.add_argument(
-        "--longhaul", type=bool, action="store_tue", help="set for longhaul testing"
+        "--longhaul", action="store_true", help="set for longhaul testing"
     )
 
     target_subparsers = parser.add_subparsers(dest="target", required=True)
