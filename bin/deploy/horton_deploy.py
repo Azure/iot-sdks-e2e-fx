@@ -13,29 +13,53 @@ import os
 testMod_host_port = 8099
 
 
-def deploy_for_iotedge(testMod_image):
-    utilities.pull_docker_image(testMod_image)
+def _deploy_common(test_image):
+    utilities.pull_docker_image(test_image)
     utilities.remove_old_instances()
 
-    settings.horton.image = testMod_image
-    settings.horton.language = utilities.get_language_from_image_name(testMod_image)
+    settings.horton.image = test_image
+    settings.horton.language = utilities.get_language_from_image_name(test_image)
     settings.horton.is_windows = utilities.is_windows()
 
+    settings.horton.id_base = utilities.get_random_device_name()
+
+
+def _deploy_net_control(host):
+    if settings.horton.is_windows:
+        settings.net_control.adapter_address = None
+    else:
+        settings.net_control.test_destination = host
+        settings.net_control.host_port = 8140
+        settings.net_control.container_port = 8040
+
+        if settings.horton.image == utilities.PYTHON_INPROC:
+            settings.net_control.adapter_address = "http://localhost:{}".format(
+                settings.net_control.container_port
+            )
+        else:
+            settings.net_control.adapter_address = "http://localhost:{}".format(
+                settings.net_control.host_port
+            )
+
+
+def deploy_for_iotedge(test_image):
+
+    _deploy_common(test_image)
+
     settings.iotedge.hostname = utilities.get_computer_name()
-    device_id_base = utilities.get_random_device_name()
 
     host = connection_string_to_sas_token(settings.iothub.connection_string)["host"]
     print("Creating new device on hub {}".format(host))
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
-    settings.iotedge.device_id = device_id_base + "_iotedge"
+    settings.iotedge.device_id = settings.horton.id_base + "_iotedge"
     iothub_service_helper.create_device(settings.iotedge.device_id, True)
 
-    edge_deployment.add_edge_modules(testMod_image)
+    edge_deployment.add_edge_modules(test_image)
     edge_deployment.set_edge_configuration()
 
     # default leaf device to use test_module connection.  Fix this in conftest.py if we need to use friend_module
-    settings.leaf_device.device_id = device_id_base + "_leaf_device"
+    settings.leaf_device.device_id = settings.horton.id_base + "_leaf_device"
     iothub_service_helper.create_device(settings.leaf_device.device_id, False)
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
@@ -46,13 +70,7 @@ def deploy_for_iotedge(testMod_image):
     settings.leaf_device.container_name = settings.test_module.container_name
     settings.leaf_device.object_type = "leaf_device"
 
-    if settings.horton.is_windows:
-        settings.net_control.adapter_address = None
-    else:
-        settings.net_control.test_destination = host
-        settings.net_control.adapter_address = "http://localhost:{}".format(
-            settings.net_control.host_port
-        )
+    _deploy_net_control(host)
 
     edge_deployment.set_config_yaml()
     edge_deployment.restart_iotedge()
@@ -66,26 +84,19 @@ def deploy_for_iotedge(testMod_image):
     settings.save()
 
 
-def deploy_for_iothub(testMod_image):
-    utilities.pull_docker_image(testMod_image)
-    utilities.remove_old_instances()
-
-    settings.horton.image = testMod_image
-    settings.horton.language = utilities.get_language_from_image_name(testMod_image)
-    settings.horton.is_windows = utilities.is_windows()
-
-    device_id_base = utilities.get_random_device_name()
+def deploy_for_iothub(test_image):
+    _deploy_common(test_image)
 
     host = connection_string_to_sas_token(settings.iothub.connection_string)["host"]
     print("Creating new device on hub {}".format(host))
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
-    settings.test_device.device_id = device_id_base + "_test_device"
+    settings.test_device.device_id = settings.horton.id_base + "_test_device"
     settings.test_device.connection_type = "connection_string"
     settings.test_device.host_port = testMod_host_port
     settings.test_device.container_name = "testMod"
     settings.test_device.object_type = "iothub_device"
-    utilities.set_args_from_image(settings.test_device, testMod_image)
+    utilities.set_args_from_image(settings.test_device, test_image)
     iothub_service_helper.create_device(settings.test_device.device_id)
 
     settings.test_module.device_id = settings.test_device.device_id
@@ -94,26 +105,14 @@ def deploy_for_iothub(testMod_image):
     settings.test_module.host_port = testMod_host_port
     settings.test_module.container_name = "testMod"
     settings.test_module.object_type = "iothub_module"
-    utilities.set_args_from_image(settings.test_module, testMod_image)
+    utilities.set_args_from_image(settings.test_module, test_image)
     iothub_service_helper.create_device_module(
         settings.test_module.device_id, settings.test_module.module_id
     )
 
-    if settings.horton.is_windows:
-        settings.net_control.adapter_address = None
-    else:
-        settings.net_control.test_destination = host
+    _deploy_net_control(host)
 
-        if settings.horton.image == utilities.PYTHON_INPROC:
-            settings.net_control.adapter_address = "http://localhost:{}".format(
-                settings.net_control.container_port
-            )
-        else:
-            settings.net_control.adapter_address = "http://localhost:{}".format(
-                settings.net_control.host_port
-            )
-
-    if testMod_image != utilities.PYTHON_INPROC:
+    if test_image != utilities.PYTHON_INPROC:
         utilities.create_docker_container(settings.test_module)
 
     settings.save()
@@ -139,7 +138,7 @@ def set_command_args(parser):
         "--longhaul", type=bool, action="store_tue", help="set for longhaul testing"
     )
 
-    target_subparsers = parser.add_subparsers(dest="target")
+    target_subparsers = parser.add_subparsers(dest="target", required=True)
 
     image_parser = target_subparsers.add_parser("image", help="deploy image")
     image_parser.add_argument("image_name", type=str, help="image name")

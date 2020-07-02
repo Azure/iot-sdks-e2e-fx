@@ -97,7 +97,8 @@ def get_language_from_image_name(image):
 def set_args_from_image(obj, image):
     obj.language = get_language_from_image_name(image)
     if image == PYTHON_INPROC:
-        obj.container_port = None
+        obj.container_port = ""
+        obj.host_port = ""
         obj.adapter_address = "python_inproc"
     else:
         obj.container_port = get_cp_from_language(obj.language)
@@ -108,7 +109,7 @@ def set_args_from_image(obj, image):
 def remove_instance(settings_object):
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
-    if settings_object.device_id:
+    if hasattr(settings_object, "device_id") and settings_object.device_id:
         iothub_service_helper.try_delete_device(settings_object.device_id)
         print(
             "Removed {} device with id {}".format(
@@ -146,7 +147,9 @@ def remove_old_instances():
     remove_instance(settings.iotedge)
     remove_instance(settings.test_device)
     remove_instance(settings.leaf_device)
-    remove_instance(settings.longhaul_control_device)
+    remove_instance(settings.net_control)
+    remove_instance(settings.horton)
+	remove_instance(settings.longhaul_control_device)
 
 
 def pull_docker_image(image):
