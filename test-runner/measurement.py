@@ -184,7 +184,10 @@ class MeasureLatency(contextlib.AbstractContextManager):
         self.end_time = datetime.datetime.now()
 
     def get_latency(self):
-        return (self.end_time - self.start_time).total_seconds()
+        if self.start_time and self.end_time:
+            return (self.end_time - self.start_time).total_seconds()
+        else:
+            return 0
 
 
 class MeasureSimpleCount(object):

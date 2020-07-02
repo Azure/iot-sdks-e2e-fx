@@ -44,9 +44,10 @@ desired_node_config = {
 
 @six.add_metaclass(abc.ABCMeta)
 class LongHaulOp(object):
-    def __init__(self, op_config, op_status):
+    def __init__(self, *, test_config, op_config, op_status):
         self.op_config = op_config
         self.op_status = op_status
+        self.test_config = test_config
 
         self.count_sending = MeasureRunningCodeBlock("sending", logger=None)
         self.count_completing = MeasureRunningCodeBlock("completing", logger=None)
@@ -57,12 +58,12 @@ class LongHaulOp(object):
         self.gather_send_stats = GatherStatistics(
             "send latency",
             slowness_threshold=op_config.slow_send_threshold.total_seconds(),
-            window_count=op_config.stats_window_op_count,
+            window_count=test_config.stats_window_op_count,
         )
         self.gather_send_and_receive_stats = GatherStatistics(
             "send and receive latency",
             slowness_threshold=op_config.slow_send_and_receive_threshold.total_seconds(),
-            window_count=op_config.stats_window_op_count,
+            window_count=test_config.stats_window_op_count,
         )
 
     @abc.abstractmethod
@@ -74,39 +75,34 @@ class LongHaulOp(object):
         pass
 
     async def run_one_op(self):
-        try:
-            measure_send_latency = MeasureLatency()
-            measure_send_and_receive_latency = MeasureLatency()
+        measure_send_latency = MeasureLatency()
+        measure_send_and_receive_latency = MeasureLatency()
 
-            with measure_send_and_receive_latency:
-                op_id = self.next_message_id.increment()
+        with measure_send_and_receive_latency:
+            op_id = self.next_message_id.increment()
 
-                # BKTODO: maybe only one update? Yes, but is this the right palce?
-                await self.update_op_status()
-                with self.count_sending, measure_send_latency:
-                    await self.do_send(op_id)
+            with self.count_sending, measure_send_latency:
+                await self.do_send(op_id)
 
-                self.gather_send_stats.add_sample(measure_send_latency.get_latency())
+            self.gather_send_stats.add_sample(measure_send_latency.get_latency())
 
-                with self.count_completing:
-                    await self.do_receive(op_id)
+            with self.count_completing:
+                await self.do_receive(op_id)
 
-            self.gather_send_and_receive_stats.add_sample(
-                measure_send_and_receive_latency.get_latency()
-            )
+        self.gather_send_and_receive_stats.add_sample(
+            measure_send_and_receive_latency.get_latency()
+        )
 
-            self.count_completed.increment()
-        except Exception:
-            self.count_failed.increment()
-            raise ()
-
-        finally:
-            await self.update_op_status()
+        self.count_completed.increment()
+        await self.update_op_status()
 
     async def schedule_one_interval(self):
         return set(
             [
-                asyncio.create_task(self.run_one_op())
+                asyncio.wait_for(
+                    self.run_one_op(),
+                    timeout=self.test_config.timeout_interval.total_seconds(),
+                )
                 for _ in range(0, self.op_config.ops_per_interval)
             ]
         )
@@ -127,7 +123,11 @@ class LongHaulOp(object):
 
 class LongHaulOpD2c(LongHaulOp):
     def __init__(self, test_config, test_status, client, eventhub):
-        super(LongHaulOpD2c, self).__init__(test_config.d2c, test_status.d2c)
+        super(LongHaulOpD2c, self).__init__(
+            test_config=test_config,
+            op_config=test_config.d2c,
+            op_status=test_status.d2c,
+        )
 
         self.client = client
         self.eventhub = eventhub
@@ -204,7 +204,8 @@ class LongHaulTest(object):
 
         test_report = ReportedTestProperties()
         test_report.test_config = test_config
-        test_report.test_status.status = "running"
+        test_status = test_report.test_status
+        test_status.status = "running"
 
         stop_reporter = False
 
@@ -224,53 +225,55 @@ class LongHaulTest(object):
                 await asyncio.sleep(5)  # todo: make configurable.
 
         # BKTODO: maybe just pass in test_config and test_report and let the runner decide what to use?
-        runner = LongHaulOpD2c(test_config, test_report.test_status, client, eventhub)
+        runner = LongHaulOpD2c(test_config, test_status, client, eventhub)
 
         try:
             reporter = asyncio.create_task(report_loop())
             all_tasks = set()
 
             while (
-                test_report.test_status.elapsed_time
-                < test_report.test_config.total_duration
-                or test_report.test_status.elapsed_time == datetime.timedelta(0)
+                test_status.elapsed_time < test_config.total_duration
+                or test_status.elapsed_time == datetime.timedelta(0)
             ):
 
-                await self.update_test_status(test_report.test_status)
-
-                if (
-                    test_report.test_status.ops_failed
-                    > test_config.max_allowed_failures
-                ):
-                    raise Exception("failure count exceeded maximum allowed")
+                await self.update_test_status(test_status)
 
                 all_tasks.update(await runner.schedule_one_interval())
 
-                logger("before sleep: {} tasks in list".format(len(all_tasks)))
+                interval_time = 1
 
                 wait_time = MeasureLatency()
-                interval_time = 1
                 with wait_time:
-                    done, pending = await asyncio.wait(
-                        all_tasks,
-                        timeout=interval_time,
-                        return_when=asyncio.FIRST_EXCEPTION,
-                    )
-                    await asyncio.gather(*done)
-                if wait_time.get_latency() < interval_time:
-                    await asyncio.sleep(interval_time - wait_time.get_latency())
+                    while len(all_tasks) and wait_time.get_latency() < interval_time:
+                        done, pending = await asyncio.wait(
+                            all_tasks,
+                            timeout=interval_time,
+                            return_when=asyncio.FIRST_EXCEPTION,
+                        )
+
+                        try:
+                            await asyncio.gather(*done)
+                        except Exception:
+                            # BKTODO: this is where we would report an error to the event stream
+                            test_status.ops_failed += 1
+                            if (
+                                test_status.ops_failed
+                                > test_config.max_allowed_failures
+                            ):
+                                raise Exception(
+                                    "failure count exceeded maximum allowed"
+                                )
+
+                        all_tasks = pending
+
+                    if len(all_tasks) == 0:
+                        await asyncio.sleep(interval_time - wait_time.get_latency())
 
                 if reporter.done():
                     # use await to pull the exception out of the Task.  If it doesn't
                     # raise, then raise our own exxception.
                     await reporter.result()
                     raise Exception("reporter task completed prematurely")
-
-                logger(
-                    "after sleep: {} done, {} pending".format(len(done), len(pending))
-                )
-
-                all_tasks = pending
 
             logger("XX waiting for runner to finish")
             await runner.finish()
