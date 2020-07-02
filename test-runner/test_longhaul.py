@@ -23,8 +23,6 @@ from horton_logging import logger
 pytestmark = pytest.mark.asyncio
 
 # BKTODO:
-# fail on timeout
-# limit number of fails
 # add control to stop test
 
 
