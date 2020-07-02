@@ -22,6 +22,7 @@ from fixtures import (  # noqa: F401
     test_device,
     test_module,
     net_control,
+    longhaul_control_device,
     telemetry_payload,
 )
 from hooks import (  # noqa: F401

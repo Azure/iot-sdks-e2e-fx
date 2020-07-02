@@ -13,6 +13,29 @@ def separator(message=""):
     return message.center(132, "-")
 
 
+async def get_client(settings_object):
+    if settings_object.adapter_address:
+        return await connections.get_client(settings_object)
+    else:
+        return None
+
+
+async def cleanup_client(settings_object):
+    if settings_object.client:
+        logger(separator("{} finalizer".format(settings_object.name)))
+        try:
+            if settings_object.client.capabilities.v2_connect_group:
+                await settings_object.client.destroy()
+            else:
+                await settings_object.client.disconnect()
+        except Exception as e:
+            logger(
+                "exception disconnecting {} module: {}".format(settings_object.name, e)
+            )
+        finally:
+            settings_object.client = None
+
+
 @pytest.fixture
 async def eventhub(event_loop):
     eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
@@ -42,74 +65,47 @@ async def registry():
 
 @pytest.fixture
 async def friend():
-    if settings.friend_module.adapter_address:
-        friend_module = await connections.get_module_client(settings.friend_module)
-        try:
-            yield friend_module
-        finally:
-            logger(separator("friend finalizer"))
-            try:
-                if friend_module.capabilities.v2_connect_group:
-                    await friend_module.destroy()
-                else:
-                    await friend_module.disconnect()
-            except Exception as e:
-                logger("exception disconnecting friend module: {}".format(e))
-    else:
-        yield None
+    obj = settings.friend_module
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def test_module():
-    test_module = await connections.get_module_client(settings.test_module)
+    obj = settings.test_module
     try:
-        yield test_module
+        yield await get_client(obj)
     finally:
-        logger(separator("module finalizer"))
-        try:
-            if test_module.capabilities.v2_connect_group:
-                await test_module.destroy()
-            else:
-                await test_module.disconnect()
-        except Exception as e:
-            logger("exception disconnecting test module: {}".format(e))
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def leaf_device():
-    if settings.leaf_device.adapter_address:
-        leaf_device = await connections.get_device_client(settings.leaf_device)
-        try:
-            yield leaf_device
-        finally:
-            logger(separator("leaf_device finalizer"))
-            try:
-                if leaf_device.capabilities.v2_connect_group:
-                    await leaf_device.destroy()
-                else:
-                    await leaf_device.disconnect()
-            except Exception as e:
-                logger("exception disconnecting leaf device: {}".format(e))
-    else:
-        yield None
+    obj = settings.leaf_device
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def test_device():
-    test_device = await connections.get_device_client(settings.test_device)
+    obj = settings.test_device
     try:
-        yield test_device
+        yield await get_client(obj)
     finally:
-        logger(separator("test_device finalizer"))
-        try:
-            if test_device.capabilities.v2_connect_group:
-                await test_device.destroy()
-            else:
-                await test_device.disconnect()
-        except Exception as e:
-            logger("exception disconnecting test device: {}".format(e))
-        finally:
-            logger("done with test device finalizer")
+        await cleanup_client(obj)
+
+
+@pytest.fixture
+async def longhaul_control_device():
+    obj = settings.longhaul_control_device
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
