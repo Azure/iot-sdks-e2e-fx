@@ -40,5 +40,6 @@ def collect_all_capabilities():
         settings.test_module,
         settings.friend_module,
         settings.test_device,
+        settings.longhaul_control_device,
     ):
         collect_capabilities(horton_object)

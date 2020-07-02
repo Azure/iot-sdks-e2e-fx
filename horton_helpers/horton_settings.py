@@ -32,6 +32,7 @@ class HortonDeviceSettings(SimpleObject):
         self.image = ""
         self.object_type = ""
         self.client = ""
+        self.transport = "mqtt"
 
 
 class HortonModuleSettings(SimpleObject):
@@ -53,6 +54,7 @@ class HortonModuleSettings(SimpleObject):
         self.image = ""
         self.object_type = ""
         self.client = ""
+        self.transport = "mqtt"
 
 
 class Horton(SimpleObject):

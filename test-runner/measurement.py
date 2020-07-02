@@ -175,9 +175,11 @@ class TrackCount(object):
         with self.lock:
             return self.count
 
-    def reset(self):
+    def extract(self):
         with self.lock:
+            count = self.count
             self.count = 0
+            return count
 
 
 class TrackMax(object):
@@ -194,6 +196,8 @@ class TrackMax(object):
         with self.lock:
             return self.max
 
-    def reset(self):
+    def extract(self):
         with self.lock:
+            max = self.max
             self.max = 0
+            return max

@@ -15,10 +15,8 @@ class OpConfig(SimpleObject):
     def __init__(self):
         super(OpConfig, self).__init__()
         self.enabled = False
-        self.interval = 0
+        self.interval_length = 0
         self.ops_per_interval = 0
-        self.slow_send_threshold = datetime.timedelta(0)
-        self.slow_send_and_receive_threshold = datetime.timedelta(0)
 
 
 class TestConfig(SimpleObject):
@@ -26,7 +24,8 @@ class TestConfig(SimpleObject):
         super(TestConfig, self).__init__()
         self.total_duration = datetime.timedelta()
         self.timeout_interval = datetime.timedelta(minutes=2)
-        self.stats_window_op_count = 100
+        self.reporting_interval = datetime.timedelta(seconds=10)
+        self.telemetry_interval = datetime.timedelta(seconds=2)
         self.max_allowed_failures = 0
         self.d2c = OpConfig()
 
@@ -36,12 +35,10 @@ class OpStatus(SimpleObject):
         super(OpStatus, self).__init__()
         self.ops_completed = 0
         self.ops_failed = 0
-        self.ops_waiting_to_send = 0
-        self.ops_waiting_to_complete = 0
-        self.ops_slow_send = 0
-        self.ops_slow_send_and_receive = 0
-        self.mean_send_latency = 0.0
-        self.mean_send_and_receive_latency = 0.0
+        self.ops_sending = 0
+        self.ops_verifying = 0
+        self.max_send_latency = 0
+        self.max_verify_latency = 0
 
 
 class TestStatus(SimpleObject):
@@ -51,27 +48,21 @@ class TestStatus(SimpleObject):
         self.status = "new"
         self.start_time = datetime.datetime.min
         self.elapsed_time = datetime.timedelta(0)
-        self.memory_used = 0.0
-        self.active_objects = 0
-        self.ops_failed = 0
+        self.objects_in_pytest_process = 0
+        self.total_ops_failed = 0
 
         self.d2c = OpStatus()
 
 
-class Telemetry(DictionaryObject):
+class IntervalReport(DictionaryObject):
     def __init__(self):
-        super(Telemetry, self).__init__()
-        self.op_id = 0
-        self.test_status = TestStatus()
+        super(IntervalReport, self).__init__()
+        self.interval_id = 0
+        self.d2c = OpStatus()
         self.lock_attributes()
 
-    def to_dict(self, op_id):
-        with self._lock:
-            self.op_id = op_id
-            return super(Telemetry, self).to_dict()
 
-
-Telemetry._defaults = Telemetry()
+IntervalReport._defaults = IntervalReport()
 
 
 class DesiredTestProperties(DictionaryObject):
