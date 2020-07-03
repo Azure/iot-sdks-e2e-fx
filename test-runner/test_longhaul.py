@@ -10,6 +10,7 @@ import six
 import abc
 import datetime
 import gc
+import traceback
 
 from longhaul_config import (
     DesiredTestProperties,
@@ -24,6 +25,8 @@ pytestmark = pytest.mark.asyncio
 
 # BKTODO:
 # add control to stop test
+# failed op does not causue test to fail
+# print stack on failure
 
 
 desired_node_config = {
@@ -126,7 +129,8 @@ class IntervalOperationLonghaul(IntervalOperation):
             self.count_completed.increment()
 
         except Exception as e:
-            logger("Exception running op: {}".format(e))
+            logger("OP FAILED: Exception running op: {}".format(e))
+            traceback.print_exc()
             self.count_failed.increment()
 
 
@@ -378,6 +382,7 @@ class LongHaulTest(object):
 
         except Exception:
             test_report.test_status.status = "failed"
+            raise
 
         finally:
             # finish all of our longhaul ops, then finish our reporting ops.
