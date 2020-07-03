@@ -305,7 +305,7 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
 
 
 class LongHaulTest(object):
-    async def test_longhaul(self, client, eventhub, longhaul_control_device):
+    async def test_longhaul(self, client, eventhub, longhaul_control_device, caplog):
         await eventhub.connect()
 
         test_config = DesiredTestProperties.from_dict(desired_node_config).test_config
@@ -348,6 +348,9 @@ class LongHaulTest(object):
                 test_status.elapsed_time < test_config.total_duration
                 or test_status.elapsed_time == datetime.timedelta(0)
             ):
+                # pytest caches all messages.  We don't want that, but I couldn't find a way
+                # to turn it off, so we just clear it once a second.
+                caplog.clear()
 
                 one_second = 1
 
