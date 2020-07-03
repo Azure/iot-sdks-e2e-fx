@@ -48,7 +48,6 @@ class TestStatus(SimpleObject):
         self.status = "new"
         self.start_time = datetime.datetime.min
         self.elapsed_time = datetime.timedelta(0)
-        self.objects_in_pytest_process = 0
         self.total_ops_failed = 0
 
         self.d2c = OpStatus()
@@ -58,6 +57,7 @@ class IntervalReport(DictionaryObject):
     def __init__(self):
         super(IntervalReport, self).__init__()
         self.interval_id = 0
+        self.objects_in_pytest_process = 0
         self.d2c = OpStatus()
         self.lock_attributes()
 

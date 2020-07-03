@@ -241,8 +241,6 @@ class IntervalOperationUpdateTestReport(IntervalOperation):
 
         self.test_status.total_ops_failed = total_ops_failed
 
-        self.test_status.objects_in_pytest_process = len(gc.get_objects())
-
         patch = {"reported": self.test_report.to_dict()}
         logger("reporting: {}".format(patch))
         await self.longhaul_control_device.patch_twin(patch)
@@ -271,6 +269,7 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
         telemetry = IntervalReport()
 
         telemetry.interval_id = self.next_interval_id.increment()
+        telemetry.objects_in_pytest_process = len(gc.get_objects())
 
         # for each op, pull out the info since the last interval to send it up in
         # a telemetry message.  This is "what has happened since the last telemetry message"
