@@ -63,6 +63,7 @@ def pytest_pyfunc_call(pyfuncitem):
 
     except Exception as e:
         logger(separator("TEST FAILED BACAUSE OF {}".format(e)))
+        logger(traceback.format_exc())
 
 
 async def configure_net_control():

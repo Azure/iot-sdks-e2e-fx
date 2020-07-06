@@ -37,6 +37,18 @@ desired_node_config = {
 }
 
 
+async def _log_exception(aw):
+    """
+    Log any exceptions that happen while running this awaitable
+    """
+    try:
+        await aw
+    except Exception:
+        logger("Exception raised")
+        logger(traceback.format_exc())
+        raise
+
+
 @six.add_metaclass(abc.ABCMeta)
 class IntervalOperation(object):
     """
@@ -59,7 +71,9 @@ class IntervalOperation(object):
 
             return set(
                 [
-                    asyncio.wait_for(self.run_one_op(), timeout=self.timeout)
+                    _log_exception(
+                        asyncio.wait_for(self.run_one_op(), timeout=self.timeout)
+                    )
                     for _ in range(0, self.ops_per_interval)
                 ]
             )
@@ -129,8 +143,8 @@ class IntervalOperationLonghaul(IntervalOperation):
             self.count_completed.increment()
 
         except Exception as e:
-            logger("OP FAILED: Exception running op: {}".format(e))
-            traceback.print_exc()
+            logger("OP FAILED: Exception running op: {}".format(type(e)))
+            logger(traceback.format_exc())
             self.count_failed.increment()
 
 
@@ -197,7 +211,9 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
 
             # start a new future
             if self.listener is None:
-                self.listener = asyncio.create_task(self.listen_on_eventhub())
+                self.listener = asyncio.create_task(
+                    _log_exception(self.listen_on_eventhub())
+                )
 
         await message_received
 
@@ -403,9 +419,11 @@ class LongHaulTest(object):
 
             await asyncio.gather(*all_tasks)
 
+            logger("Marking test as complete")
             test_report.test_status.status = "completed"
 
         except Exception:
+            logger("Marking test as failed")
             test_report.test_status.status = "failed"
             raise
 
@@ -419,7 +437,9 @@ class LongHaulTest(object):
                     await command_listener
                 except asyncio.CancelledError:
                     pass
+			logger("finishing ops")
             await asyncio.gather(*(op.finish() for op in longhaul_ops.values()))
+            logger("sending last telemetry and updating reported properties")
             await send_test_telemetry.finish()
             await update_test_report.finish()
 
