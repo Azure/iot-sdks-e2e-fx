@@ -25,4 +25,7 @@ def incoming_message_to_test_script_object(message):
     payload = message.data
     if isinstance(payload, bytes):
         payload = payload.decode("utf-8")
-    return {"body": json.loads(payload)}
+    try:
+        return {"body": json.loads(payload)}
+    except json.JSONDecodeError:
+        return {"body": payload}

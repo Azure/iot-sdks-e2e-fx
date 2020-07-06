@@ -26,6 +26,7 @@ pytestmark = pytest.mark.asyncio
 # BKTODO:
 # add control to stop test
 # add events for connected, disconnected
+#
 
 
 desired_node_config = {
@@ -304,9 +305,10 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
 
 
 class LongHaulTest(object):
-    async def listen_for_commands(longhaul_control_device, callback):
+    async def listen_for_commands(self, longhaul_control_device, callback):
         while True:
-            command = await longhaul_control_device.receive_message()
+            logger("listening")
+            command = await longhaul_control_device.wait_for_c2d_message()
             if command.body == "stop":
                 asyncio.ensure_future(callback())
 
@@ -323,9 +325,13 @@ class LongHaulTest(object):
         stop = False
 
         async def set_stop_flag():
+            nonlocal stop
             stop = True
 
-        command_listener = asyncio.ensure_future(listen_for_commands, set_stop_flag)
+        # BKTODO: make more robust, probably following eventhub example from other machine
+        command_listener = asyncio.ensure_future(
+            self.listen_for_commands(longhaul_control_device, set_stop_flag)
+        )
 
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
@@ -356,7 +362,7 @@ class LongHaulTest(object):
             one_second = 1
             all_tasks = set()
 
-            while (
+            while not stop and (
                 test_status.elapsed_time < test_config.total_duration
                 or test_status.elapsed_time == datetime.timedelta(0)
             ):
@@ -409,7 +415,7 @@ class LongHaulTest(object):
             # update_test_report.
             if command_listener:
                 try:
-                    command_listener_cancel()
+                    command_listener.cancel()
                     await command_listener
                 except asyncio.CancelledError:
                     pass
