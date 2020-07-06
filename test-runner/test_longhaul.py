@@ -25,8 +25,7 @@ pytestmark = pytest.mark.asyncio
 
 # BKTODO:
 # add control to stop test
-# failed op does not causue test to fail
-# print stack on failure
+# add events for connected, disconnected
 
 
 desired_node_config = {
@@ -250,7 +249,7 @@ class IntervalOperationUpdateTestReport(IntervalOperation):
         await self.longhaul_control_device.patch_twin(patch)
 
     async def finish(self):
-        # one last time before we finish the test
+        # report one last time before we finish the test
         await self.run_one_op()
 
 
@@ -300,11 +299,17 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
             total_op_status.ops_failed += op_status.ops_failed
 
     async def finish(self):
-        # one last time before we finish the test
+        # send one last time before we finish the test
         await self.run_one_op()
 
 
 class LongHaulTest(object):
+    async def listen_for_commands(longhaul_control_device, callback):
+        while True:
+            command = await longhaul_control_device.receive_message()
+            if command.body == "stop":
+                asyncio.ensure_future(callback())
+
     async def test_longhaul(self, client, eventhub, longhaul_control_device, caplog):
         await eventhub.connect()
 
@@ -315,7 +320,13 @@ class LongHaulTest(object):
         test_status = test_report.test_status
         test_status.status = "running"
 
-        # BKTODO: maybe just pass in test_config and test_report and let the runner decide what to use?
+        stop = False
+
+        async def set_stop_flag():
+            stop = True
+
+        command_listener = asyncio.ensure_future(listen_for_commands, set_stop_flag)
+
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
                 test_config=test_config,
@@ -342,6 +353,7 @@ class LongHaulTest(object):
         )
 
         try:
+            one_second = 1
             all_tasks = set()
 
             while (
@@ -352,7 +364,11 @@ class LongHaulTest(object):
                 # to turn it off, so we just clear it once a second.
                 caplog.clear()
 
-                one_second = 1
+                if command_listener.done():
+                    listener = command_listener
+                    listener = None
+                    listener.result()  # raises if there's an error
+                    raise Exception("command listener unexpectedly stopped")
 
                 for op in all_ops:
                     all_tasks.update(await op.schedule_one_second())
@@ -391,6 +407,12 @@ class LongHaulTest(object):
             # finish all of our longhaul ops, then finish our reporting ops.
             # order is important here since send_test_telemetry feeds data into
             # update_test_report.
+            if command_listener:
+                try:
+                    command_listener_cancel()
+                    await command_listener
+                except asyncio.CancelledError:
+                    pass
             await asyncio.gather(*(op.finish() for op in longhaul_ops.values()))
             await send_test_telemetry.finish()
             await update_test_report.finish()
