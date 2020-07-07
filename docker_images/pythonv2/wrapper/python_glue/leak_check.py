@@ -199,7 +199,7 @@ class LeakTracker(object):
         for obj in objects:
             referrers = []
             for ref in gc.get_referrers(obj.weakref()):
-                if type(ref) in [dict]:
+                if type(ref) in [dict] or str(type(ref)) in ["<class 'cell'>"]:
                     referrers.append(ref)
                 else:
                     referrers.append(RefObject(ref))
