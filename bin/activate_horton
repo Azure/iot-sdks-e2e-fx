@@ -23,7 +23,7 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     if [ $? -eq 0 ]; then
       python --version
 
-      ret=$(echo "import sys; print(sys.hexversion>0x3070000)" | python | sed -e 's/[\r\n]//g')
+      ret=$(echo "import sys; print(sys.hexversion>0x3080000)" | python | sed -e 's/[\r\n]//g')
       echo ret="_${ret}_"
       if [ $? -ne 0 ]; then
         colorecho $_red "Error getting python version"
@@ -31,13 +31,13 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
       fi
 
       if [[ $ret == "True" ]]; then
-        colorecho $_yellow "Python3.7+ is already installed"
+        colorecho $_yellow "Python3.8+ is already installed"
         needpython=0
       fi
     fi
 
     if [ $needpython -eq 1 ]; then
-       colorecho $_red "Python 3.7+ is required.  Please install and re-run"
+       colorecho $_red "Python 3.8+ is required.  Please install and re-run"
        return 1
     fi
 

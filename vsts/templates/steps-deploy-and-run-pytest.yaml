@@ -234,7 +234,7 @@ steps:
 
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: '3.7'
+    versionSpec: '3.8'
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
