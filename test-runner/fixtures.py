@@ -27,9 +27,12 @@ async def cleanup_client(settings_object):
                 hasattr(settings_object.client, "capabilities")
                 and settings_object.client.capabilities.v2_connect_group
             ):
+                logger("Destroying")
                 await settings_object.client.destroy()
             else:
+                logger("Disconnecting")
                 await settings_object.client.disconnect()
+            logger("done finalizing {}".format(settings_object.name))
         except Exception as e:
             logger(
                 "exception disconnecting {} module: {}".format(settings_object.name, e)
@@ -43,67 +46,84 @@ async def eventhub(event_loop):
     # we need the event_loop fixture so pytest_async creates the event loop before celling this.
     # Otherwise we get errors realted to mis-matched event loops when cleaning up this object.
     obj = settings.eventhub
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def registry():
     obj = settings.registry
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def service():
     obj = settings.service
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def friend():
     obj = settings.friend_module
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def test_module():
     obj = settings.test_module
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def leaf_device():
     obj = settings.leaf_device
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def test_device():
     obj = settings.test_device
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def longhaul_control_device():
     obj = settings.longhaul_control_device
-    yield await get_client(obj)
-    await cleanup_client(obj)
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def net_control():
     api = getattr(settings.net_control, "api", None)
-    yield api
-
-    if api:
-        logger(separator("net_control finalizer"))
-        await settings.net_control.api.reconnect()
+    try:
+        yield api
+    finally:
+        if api:
+            logger(separator("net_control finalizer"))
+            await settings.net_control.api.reconnect()
 
 
 @pytest.fixture(

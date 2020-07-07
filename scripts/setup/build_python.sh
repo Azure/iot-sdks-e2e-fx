@@ -12,9 +12,9 @@ fi
 
 pushd .
 
-RUNTIME=3.8.3
+RUNTIME=3.7.7
 
-#sudo apt-get update
+sudo apt-get update
 [ $? -eq 0 ] || { echo "APT failed"; return 1; }
 
 sudo apt-get install -y make build-essential zlib1g-dev libbz2-dev \

@@ -364,13 +364,15 @@ class CommandListener(RobustListener):
         self.coro = coro
 
     async def listener_function(self):
+        logger("In listener function")
         while True:
             command = await self.longhaul_control_device.wait_for_c2d_message()
+            logger("Got command {}".format(command.__dict__))
             if command.body == "stop":
                 asyncio.ensure_future(self.coro())
 
     async def stop(self):
-        super(CommandListener, self).stop()
+        await super(CommandListener, self).stop()
         self.longhaul_control_device = None
         self.coro = None
 
