@@ -84,7 +84,7 @@ class IntervalOperation(object):
     async def run_one_op(self):
         pass
 
-    async def finish(self):
+    async def stop(self):
         pass
 
 
@@ -217,7 +217,7 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
 
         await message_received
 
-    async def finish(self):
+    async def stop(self):
         if self.listener:
             self.listener.cancel()
             self.listener = None
@@ -265,8 +265,8 @@ class IntervalOperationUpdateTestReport(IntervalOperation):
         logger("reporting: {}".format(patch))
         await self.longhaul_control_device.patch_twin(patch)
 
-    async def finish(self):
-        # report one last time before we finish the test
+    async def stop(self):
+        # report one last time before we stop the test
         await self.run_one_op()
 
 
@@ -315,19 +315,67 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
             total_op_status.ops_completed += op_status.ops_completed
             total_op_status.ops_failed += op_status.ops_failed
 
-    async def finish(self):
-        # send one last time before we finish the test
+    async def stop(self):
+        # send one last time before we stop the test
         await self.run_one_op()
 
 
-class LongHaulTest(object):
-    async def listen_for_commands(self, longhaul_control_device, callback):
-        while True:
-            logger("listening")
-            command = await longhaul_control_device.wait_for_c2d_message()
-            if command.body == "stop":
-                asyncio.ensure_future(callback())
+@six.add_metaclass(abc.ABCMeta)
+class RobustListener(object):
+    # BKTODO: log and test
+    def __init__(self):
+        self.listener_task = None
 
+    async def start(self):
+        logger("Starting {} listener".format(type(self)))
+        assert not self.listener_task
+        self.listener_task = asyncio.create_task(
+            _log_exception(self.listener_function())
+        )
+        self.listener_task.done_callback = self.restart_sync
+
+    def restart_sync(self):
+        logger("Restarting {} listener".format(type(self)))
+        self.listener_task = None
+        asyncio.get_running_loop.run_cororoutine_threadsafe(
+            _log_exception(self.start()), asyncio.get_event_loop()
+        )
+
+    @abc.abstractmethod
+    async def listener_function(self):
+        pass
+
+    async def stop(self):
+        if self.listener_task:
+            logger("Stopping {} listener".format(type(self)))
+            self.listener_task.done_callback = None
+            self.listener_task.cancel()
+            try:
+                self.listener_task.result()
+            except asyncio.TaskCancelledError:
+                pass
+            self.listener_task = None
+
+
+class CommandListener(RobustListener):
+    def __init__(self, longhaul_control_device, coro):
+        super(CommandListener, self).__init__()
+        self.longhaul_control_device = longhaul_control_device
+        self.coro = coro
+
+    async def listener_function(self):
+        while True:
+            command = await self.longhaul_control_device.wait_for_c2d_message()
+            if command.body == "stop":
+                asyncio.ensure_future(self.coro())
+
+    async def stop(self):
+        super(CommandListener, self).stop()
+        self.longhaul_control_device = None
+        self.coro = None
+
+
+class LongHaulTest(object):
     async def test_longhaul(self, client, eventhub, longhaul_control_device, caplog):
         await eventhub.connect()
 
@@ -345,9 +393,8 @@ class LongHaulTest(object):
             stop = True
 
         # BKTODO: make more robust, probably following eventhub example from other machine
-        command_listener = asyncio.ensure_future(
-            self.listen_for_commands(longhaul_control_device, set_stop_flag)
-        )
+        command_listener = CommandListener(longhaul_control_device, set_stop_flag)
+        await command_listener.start()
 
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
@@ -386,12 +433,6 @@ class LongHaulTest(object):
                 # to turn it off, so we just clear it once a second.
                 caplog.clear()
 
-                if command_listener.done():
-                    listener = command_listener
-                    listener = None
-                    listener.result()  # raises if there's an error
-                    raise Exception("command listener unexpectedly stopped")
-
                 for op in all_ops:
                     all_tasks.update(await op.schedule_one_second())
 
@@ -428,20 +469,14 @@ class LongHaulTest(object):
             raise
 
         finally:
-            # finish all of our longhaul ops, then finish our reporting ops.
+            # stop all of our longhaul ops, then stop our reporting ops.
             # order is important here since send_test_telemetry feeds data into
             # update_test_report.
-            if command_listener:
-                try:
-                    command_listener.cancel()
-                    await command_listener
-                except asyncio.CancelledError:
-                    pass
-			logger("finishing ops")
-            await asyncio.gather(*(op.finish() for op in longhaul_ops.values()))
+            await command_listener.stop()
+            await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")
-            await send_test_telemetry.finish()
-            await update_test_report.finish()
+            await send_test_telemetry.stop()
+            await update_test_report.stop()
 
 
 @pytest.mark.testgroup_iothub_device_stress
