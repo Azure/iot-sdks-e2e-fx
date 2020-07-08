@@ -20,9 +20,7 @@ from longhaul_config import (
 from measurement import TrackCount, TrackMax, MeasureRunningCodeBlock, MeasureLatency
 from horton_logging import logger
 from sample_content import make_message_payload
-import logging
 
-python_logger = logging.getLogger(__name__)
 pytestmark = pytest.mark.asyncio
 
 # BKTODO:
@@ -62,18 +60,6 @@ def _get_seconds(interval):
         return interval
     else:
         assert False
-
-
-async def _log_exception(aw):
-    """
-    Log any exceptions that happen while running this awaitable
-    """
-    try:
-        await aw
-    except Exception:
-        logger("Exception raised")
-        logger(traceback.format_exc())
-        raise
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -212,12 +198,10 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
                 mid = message["op_id"]
                 with self.mid_list_lock:
                     if mid in self.mid_list:
-                        logger("received known mid {}".format(mid))
                         if isinstance(self.mid_list[mid], asyncio.Future):
                             self.mid_list[mid].set_result(True)
                         del self.mid_list[mid]
                     else:
-                        logger("received unkown mid {}".format(mid))
                         self.mid_list[mid] = True
 
     async def wait_for_completion(self, mid):
@@ -226,11 +210,9 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
         with self.mid_list_lock:
             # if we've received it, return.  Else, set a future for the listener to complete when it does receive.
             if mid in self.mid_list:
-                logger("already received mid {}. returning".format(mid))
                 del self.mid_list[mid]
                 return
             else:
-                logger("waiting for mid {}. returning".format(mid))
                 self.mid_list[mid] = message_received
 
             # see if the previous listener is done.

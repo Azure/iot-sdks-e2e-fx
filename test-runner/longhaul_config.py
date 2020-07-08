@@ -23,7 +23,7 @@ class TestConfig(SimpleObject):
     def __init__(self):
         super(TestConfig, self).__init__()
         self.total_duration = datetime.timedelta()
-        self.timeout_interval = datetime.timedelta(minutes=5)
+        self.timeout_interval = datetime.timedelta(minutes=2)
         self.reporting_interval = datetime.timedelta(seconds=10)
         self.telemetry_interval = datetime.timedelta(seconds=2)
         self.eventhub_renew_interval = datetime.timedelta(minutes=15)
