@@ -55,7 +55,7 @@ class FakeDictionaryObject(DictionaryObject):
         self.sub_object = FakeSubObject()
         self.dict_integer_value = None
         self.dict_float_value = None
-        self.dict_string_avlue = None
+        self.dict_string_value = None
         self.dict_boolean_value = None
         self.dict_none_value = None
         self.dict_timedelta_value = datetime.timedelta(0)
@@ -65,7 +65,7 @@ class FakeDictionaryObject(DictionaryObject):
         self.sub_object.populate()
         self.dict_integer_value = fake_dict_integer_value
         self.dict_float_value = fake_dict_float_value
-        self.dict_string_avlue = fake_dict_string_value
+        self.dict_string_value = fake_dict_string_value
         self.dict_boolean_value = fake_dict_boolean_value
         self.dict_none_value = fake_dict_none_value
         self.dict_timedelta_value = fake_dict_timedelta_value
@@ -113,25 +113,25 @@ class TestDictionaryObjectToDict(object):
     def test_serializes_root_scalars(self, native_object):
         d = DictionaryObject.to_dict(native_object)
 
-        assert d["dict_integer_value"] == fake_dict_integer_value
-        assert d["dict_float_value"] == fake_dict_float_value
-        assert d["dict_string_avlue"] == fake_dict_string_value
-        assert d["dict_boolean_value"] == fake_dict_boolean_value
-        assert d["dict_none_value"] == fake_dict_none_value
-        assert d["dict_timedelta_value"] == str(fake_dict_timedelta_value)
-        assert d["dict_datetime_value"] == str(fake_dict_datetime_value)
+        assert d["dictIntegerValue"] == fake_dict_integer_value
+        assert d["dictFloatValue"] == fake_dict_float_value
+        assert d["dictStringValue"] == fake_dict_string_value
+        assert d["dictBooleanValue"] == fake_dict_boolean_value
+        assert d["dictNoneValue"] == fake_dict_none_value
+        assert d["dictTimedeltaValue"] == str(fake_dict_timedelta_value)
+        assert d["dictDatetimeValue"] == str(fake_dict_datetime_value)
 
     @pytest.mark.it("serializes scalar values in sub objects")
     def test_serializes_sub_scalars(self, native_object):
         d = DictionaryObject.to_dict(native_object)
 
-        assert d["sub_object"]["sub_integer_value"] == fake_sub_integer_value
-        assert d["sub_object"]["sub_float_value"] == fake_sub_float_value
-        assert d["sub_object"]["sub_string_value"] == fake_sub_string_value
-        assert d["sub_object"]["sub_boolean_value"] == fake_sub_boolean_value
-        assert d["sub_object"]["sub_none_value"] == fake_sub_none_value
-        assert d["sub_object"]["sub_timedelta_value"] == str(fake_sub_timedelta_value)
-        assert d["sub_object"]["sub_datetime_value"] == str(fake_sub_datetime_value)
+        assert d["subObject"]["subIntegerValue"] == fake_sub_integer_value
+        assert d["subObject"]["subFloatValue"] == fake_sub_float_value
+        assert d["subObject"]["subStringValue"] == fake_sub_string_value
+        assert d["subObject"]["subBooleanValue"] == fake_sub_boolean_value
+        assert d["subObject"]["subNoneValue"] == fake_sub_none_value
+        assert d["subObject"]["subTimedeltaValue"] == str(fake_sub_timedelta_value)
+        assert d["subObject"]["subDatetimeValue"] == str(fake_sub_datetime_value)
 
     @pytest.mark.it("recurses past the second level")
     def test_recurses(self, native_object):
@@ -147,12 +147,12 @@ class TestDictionaryObjectToDict(object):
 
         d = DictionaryObject.to_dict(native_object)
 
-        assert isinstance(d["sub_object"]["sub"], dict)
-        assert d["sub_object"]["sub"]["level"] == 1
-        assert isinstance(d["sub_object"]["sub"]["sub"], dict)
-        assert d["sub_object"]["sub"]["sub"]["level"] == 2
-        assert isinstance(d["sub_object"]["sub"]["sub"]["sub"], dict)
-        assert d["sub_object"]["sub"]["sub"]["sub"]["level"] == 3
+        assert isinstance(d["subObject"]["sub"], dict)
+        assert d["subObject"]["sub"]["level"] == 1
+        assert isinstance(d["subObject"]["sub"]["sub"], dict)
+        assert d["subObject"]["sub"]["sub"]["level"] == 2
+        assert isinstance(d["subObject"]["sub"]["sub"]["sub"], dict)
+        assert d["subObject"]["sub"]["sub"]["sub"]["level"] == 3
 
     @pytest.mark.it("returns an empty object if all attribute values are default")
     def test_returns_empty_object_for_all_defaults(
@@ -169,7 +169,7 @@ class TestDictionaryObjectToDict(object):
     ):
         native_object.dict_integer_value = 100
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"dict_integer_value": 100}
+        assert d == {"dictIntegerValue": 100}
 
     @pytest.mark.it(
         "only includes attributes in sub-objects that have changed from the default"
@@ -179,7 +179,7 @@ class TestDictionaryObjectToDict(object):
     ):
         native_object.sub_object.sub_integer_value = 100
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"sub_object": {"sub_integer_value": 100}}
+        assert d == {"subObject": {"subIntegerValue": 100}}
 
     @pytest.mark.it("does not include sub-objects if all their values are default")
     def test_does_not_include_sub_objects_with_no_changes(
@@ -187,7 +187,7 @@ class TestDictionaryObjectToDict(object):
     ):
         native_object.dict_integer_value = 100
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"dict_integer_value": 100}
+        assert d == {"dictIntegerValue": 100}
 
     @pytest.mark.it(
         "does include sub-objects if they have sub-sub-objects with non-default values"
@@ -201,7 +201,7 @@ class TestDictionaryObjectToDict(object):
     ):
         native_object.sub_object.sub_sub_object.sub_sub_value = 200
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"sub_object": {"sub_sub_object": {"sub_sub_value": 200}}}
+        assert d == {"subObject": {"subSubObject": {"subSubValue": 200}}}
 
     @pytest.mark.it("always includes values in the root with no default")
     def test_always_includes_new_values_in_root(
@@ -209,7 +209,7 @@ class TestDictionaryObjectToDict(object):
     ):
         native_object.new_value = 300
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"new_value": 300}
+        assert d == {"newValue": 300}
 
     @pytest.mark.it("always includes values in sub objects with no default")
     def test_always_incldues_new_values_in_sub_object(
@@ -217,7 +217,7 @@ class TestDictionaryObjectToDict(object):
     ):
         native_object.sub_object.new_sub_value = 400
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"sub_object": {"new_sub_value": 400}}
+        assert d == {"subObject": {"newSubValue": 400}}
 
     @pytest.mark.it(
         "always includes entire sub-object if there is no default for the sub-object"
@@ -229,7 +229,7 @@ class TestDictionaryObjectToDict(object):
         native_object.new_sub.first_value = 1
         native_object.new_sub.second_value = 2
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"new_sub": {"first_value": 1, "second_value": 2}}
+        assert d == {"newSub": {"firstValue": 1, "secondValue": 2}}
 
     @pytest.mark.it(
         "always include None in the root object even if the default is None"
@@ -240,7 +240,7 @@ class TestDictionaryObjectToDict(object):
         native_object.dict_none_value = None
         assert native_object_defaults.dict_none_value is None
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"dict_none_value": None}
+        assert d == {"dictNoneValue": None}
 
     @pytest.mark.it("always include None in sub objects even if the default is None")
     def test_always_includes_none_in_sub_objects(
@@ -249,7 +249,7 @@ class TestDictionaryObjectToDict(object):
         native_object.sub_object.sub_none_value = None
         assert native_object_defaults.sub_object.sub_none_value is None
         d = native_object.to_dict(native_object_defaults)
-        assert d == {"sub_object": {"sub_none_value": None}}
+        assert d == {"subObject": {"subNoneValue": None}}
 
 
 @pytest.mark.describe("DictionaryObject from_dict method")
@@ -257,21 +257,21 @@ class TestDictionaryObjectFromDict(object):
     @pytest.fixture
     def dict_object(self):
         return {
-            "dict_integer_value": fake_dict_integer_value,
-            "dict_float_value": fake_dict_float_value,
-            "dict_string_avlue": fake_dict_string_value,
-            "dict_boolean_value": fake_dict_boolean_value,
-            "dict_none_value": fake_dict_none_value,
-            "dict_timedelta_value": str(fake_dict_timedelta_value),
-            "dict_datetime_value": str(fake_dict_datetime_value),
-            "sub_object": {
-                "sub_integer_value": fake_sub_integer_value,
-                "sub_float_value": fake_sub_float_value,
-                "sub_string_value": fake_sub_string_value,
-                "sub_boolean_value": fake_sub_boolean_value,
-                "sub_none_value": fake_sub_none_value,
-                "sub_timedelta_value": str(fake_sub_timedelta_value),
-                "sub_datetime_value": str(fake_sub_datetime_value),
+            "dictIntegerValue": fake_dict_integer_value,
+            "dictFloatValue": fake_dict_float_value,
+            "dictStringValue": fake_dict_string_value,
+            "dictBooleanValue": fake_dict_boolean_value,
+            "dictNoneValue": fake_dict_none_value,
+            "dictTimedeltaValue": str(fake_dict_timedelta_value),
+            "dictDatetimeValue": str(fake_dict_datetime_value),
+            "subObject": {
+                "subIntegerValue": fake_sub_integer_value,
+                "subFloatValue": fake_sub_float_value,
+                "subStringValue": fake_sub_string_value,
+                "subBooleanValue": fake_sub_boolean_value,
+                "subNoneValue": fake_sub_none_value,
+                "subTimedeltaValue": str(fake_sub_timedelta_value),
+                "subDatetimeValue": str(fake_sub_datetime_value),
             },
         }
 
@@ -290,7 +290,7 @@ class TestDictionaryObjectFromDict(object):
 
         assert obj.dict_integer_value == fake_dict_integer_value
         assert obj.dict_float_value == fake_dict_float_value
-        assert obj.dict_string_avlue == fake_dict_string_value
+        assert obj.dict_string_value == fake_dict_string_value
         assert obj.dict_boolean_value == fake_dict_boolean_value
         assert obj.dict_none_value == fake_dict_none_value
 
@@ -299,17 +299,17 @@ class TestDictionaryObjectFromDict(object):
     )
     def test_sets_new_scalar_attribute(self, dict_object):
 
-        dict_object["new_dict_integer_value"] = fake_dict_integer_value
-        dict_object["new_dict_float_value"] = fake_dict_float_value
-        dict_object["new_dict_string_avlue"] = fake_dict_string_value
-        dict_object["new_dict_boolean_value"] = fake_dict_boolean_value
-        dict_object["new_dict_none_value"] = fake_dict_none_value
+        dict_object["newDictIntegerValue"] = fake_dict_integer_value
+        dict_object["newDictFloatValue"] = fake_dict_float_value
+        dict_object["newDictStringValue"] = fake_dict_string_value
+        dict_object["newDictBooleanValue"] = fake_dict_boolean_value
+        dict_object["newDictNoneValue"] = fake_dict_none_value
 
         obj = FakeDictionaryObject.from_dict(dict_object)
 
         assert obj.new_dict_integer_value == fake_dict_integer_value
         assert obj.new_dict_float_value == fake_dict_float_value
-        assert obj.new_dict_string_avlue == fake_dict_string_value
+        assert obj.new_dict_string_value == fake_dict_string_value
         assert obj.new_dict_boolean_value == fake_dict_boolean_value
         assert obj.new_dict_none_value == fake_dict_none_value
 
@@ -330,12 +330,12 @@ class TestDictionaryObjectFromDict(object):
     )
     def test_creates_and_fills_new_sub_object_attributes(self, dict_object):
 
-        dict_object["new_sub_object"] = {}
-        dict_object["new_sub_object"]["sub_integer_value"] = fake_sub_integer_value
-        dict_object["new_sub_object"]["sub_float_value"] = fake_sub_float_value
-        dict_object["new_sub_object"]["sub_string_value"] = fake_sub_string_value
-        dict_object["new_sub_object"]["sub_boolean_value"] = fake_sub_boolean_value
-        dict_object["new_sub_object"]["sub_none_value"] = fake_sub_none_value
+        dict_object["newSubObject"] = {}
+        dict_object["newSubObject"]["subIntegerValue"] = fake_sub_integer_value
+        dict_object["newSubObject"]["subFloatValue"] = fake_sub_float_value
+        dict_object["newSubObject"]["subStringValue"] = fake_sub_string_value
+        dict_object["newSubObject"]["subBooleanValue"] = fake_sub_boolean_value
+        dict_object["newSubObject"]["subNoneValue"] = fake_sub_none_value
 
         obj = FakeDictionaryObject.from_dict(dict_object)
 
@@ -348,7 +348,7 @@ class TestDictionaryObjectFromDict(object):
 
     @pytest.mark.it("Recurses into mew sub_objects")
     def test_recurses_into_mew_sub_objects(self, dict_object):
-        dict_object["sub_object"]["sub"] = {
+        dict_object["subObject"]["sub"] = {
             "level": 1,
             "sub": {"level": 2, "sub": {"level": 3}},
         }

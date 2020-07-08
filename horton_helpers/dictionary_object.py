@@ -4,6 +4,7 @@ import json
 import datetime
 import re
 import threading
+import inflection
 
 
 class SimpleObject(object):
@@ -72,21 +73,24 @@ class DictionaryObject(SimpleObject):
         """
 
         def fill_native_object_from_dict(native_object, dict_object):
-            for key in dict_object:
-                dict_value = dict_object[key]
+            for dict_key in dict_object:
+                native_key = inflection.underscore(dict_key)
+                dict_value = dict_object[dict_key]
                 if isinstance(dict_value, dict):
-                    native_value = getattr(native_object, key, SimpleObject())
-                    setattr(native_object, key, native_value)
+                    native_value = getattr(native_object, native_key, SimpleObject())
+                    setattr(native_object, native_key, native_value)
                     fill_native_object_from_dict(native_value, dict_value)
                 elif _is_scalar(dict_value):
-                    old_native_value = getattr(native_object, key, None)
+                    old_native_value = getattr(native_object, native_key, None)
                     if _is_tostring_object(old_native_value):
-                        _set_tostring_attr(native_object, key, dict_value)
+                        _set_tostring_attr(native_object, native_key, dict_value)
                     else:
-                        setattr(native_object, key, dict_value)
+                        setattr(native_object, native_key, dict_value)
                 else:
                     raise ValueError(
-                        "{} must be a dictionary, string, or scalar value".format(key)
+                        "{} must be a dictionary, string, or scalar value".format(
+                            dict_key
+                        )
                     )
 
         fill_native_object_from_dict(self, dict_object)
@@ -112,30 +116,31 @@ class DictionaryObject(SimpleObject):
 
         def dict_from_native_object(native_object, default_object):
             dict_object = {}
-            for name in native_object._get_attribute_names():
+            for native_key in native_object._get_attribute_names():
+                dict_key = inflection.camelize(native_key, uppercase_first_letter=False)
 
                 default_value = None
                 if default_object:
-                    default_value = getattr(default_object, name, None)
+                    default_value = getattr(default_object, native_key, None)
 
-                native_value = getattr(native_object, name)
+                native_value = getattr(native_object, native_key)
 
                 if _is_scalar(native_value):
                     # always include None, even if it's the default.  This is
                     # because None has a special meaning if we're using this to send a
                     # twin patch.
                     if (default_value is None) or (native_value != default_value):
-                        dict_object[name] = native_value
+                        dict_object[dict_key] = native_value
                 elif _is_tostring_object(native_value):
                     if native_value != default_value:
-                        dict_object[name] = str(native_value)
+                        dict_object[dict_key] = str(native_value)
                 elif isinstance(native_value, object):
                     new_value = dict_from_native_object(native_value, default_value)
                     if new_value:
-                        dict_object[name] = new_value
+                        dict_object[dict_key] = new_value
                 else:
                     raise ValueError(
-                        "{} must be a scalar value or an object".format(name)
+                        "{} must be a scalar value or an object".format(native_key)
                     )
             return dict_object
 

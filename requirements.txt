@@ -19,3 +19,4 @@ six
 uamqp
 urllib3>=1.25.8
 PyYAML>=5.3.1
+inflection==0.5.0
