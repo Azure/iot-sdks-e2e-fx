@@ -130,6 +130,9 @@ class IntervalOperationLonghaul(IntervalOperation):
         self.track_max_send_latency = TrackMax()
         self.track_max_verify_latency = TrackMax()
 
+        self.uncompleted_ops = set()
+        self.uncompleted_ops_lock = threading.Lock()
+
     @abc.abstractmethod
     async def do_send(self, op_id):
         pass
@@ -147,11 +150,17 @@ class IntervalOperationLonghaul(IntervalOperation):
 
             op_id = self.next_op_id.increment()
 
+            with self.uncompleted_ops_lock:
+                self.uncompleted_ops.add(op_id)
+
             with self.count_sending, measure_send_latency:
                 await self.do_send(op_id)
 
             with self.count_verifying, measure_verify_latency:
                 await self.do_receive(op_id)
+
+            with self.uncompleted_ops_lock:
+                self.uncompleted_ops.remove(op_id)
 
             self.count_completed.increment()
 
@@ -519,6 +528,15 @@ class LongHaulTest(object):
             logger("Marking test as failed")
             traceback.print_exc()
             test_report.test_status.status = "failed"
+
+            for op in longhaul_ops:
+                if len(op.uncompleted_ops):
+                    logger(
+                        "{} has the following uncompleted op_id's: {}".format(
+                            type(op), op.uncompleted_ops
+                        )
+                    )
+
             raise
 
         finally:

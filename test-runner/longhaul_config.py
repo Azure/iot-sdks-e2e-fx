@@ -26,7 +26,7 @@ class TestConfig(SimpleObject):
         self.timeout_interval = datetime.timedelta(minutes=2)
         self.reporting_interval = datetime.timedelta(seconds=10)
         self.telemetry_interval = datetime.timedelta(seconds=2)
-        self.eventhub_renew_interval = datetime.timedelta(minutes=15)
+        self.eventhub_renew_interval = datetime.timedelta(minutes=1)
         self.max_allowed_failures = 0
         self.d2c = OpConfig()
 
