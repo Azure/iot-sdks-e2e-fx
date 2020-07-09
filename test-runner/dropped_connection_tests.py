@@ -62,7 +62,7 @@ class DroppedConnectionTestsTelemetry(object):
         # wait for the send to complete, and verify that it arrvies
         await send_future
 
-        await eventhub.connect(offset=start_listening_time)
+        await eventhub.connect(starting_position=start_listening_time)
         received_message_future = asyncio.ensure_future(
             eventhub.wait_for_next_event(client.device_id, expected=test_payload)
         )
@@ -256,7 +256,7 @@ class DroppedConnectionTestsInputOutput(object):
         logger("All messages sent.  Awaiting reception")
 
         logger("connecting eventhub")
-        await eventhub.connect(offset=start_listening_time)
+        await eventhub.connect(starting_position=start_listening_time)
         receive_future = asyncio.ensure_future(
             eventhub.wait_for_next_event(client.device_id)
         )
