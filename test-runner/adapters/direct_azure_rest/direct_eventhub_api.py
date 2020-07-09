@@ -84,42 +84,6 @@ class EventHubApi:
             await self.received_events.put(event)
             await partition_context.update_checkpoint(event)
             self.starting_position[partition_context.partition_id] = event.offset
-            logger(
-                "EventHubApi: partition {} at context {}".format(
-                    partition_context.partition_id, event.offset
-                )
-            )
-
-        async def on_error(partition_context, error):
-            # Put your code here. partition_context can be None in the on_error callback.
-            if partition_context:
-                logger(
-                    "EventHubApi: An exception: {} occurred during receiving from Partition: {}.".format(
-                        partition_context.partition_id, error
-                    )
-                )
-            else:
-                logger(
-                    "EventHubApi: An exception: {} occurred during the load balance process.".format(
-                        error
-                    )
-                )
-
-        async def on_partition_initialize(partition_context):
-            # Put your code here.
-            logger(
-                "EventHubApi: Partition: {} has been initialized.".format(
-                    partition_context.partition_id
-                )
-            )
-
-        async def on_partition_close(partition_context, reason):
-            # Put your code here.
-            logger(
-                "EventHubApi: Partition: {} has been closed, reason for closing: {}.".format(
-                    partition_context.partition_id, reason
-                )
-            )
 
         async def get_current_position():
             positions = {}
@@ -149,27 +113,14 @@ class EventHubApi:
                 pprint(self.starting_position)
                 await self.consumer_client.receive(
                     on_event=on_event,
-                    on_error=on_error,
                     starting_position=starting_position,
-                    on_partition_initialize=on_partition_initialize,
-                    on_partition_close=on_partition_close,
+                    starting_position_inclusive=True,
                 )
             except Exception as e:
                 logger("EventHubApi exception: {}".format(e))
                 raise
 
-        def done_cb(*args, **kwargs):
-            logger("** listener future is done")
-            logger("cancelled? {}".format(self.listener_future.cancelled()))
-            logger(
-                "exception {} {} ".format(
-                    self.listener_future.exception(),
-                    type(self.listener_future.exception()),
-                )
-            )
-
         self.listener_future = asyncio.ensure_future(listener())
-        self.listener_future.add_done_callback(done_cb)
 
         logger("EventHubApi: Listener Created")
 
