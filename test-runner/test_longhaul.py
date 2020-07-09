@@ -32,7 +32,7 @@ pytestmark = pytest.mark.asyncio
 desired_node_config = {
     "testConfig": {
         "d2c": {"enabled": True, "intervalLength": 1, "opsPerInterval": 10},
-        "totalDuration": "73:00:30",
+        "totalDuration": "72:00:10",
     }
 }
 
@@ -339,7 +339,6 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
 
 @six.add_metaclass(abc.ABCMeta)
 class RobustListener(object):
-    # BKTODO: log and test
     def __init__(self):
         self.listener_task = None
 
@@ -349,29 +348,38 @@ class RobustListener(object):
         self.listener_task = asyncio.create_task(
             _log_exception(self.listener_function())
         )
-        self.listener_task.done_callback = self.restart_sync
+        self.listener_task.add_done_callback(self.listener_done)
+
+    def listener_done(self, task):
+        self.restart_sync()
 
     def restart_sync(self):
         logger("Restarting {} listener".format(type(self)))
         self.listener_task = None
-        asyncio.get_running_loop.run_cororoutine_threadsafe(
-            _log_exception(self.start()), asyncio.get_event_loop()
-        )
+        asyncio.get_running_loop().run_until_complete(_log_exception(self.start()))
 
     @abc.abstractmethod
     async def listener_function(self):
         pass
 
+    async def prevent_restart(self):
+        if self.listener_task:
+            self.listener_task.remove_done_callback(self.listener_done)
+
+    async def wait_for_completion(self):
+        if self.listener_task:
+            try:
+                await self.listener_task
+            except asyncio.CancelledError:
+                pass
+            self.listener_task = None
+
     async def stop(self):
         if self.listener_task:
             logger("Stopping {} listener".format(type(self)))
-            self.listener_task.done_callback = None
+            self.prevent_restart()
             self.listener_task.cancel()
-            try:
-                self.listener_task.result()
-            except asyncio.TaskCancelledError:
-                pass
-            self.listener_task = None
+            self.wait_for_completion()
 
 
 class CommandListener(RobustListener):
@@ -384,12 +392,16 @@ class CommandListener(RobustListener):
         logger("In listener function")
         while True:
             command = await self.longhaul_control_device.wait_for_c2d_message()
-            logger("Got command {}".format(command.__dict__))
+            logger("Listener received command {}".format(command.__dict__))
             if command.body == "stop":
-                asyncio.ensure_future(self.coro())
+                await self.prevent_restart()
+                await self.coro()
+                return
 
     async def stop(self):
-        await super(CommandListener, self).stop()
+        await self.prevent_restart()
+        await self.coro()
+        await self.wait_for_completion()
         self.longhaul_control_device = None
         self.coro = None
 
@@ -409,7 +421,9 @@ class IntervalOperationRenewEventhub(IntervalOperation):
 
 
 class LongHaulTest(object):
-    async def test_longhaul(self, client, eventhub, longhaul_control_device, caplog):
+    async def test_longhaul(
+        self, client, eventhub, service, longhaul_control_device, caplog
+    ):
         await eventhub.connect()
 
         test_config = DesiredTestProperties.from_dict(desired_node_config).test_config
@@ -423,9 +437,9 @@ class LongHaulTest(object):
 
         async def set_stop_flag():
             nonlocal stop
+            logger("stop = True")
             stop = True
 
-        # BKTODO: make more robust, probably following eventhub example from other machine
         command_listener = CommandListener(longhaul_control_device, set_stop_flag)
         await command_listener.start()
 
@@ -499,8 +513,11 @@ class LongHaulTest(object):
             logger("Marking test as complete")
             test_report.test_status.status = "completed"
 
+            await service.send_c2d(longhaul_control_device.device_id, "stop")
+
         except Exception:
             logger("Marking test as failed")
+            traceback.print_exc()
             test_report.test_status.status = "failed"
             raise
 
@@ -512,7 +529,7 @@ class LongHaulTest(object):
             await command_listener.stop()
             await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")
-            await renew_eventhub.finish()
+            await renew_eventhub.stop()
             await send_test_telemetry.stop()
             await update_test_report.stop()
 
