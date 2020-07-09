@@ -24,3 +24,12 @@ class C2dTests(object):
 
         received_message = await test_input_future
         assert received_message.body == test_payload
+
+    @pytest.mark.skip("fails on pythonv2 inproc and maybe more")  # BKTODO
+    @pytest.mark.it("Is graceful if quit while waiting for C2D message")
+    async def test_device_quit_without_c2d(self, client, service):
+        await client.enable_c2d()
+        asyncio.ensure_future(client.wait_for_c2d_message())
+        await asyncio.sleep(10)  # wait for receive pipeline to finish setting up
+
+        # that's it.  If something goes wrong, hopefully it's caught (by leak-check code, for instance)

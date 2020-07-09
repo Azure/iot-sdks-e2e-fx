@@ -3,7 +3,6 @@
 # full license information.
 import pytest
 import connections
-import adapters
 import sample_content
 from horton_settings import settings
 from horton_logging import logger
@@ -24,10 +23,16 @@ async def cleanup_client(settings_object):
     if settings_object.client:
         logger(separator("{} finalizer".format(settings_object.name)))
         try:
-            if settings_object.client.capabilities.v2_connect_group:
+            if (
+                hasattr(settings_object.client, "capabilities")
+                and settings_object.client.capabilities.v2_connect_group
+            ):
+                logger("Destroying")
                 await settings_object.client.destroy()
             else:
+                logger("Disconnecting")
                 await settings_object.client.disconnect()
+            logger("done finalizing {}".format(settings_object.name))
         except Exception as e:
             logger(
                 "exception disconnecting {} module: {}".format(settings_object.name, e)
@@ -38,29 +43,31 @@ async def cleanup_client(settings_object):
 
 @pytest.fixture
 async def eventhub(event_loop):
-    eventhub = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
-    await eventhub.create_from_connection_string(settings.eventhub.connection_string)
+    # we need the event_loop fixture so pytest_async creates the event loop before celling this.
+    # Otherwise we get errors realted to mis-matched event loops when cleaning up this object.
+    obj = settings.eventhub
     try:
-        yield eventhub
+        yield await get_client(obj)
     finally:
-        logger(separator("eventhub finalizer"))
-        try:
-            await eventhub.disconnect()
-        except Exception as e:
-            logger("exception disconnecting eventhub: {}".format(e))
+        await cleanup_client(obj)
 
 
 @pytest.fixture
 async def registry():
-    registry = await connections.connect_registry_client()
+    obj = settings.registry
     try:
-        yield registry
+        yield await get_client(obj)
     finally:
-        logger(separator("registry finalizer"))
-        try:
-            await registry.disconnect()
-        except Exception as e:
-            logger("exception disconnecting registry: {}".format(e))
+        await cleanup_client(obj)
+
+
+@pytest.fixture
+async def service():
+    obj = settings.service
+    try:
+        yield await get_client(obj)
+    finally:
+        await cleanup_client(obj)
 
 
 @pytest.fixture
@@ -106,19 +113,6 @@ async def longhaul_control_device():
         yield await get_client(obj)
     finally:
         await cleanup_client(obj)
-
-
-@pytest.fixture
-async def service():
-    service = await connections.connect_service_client()
-    try:
-        yield service
-    finally:
-        logger(separator("service finalizer"))
-        try:
-            await service.disconnect()
-        except Exception as e:
-            logger("exception disconnecting service: {}".format(e))
 
 
 @pytest.fixture

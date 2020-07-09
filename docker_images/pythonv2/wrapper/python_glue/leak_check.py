@@ -45,21 +45,20 @@ def _dump_referrers(obj):
             print("  used by: {}:{}".format(type(referrer), referrer))
 
 
-class LeakedObject(object):
+class RefObject(object):
     """
     Object holding details on the leak of some tracked object
     """
 
-    def __init__(self, source_file, obj):
-        self.source_file = source_file
+    def __init__(self, obj):
         self.value = str(obj)
         self.weakref = weakref.ref(obj)
 
     def __repr__(self):
-        return "{}-{}".format(self.source_file, self.value)
+        return self.value
 
     def __eq__(self, obj):
-        return self.source_file == obj.source_file and self.weakref == obj.weakref
+        return self.weakref == obj.weakref
 
     def __ne__(self, obj):
         return not self == obj
@@ -103,7 +102,7 @@ class LeakTracker(object):
             if any([mod.is_module_object(obj) for mod in self.tracked_modules]):
                 source_file = inspect.getsourcefile(obj.__class__)
                 try:
-                    all.append(LeakedObject(source_file, obj))
+                    all.append(RefObject(obj))
                 except TypeError:
                     logger.warning(
                         "Could not add {} from {} to leak list".format(
@@ -185,6 +184,25 @@ class LeakTracker(object):
                 logger.errer(
                     "and {} more objects".format(len(all_tracked_objects) - count)
                 )
+            referrers = self.get_referrers(all_tracked_objects)  # noqa: F841
             assert False
         else:
             logger.info("No leaks")
+
+    def get_referrers(self, objects):
+        """
+        Get all referrers for all objects as a way to see why objects are leaking.
+        Meant to be run inside a debugger, probably using pprint on the output
+        """
+        all_referrers = []
+        index = 0
+        for obj in objects:
+            referrers = []
+            for ref in gc.get_referrers(obj.weakref()):
+                if type(ref) in [dict] or str(type(ref)) in ["<class 'cell'>"]:
+                    referrers.append(ref)
+                else:
+                    referrers.append(RefObject(ref))
+            all_referrers.append({"index": index, "obj": obj, "referrers": referrers})
+            index += 1
+        return all_referrers

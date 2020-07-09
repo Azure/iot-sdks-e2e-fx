@@ -5,8 +5,6 @@
 import datetime
 import threading
 import contextlib
-import statistics
-import collections
 from horton_logging import logger
 
 
@@ -56,35 +54,6 @@ class ReportAverage(object):
             self.logger(
                 "{} average: {}".format(self.name, self.total / self.sample_count)
             )
-
-
-Stats = collections.namedtuple("stats", "mean slow")
-
-
-class GatherStatistics(object):
-    def __init__(self, name, window_count=None, slowness_threshold=None):
-        self.lock = threading.Lock()
-        self.name = name
-        self.slowness_threshold = slowness_threshold
-        self.slow = 0
-        self.samples = []
-        self.window_count = window_count
-
-    def add_sample(self, sample):
-        with self.lock:
-            self.samples.append(sample)
-            if sample > self.slowness_threshold:
-                self.slow += 1
-            if self.window_count:
-                self.samples = self.samples[-self.window_count :]
-
-    def get_stats(self):
-        with self.lock:
-            if len(self.samples):
-                mean = statistics.mean(self.samples)
-                return Stats(mean=mean, slow=self.slow)
-            else:
-                return Stats(mean=0.0, slow=0.0)
 
 
 class ReportCount(object):
@@ -172,15 +141,18 @@ class MeasureRunningCodeBlock(contextlib.AbstractContextManager):
 
 
 class MeasureLatency(contextlib.AbstractContextManager):
-    def __init__(self):
+    def __init__(self, tracker=None):
         self.start_time = None
         self.end_time = None
+        self.tracker = tracker
 
     def __enter__(self):
         self.start_time = datetime.datetime.now()
 
     def __exit__(self, *args):
         self.end_time = datetime.datetime.now()
+        if self.tracker:
+            self.tracker.add_sample(self.get_latency())
 
     def get_latency(self):
         if self.start_time and self.end_time:
@@ -189,7 +161,7 @@ class MeasureLatency(contextlib.AbstractContextManager):
             return 0
 
 
-class MeasureSimpleCount(object):
+class TrackCount(object):
     def __init__(self):
         self.lock = threading.Lock()
         self.count = 0
@@ -202,3 +174,30 @@ class MeasureSimpleCount(object):
     def get_count(self):
         with self.lock:
             return self.count
+
+    def extract(self):
+        with self.lock:
+            count = self.count
+            self.count = 0
+            return count
+
+
+class TrackMax(object):
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.max = 0
+
+    def add_sample(self, sample):
+        with self.lock:
+            if sample > self.max:
+                self.max = sample
+
+    def get_max(self):
+        with self.lock:
+            return self.max
+
+    def extract(self):
+        with self.lock:
+            max = self.max
+            self.max = 0
+            return max
