@@ -31,7 +31,8 @@ pytestmark = pytest.mark.asyncio
 
 desired_node_config = {
     "testConfig": {
-        "d2c": {"enabled": True, "intervalLength": 1, "opsPerInterval": 10},
+        "d2c": {"enabled": True, "intervalLength": 1, "opsPerInterval": 15},
+        # "totalDuration": "00:00:10",
         "totalDuration": "72:00:10",
     }
 }
@@ -169,6 +170,10 @@ class IntervalOperationLonghaul(IntervalOperation):
             self.count_failed.increment()
 
 
+not_received = "not received"
+received = "received"
+
+
 class IntervalOperationD2c(IntervalOperationLonghaul):
     """
     Class represending the testing of D2C as a longhaul operation
@@ -182,13 +187,16 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
         self.client = client
         self.eventhub = eventhub
 
-        self.mid_list = {}
-        self.mid_list_lock = threading.Lock()
+        self.op_id_list = {}
+        self.op_id_list_lock = threading.Lock()
         self.listener = None
 
     async def do_send(self, op_id):
         telemetry = make_message_payload()
         telemetry["op_id"] = op_id
+        with self.op_id_list_lock:
+            logger("setting op_id {} to not_received".format(op_id))
+            self.op_id_list[op_id] = not_received
         await self.client.send_event(telemetry)
 
     async def do_receive(self, op_id):
@@ -204,25 +212,61 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
                 pass
 
             if isinstance(message, dict) and "op_id" in message:
-                mid = message["op_id"]
-                with self.mid_list_lock:
-                    if mid in self.mid_list:
-                        if isinstance(self.mid_list[mid], asyncio.Future):
-                            self.mid_list[mid].set_result(True)
-                        del self.mid_list[mid]
+                op_id = message["op_id"]
+                logger("received op_id {}".format(op_id))
+                with self.op_id_list_lock:
+                    if op_id in self.op_id_list:
+                        if isinstance(self.op_id_list[op_id], asyncio.Future):
+                            if self.op_id_list[op_id].done():
+                                logger(
+                                    "Waiting for op_id {}.  already signalled.  doing nothing.".format(
+                                        op_id
+                                    )
+                                )
+                            else:
+                                logger(
+                                    "Waiting for op_id {}.  signalling.".format(op_id)
+                                )
+                                self.op_id_list[op_id].set_result(True)
+                        elif self.op_id_list[op_id] in [not_received, received]:
+                            logger(
+                                "not yet waiting for op_id {}.  Marking as received".format(
+                                    op_id
+                                )
+                            )
+                            self.op_id_list[op_id] = received
+                        else:
+                            logger(
+                                "unexpected value in op_id_list for op_id {}: {}".format(
+                                    op_id, self.op_id_list[op_id]
+                                )
+                            )
+                            assert False
                     else:
-                        self.mid_list[mid] = True
+                        logger("Received already-handled op_id {}".format(op_id))
 
-    async def wait_for_completion(self, mid):
+    async def wait_for_completion(self, op_id):
         message_received = asyncio.Future()
 
-        with self.mid_list_lock:
+        with self.op_id_list_lock:
             # if we've received it, return.  Else, set a future for the listener to complete when it does receive.
-            if mid in self.mid_list:
-                del self.mid_list[mid]
-                return
+            if op_id in self.op_id_list:
+                if self.op_id_list[op_id] == received:
+                    logger("op_id {} already received.  returning".format(op_id))
+                    return
+                elif self.op_id_list[op_id] == not_received:
+                    logger("op_id {} not received.  storing future".format(op_id))
+                    self.op_id_list[op_id] = message_received
+                else:
+                    logger(
+                        "unexpected value in op_id_list for op_id {}: {}".format(
+                            op_id, self.op_id_list[op_id]
+                        )
+                    )
+                    assert False
             else:
-                self.mid_list[mid] = message_received
+                logger("waiting for op_id which is not in op_id_list {}".format(op_id))
+                assert False
 
             # see if the previous listener is done.
             if self.listener and self.listener.done():
@@ -522,14 +566,12 @@ class LongHaulTest(object):
             logger("Marking test as complete")
             test_report.test_status.status = "completed"
 
-            await service.send_c2d(longhaul_control_device.device_id, "stop")
-
         except Exception:
             logger("Marking test as failed")
             traceback.print_exc()
             test_report.test_status.status = "failed"
 
-            for op in longhaul_ops:
+            for op in longhaul_ops.values():
                 if len(op.uncompleted_ops):
                     logger(
                         "{} has the following uncompleted op_id's: {}".format(
@@ -543,8 +585,10 @@ class LongHaulTest(object):
             # stop all of our longhaul ops, then stop our reporting ops.
             # order is important here since send_test_telemetry feeds data into
             # update_test_report.
-            logger("finishing ops")
+            logger("Stopping command listener")
+            await service.send_c2d(longhaul_control_device.device_id, "stop")
             await command_listener.stop()
+            logger("stopping all  ops")
             await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")
             await renew_eventhub.stop()
