@@ -134,6 +134,40 @@
                 }
             }
         },
+        "/device/createFromSymmetricKey/{transportType}": {
+            "put": {
+                "tags": [
+                    "device"
+                ],
+                "summary": "Create a device client from a symmetric key",
+                "operationId": "Device_CreateFromSymmetricKey",
+                "consumes": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "parameters.json#/transportType"
+                    },
+                    {
+                        "$ref": "parameters.json#/deviceId"
+                    },
+                    {
+                        "$ref": "parameters.json#/hostname"
+                    },
+                    {
+                        "$ref": "parameters.json#/symmetricKey"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "definitions.json#/connectResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/device/{connectionId}/connect2": {
             "put": {
                 "tags": [

@@ -169,5 +169,19 @@
     "description": "human readable descripton of the status for blob upload",
     "required": true,
     "type": "string"
+  },
+  "hostname": {
+    "name": "hostname",
+    "in": "query",
+    "description": "name of the host to connect to",
+    "required": true,
+    "type": "string"
+  },
+  "symmetricKey": {
+    "name": "symmetricKey",
+    "in": "query",
+    "description": "key to use for connection",
+    "required": true,
+    "type": "string"
   }
 }

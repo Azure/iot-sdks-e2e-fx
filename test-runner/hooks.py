@@ -69,15 +69,15 @@ def pytest_pyfunc_call(pyfuncitem):
 async def configure_net_control():
     if settings.test_module.capabilities.net_control_app:
         try:
-            settings.net_control.api = await connections.get_net_control_api()
+            settings.net_control.adapter = await connections.get_net_control_adapter()
         except Exception:
             print(
                 "network control server is unavailable.  Either start the server or set net_control.adapter_address to '' in _horton_settings.json"
             )
             settings.test_module.capabilities.net_control = False
 
-    if settings.net_control.api:
-        await settings.net_control.api.reconnect()
+    if settings.net_control.adapter:
+        await settings.net_control.adapter.reconnect()
 
 
 async def session_init():

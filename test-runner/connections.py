@@ -4,6 +4,11 @@
 import adapters
 import base64
 from horton_settings import settings
+from horton_logging import logger
+
+
+def separator(message=""):
+    return message.center(132, "-")
 
 
 def get_ca_cert(settings_object):
@@ -18,122 +23,192 @@ def get_ca_cert(settings_object):
         return {}
 
 
-async def _get_module_client(settings_object):
+async def _get_module_client_adapter(settings_object):
     """
-    get a module client for the given settings object
+    get a module client adapter for the given settings object
     """
-    client = adapters.create_adapter(settings_object.adapter_address, "module_client")
+    if not settings_object.device_id or not settings_object.module_id:
+        return None
 
-    client.device_id = settings_object.device_id
-    client.module_id = settings_object.module_id
-    client.capabilities = settings_object.capabilities
-    client.settings = settings_object
-    client.settings.client = client
+    adapter = adapters.create_adapter(settings_object.adapter_address, "module_client")
 
-    if settings_object.capabilities.v2_connect_group:
-        if settings_object.connection_type == "environment":
-            await client.create_from_environment(settings_object.transport)
-        else:
-            await client.create_from_connection_string(
-                settings_object.transport,
-                settings_object.connection_string,
-                get_ca_cert(settings_object),
-            )
-    else:
-        if settings_object.connection_type == "environment":
-            await client.connect_from_environment(settings_object.transport)
-        else:
-            await client.connect(
-                settings_object.transport,
-                settings_object.connection_string,
-                get_ca_cert(settings_object),
-            )
-    return client
+    adapter.device_id = settings_object.device_id
+    adapter.module_id = settings_object.module_id
+
+    return adapter
 
 
-async def _get_device_client(settings_object):
+async def _get_device_client_adapter(settings_object):
     """
-    get a device client for the given settings object
+    get a device client adapter for the given settings object
     """
-    client = adapters.create_adapter(settings_object.adapter_address, "device_client")
+    if not settings_object.device_id and not settings_object.registration_id:
+        return None
 
-    client.device_id = settings_object.device_id
-    client.capabilities = settings_object.capabilities
-    client.settings = settings_object
-    client.settings.client = client
+    adapter = adapters.create_adapter(settings_object.adapter_address, "device_client")
 
-    if settings_object.capabilities.v2_connect_group:
-        await client.create_from_connection_string(
-            settings_object.transport,
-            settings_object.connection_string,
-            get_ca_cert(settings_object),
-        )
-    else:
-        await client.connect(
-            settings_object.transport,
-            settings_object.connection_string,
-            get_ca_cert(settings_object),
-        )
-    return client
+    adapter.device_id = settings_object.device_id
+
+    return adapter
 
 
-async def _get_eventhub_client():
+async def _get_device_provisioning_client_adapter(settings_object):
     """
-    get an eventhub client that we can use to watch telemetry operations
+    get a device client adapter for the given settings object
     """
-    client = adapters.create_adapter(settings.eventhub.adapter_address, "eventhub")
-    await client.create_from_connection_string(settings.eventhub.connection_string)
-    client.settings = settings.eventhub
-    client.settings.client = client
-    return client
+    if not settings_object.id_scope:
+        return None
+
+    adapter = adapters.create_adapter(
+        settings_object.adapter_address, "device_provisioning"
+    )
+    return adapter
 
 
-async def _get_registry_client():
+async def _get_eventhub_client_adapter(settings_object):
     """
-    connect the module client for the Registry implementation we're using return the client object
+    get an eventhub client adapter that we can use to watch telemetry operations
     """
-    client = adapters.create_adapter(settings.registry.adapter_address, "registry")
-    await client.connect(settings.registry.connection_string)
-    client.settings = settings.registry
-    client.settings.client = client
-    return client
+    adapter = adapters.create_adapter(settings_object.adapter_address, "eventhub")
+    await adapter.create_from_connection_string(settings_object.connection_string)
+    return adapter
 
 
-async def _get_service_client():
+async def _get_registry_client_adapter(settings_object):
     """
-    connect the module client for the ServiceClient implementation we're using return the client object
+    connect the client adapter for the Registry implementation we're using
     """
-    client = adapters.create_adapter(settings.service.adapter_address, "service")
-    await client.connect(settings.service.connection_string)
-    client.settings = settings.service
-    client.settings.client = client
-    return client
+    adapter = adapters.create_adapter(settings_object.adapter_address, "registry")
+    await adapter.connect(settings_object.connection_string)
+    return adapter
 
 
-async def get_net_control_api():
+async def _get_service_client_adapter(settings_object):
+    """
+    connect the client for the ServiceClient implementation we're using return the client object
+    """
+    adapter = adapters.create_adapter(settings_object.adapter_address, "service")
+    await adapter.connect(settings_object.connection_string)
+    return adapter
+
+
+async def _get_net_control_adapter(settings_object):
     """
     return an object that can be used to control the network
     """
-    api = adapters.create_adapter(settings.net_control.adapter_address, "net")
-    await api.set_destination(
-        settings.net_control.test_destination, settings.test_module.transport
+    adapter = adapters.create_adapter(settings_object.adapter_address, "net")
+    await adapter.set_destination(
+        settings_object.test_destination, settings.test_module.transport
     )
-    return api
+    return adapter
 
 
-async def get_client(settings_object):
+async def get_adapter(settings_object):
     """
-    get a client object for the givving settings object
+    get a client adapter object for the givving settings object
     """
-    if settings_object.object_type in ["iothub_device", "leaf_device"]:
-        return await _get_device_client(settings_object)
+    if not settings_object.adapter_address:
+        return None
+    elif settings_object.object_type in ["iothub_device", "leaf_device"]:
+        adapter = await _get_device_client_adapter(settings_object)
     elif settings_object.object_type in ["iothub_module", "iotedge_module"]:
-        return await _get_module_client(settings_object)
+        adapter = await _get_module_client_adapter(settings_object)
     elif settings_object.object_type == "iothub_registry":
-        return await _get_registry_client()
+        adapter = await _get_registry_client_adapter(settings_object)
     elif settings_object.object_type == "iothub_service":
-        return await _get_service_client()
+        adapter = await _get_service_client_adapter(settings_object)
+    elif settings_object.object_type == "device_provisioning":
+        adapter = await _get_device_provisioning_client_adapter(settings_object)
     elif settings_object.object_type == "eventhub":
-        return await _get_eventhub_client()
+        adapter = await _get_eventhub_client_adapter(settings_object)
+    elif settings_object.object_type == "net_control":
+        adapter = await _get_net_control_adapter(settings_object)
     else:
         assert "invalid object_type: {}".format(settings_object.object_type)
+
+    adapter.capabilities = settings_object.capabilities
+    adapter.settings = settings_object
+    settings_object.adapter = adapter
+
+    return adapter
+
+
+async def create_client(settings_object, device_provisioning=None):
+    adapter = settings_object.adapter
+
+    if settings_object.connection_type == "dps_symmetric_key":
+        await device_provisioning.create_from_symmetric_key(
+            transport="mqtt",
+            provisioning_host=device_provisioning.settings.provisioning_host,
+            registration_id=settings_object.registration_id,
+            id_scope=device_provisioning.settings.id_scope,
+            symmetric_key=settings_object.symmetric_key,
+        )
+        result = await device_provisioning.register()
+        await device_provisioning.destroy()
+
+        if result.status != "assigned":
+            raise Exception("Invalid rgistration status: {}".result.status)
+
+        settings_object.device_id = result.device_id
+        settings_object.hostname = result.assigned_hub
+
+        await adapter.create_from_symmetric_key(
+            settings_object.transport,
+            hostname=settings_object.hostname,
+            symmetric_key=settings_object.symmetric_key,
+            device_id=settings_object.device_id,
+        )
+
+    elif settings_object.connection_type == "symmetric_key":
+        await adapter.create_from_symmetric_key(
+            settings_object.transport,
+            hostname=settings_object.hostname,
+            symmetric_key=settings_object.symmetric_key,
+            device_id=settings_object.device_id,
+        )
+
+    elif settings_object.capabilities.v2_connect_group:
+        if settings_object.connection_type == "environment":
+            await adapter.create_from_environment(settings_object.transport)
+        elif settings_object.connection_type.startswith("connection_string"):
+            await adapter.create_from_connection_string(
+                settings_object.transport,
+                settings_object.connection_string,
+                get_ca_cert(settings_object),
+            )
+    else:
+        if settings_object.connection_type == "environment":
+            await adapter.connect_from_environment(settings_object.transport)
+        elif settings_object.connection_type.startswith("connection_string"):
+            await adapter.connect(
+                settings_object.transport,
+                settings_object.connection_string,
+                get_ca_cert(settings_object),
+            )
+
+
+async def cleanup_adapter(settings_object):
+    if settings_object.adapter:
+        logger(separator("{} finalizer".format(settings_object.name)))
+        try:
+            if (
+                hasattr(settings_object.adapter, "capabilities")
+                and hasattr(settings_object.adapter.capabilities, "v2_connect_group")
+                and settings_object.adapter.capabilities.v2_connect_group
+            ):
+                logger("Destroying")
+                await settings_object.adapter.destroy()
+            elif hasattr(settings_object.adapter, "disconnect"):
+                logger("Disconnecting")
+                await settings_object.adapter.disconnect()
+            elif hasattr(settings_object.adapter, "destroy"):
+                logger("Destroying")
+                await settings_object.adapter.destroy()
+            logger("done finalizing {}".format(settings_object.name))
+        except Exception as e:
+            logger(
+                "exception disconnecting {} module: {}".format(settings_object.name, e)
+            )
+        finally:
+            settings_object.adapter = None

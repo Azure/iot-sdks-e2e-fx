@@ -15,45 +15,44 @@ IOTEDGE_DEBUG_LOG_OLD_NAME = "IOTEDGE_DEBUG_LOG"
 # saves all the None values to json and we don't want that.
 
 
-class HortonDeviceSettings(SimpleObject):
-    def __init__(self, name):
-        super(HortonDeviceSettings, self).__init__()
+class ObjectWithAdapter(SimpleObject):
+    def __init__(self, name, object_type):
+        super(ObjectWithAdapter, self).__init__()
         self.name = name
-        self.device_id = ""
+        self.object_type = object_type
+        self.image = ""
         self.language = ""
         self.adapter_address = ""
+        self.adapter = None
+        self.host_port = ""
+        self.container_port = ""
+        self.container_name = ""
+        self.capabilities = None
+
+
+class HortonDeviceSettings(ObjectWithAdapter):
+    def __init__(self, name, object_type):
+        super(HortonDeviceSettings, self).__init__(name, object_type)
+        self.device_id = ""
         self.connection_type = ""
         self.connection_string = ""
         self.x509_cert_path = ""
         self.x509_key_path = ""
-        self.host_port = ""
-        self.container_port = ""
-        self.container_name = ""
-        self.image = ""
-        self.object_type = ""
-        self.client = ""
         self.transport = "mqtt"
+        self.registration_id = ""
+        self.symmetric_key = ""
+        self.hostname = ""
 
 
-class HortonModuleSettings(SimpleObject):
-    def __init__(self, name):
-        super(HortonModuleSettings, self).__init__()
-        self.name = name
+class HortonModuleSettings(ObjectWithAdapter):
+    def __init__(self, name, object_type):
+        super(HortonModuleSettings, self).__init__(name, object_type)
         self.device_id = ""
         self.module_id = ""
-        self.image = ""
-        self.language = ""
-        self.adapter_address = ""
         self.connection_type = ""
         self.connection_string = ""
         self.x509_cert_path = ""
         self.x509_key_path = ""
-        self.host_port = ""
-        self.container_port = ""
-        self.container_name = ""
-        self.image = ""
-        self.object_type = ""
-        self.client = ""
         self.transport = "mqtt"
 
 
@@ -87,15 +86,20 @@ class IotEdge(SimpleObject):
         self.hostname = ""
 
 
-class NetControl(SimpleObject):
+class NetControl(ObjectWithAdapter):
     def __init__(self):
-        super(NetControl, self).__init__()
-        self.name = "net_control"
-        self.host_port = ""
-        self.container_port = ""
-        self.adapter_address = ""
+        super(NetControl, self).__init__("net_control", "net_control")
         self.test_destination = ""
         self.api = ""
+
+
+class DeviceProvisioning(ObjectWithAdapter):
+    def __init__(self):
+        super(DeviceProvisioning, self).__init__(
+            "device_provisioning", "device_provisioning"
+        )
+        self.provisioning_host = ""
+        self.id_scope = ""
 
 
 class HortonSettings(DictionaryObject):
@@ -105,11 +109,14 @@ class HortonSettings(DictionaryObject):
         self.horton = Horton()
         self.iothub = IotHub()
         self.iotedge = IotEdge()
-        self.test_module = HortonModuleSettings("test_module")
-        self.friend_module = HortonModuleSettings("friend_module")
-        self.leaf_device = HortonDeviceSettings("leaf_device")
-        self.test_device = HortonDeviceSettings("test_device")
-        self.longhaul_control_device = HortonDeviceSettings("longhaul_control_device")
+        self.test_module = HortonModuleSettings("test_module", "iotedge_module")
+        self.friend_module = HortonModuleSettings("friend_module", "iotedge_module")
+        self.leaf_device = HortonDeviceSettings("leaf_device", "leaf_device")
+        self.test_device = HortonDeviceSettings("test_device", "iotthub_device")
+        self.longhaul_control_device = HortonDeviceSettings(
+            "longhaul_control_device", "iothub_device"
+        )
+        self.device_provisioning = DeviceProvisioning()
         self.net_control = NetControl()
 
         self._objects = [
@@ -122,6 +129,7 @@ class HortonSettings(DictionaryObject):
             self.net_control,
             self.horton,
             self.longhaul_control_device,
+            self.device_provisioning,
         ]
 
     def load_deprecated_environment_variables(self):

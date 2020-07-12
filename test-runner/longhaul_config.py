@@ -26,7 +26,7 @@ class TestConfig(SimpleObject):
         self.timeout_interval = datetime.timedelta(minutes=2)
         self.reporting_interval = datetime.timedelta(seconds=10)
         self.telemetry_interval = datetime.timedelta(seconds=2)
-        self.eventhub_renew_interval = datetime.timedelta(minutes=15)
+        self.eventhub_renew_interval = datetime.timedelta(minutes=1)
         self.max_allowed_failures = 0
         self.d2c = OpConfig()
 
@@ -86,3 +86,19 @@ class ReportedTestProperties(DictionaryObject):
 
 
 ReportedTestProperties._defaults = ReportedTestProperties()
+
+
+class CentralTelemetry(DictionaryObject):
+    def __init__(self):
+        super(CentralTelemetry, self).__init__()
+        self.count_pytest_objects = 0
+        self.count_d2c_completed = 0
+        self.count_d2c_failed = 0
+        self.count_d2c_sending = 0
+        self.count_d2c_verifying = 0
+        self.latency_d2c_send = 0
+        self.latency_d2c_verify = 0
+        self.lock_attributes()
+
+
+CentralTelemetry._defaults = CentralTelemetry()

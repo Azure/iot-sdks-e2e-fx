@@ -2,43 +2,10 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import pytest
-import connections
+from connections import get_adapter, create_client, cleanup_adapter
 import sample_content
 from horton_settings import settings
 from horton_logging import logger
-
-
-def separator(message=""):
-    return message.center(132, "-")
-
-
-async def get_client(settings_object):
-    if settings_object.adapter_address:
-        return await connections.get_client(settings_object)
-    else:
-        return None
-
-
-async def cleanup_client(settings_object):
-    if settings_object.client:
-        logger(separator("{} finalizer".format(settings_object.name)))
-        try:
-            if (
-                hasattr(settings_object.client, "capabilities")
-                and settings_object.client.capabilities.v2_connect_group
-            ):
-                logger("Destroying")
-                await settings_object.client.destroy()
-            else:
-                logger("Disconnecting")
-                await settings_object.client.disconnect()
-            logger("done finalizing {}".format(settings_object.name))
-        except Exception as e:
-            logger(
-                "exception disconnecting {} module: {}".format(settings_object.name, e)
-            )
-        finally:
-            settings_object.client = None
 
 
 @pytest.fixture
@@ -47,72 +14,92 @@ async def eventhub(event_loop):
     # Otherwise we get errors realted to mis-matched event loops when cleaning up this object.
     obj = settings.eventhub
     try:
-        yield await get_client(obj)
+        yield await get_adapter(obj)
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
 async def registry():
     obj = settings.registry
     try:
-        yield await get_client(obj)
+        yield await get_adapter(obj)
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
 async def service():
     obj = settings.service
     try:
-        yield await get_client(obj)
+        yield await get_adapter(obj)
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
 async def friend():
     obj = settings.friend_module
+    adapter = await get_adapter(obj)
+    await create_client(obj)
     try:
-        yield await get_client(obj)
+        yield adapter
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
 async def test_module():
     obj = settings.test_module
+    adapter = await get_adapter(obj)
+    await create_client(obj)
     try:
-        yield await get_client(obj)
+        yield adapter
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
 async def leaf_device():
     obj = settings.leaf_device
+    adapter = await get_adapter(obj)
+    await create_client(obj)
     try:
-        yield await get_client(obj)
+        yield adapter
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
-async def test_device():
+async def test_device(device_provisioning):
     obj = settings.test_device
+    adapter = await get_adapter(obj)
+    await create_client(obj, device_provisioning)
     try:
-        yield await get_client(obj)
+        yield adapter
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
-async def longhaul_control_device():
+async def longhaul_control_device(device_provisioning):
     obj = settings.longhaul_control_device
+    adapter = await get_adapter(obj)
+    await create_client(obj, device_provisioning)
     try:
-        yield await get_client(obj)
+        yield adapter
     finally:
-        await cleanup_client(obj)
+        await cleanup_adapter(obj)
+
+
+@pytest.fixture
+async def device_provisioning():
+    obj = settings.device_provisioning
+    adapter = await get_adapter(obj)
+    try:
+        yield adapter
+    finally:
+        await cleanup_adapter(obj)
 
 
 @pytest.fixture
@@ -122,7 +109,7 @@ async def net_control():
         yield api
     finally:
         if api:
-            logger(separator("net_control finalizer"))
+            logger("net_control finalizer".center(132, "-"))
             await settings.net_control.api.reconnect()
 
 

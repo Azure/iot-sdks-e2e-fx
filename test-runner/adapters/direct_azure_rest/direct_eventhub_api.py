@@ -157,8 +157,6 @@ class EventHubApi:
         await self._close_eventhub_client()
 
     async def wait_for_next_event(self, device_id, expected=None):
-        logger("EventHubApi: waiting for next event for {}".format(device_id))
-
         while True:
             event = await self.received_events.get()
             if not device_id:
@@ -176,5 +174,3 @@ class EventHubApi:
                         logger("EventHubApi: unexpected message.  skipping")
                 else:
                     return received
-            else:
-                logger("EventHubApi: event not for me received")
