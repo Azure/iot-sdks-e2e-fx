@@ -85,6 +85,34 @@ class EventHubApi:
             await partition_context.update_checkpoint(event)
             self.starting_position[partition_context.partition_id] = event.offset
 
+        async def on_error(partition_context, error):
+            if partition_context:
+                logger(
+                    "EventHubApi: An exception: {} occurred during receiving from Partition: {}.".format(
+                        partition_context.partition_id, error
+                    )
+                )
+            else:
+                logger(
+                    "EventHubApi: An exception: {} occurred during the load balance process.".format(
+                        error
+                    )
+                )
+
+        async def on_partition_initialize(partition_context):
+            logger(
+                "EventHubApi: Partition: {} has been initialized.".format(
+                    partition_context.partition_id
+                )
+            )
+
+        async def on_partition_close(partition_context, reason):
+            logger(
+                "EventHubApi: Partition: {} has been closed, reason for closing: {}.".format(
+                    partition_context.partition_id, reason
+                )
+            )
+
         async def get_current_position():
             positions = {}
             ids = await self.consumer_client.get_partition_ids()
@@ -115,6 +143,9 @@ class EventHubApi:
                     on_event=on_event,
                     starting_position=starting_position,
                     starting_position_inclusive=True,
+                    on_error=on_error,
+                    on_partition_initialize=on_partition_initialize,
+                    on_partition_close=on_partition_close,
                 )
             except Exception as e:
                 logger("EventHubApi exception: {}".format(e))
