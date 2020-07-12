@@ -104,13 +104,13 @@ async def device_provisioning():
 
 @pytest.fixture
 async def net_control():
-    api = getattr(settings.net_control, "api", None)
+    adapter = getattr(settings.net_control, "adapter", None)
     try:
-        yield api
+        yield adapter
     finally:
-        if api:
+        if adapter:
             logger("net_control finalizer".center(132, "-"))
-            await settings.net_control.api.reconnect()
+            await adapter.reconnect()
 
 
 @pytest.fixture(
