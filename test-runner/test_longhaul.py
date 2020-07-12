@@ -217,8 +217,17 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
                 with self.op_id_list_lock:
                     if op_id in self.op_id_list:
                         if isinstance(self.op_id_list[op_id], asyncio.Future):
-                            logger("Waiting for op_id {}.  signalling.".format(op_id))
-                            self.op_id_list[op_id].set_result(True)
+                            if self.op_id_list[op_id].done():
+                                logger(
+                                    "Waiting for op_id {}.  already signalled.  doing nothing.".format(
+                                        op_id
+                                    )
+                                )
+                            else:
+                                logger(
+                                    "Waiting for op_id {}.  signalling.".format(op_id)
+                                )
+                                self.op_id_list[op_id].set_result(True)
                         elif self.op_id_list[op_id] in [not_received, received]:
                             logger(
                                 "not yet waiting for op_id {}.  Marking as received".format(
