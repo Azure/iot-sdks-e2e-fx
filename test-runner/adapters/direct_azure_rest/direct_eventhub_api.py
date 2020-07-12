@@ -5,7 +5,6 @@ import asyncio
 import ast
 import datetime
 import threading
-from pprint import pprint
 from azure.eventhub.aio import EventHubConsumerClient
 from ..adapter_config import logger
 from . import eventhub_connection_string
@@ -137,8 +136,12 @@ class EventHubApi:
                     # the current position so we can update it as events come in.
                     starting_position = self.starting_position
                     self.starting_position = await get_current_position()
-                print("EventHubApi: listening at")
-                pprint(self.starting_position)
+                logger("EventHubApi: listening at {}".format(starting_position))
+                logger(
+                    "EventHubApi: next starting position = {}".format(
+                        self.starting_position
+                    )
+                )
                 await self.consumer_client.receive(
                     on_event=on_event,
                     starting_position=starting_position,
@@ -195,9 +198,7 @@ class EventHubApi:
             if not device_id:
                 return event.body_as_json()
             elif get_device_id_from_event(event) == device_id:
-                logger(
-                    "EventHubApi: received event: {}".format(event.body_as_str()[:80])
-                )
+                logger("EventHubApi: received event: {}".format(event))
                 received = event.body_as_json()
                 if expected is not None:
                     if json_is_same(expected, received):
