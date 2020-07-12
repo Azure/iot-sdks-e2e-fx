@@ -181,14 +181,14 @@ class EventHubApi:
                 await self.listener_future
             except asyncio.CancelledError:
                 pass
-            logger("_close_eventhub_client: listener is complete")
+            logger("EentHubApi: _close_eventhub_client: listener is complete")
 
     async def disconnect(self):
         logger("EventHubApi: async disconnect")
         await self._close_eventhub_client()
 
     async def wait_for_next_event(self, device_id, expected=None):
-        logger("EventHubApi: waiting for next event for {}".format(device_id))
+        # logger("EventHubApi: waiting for next event for {}".format(device_id))
 
         while True:
             event = await self.received_events.get()
@@ -208,4 +208,5 @@ class EventHubApi:
                 else:
                     return received
             else:
-                logger("EventHubApi: event not for me received")
+                pass
+                # logger("EventHubApi: event not for me received")
