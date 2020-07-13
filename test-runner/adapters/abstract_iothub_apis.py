@@ -54,13 +54,26 @@ class Connect(object):
 
 
 @six.add_metaclass(abc.ABCMeta)
-class ConnectFromEnvironment(object):
+class DeviceConnect(object):
+    @abc.abstractmethod
+    def create_from_symmetric_key(self, transport, device_id, hostname, symmetric_key):
+        pass
+
+
+@six.add_metaclass(abc.ABCMeta)
+class ModuleConnect(object):
     @abc.abstractmethod
     def connect_from_environment(self, transport):
         pass
 
     @abc.abstractmethod
     def create_from_environment(self, transport):
+        pass
+
+    @abc.abstractmethod
+    def create_from_symmetric_key(
+        self, transport, device_id, module_id, hostname, symmetric_key
+    ):
         pass
 
 
@@ -186,7 +199,7 @@ class BlobUpload(object):
 @six.add_metaclass(abc.ABCMeta)
 class AbstractModuleApi(
     Connect,
-    ConnectFromEnvironment,
+    ModuleConnect,
     Telemetry,
     Twin,
     InputsAndOutputs,
@@ -199,7 +212,14 @@ class AbstractModuleApi(
 
 @six.add_metaclass(abc.ABCMeta)
 class AbstractDeviceApi(
-    Connect, C2d, Telemetry, Twin, HandleMethods, ConnectionStatus, BlobUpload
+    Connect,
+    DeviceConnect,
+    C2d,
+    Telemetry,
+    Twin,
+    HandleMethods,
+    ConnectionStatus,
+    BlobUpload,
 ):
     pass
 

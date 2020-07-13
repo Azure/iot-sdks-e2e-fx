@@ -5,7 +5,6 @@ import asyncio
 import ast
 import datetime
 import threading
-from pprint import pprint
 from azure.eventhub.aio import EventHubConsumerClient
 from ..adapter_config import logger
 from . import eventhub_connection_string
@@ -85,6 +84,34 @@ class EventHubApi:
             await partition_context.update_checkpoint(event)
             self.starting_position[partition_context.partition_id] = event.offset
 
+        async def on_error(partition_context, error):
+            if partition_context:
+                logger(
+                    "EventHubApi: An exception: {} occurred during receiving from Partition: {}.".format(
+                        partition_context.partition_id, error
+                    )
+                )
+            else:
+                logger(
+                    "EventHubApi: An exception: {} occurred during the load balance process.".format(
+                        error
+                    )
+                )
+
+        async def on_partition_initialize(partition_context):
+            logger(
+                "EventHubApi: Partition: {} has been initialized.".format(
+                    partition_context.partition_id
+                )
+            )
+
+        async def on_partition_close(partition_context, reason):
+            logger(
+                "EventHubApi: Partition: {} has been closed, reason for closing: {}.".format(
+                    partition_context.partition_id, reason
+                )
+            )
+
         async def get_current_position():
             positions = {}
             ids = await self.consumer_client.get_partition_ids()
@@ -109,12 +136,19 @@ class EventHubApi:
                     # the current position so we can update it as events come in.
                     starting_position = self.starting_position
                     self.starting_position = await get_current_position()
-                print("EventHubApi: listening at")
-                pprint(self.starting_position)
+                logger("EventHubApi: listening at {}".format(starting_position))
+                logger(
+                    "EventHubApi: next starting position = {}".format(
+                        self.starting_position
+                    )
+                )
                 await self.consumer_client.receive(
                     on_event=on_event,
                     starting_position=starting_position,
                     starting_position_inclusive=True,
+                    on_error=on_error,
+                    on_partition_initialize=on_partition_initialize,
+                    on_partition_close=on_partition_close,
                 )
             except Exception as e:
                 logger("EventHubApi exception: {}".format(e))
@@ -150,23 +184,21 @@ class EventHubApi:
                 await self.listener_future
             except asyncio.CancelledError:
                 pass
-            logger("_close_eventhub_client: listener is complete")
+            logger("EventHubApi: _close_eventhub_client: listener is complete")
 
     async def disconnect(self):
         logger("EventHubApi: async disconnect")
         await self._close_eventhub_client()
 
     async def wait_for_next_event(self, device_id, expected=None):
-        logger("EventHubApi: waiting for next event for {}".format(device_id))
+        # logger("EventHubApi: waiting for next event for {}".format(device_id))
 
         while True:
             event = await self.received_events.get()
             if not device_id:
                 return event.body_as_json()
             elif get_device_id_from_event(event) == device_id:
-                logger(
-                    "EventHubApi: received event: {}".format(event.body_as_str()[:80])
-                )
+                logger("EventHubApi: received event: {}".format(event))
                 received = event.body_as_json()
                 if expected is not None:
                     if json_is_same(expected, received):
@@ -177,4 +209,5 @@ class EventHubApi:
                 else:
                     return received
             else:
-                logger("EventHubApi: event not for me received")
+                pass
+                # logger("EventHubApi: event not for me received")

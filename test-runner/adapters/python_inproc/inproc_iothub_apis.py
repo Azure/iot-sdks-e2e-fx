@@ -87,7 +87,17 @@ class Connect(object):
         await self.glue.destroy()
 
 
-class ConnectFromEnvironment(object):
+class DeviceConnect(object):
+    async def create_from_symmetric_key(
+        self, transport, device_id, hostname, symmetric_key
+    ):
+        client_object_list.append(self)
+        await self.glue.create_from_symmetric_key(
+            transport, device_id, hostname, symmetric_key
+        )
+
+
+class ModuleConnect(object):
     async def connect_from_environment(self, transport):
         client_object_list.append(self)
         await self.glue.connect_from_environment(transport)
@@ -95,6 +105,14 @@ class ConnectFromEnvironment(object):
     async def create_from_environment(self, transport):
         client_object_list.append(self)
         await self.glue.create_from_environment(transport)
+
+    async def create_from_symmetric_key(
+        self, transport, device_id, module_id, hostname, symmetric_key
+    ):
+        client_object_list.append(self)
+        await self.glue.create_from_symmetric_key(
+            transport, device_id, module_id, hostname, symmetric_key
+        )
 
 
 class Twin(object):
@@ -199,6 +217,7 @@ class BlobUpload(object):
 
 class DeviceApi(
     Connect,
+    DeviceConnect,
     Twin,
     Telemetry,
     C2d,
@@ -213,7 +232,7 @@ class DeviceApi(
 
 class ModuleApi(
     Connect,
-    ConnectFromEnvironment,
+    ModuleConnect,
     Twin,
     Telemetry,
     InputsAndOutputs,

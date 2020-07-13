@@ -212,6 +212,46 @@ paths:
           schema:
             $ref: "#/definitions/connectResponse"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
+  /device/createFromSymmetricKey/{transportType}:
+    put:
+      tags:
+      - "device"
+      summary: "Create a device client from a symmetric key"
+      operationId: "device_create_from_symmetric_key"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "hostname"
+        in: "query"
+        description: "name of the host to connect to"
+        required: true
+        type: "string"
+      - name: "symmetricKey"
+        in: "query"
+        description: "key to use for connection"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.device_controller"
   /device/{connectionId}/connect2:
     put:
       tags:
@@ -740,6 +780,50 @@ paths:
         required: true
         schema:
           type: "object"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "swagger_server.controllers.module_controller"
+  /module/createFromSymmetricKey/{transportType}:
+    put:
+      tags:
+      - "module"
+      summary: "Create a module client from a symmetric key"
+      operationId: "module_create_from_symmetric_key"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "moduleId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "hostname"
+        in: "query"
+        description: "name of the host to connect to"
+        required: true
+        type: "string"
+      - name: "symmetricKey"
+        in: "query"
+        description: "key to use for connection"
+        required: true
+        type: "string"
       responses:
         200:
           description: "OK"

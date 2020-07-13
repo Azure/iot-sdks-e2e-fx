@@ -8,6 +8,7 @@ import utilities
 import json
 from azure.storage.blob import BlobClient
 import limitations
+from horton_logging import logger
 
 invalid_correlation_id = "Mjk5OTA0MjAyMjQ0X2YwMDE2ODJiLWMyOTItNGZiNi04MjUzLTZhZDQzZTI2ODIzMV9BRjRWU1BNNFNZQzJYWThGMFBSV09XS0VXUk9SOUFUUFJSSUVFVVZXU1Q4Vk1BMUUxWE84UjJUMFpVSVdCMVVVX3ZlcjIuMAo=="
 success_code = 200
@@ -34,7 +35,7 @@ async def move_blob_status_into_eventhub(service, client):
     """
     while True:
         status = await service.get_blob_upload_status()
-        print("status = {}".format(status))
+        logger("got upload status = {}".format(status))
         await client.send_event(json.loads(str(status)))
 
 

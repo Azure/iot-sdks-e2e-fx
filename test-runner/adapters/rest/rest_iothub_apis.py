@@ -112,7 +112,23 @@ class Connect(object):
             time.sleep(2)
 
 
-class ConnectFromEnvironment(object):
+class DeviceConnect(object):
+    @log_entry_and_exit
+    async def create_from_symmetric_key(
+        self, transport, device_id, hostname, symmetric_key
+    ):
+        result = await self.rest_endpoint.create_from_symmetric_key(
+            transport,
+            device_id,
+            hostname,
+            symmetric_key,
+            timeout=adapter_config.default_api_timeout,
+        )
+        assert not self.connection_id
+        self.connection_id = result.connection_id
+
+
+class ModuleConnect(object):
     @log_entry_and_exit
     async def connect_from_environment(self, transport):
         result = await self.rest_endpoint.connect_from_environment(
@@ -125,6 +141,21 @@ class ConnectFromEnvironment(object):
     async def create_from_environment(self, transport):
         result = await self.rest_endpoint.create_from_environment(
             transport, timeout=adapter_config.default_api_timeout
+        )
+        assert not self.connection_id
+        self.connection_id = result.connection_id
+
+    @log_entry_and_exit
+    async def create_from_symmetric_key(
+        self, transport, device_id, module_id, hostname, symmetric_key
+    ):
+        result = await self.rest_endpoint.create_from_symmetric_key(
+            transport,
+            device_id,
+            module_id,
+            hostname,
+            symmetric_key,
+            timeout=adapter_config.default_api_timeout,
         )
         assert not self.connection_id
         self.connection_id = result.connection_id
@@ -360,6 +391,7 @@ class BlobUpload(object):
 
 class DeviceApi(
     Connect,
+    DeviceConnect,
     C2d,
     Telemetry,
     Twin,
@@ -377,7 +409,7 @@ class DeviceApi(
 
 class ModuleApi(
     Connect,
-    ConnectFromEnvironment,
+    ModuleConnect,
     Telemetry,
     Twin,
     InputsAndOutputs,

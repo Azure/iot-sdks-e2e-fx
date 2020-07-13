@@ -15,6 +15,17 @@ logger = logging.getLogger(__name__)
 DEFAULT_KEEPALIVE = 8
 
 
+def get_kwargs(transport_type):
+    kwargs = {}
+
+    if transport_type == "mqttws":
+        kwargs["websockets"] = True
+    if internal_control_glue.sas_renewal_interval:
+        kwargs["sastoken_ttl"] = internal_control_glue.sas_renewal_interval
+
+    return kwargs
+
+
 class Connect(ConnectionStatus):
     def connect_sync(self, transport_type, connection_string, cert):
         assert False
@@ -25,12 +36,7 @@ class Connect(ConnectionStatus):
     def create_from_connection_string_sync(
         self, transport_type, connection_string, cert
     ):
-        kwargs = {}
-
-        if transport_type == "mqttws":
-            kwargs["websockets"] = True
-        if internal_control_glue.sas_renewal_interval:
-            kwargs["sastoken_ttl"] = internal_control_glue.sas_renewal_interval
+        kwargs = get_kwargs(transport_type)
 
         if "GatewayHostName" in connection_string:
             self.client = self.client_class.create_from_connection_string(
@@ -66,19 +72,40 @@ class Connect(ConnectionStatus):
                 self.client = None
 
 
-class ConnectFromEnvironment(object):
+class DeviceConnect(object):
+    def create_from_symmetric_key_sync(
+        self, transport_type, device_id, hostname, symmetric_key
+    ):
+        kwargs = get_kwargs(transport_type)
+
+        self.client = self.client_class.create_from_symmetric_key(
+            symmetric_key, hostname, device_id, **kwargs
+        )
+
+        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
+        self._attach_connect_event_watcher()
+
+
+class ModuleConnect(object):
     def connect_from_environment_sync(self, transport_type):
         assert False
 
     def create_from_environment_sync(self, transport_type):
-        kwargs = {}
-
-        if transport_type == "mqttws":
-            kwargs["websockets"] = True
-        if internal_control_glue.sas_renewal_interval:
-            kwargs["sastoken_ttl"] = internal_control_glue.sas_renewal_interval
+        kwargs = get_kwargs(transport_type)
 
         self.client = self.client_class.create_from_edge_environment(**kwargs)
+
+        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
+        self._attach_connect_event_watcher()
+
+    def create_from_symmetric_key_sync(
+        self, transport_type, device_id, module_id, hostname, symmetric_key
+    ):
+        kwargs = get_kwargs(transport_type)
+
+        self.client = self.client_class.create_from_symmetric_key(
+            symmetric_key, hostname, device_id, module_id, **kwargs
+        )
 
         mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
@@ -222,7 +249,9 @@ class BlobUpload(object):
         )
 
 
-class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry, BlobUpload):
+class InternalDeviceGlueSync(
+    Connect, DeviceConnect, HandleMethods, C2d, Twin, Telemetry, BlobUpload
+):
     def __init__(self):
         self.client_class = IoTHubDeviceClient
         self.client = None
@@ -230,7 +259,7 @@ class InternalDeviceGlueSync(Connect, HandleMethods, C2d, Twin, Telemetry, BlobU
 
 class InternalModuleGlueSync(
     Connect,
-    ConnectFromEnvironment,
+    ModuleConnect,
     HandleMethods,
     C2d,
     Twin,

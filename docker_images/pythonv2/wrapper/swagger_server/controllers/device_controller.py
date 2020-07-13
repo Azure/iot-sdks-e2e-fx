@@ -80,6 +80,27 @@ def device_create_from_connection_string(
     )
 
 
+def device_create_from_symmetric_key(
+    transportType, deviceId, hostname, symmetricKey
+):  # noqa: E501
+    """Create a device client from a symmetric key
+
+     # noqa: E501
+
+    :param transportType: Transport to use
+    :type transportType: str
+    :param deviceId: 
+    :type deviceId: str
+    :param hostname: name of the host to connect to
+    :type hostname: str
+    :param symmetricKey: key to use for connection
+    :type symmetricKey: str
+
+    :rtype: ConnectResponse
+    """
+    return "do some magic!"
+
+
 def device_create_from_x509(transportType, X509):  # noqa: E501
     """Create a device client from X509 credentials
 

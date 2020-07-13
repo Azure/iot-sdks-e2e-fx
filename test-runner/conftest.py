@@ -12,7 +12,7 @@ import runtime_capabilities
 import scenarios
 from distutils.version import LooseVersion
 from horton_logging import set_logger
-from horton_settings import settings
+from horton_settings import settings, ObjectWithAdapter
 from fixtures import (  # noqa: F401
     eventhub,
     registry,
@@ -24,6 +24,7 @@ from fixtures import (  # noqa: F401
     net_control,
     longhaul_control_device,
     telemetry_payload,
+    device_provisioning,
 )
 from hooks import (  # noqa: F401
     pytest_runtest_logstart,
@@ -212,26 +213,17 @@ def add_service_settings():
     class ServiceSettings:
         pass
 
-    settings.eventhub = ServiceSettings()
-    settings.eventhub.name = "eventhub"
+    settings.eventhub = ObjectWithAdapter("eventhub", "eventhub")
     settings.eventhub.connection_string = settings.iothub.connection_string
     settings.eventhub.adapter_address = "direct_rest"
-    settings.eventhub.client = None
-    settings.eventhub.object_type = "eventhub"
 
-    settings.registry = ServiceSettings()
-    settings.registry.name = "registry"
+    settings.registry = ObjectWithAdapter("registry", "iothub_registry")
     settings.registry.connection_string = settings.iothub.connection_string
     settings.registry.adapter_address = settings.test_module.adapter_address
-    settings.registry.client = None
-    settings.registry.object_type = "iothub_registry"
 
-    settings.service = ServiceSettings()
-    settings.service.name = "service"
+    settings.service = ObjectWithAdapter("service", "iothub_service")
     settings.service.connection_string = settings.iothub.connection_string
     settings.service.adapter_address = settings.test_module.adapter_address
-    settings.service.client = None
-    settings.service.object_type = "iothub_service"
 
 
 def adjust_surfaces_for_missing_implementations():

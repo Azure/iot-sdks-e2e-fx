@@ -261,6 +261,67 @@ class DeviceOperations(object):
         return deserialized
     create_from_x509.metadata = {'url': '/device/createFromX509/{transportType}'}
 
+    def create_from_symmetric_key(
+            self, transport_type, device_id, hostname, symmetric_key, custom_headers=None, raw=False, **operation_config):
+        """Create a device client from a symmetric key.
+
+        :param transport_type: Transport to use. Possible values include:
+         'amqp', 'amqpws', 'mqtt', 'mqttws', 'http'
+        :type transport_type: str
+        :param device_id:
+        :type device_id: str
+        :param hostname: name of the host to connect to
+        :type hostname: str
+        :param symmetric_key: key to use for connection
+        :type symmetric_key: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+         deserialized response
+        :param operation_config: :ref:`Operation configuration
+         overrides<msrest:optionsforoperations>`.
+        :return: ConnectResponse or ClientRawResponse if raw=true
+        :rtype: ~e2erestapi.models.ConnectResponse or
+         ~msrest.pipeline.ClientRawResponse
+        :raises:
+         :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
+        """
+        # Construct URL
+        url = self.create_from_symmetric_key.metadata['url']
+        path_format_arguments = {
+            'transportType': self._serialize.url("transport_type", transport_type, 'str'),
+            'deviceId': self._serialize.url("device_id", device_id, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+        query_parameters['hostname'] = self._serialize.query("hostname", hostname, 'str')
+        query_parameters['symmetricKey'] = self._serialize.query("symmetric_key", symmetric_key, 'str')
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if custom_headers:
+            header_parameters.update(custom_headers)
+
+        # Construct and send request
+        request = self._client.put(url, query_parameters, header_parameters)
+        response = self._client.send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200]:
+            raise HttpOperationError(self._deserialize, response)
+
+        deserialized = None
+        if response.status_code == 200:
+            deserialized = self._deserialize('ConnectResponse', response)
+
+        if raw:
+            client_raw_response = ClientRawResponse(deserialized, response)
+            return client_raw_response
+
+        return deserialized
+    create_from_symmetric_key.metadata = {'url': '/device/createFromSymmetricKey/{transportType}'}
+
     def connect2(
             self, connection_id, custom_headers=None, raw=False, **operation_config):
         """Connect the device.
