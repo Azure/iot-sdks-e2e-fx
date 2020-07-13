@@ -184,7 +184,7 @@ class EventHubApi:
                 await self.listener_future
             except asyncio.CancelledError:
                 pass
-            logger("EentHubApi: _close_eventhub_client: listener is complete")
+            logger("EventHubApi: _close_eventhub_client: listener is complete")
 
     async def disconnect(self):
         logger("EventHubApi: async disconnect")

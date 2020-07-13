@@ -319,7 +319,8 @@ def device_send_event(connectionId, eventBody):  # noqa: E501
     """
     if connexion.request.is_json:
         eventBody = EventBody.from_dict(connexion.request.get_json())  # noqa: E501
-    return "do some magic!"
+    # changed from return 'do some magic!'
+    device_glue.send_event_sync(connectionId, eventBody)
 
 
 def device_wait_for_c2d_message(connectionId):  # noqa: E501
