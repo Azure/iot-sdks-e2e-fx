@@ -90,7 +90,6 @@ class NetControl(ObjectWithAdapter):
     def __init__(self):
         super(NetControl, self).__init__("net_control", "net_control")
         self.test_destination = ""
-        self.api = ""
 
 
 class DeviceProvisioning(ObjectWithAdapter):
@@ -143,10 +142,9 @@ class HortonSettings(DictionaryObject):
 
     def clear_object(self, obj):
         print("clearing {} object".format(obj.name))
-        old_name = obj.name
         for attr in obj._get_attribute_names():
-            setattr(obj, attr, "")
-        obj.name = old_name
+            if attr not in ["name", "object_type"]:
+                setattr(obj, attr, "")
 
     def save(self):
         self.to_file(horton_settings_file_name)
