@@ -88,9 +88,7 @@ class IntervalOperation(object):
                     _log_exception(
                         asyncio.wait_for(
                             self.run_one_op(),
-                            timeout=_get_seconds(
-                                self.test_config.test_run_operation_timeout_interval
-                            ),
+                            timeout=_get_seconds(self.test_config.timeout_interval),
                         )
                     )
                     for _ in range(0, self.ops_per_interval)
@@ -324,7 +322,7 @@ class IntervalOperationUpdateTestReport(IntervalOperation):
     def __init__(self, *, test_config, execution_properties, longhaul_control_device):
         super(IntervalOperationUpdateTestReport, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.test_run_property_update_interval),
+            interval_length=_get_seconds(test_config.property_update_interval),
             ops_per_interval=1,
             longhaul_control_device=longhaul_control_device,
         )
@@ -345,7 +343,7 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
     def __init__(self, *, test_config, longhaul_control_device):
         super(IntervalOperationSendTestTelemetry, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.test_run_telemetry_interval),
+            interval_length=_get_seconds(test_config.telenetry_interval),
             ops_per_interval=1,
             longhaul_control_device=longhaul_control_device,
         )
@@ -434,7 +432,7 @@ class IntervalOperationRenewEventhub(IntervalOperation):
     def __init__(self, *, test_config, eventhub, longhaul_control_device):
         super(IntervalOperationRenewEventhub, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.test_run_eventhub_renew_interval),
+            interval_length=_get_seconds(test_config.eventhub_renew_interval),
             ops_per_interval=1,
             longhaul_control_device=longhaul_control_device,
         )
@@ -454,9 +452,9 @@ class LongHaulTest(object):
         test_config = LonghaulConfig.from_dict(longhaul_config)
 
         execution_properties = ExecutionProperties()
-        execution_properties.test_run_status = "new"
-        execution_properties.test_run_start_time = datetime.datetime.now()
-        execution_properties.test_run_elapsed_time = datetime.timedelta(0)
+        execution_properties.execution_status = "new"
+        execution_properties.execution_start_time = datetime.datetime.now()
+        execution_properties.execution_elapsed_time = datetime.timedelta(0)
 
         stop = False
 
@@ -499,9 +497,8 @@ class LongHaulTest(object):
             all_tasks = set()
 
             while not stop and (
-                execution_properties.test_run_elapsed_time
-                < test_config.test_run_total_duration
-                or execution_properties.test_run_elapsed_time == datetime.timedelta(0)
+                execution_properties.execution_elapsed_time < test_config.total_duration
+                or execution_properties.execution_elapsed_time == datetime.timedelta(0)
             ):
                 # pytest caches all messages.  We don't want that, but I couldn't find a way
                 # to turn it off, so we just clear it once a second.
@@ -526,19 +523,19 @@ class LongHaulTest(object):
                     if len(all_tasks) == 0:
                         await asyncio.sleep(one_second - wait_time.get_latency())
 
-                execution_properties.test_run_elapsed_time = (
-                    datetime.datetime.now() - execution_properties.test_run_start_time
+                execution_properties.execution_elapsed_time = (
+                    datetime.datetime.now() - execution_properties.execution_start_time
                 )
 
             await asyncio.gather(*all_tasks)
 
             logger("Marking test as complete")
-            execution_properties.test_run_status = "completed"
+            execution_properties.execution_status = "completed"
 
         except Exception:
             logger("Marking test as failed")
             logger(traceback.format_exc())
-            execution_properties.test_run_status = "failed"
+            execution_properties.execution_status = "failed"
 
             for op in longhaul_ops.values():
                 if len(op.uncompleted_ops):
