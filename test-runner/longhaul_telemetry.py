@@ -45,15 +45,15 @@ class PlatformTelemetry(DictionaryObject):
 PlatformTelemetry._defaults = PlatformTelemetry()
 
 
-class TestRunnerTelemetry(DictionaryObject):
+class ExecutionTelemetry(DictionaryObject):
     def __init__(self):
-        super(TestRunnerTelemetry, self).__init__()
+        super(ExecutionTelemetry, self).__init__()
         self.pytest_gc_object_count = 0
         self.sdk_gc_object_count = 0
         self.lock_attributes()
 
 
-TestRunnerTelemetry._defaults = TestRunnerTelemetry()
+ExecutionTelemetry._defaults = ExecutionTelemetry()
 
 
 class D2cTelemetry(DictionaryObject):

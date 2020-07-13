@@ -12,8 +12,8 @@ import abc
 import datetime
 import traceback
 
-from longhaul_config import TestConfig
-from longhaul_telemetry import ExecutionProperties, D2cTelemetry, TestRunnerTelemetry
+from longhaul_config import LonghaulConfig
+from longhaul_telemetry import ExecutionProperties, D2cTelemetry, ExecutionTelemetry
 from measurement import TrackCount, TrackMax, MeasureRunningCodeBlock, MeasureLatency
 from horton_logging import logger
 from sample_content import make_message_payload
@@ -25,11 +25,11 @@ pytestmark = pytest.mark.asyncio
 # change stop to a function
 
 
-longhaul_test_config = {
+longhaul_config = {
     "d2cEnabled": True,
     "d2cIntervalLength": 1,
     "d2cOpsPerInterval": 15,
-    "testRunTotalDuration": "00:00:10",
+    "testRunTotalDuration": "00:00:30",
     # "testRunTotalDuration": "72:00:10",
 }
 
@@ -351,32 +351,10 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
         )
 
     async def run_one_op(self):
-        telemetry = TestRunnerTelemetry()
+        telemetry = ExecutionTelemetry()
         telemetry.pytest_gc_object_count = len(gc.get_objects())
 
-        # for each op, pull out the info since the last interval to send it up in
-        # a telemetry message.  This is "what has happened since the last telemetry message"
-        for op_name in self.longhaul_ops:
-            op = self.longhaul_ops[op_name]
-            op_status = getattr(telemetry, op_name)
-
-            op_status.ops_completed = op.count_completed.extract()
-            op_status.ops_failed = op.count_failed.extract()
-            op_status.ops_sending = op.count_sending.get_count()
-            op_status.ops_verifying = op.count_verifying.get_count()
-            op_status.max_send_latency = op.track_max_send_latency.extract()
-            op_status.max_verify_latency = op.track_max_verify_latency.extract()
-
         await self.longhaul_control_device.send_event(telemetry.to_dict())
-
-        # Then, once we've sent it up as telemetry, add it to the test_status object where
-        # we record stats since the beginning of the run.
-        for op_name in self.longhaul_ops:
-            op_status = getattr(telemetry, op_name)
-            total_op_status = getattr(self.test_status, op_name)
-
-            total_op_status.ops_completed += op_status.ops_completed
-            total_op_status.ops_failed += op_status.ops_failed
 
     async def stop(self):
         # send one last time before we stop the test
@@ -473,9 +451,7 @@ class LongHaulTest(object):
     ):
         await eventhub.connect()
 
-        breakpoint()
-
-        test_config = TestConfig.from_dict(longhaul_test_config)
+        test_config = LonghaulConfig.from_dict(longhaul_config)
 
         execution_properties = ExecutionProperties()
         execution_properties.test_run_status = "new"

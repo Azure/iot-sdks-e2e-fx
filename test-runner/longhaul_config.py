@@ -4,9 +4,9 @@ import datetime
 from dictionary_object import DictionaryObject
 
 
-class TestConfig(DictionaryObject):
+class LonghaulConfig(DictionaryObject):
     def __init__(self):
-        super(TestConfig, self).__init__()
+        super(LonghaulConfig, self).__init__()
         self.test_run_total_duration = datetime.timedelta()
         self.test_run_operation_timeout_interval = datetime.timedelta(minutes=2)
         self.test_run_property_update_interval = datetime.timedelta(seconds=10)
@@ -19,4 +19,4 @@ class TestConfig(DictionaryObject):
         self.lock_attributes()
 
 
-TestConfig._defaults = TestConfig()
+LonghaulConfig._defaults = LonghaulConfig()
