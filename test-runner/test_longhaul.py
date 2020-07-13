@@ -9,14 +9,10 @@ import threading
 import six
 import abc
 import datetime
-import gc
 import traceback
 
-from longhaul_config import (
-    DesiredTestProperties,
-    ReportedTestProperties,
-    CentralTelemetry,
-)
+from longhaul_config import TestConfig
+from longhaul_telemetry import ExecutionProperties, D2cTelemetry
 from measurement import TrackCount, TrackMax, MeasureRunningCodeBlock, MeasureLatency
 from horton_logging import logger
 from sample_content import make_message_payload
@@ -24,17 +20,14 @@ from sample_content import make_message_payload
 pytestmark = pytest.mark.asyncio
 
 # BKTODO:
-# add control to stop test
 # add events for connected, disconnected
-#
+# change stop to a function
 
 
-desired_node_config = {
-    "testConfig": {
-        "d2c": {"enabled": True, "intervalLength": 1, "opsPerInterval": 15},
-        # "totalDuration": "00:00:10",
-        "totalDuration": "72:00:10",
-    }
+longhaul_test_config = {
+    "d2c": {"enabled": True, "intervalLength": 1, "opsPerInterval": 15},
+    "totalDuration": "00:00:10",
+    # "totalDuration": "72:00:10",
 }
 
 
@@ -71,22 +64,26 @@ class IntervalOperation(object):
     constructor parameters
     """
 
-    def __init__(self, *, interval_length, ops_per_interval, timeout):
-
+    def __init__(self, *, test_config, interval_length, ops_per_interval):
+        self.test_config = test_config
         self.interval_length = interval_length
         self.ops_per_interval = ops_per_interval
         self.interval_index = 0
-        self.timeout = timeout
 
     async def schedule_one_second(self):
         self.interval_index += 1
         if self.interval_index == self.interval_length:
             self.interval_index = 0
 
+            await self.send_longhaul_telemetry()
+
             return set(
                 [
                     _log_exception(
-                        asyncio.wait_for(self.run_one_op(), timeout=self.timeout)
+                        asyncio.wait_for(
+                            self.run_one_op(),
+                            timeout=self.test_config.test_run_operation_timeout_interval,
+                        )
                     )
                     for _ in range(0, self.ops_per_interval)
                 ]
@@ -96,6 +93,9 @@ class IntervalOperation(object):
 
     @abc.abstractmethod
     async def run_one_op(self):
+        pass
+
+    async def send_longhaul_telemetry(self):
         pass
 
     async def stop(self):
@@ -110,23 +110,16 @@ class IntervalOperationLonghaul(IntervalOperation):
     for reporting, including counts and latency values.
     """
 
-    def __init__(self, *, test_config, test_status, op_config):
-        super(IntervalOperationLonghaul, self).__init__(
-            interval_length=op_config.interval_length,
-            ops_per_interval=op_config.ops_per_interval,
-            timeout=_get_seconds(test_config.timeout_interval),
-        )
-
-        self.test_config = test_config
-        self.test_status = test_status
+    def __init__(self, *args, **kwargs):
+        super(IntervalOperationLonghaul, self).__init__(*args, **kwargs)
 
         self.next_op_id = TrackCount()
 
         self.count_sending = MeasureRunningCodeBlock("sending", logger=None)
         self.count_verifying = MeasureRunningCodeBlock("verifying", logger=None)
 
-        self.count_completed = TrackCount()
-        self.count_failed = TrackCount()
+        self.count_total_completed = TrackCount()
+        self.count_total_failed = TrackCount()
 
         self.track_max_send_latency = TrackMax()
         self.track_max_verify_latency = TrackMax()
@@ -163,11 +156,11 @@ class IntervalOperationLonghaul(IntervalOperation):
             with self.uncompleted_ops_lock:
                 self.uncompleted_ops.remove(op_id)
 
-            self.count_completed.increment()
+            self.count_total_completed.increment()
 
         except Exception as e:
             logger("OP FAILED: Exception running op: {}".format(type(e)))
-            self.count_failed.increment()
+            self.count_total_failed.increment()
 
 
 not_received = "not received"
@@ -179,9 +172,11 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
     Class represending the testing of D2C as a longhaul operation
     """
 
-    def __init__(self, *, test_config, test_status, client, eventhub):
+    def __init__(self, *, test_config, client, eventhub):
         super(IntervalOperationD2c, self).__init__(
-            test_config=test_config, test_status=test_status, op_config=test_config.d2c
+            test_config=test_config,
+            interval_length=test_config.d2c_interval_length,
+            ops_per_interval=test_config.d2c_ops_per_interval,
         )
 
         self.client = client
@@ -287,6 +282,29 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
 
         await message_received
 
+    async def send_longhaul_telemetry(self):
+        telemetry = D2cTelemetry()
+
+        telemetry.count_total_d2c_completed = self.count_total_completed.get_count()
+        telemetry.count_total_d2c_failed = self.count_total_failed.get_count()
+        telemetry.count_current_d2c_sending = self.count_sending.get_count()
+        telemetry.count_current_d2c_verifying = self.count_verifying.get_count()
+        telemetry.latency_d2c_send = self.track.max_send_latency.extract()
+        telemetry.latency_d2c_verify = self.track_max_verify_latency.extract()
+
+        await self.longhaul_control_device.send_event(telemetry.to_dict())
+
+        if (
+            self.count_total_failures.get_count()
+            > self.test_config.d2c_count_failures_allowed
+        ):
+            raise Exception(
+                "D2c failures ({}) exceeeded amount allowed ({})".format(
+                    self.count_total_failures.get_count(),
+                    self.test_config.d2c_count_failures_allowed,
+                )
+            )
+
     async def stop(self):
         if self.listener:
             self.listener.cancel()
@@ -294,95 +312,23 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
 
 
 class IntervalOperationUpdateTestReport(IntervalOperation):
-    def __init__(
-        self, *, test_config, test_status, longhaul_control_device, longhaul_ops
-    ):
+    def __init__(self, *, test_config, execution_properties, longhaul_control_device):
         super(IntervalOperationUpdateTestReport, self).__init__(
+            test_config=test_config,
             interval_length=_get_seconds(test_config.reporting_interval),
             ops_per_interval=1,
-            timeout=_get_seconds(test_config.timeout_interval),
         )
-
+        self.execution_properties = execution_properties
         self.longhaul_control_device = longhaul_control_device
-        self.longhaul_ops = longhaul_ops
-        self.test_config = test_config
-        self.test_status = test_status
-
-        self.test_report = ReportedTestProperties()
-        self.test_report.test_config = test_config
-        self.test_report.test_status = test_status
 
     async def run_one_op(self):
-        now = datetime.datetime.now()
-        if self.test_status.start_time == datetime.datetime.min:
-            self.test_status.start_time = now
 
-        self.test_status.elapsed_time = now - self.test_status.start_time
-
-        total_ops_failed = 0
-        for op_name in self.longhaul_ops:
-            op = self.longhaul_ops[op_name]
-            op_status = getattr(self.test_status, op_name)
-
-            op_status.ops_sending = op.count_sending.get_count()
-            op_status.ops_verifying = op.count_verifying.get_count()
-
-            total_ops_failed += op_status.ops_failed
-
-        self.test_status.total_ops_failed = total_ops_failed
-
-        patch = {"reported": self.test_report.to_dict()}
+        patch = {"reported": self.execution_properties.to_dict()}
         logger("reporting: {}".format(patch))
         await self.longhaul_control_device.patch_twin(patch)
 
     async def stop(self):
         # report one last time before we stop the test
-        await self.run_one_op()
-
-
-class IntervalOperationSendTestTelemetry(IntervalOperation):
-    def __init__(
-        self, *, test_config, test_status, longhaul_control_device, longhaul_ops
-    ):
-        super(IntervalOperationSendTestTelemetry, self).__init__(
-            interval_length=_get_seconds(test_config.telemetry_interval),
-            ops_per_interval=1,
-            timeout=_get_seconds(test_config.timeout_interval),
-        )
-        self.longhaul_control_device = longhaul_control_device
-        self.longhaul_ops = longhaul_ops
-        self.test_config = test_config
-        self.test_status = test_status
-        self.next_interval_id = TrackCount()
-
-    async def run_one_op(self):
-        telemetry = CentralTelemetry()
-
-        telemetry.count_pytest_objects = len(gc.get_objects())
-        d2c = self.longhaul_ops["d2c"]
-
-        telemetry.count_d2c_completed = d2c.count_completed.extract()
-        telemetry.count_d2c_failed = d2c.count_failed.extract()
-        telemetry.count_d2c_sending = d2c.count_sending.get_count()
-        telemetry.count_d2c_verifying = d2c.count_verifying.get_count()
-        telemetry.latency_d2c_send = d2c.track_max_send_latency.extract()
-        telemetry.latency_d2c_verify = d2c.track_max_verify_latency.extract()
-
-        await self.longhaul_control_device.send_event(telemetry.to_dict())
-
-        # Then, once we've sent it up as telemetry, add it to the test_status object where
-        # we record stats since the beginning of the run.
-        """
-        for op_name in self.longhaul_ops:
-            op_status = getattr(telemetry, op_name)
-            total_op_status = getattr(self.test_status, op_name)
-
-            total_op_status.ops_completed += op_status.ops_completed
-            total_op_status.ops_failed += op_status.ops_failed
-        """
-
-    async def stop(self):
-        # send one last time before we stop the test
         await self.run_one_op()
 
 
@@ -458,9 +404,9 @@ class CommandListener(RobustListener):
 class IntervalOperationRenewEventhub(IntervalOperation):
     def __init__(self, *, test_config, eventhub):
         super(IntervalOperationRenewEventhub, self).__init__(
+            test_config=test_config,
             interval_length=_get_seconds(test_config.eventhub_renew_interval),
             ops_per_interval=1,
-            timeout=_get_seconds(test_config.timeout_interval),
         )
         self.eventhub = eventhub
 
@@ -475,12 +421,12 @@ class LongHaulTest(object):
     ):
         await eventhub.connect()
 
-        test_config = DesiredTestProperties.from_dict(desired_node_config).test_config
+        test_config = TestConfig.from_dict(longhaul_test_config)
 
-        test_report = ReportedTestProperties()
-        test_report.test_config = test_config
-        test_status = test_report.test_status
-        test_status.status = "running"
+        execution_properties = ExecutionProperties()
+        execution_properties.test_run_status = "new"
+        execution_properties.test_run_start_time = datetime.datetime.now()
+        execution_properties.test_run_elapsed_time = datetime.timedelta(0)
 
         stop = False
 
@@ -494,39 +440,27 @@ class LongHaulTest(object):
 
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
-                test_config=test_config,
-                test_status=test_status,
-                client=client,
-                eventhub=eventhub,
+                test_config=test_config, client=client, eventhub=eventhub
             )
         }
         update_test_report = IntervalOperationUpdateTestReport(
             test_config=test_config,
-            test_status=test_status,
+            execution_properties=execution_properties,
             longhaul_control_device=longhaul_control_device,
-            longhaul_ops=longhaul_ops,
-        )
-        send_test_telemetry = IntervalOperationSendTestTelemetry(
-            test_config=test_config,
-            test_status=test_status,
-            longhaul_control_device=longhaul_control_device,
-            longhaul_ops=longhaul_ops,
         )
         renew_eventhub = IntervalOperationRenewEventhub(
             test_config=test_config, eventhub=eventhub
         )
 
-        all_ops = set(longhaul_ops.values()) | set(
-            [update_test_report, send_test_telemetry, renew_eventhub]
-        )
+        all_ops = set(longhaul_ops.values()) | set([update_test_report, renew_eventhub])
 
         try:
             one_second = 1
             all_tasks = set()
 
             while not stop and (
-                test_status.elapsed_time < test_config.total_duration
-                or test_status.elapsed_time == datetime.timedelta(0)
+                execution_properties.test_run_elapsed_time < test_config.total_duration
+                or execution_properties.test_run_elapsed_time == datetime.timedelta(0)
             ):
                 # pytest caches all messages.  We don't want that, but I couldn't find a way
                 # to turn it off, so we just clear it once a second.
@@ -546,26 +480,24 @@ class LongHaulTest(object):
 
                         await asyncio.gather(*done)
 
-                        if (
-                            test_status.total_ops_failed
-                            > test_config.max_allowed_failures
-                        ):
-                            raise Exception("failure count exceeded maximum allowed")
-
                         all_tasks = pending
 
                     if len(all_tasks) == 0:
                         await asyncio.sleep(one_second - wait_time.get_latency())
 
+                execution_properties.test_run_elapsed_time = (
+                    datetime.datetime.now() - execution_properties.test_run_start_time
+                )
+
             await asyncio.gather(*all_tasks)
 
             logger("Marking test as complete")
-            test_report.test_status.status = "completed"
+            execution_properties.test_run_status = "completed"
 
         except Exception:
             logger("Marking test as failed")
-            traceback.print_exc()
-            test_report.test_status.status = "failed"
+            logger(traceback.format_exc())
+            execution_properties.test_run_status = "failed"
 
             for op in longhaul_ops.values():
                 if len(op.uncompleted_ops):
@@ -588,7 +520,6 @@ class LongHaulTest(object):
             await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")
             await renew_eventhub.stop()
-            await send_test_telemetry.stop()
             await update_test_report.stop()
 
 

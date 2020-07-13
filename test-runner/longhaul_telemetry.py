@@ -21,13 +21,12 @@ class PlatformProperties(DictionaryObject):
 PlatformProperties._defaults = PlatformProperties()
 
 
-class TestRunProperties(DictionaryObject):
+class ExecutionProperties(DictionaryObject):
     def __init__(self):
-        super(TestRunProperties, self).__init__()
+        super(ExecutionProperties, self).__init__()
         self.test_run_status = "new"
         self.test_run_start_time = datetime.datetime.min
         self.test_run_elapsed_time = datetime.timedelta(0)
-        self.test_run_total_ops_failed = 0
         self.lock_attributes()
 
 
