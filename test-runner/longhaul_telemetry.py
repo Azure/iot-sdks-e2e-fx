@@ -48,7 +48,7 @@ PlatformTelemetry._defaults = PlatformTelemetry()
 class TestRunnerTelemetry(DictionaryObject):
     def __init__(self):
         super(TestRunnerTelemetry, self).__init__()
-        self.test_gc_object_count = 0
+        self.pytest_gc_object_count = 0
         self.sdk_gc_object_count = 0
         self.lock_attributes()
 
