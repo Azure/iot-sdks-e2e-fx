@@ -26,9 +26,11 @@ pytestmark = pytest.mark.asyncio
 
 
 longhaul_test_config = {
-    "d2c": {"enabled": True, "intervalLength": 1, "opsPerInterval": 15},
-    "totalDuration": "00:00:10",
-    # "totalDuration": "72:00:10",
+    "d2cEnabled": True,
+    "d2cIntervalLength": 1,
+    "d2cOpsPerInterval": 15,
+    "testRunTotalDuration": "00:00:10",
+    # "testRunTotalDuration": "72:00:10",
 }
 
 
@@ -65,10 +67,13 @@ class IntervalOperation(object):
     constructor parameters
     """
 
-    def __init__(self, *, test_config, interval_length, ops_per_interval):
+    def __init__(
+        self, *, test_config, interval_length, ops_per_interval, longhaul_control_device
+    ):
         self.test_config = test_config
         self.interval_length = interval_length
         self.ops_per_interval = ops_per_interval
+        self.longhaul_control_device = longhaul_control_device
         self.interval_index = 0
 
     async def schedule_one_second(self):
@@ -83,7 +88,9 @@ class IntervalOperation(object):
                     _log_exception(
                         asyncio.wait_for(
                             self.run_one_op(),
-                            timeout=self.test_config.test_run_operation_timeout_interval,
+                            timeout=_get_seconds(
+                                self.test_config.test_run_operation_timeout_interval
+                            ),
                         )
                     )
                     for _ in range(0, self.ops_per_interval)
@@ -173,11 +180,12 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
     Class represending the testing of D2C as a longhaul operation
     """
 
-    def __init__(self, *, test_config, client, eventhub):
+    def __init__(self, *, test_config, client, eventhub, longhaul_control_device):
         super(IntervalOperationD2c, self).__init__(
             test_config=test_config,
             interval_length=test_config.d2c_interval_length,
             ops_per_interval=test_config.d2c_ops_per_interval,
+            longhaul_control_device=longhaul_control_device,
         )
 
         self.client = client
@@ -290,18 +298,18 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
         telemetry.count_total_d2c_failed = self.count_total_failed.get_count()
         telemetry.count_current_d2c_sending = self.count_sending.get_count()
         telemetry.count_current_d2c_verifying = self.count_verifying.get_count()
-        telemetry.latency_d2c_send = self.track.max_send_latency.extract()
+        telemetry.latency_d2c_send = self.track_max_send_latency.extract()
         telemetry.latency_d2c_verify = self.track_max_verify_latency.extract()
 
         await self.longhaul_control_device.send_event(telemetry.to_dict())
 
         if (
-            self.count_total_failures.get_count()
+            self.count_total_failed.get_count()
             > self.test_config.d2c_count_failures_allowed
         ):
             raise Exception(
                 "D2c failures ({}) exceeeded amount allowed ({})".format(
-                    self.count_total_failures.get_count(),
+                    self.count_total_failed.get_count(),
                     self.test_config.d2c_count_failures_allowed,
                 )
             )
@@ -316,11 +324,11 @@ class IntervalOperationUpdateTestReport(IntervalOperation):
     def __init__(self, *, test_config, execution_properties, longhaul_control_device):
         super(IntervalOperationUpdateTestReport, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.reporting_interval),
+            interval_length=_get_seconds(test_config.test_run_property_update_interval),
             ops_per_interval=1,
+            longhaul_control_device=longhaul_control_device,
         )
         self.execution_properties = execution_properties
-        self.longhaul_control_device = longhaul_control_device
 
     async def run_one_op(self):
 
@@ -337,10 +345,10 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
     def __init__(self, *, test_config, longhaul_control_device):
         super(IntervalOperationSendTestTelemetry, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.telemetry_interval),
+            interval_length=_get_seconds(test_config.test_run_telemetry_interval),
             ops_per_interval=1,
+            longhaul_control_device=longhaul_control_device,
         )
-        self.longhaul_control_device = longhaul_control_device
 
     async def run_one_op(self):
         telemetry = TestRunnerTelemetry()
@@ -445,11 +453,12 @@ class CommandListener(RobustListener):
 
 
 class IntervalOperationRenewEventhub(IntervalOperation):
-    def __init__(self, *, test_config, eventhub):
+    def __init__(self, *, test_config, eventhub, longhaul_control_device):
         super(IntervalOperationRenewEventhub, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.eventhub_renew_interval),
+            interval_length=_get_seconds(test_config.test_run_eventhub_renew_interval),
             ops_per_interval=1,
+            longhaul_control_device=longhaul_control_device,
         )
         self.eventhub = eventhub
 
@@ -463,6 +472,8 @@ class LongHaulTest(object):
         self, client, eventhub, service, longhaul_control_device, caplog
     ):
         await eventhub.connect()
+
+        breakpoint()
 
         test_config = TestConfig.from_dict(longhaul_test_config)
 
@@ -483,7 +494,10 @@ class LongHaulTest(object):
 
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
-                test_config=test_config, client=client, eventhub=eventhub
+                test_config=test_config,
+                client=client,
+                eventhub=eventhub,
+                longhaul_control_device=longhaul_control_device,
             )
         }
         update_test_report = IntervalOperationUpdateTestReport(
@@ -495,7 +509,9 @@ class LongHaulTest(object):
             test_config=test_config, longhaul_control_device=longhaul_control_device
         )
         renew_eventhub = IntervalOperationRenewEventhub(
-            test_config=test_config, eventhub=eventhub
+            test_config=test_config,
+            eventhub=eventhub,
+            longhaul_control_device=longhaul_control_device,
         )
 
         all_ops = set(longhaul_ops.values()) | set(
@@ -507,7 +523,8 @@ class LongHaulTest(object):
             all_tasks = set()
 
             while not stop and (
-                execution_properties.test_run_elapsed_time < test_config.total_duration
+                execution_properties.test_run_elapsed_time
+                < test_config.test_run_total_duration
                 or execution_properties.test_run_elapsed_time == datetime.timedelta(0)
             ):
                 # pytest caches all messages.  We don't want that, but I couldn't find a way
@@ -558,12 +575,13 @@ class LongHaulTest(object):
             raise
 
         finally:
-            # stop all of our longhaul ops, then stop our reporting ops.
-            # order is important here since send_test_telemetry feeds data into
-            # update_test_report.
             logger("Stopping command listener")
             await service.send_c2d(longhaul_control_device.device_id, "stop")
             await command_listener.stop()
+
+            # stop all of our longhaul ops, then stop our reporting ops.
+            # order is important here since send_test_telemetry feeds data into
+            # update_test_report.
             logger("stopping all  ops")
             await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")

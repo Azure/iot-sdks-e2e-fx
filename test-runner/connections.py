@@ -152,6 +152,7 @@ async def create_client(settings_object, device_provisioning=None):
 
         settings_object.device_id = result.device_id
         settings_object.hostname = result.assigned_hub
+        adapter.device_id = settings_object.device_id
 
         await adapter.create_from_symmetric_key(
             settings_object.transport,

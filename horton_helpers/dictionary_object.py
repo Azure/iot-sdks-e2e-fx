@@ -40,6 +40,12 @@ class SimpleObject(object):
             or not hasattr(self, "_attributes_locked")
             or not self._attributes_locked
         ):
+            if name == "device_id":
+                print(
+                    "Setting device_id from {} to {}".format(
+                        getattr(self, name, None), value
+                    )
+                )
             super(SimpleObject, self).__setattr__(name, value)
         else:
             raise AttributeError(
