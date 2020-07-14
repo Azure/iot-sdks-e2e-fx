@@ -19,8 +19,6 @@ class AbstractSystemControlApi:
     def reconnect_network(self):
         pass
 
-    # BKTODO: schedule discussion
-
     @abc.abstractmethod
     def get_system_stats(self, wrapper_pid):
         pass
