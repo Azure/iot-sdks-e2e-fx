@@ -93,6 +93,6 @@ steps:
 
 - bash:
     source ${HORTON_FRAMEWORKROOT}/bin/activate_horton &&
-    python ${HORTON_FRAMEWORKROOT}/docker_images/net_control_app/main.py &
+    python ${HORTON_FRAMEWORKROOT}/docker_images/system_control_app/main.py &
   displayName: 'start net control app'
   condition: and(always(), ne(variables['skipTest'],'yes'), eq(variables['pythonInproc'], 'yes'), ne(variables['Agent.OS'], 'Windows_NT'))

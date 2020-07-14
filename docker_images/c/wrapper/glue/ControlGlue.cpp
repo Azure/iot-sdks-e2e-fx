@@ -60,7 +60,7 @@ std::string ControlGlue::GetCapabilities()
     return "{ " \
             "\"flags\": { " \
                 "\"v2_connect_group\" : false, " \
-                "\"net_control_app\" : false " \
+                "\"system_control_app\" : false " \
             "} " \
         "} ";
 }

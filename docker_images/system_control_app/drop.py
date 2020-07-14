@@ -4,7 +4,7 @@
 import logging
 import subprocess
 
-logger = logging.getLogger("net_control." + __name__)
+logger = logging.getLogger("system_control_app." + __name__)
 
 mqtt_port = 8883
 mqttws_port = 443

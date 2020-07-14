@@ -8,7 +8,7 @@ import drop
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("net_control." + __name__)
+logger = logging.getLogger("system_control_app." + __name__)
 
 default_port = 8040
 client_transport = ""
@@ -35,12 +35,12 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_PUT(self):
         logger.info("Received PUT for {}".format(self.path))
         try:
-            if self.path.startswith("/net/setDestination/"):
-                self.handle_set_destination()
-            elif self.path.startswith("/net/disconnect/"):
-                self.handle_disconnect()
-            elif self.path.startswith("/net/reconnect"):
-                self.handle_reconnect()
+            if self.path.startswith("/systemControl/setNetworkDestination/"):
+                self.handle_set_network_destination()
+            elif self.path.startswith("/systemControl/disconnectNetwork/"):
+                self.handle_disconnect_network()
+            elif self.path.startswith("/systemControl/reconnectNetwork"):
+                self.handle_reconnect_network()
             else:
                 self.send_response(404)
         except Exception:
@@ -50,9 +50,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         logger.info("done handling PUT for {}".format(self.path))
 
-    def handle_set_destination(self):
-        # /net/setDestination/<IP>/<transport>/
-        logger.info("inside handle_set_destination")
+    def handle_set_network_destination(self):
+        # /systemControl/setNetworkDestination/<IP>/<transport>/
+        logger.info("inside handle_set_network_destination")
         parts = split_path(self.path)
         logger.info("parts={}".format(parts))
         if len(parts) != 4:
@@ -60,12 +60,12 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif parts[3] not in drop.all_transports:
             self.send_response(404)
         else:
-            self.do_set_destination(parts[2], parts[3])
+            self.do_set_network_destination(parts[2], parts[3])
             self.send_response(200)
 
-    def handle_disconnect(self):
-        # /net/disconnect/<disconnect_type>/
-        logger.info("inside handle_disconnect")
+    def handle_disconnect_network(self):
+        # /systemControl/disconnectNetwork/<disconnect_type>/
+        logger.info("inside handle_network_disconnect")
         parts = split_path(self.path)
         logger.info("parts={}".format(parts))
         if len(parts) != 3:
@@ -73,31 +73,31 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif parts[2] not in drop.all_disconnect_types:
             self.send_response(404)
         else:
-            self.do_disconnect(parts[2])
+            self.do_disconnect_network(parts[2])
             self.send_response(200)
 
-    def handle_reconnect(self):
-        # /net/reconnect/
-        logger.info("inside handle_reconnect")
+    def handle_reconnect_network(self):
+        # /systemControl/reconnectNetwork/
+        logger.info("inside handle_reconnect_network")
         parts = split_path(self.path)
         logger.info("parts={}".format(parts))
         if len(parts) != 2:
             self.send_response(404)
         else:
-            self.do_reconnect()
+            self.do_reconnect_network()
             self.send_response(200)
 
-    def do_set_destination(self, ip, transport):
+    def do_set_network_destination(self, ip, transport):
         global destination_ip
         global client_transport
         destination_ip = ip
         client_transport = transport
         self.send_response(200)
 
-    def do_disconnect(self, disconnect_type):
+    def do_disconnect_network(self, disconnect_type):
         drop.disconnect_port(disconnect_type, client_transport)
 
-    def do_reconnect(self):
+    def do_reconnect_network(self):
         drop.reconnect_port(client_transport)
 
 

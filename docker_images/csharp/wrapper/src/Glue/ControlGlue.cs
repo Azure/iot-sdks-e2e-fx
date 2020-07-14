@@ -38,8 +38,7 @@ namespace IO.Swagger.Controllers
             {
                 flags = new
                 {
-                    v2_connect_group = false,
-                    net_control_app = false
+                    v2_connect_group = false
                 }
             };
             return caps;
