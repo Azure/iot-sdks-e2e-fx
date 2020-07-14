@@ -6,7 +6,7 @@ import abc
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractNetApi:
+class AbstractSystemApi:
     @abc.abstractmethod
     def set_destination(self, ip, transport):
         pass

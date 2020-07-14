@@ -8,11 +8,11 @@
 from msrest.pipeline import ClientRawResponse
 from msrest.exceptions import HttpOperationError
 
-from .. import models
+from ... import models
 
 
-class SystemOperations(object):
-    """SystemOperations operations.
+class SystemControlOperations:
+    """SystemControlOperations async operations.
 
     You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
 
@@ -24,7 +24,7 @@ class SystemOperations(object):
 
     models = models
 
-    def __init__(self, client, config, serializer, deserializer):
+    def __init__(self, client, config, serializer, deserializer) -> None:
 
         self._client = client
         self._serialize = serializer
@@ -32,9 +32,9 @@ class SystemOperations(object):
 
         self.config = config
 
-    def set_destination(
-            self, ip, transport_type, custom_headers=None, raw=False, **operation_config):
-        """Set destination for system disconnect ops.
+    async def set_network_destination(
+            self, ip, transport_type, *, custom_headers=None, raw=False, **operation_config):
+        """Set destination for network disconnect ops.
 
         :param ip:
         :type ip: str
@@ -52,7 +52,7 @@ class SystemOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.set_destination.metadata['url']
+        url = self.set_network_destination.metadata['url']
         path_format_arguments = {
             'ip': self._serialize.url("ip", ip, 'str'),
             'transportType': self._serialize.url("transport_type", transport_type, 'str')
@@ -69,7 +69,7 @@ class SystemOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -77,11 +77,11 @@ class SystemOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    set_destination.metadata = {'url': '/system/setDestination/{ip}/{transportType}'}
+    set_network_destination.metadata = {'url': '/systemControl/setNetworkDestination/{ip}/{transportType}'}
 
-    def disconnect(
-            self, disconnect_type, custom_headers=None, raw=False, **operation_config):
-        """Simulate a systemwork disconnection.
+    async def disconnect_network(
+            self, disconnect_type, *, custom_headers=None, raw=False, **operation_config):
+        """Simulate a network disconnection.
 
         :param disconnect_type: disconnect method for dropped connection
          tests. Possible values include: 'DROP', 'REJECT'
@@ -97,7 +97,7 @@ class SystemOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.disconnect.metadata['url']
+        url = self.disconnect_network.metadata['url']
         path_format_arguments = {
             'disconnectType': self._serialize.url("disconnect_type", disconnect_type, 'str')
         }
@@ -113,7 +113,7 @@ class SystemOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -121,11 +121,11 @@ class SystemOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect.metadata = {'url': '/system/disconnect/{disconnectType}'}
+    disconnect_network.metadata = {'url': '/systemControl/disconnectNetwork/{disconnectType}'}
 
-    def reconnect(
-            self, custom_headers=None, raw=False, **operation_config):
-        """Reconnect the systemwork after a simulated network disconnection.
+    async def reconnect_network(
+            self, *, custom_headers=None, raw=False, **operation_config):
+        """Reconnect th networrk after a simulated network disconnection.
 
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
@@ -138,7 +138,7 @@ class SystemOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.reconnect.metadata['url']
+        url = self.reconnect_network.metadata['url']
 
         # Construct parameters
         query_parameters = {}
@@ -150,7 +150,7 @@ class SystemOperations(object):
 
         # Construct and send request
         request = self._client.put(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -158,10 +158,10 @@ class SystemOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    reconnect.metadata = {'url': '/system/reconnect'}
+    reconnect_network.metadata = {'url': '/systemControl/reconnectNetwork'}
 
-    def get_system_stats(
-            self, pid, custom_headers=None, raw=False, **operation_config):
+    async def get_system_stats(
+            self, pid, *, custom_headers=None, raw=False, **operation_config):
         """Get statistics about the operation of the operating system.
 
         :param pid: Process ID for the wrapper process
@@ -194,7 +194,7 @@ class SystemOperations(object):
 
         # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
-        response = self._client.send(request, stream=False, **operation_config)
+        response = await self._client.async_send(request, stream=False, **operation_config)
 
         if response.status_code not in [200]:
             raise HttpOperationError(self._deserialize, response)
@@ -208,4 +208,4 @@ class SystemOperations(object):
             return client_raw_response
 
         return deserialized
-    get_system_stats.metadata = {'url': '/control/systemStats/{pid}'}
+    get_system_stats.metadata = {'url': '/sytemControl/systemStats/{pid}'}

@@ -5,13 +5,13 @@ from .generated.e2erestapi.aio import (
     AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
 )
 from .. import adapter_config
-from ..abstract_net_api import AbstractNetApi
+from ..abstract_system_api import AbstractSystemApi
 from .rest_decorators import log_entry_and_exit
 
 
-class NetApi(AbstractNetApi):
+class SystemApi(AbstractSystemApi):
     def __init__(self, hostname):
-        self.rest_endpoint = GeneratedAsyncApi(hostname).net
+        self.rest_endpoint = GeneratedAsyncApi(hostname).system
         self.rest_endpoint.config.retry_policy.retries = 0
 
     @log_entry_and_exit

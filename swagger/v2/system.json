@@ -12,18 +12,18 @@
     ],
     "tags": [
         {
-            "name": "system",
-            "description": "systemwork control APIs"
+            "name": "systemControl",
+            "description": "systemControlwork control APIs"
         }
     ],
     "paths": {
-        "/system/setDestination/{ip}/{transportType}": {
+        "/systemControl/setNetworkDestination/{ip}/{transportType}": {
             "put": {
                 "tags": [
-                    "system"
+                    "systemControl"
                 ],
-                "summary": "Set destination for system disconnect ops",
-                "operationId": "System_SetDestination",
+                "summary": "Set destination for network disconnect ops",
+                "operationId": "SystemControl_SetNetworkDestination",
                 "parameters": [
                     {
                         "name": "ip",
@@ -42,13 +42,13 @@
                 }
             }
         },
-        "/system/disconnect/{disconnectType}": {
+        "/systemControl/disconnectNetwork/{disconnectType}": {
             "put": {
                 "tags": [
-                    "system"
+                    "systemControl"
                 ],
-                "summary": "Simulate a systemwork disconnection",
-                "operationId": "System_Disconnect",
+                "summary": "Simulate a network disconnection",
+                "operationId": "SystemControl_DisconnectNetwork",
                 "parameters": [
                     {
                         "$ref": "parameters.json#/disconnectType"
@@ -61,13 +61,13 @@
                 }
             }
         },
-        "/system/reconnect": {
+        "/systemControl/reconnectNetwork": {
             "put": {
                 "tags": [
-                    "system"
+                    "systemControl"
                 ],
-                "summary": "Reconnect the systemwork after a simulated network disconnection",
-                "operationId": "System_Reconnect",
+                "summary": "Reconnect th networrk after a simulated network disconnection",
+                "operationId": "SystemControl_ReconnectNetwork",
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -75,13 +75,13 @@
                 }
             }
         },
-        "/control/systemStats/{pid}": {
+        "/sytemControl/systemStats/{pid}": {
             "get": {
                 "tags": [
-                    "system"
+                    "systemControl"
                 ],
                 "summary": "Get statistics about the operation of the operating system",
-                "operationId": "System_GetSystemStats",
+                "operationId": "SystemControl_GetSystemStats",
                 "parameters": [
                     {
                         "$ref": "parameters.json#/pid"

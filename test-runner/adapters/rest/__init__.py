@@ -4,4 +4,4 @@
 
 from .rest_iothub_apis import ModuleApi, DeviceApi, ServiceApi, RegistryApi
 from .rest_control_api import ControlApi
-from .rest_net_api import NetApi
+from .rest_system_api import SystemApi
