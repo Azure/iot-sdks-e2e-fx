@@ -10,7 +10,7 @@ from msrest import Serializer, Deserializer
 
 from ._configuration import AzureIOTEndToEndTestWrapperRestApiConfiguration
 from msrest.exceptions import HttpOperationError
-from .operations import NetOperations
+from .operations import SystemControlOperations
 from .operations import ControlOperations
 from .operations import DeviceOperations
 from .operations import ModuleOperations
@@ -25,8 +25,8 @@ class AzureIOTEndToEndTestWrapperRestApi(SDKClient):
     :ivar config: Configuration for client.
     :vartype config: AzureIOTEndToEndTestWrapperRestApiConfiguration
 
-    :ivar net: Net operations
-    :vartype net: e2erestapi.operations.NetOperations
+    :ivar system_control: SystemControl operations
+    :vartype system_control: e2erestapi.operations.SystemControlOperations
     :ivar control: Control operations
     :vartype control: e2erestapi.operations.ControlOperations
     :ivar device: Device operations
@@ -52,7 +52,7 @@ class AzureIOTEndToEndTestWrapperRestApi(SDKClient):
         self._serialize = Serializer(client_models)
         self._deserialize = Deserializer(client_models)
 
-        self.net = NetOperations(
+        self.system_control = SystemControlOperations(
             self._client, self.config, self._serialize, self._deserialize)
         self.control = ControlOperations(
             self._client, self.config, self._serialize, self._deserialize)

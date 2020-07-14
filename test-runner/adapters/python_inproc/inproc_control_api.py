@@ -5,7 +5,6 @@
 
 import internal_control_glue
 from ..abstract_control_api import AbstractControlApi
-from ..decorators import emulate_async
 
 
 class ControlApi(AbstractControlApi):
@@ -23,4 +22,8 @@ class ControlApi(AbstractControlApi):
 
     async def cleanup(self, cmd):
         # BKTODO: this doesn't actually clean anything yet.  it needs to be fixed once we go full async and get rid of the weird internal stuff
+        pass
+
+    async def get_wrapper_stats(self):
+        # BKTODO
         pass

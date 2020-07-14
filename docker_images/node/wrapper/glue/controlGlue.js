@@ -76,7 +76,7 @@ exports.control_GetCapabilities = function() {
     var caps = {
       'flags': {
         'v2_connect_group': true,
-        'net_control_app': true,
+        'system_control_app': true,
       }
     };
     resolve(caps);

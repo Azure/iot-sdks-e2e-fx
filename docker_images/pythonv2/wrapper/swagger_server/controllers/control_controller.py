@@ -32,6 +32,17 @@ def control_get_capabilities():  # noqa: E501
     return control_glue.get_capabilities()
 
 
+def control_get_wrapper_stats():  # noqa: E501
+    """Get statistics about the operation of the test wrapper
+
+     # noqa: E501
+
+
+    :rtype: object
+    """
+    return 'do some magic!'
+
+
 def control_log_message(logMessage):  # noqa: E501
     """log a message to output
 

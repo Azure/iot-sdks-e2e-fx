@@ -165,12 +165,12 @@ class RegressionTests(object):
         "fails a connect operation if connection fails for the first time connecting"
     )
     async def test_regression_bad_connection_fail_first_connection(
-        self, net_control, client, drop_mechanism
+        self, system_control, client, drop_mechanism
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         with pytest.raises(Exception) as e:
             await client.connect2()
@@ -181,12 +181,12 @@ class RegressionTests(object):
         "fails a send_event operation if connection fails for the first time connecting"
     )
     async def test_regression_bad_connection_fail_first_send_event(
-        self, net_control, client, drop_mechanism
+        self, system_control, client, drop_mechanism
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         payload = sample_content.make_message_payload()
 
@@ -199,21 +199,21 @@ class RegressionTests(object):
         "retries a connect operation if connection fails for the second time connecting"
     )
     async def test_regression_bad_connection_retry_second_connection(
-        self, net_control, client, drop_mechanism
+        self, system_control, client, drop_mechanism
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
         await client.connect2()
         await client.disconnect2()
 
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         connect_future = asyncio.ensure_future(client.connect2())
 
         await asyncio.sleep(2)
 
-        await net_control.reconnect()
+        await system_control.reconnect_network()
 
         await connect_future
 
@@ -221,10 +221,10 @@ class RegressionTests(object):
         "retries a send_event operation if connection fails for the second time connecting"
     )
     async def test_regression_bad_connection_retry_second_send_event(
-        self, net_control, client, drop_mechanism, eventhub
+        self, system_control, client, drop_mechanism, eventhub
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
         await client.connect2()
         await client.disconnect2()
@@ -236,13 +236,13 @@ class RegressionTests(object):
             eventhub.wait_for_next_event(client.device_id, expected=payload)
         )
 
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         send_future = asyncio.ensure_future(client.send_event(payload))
 
         await asyncio.sleep(1)
 
-        await net_control.reconnect()
+        await system_control.reconnect_network()
 
         await send_future
         received_message = await received_message_future
@@ -253,15 +253,15 @@ class RegressionTests(object):
         "Can retry multiple conenct operations while the network is disconnected"
     )
     async def test_regression_bad_connection_retry_multiple_connections(
-        self, net_control, client, drop_mechanism
+        self, system_control, client, drop_mechanism
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
         await client.connect2()
         await client.disconnect2()
 
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         connect_future_1 = asyncio.ensure_future(client.connect2())
         connect_future_2 = asyncio.ensure_future(client.connect2())
@@ -269,7 +269,7 @@ class RegressionTests(object):
 
         await asyncio.sleep(5)
 
-        await net_control.reconnect()
+        await system_control.reconnect_network()
 
         await connect_future_1
         await connect_future_2
@@ -279,11 +279,11 @@ class RegressionTests(object):
         "Enables automatic reconnection even if connect is not called directly"
     )
     async def test_regression_autoconnect_without_calling_connect(
-        self, net_control, client, drop_mechanism
+        self, system_control, client, drop_mechanism
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_test_for(client, "node", ["mqtt", "mqttws"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
         payload = sample_content.make_message_payload()
         await client.send_event(payload)
@@ -291,31 +291,31 @@ class RegressionTests(object):
         status = await client.get_connection_status()
         assert status == "connected"
 
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         await client.wait_for_connection_status_change("disconnected")
 
-        await net_control.reconnect()
+        await system_control.reconnect_network()
 
         await client.wait_for_connection_status_change("connected")
         assert status == "connected"
 
     @pytest.mark.it("Can retry send_event with different failure conditions")
     async def test_regression_reconnect_send_event_different_timing(
-        self, net_control, client, drop_mechanism, eventhub
+        self, system_control, client, drop_mechanism, eventhub
     ):
         payloads = []
         send_futures = []
 
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_test_for(client, "node", ["mqtt", "mqttws"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
         logger("connecting")
         await client.connect2()
 
         logger("unplugging network")
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         # start listening before we send
         await eventhub.connect()
@@ -341,7 +341,7 @@ class RegressionTests(object):
             )
 
         logger("reconnect the network")
-        await net_control.reconnect()
+        await system_control.reconnect_network()
 
         logger("waiting for all messages to send")
         await asyncio.gather(*send_futures)
@@ -357,19 +357,19 @@ class RegressionTests(object):
     @pytest.mark.skip("Fails because packets are still 'in flight' when disconnecting")
     @pytest.mark.it("Can fail send_event calls by manually disconnecting")
     async def test_regression_disconnect_cancels_send_event(
-        self, net_control, client, drop_mechanism
+        self, system_control, client, drop_mechanism
     ):
         payloads = []
         send_futures = []
 
         limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
         logger("connecting")
         await client.connect2()
 
         logger("unplugging network")
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
         logger(
             "sending 2 messages before the client realizes the network was unplugged"
@@ -416,16 +416,16 @@ class RegressionTests(object):
     @pytest.mark.skip("node keepalive changes aren't working")
     @pytest.mark.it("Lets us have a short keepalive interval")
     @pytest.mark.timeout(45)
-    async def test_keepalive_interval(self, client, net_control, drop_mechanism):
+    async def test_keepalive_interval(self, client, system_control, drop_mechanism):
         # We want the keepalive to be low to make these tests fast.  This
         # test is marked with a 45 second timeout.  Keepalive should be closer
         # to 10 seconds, so 45 to connect and notice the drop should be enough
         limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_if_no_net_control()
+        limitations.skip_if_no_system_control()
 
         await client.connect2()
 
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
         await client.wait_for_connection_status_change("disconnected")
 
-        await net_control.reconnect()
+        await system_control.reconnect_network()

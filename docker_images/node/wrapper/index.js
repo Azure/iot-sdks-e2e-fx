@@ -42,9 +42,9 @@ Object.keys(paths).forEach(function(path) {
 
 // spawn net watcher
 
-const net_control_app = spawn('python', ['/net_control_app/main.py']);
-net_control_app.stdout.on('data', (data) => {  console.log(`net_control_app: ${data}`);});
-net_control_app.stderr.on('data', (data) => {  console.log(`net_control_app: ${data}`);});
+const system_control_app = spawn('python', ['/system_control_app/main.py']);
+system_control_app.stdout.on('data', (data) => {  console.log(`system_control_app: ${data}`);});
+system_control_app.stderr.on('data', (data) => {  console.log(`system_control_app: ${data}`);});
 
 // END code added in merge
 

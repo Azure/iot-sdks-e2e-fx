@@ -5,7 +5,7 @@
 # regenerated.
 # --------------------------------------------------------------------------
 
-from ._net_operations_async import NetOperations
+from ._system_control_operations_async import SystemControlOperations
 from ._control_operations_async import ControlOperations
 from ._device_operations_async import DeviceOperations
 from ._module_operations_async import ModuleOperations
@@ -13,7 +13,7 @@ from ._service_operations_async import ServiceOperations
 from ._registry_operations_async import RegistryOperations
 
 __all__ = [
-    'NetOperations',
+    'SystemControlOperations',
     'ControlOperations',
     'DeviceOperations',
     'ModuleOperations',

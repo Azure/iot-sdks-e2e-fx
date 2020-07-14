@@ -49,20 +49,20 @@ class DropScenarioBaseClass(object):
         return settings.test_module.transport
 
     @pytest.fixture(autouse=True)
-    async def reconnect_after_each_test(self, net_control):
+    async def reconnect_after_each_test(self, system_control):
         # if this test is going to drop packets, add a finalizer to make sure we always stop
         # stop dropping it when we're done.  Calling reconnect twice in a row is allowed.
         try:
             yield
         finally:
             logger("in finalizer: no longer dropping packets")
-            await net_control.reconnect()
+            await system_control.reconnect_network()
 
     async def start_dropping(
-        self, *, net_control, drop_mechanism, test_module_transport
+        self, *, system_control, drop_mechanism, test_module_transport
     ):
         logger("start drop packets")
-        await net_control.disconnect(drop_mechanism)
+        await system_control.disconnect_network(drop_mechanism)
 
     async def wait_for_disconnection_event(self, *, client):
         status = await client.get_connection_status()
@@ -72,9 +72,9 @@ class DropScenarioBaseClass(object):
         await client.wait_for_connection_status_change("disconnected")
         logger("client disconnection event received")
 
-    async def stop_dropping(self, *, net_control):
+    async def stop_dropping(self, *, system_control):
         logger("stop dropping packets")
-        await net_control.reconnect()
+        await system_control.reconnect_network()
 
     async def wait_for_reconnection_event(self, *, client):
         logger("waiting for client reconnection event")
@@ -92,14 +92,14 @@ class NetworkGlitchClientConnected(DropScenarioBaseClass):
 
     @pytest.fixture
     def before_api_call(
-        self, client, drop_mechanism, net_control, test_module_transport
+        self, client, drop_mechanism, system_control, test_module_transport
     ):
         async def func():
             await client.connect2()
             assert await client.get_connection_status() == "connected"
 
             await self.start_dropping(
-                net_control=net_control,
+                system_control=system_control,
                 drop_mechanism=drop_mechanism,
                 test_module_transport=test_module_transport,
             )
@@ -107,11 +107,11 @@ class NetworkGlitchClientConnected(DropScenarioBaseClass):
         return func
 
     @pytest.fixture
-    def after_api_call(self, client, net_control):
+    def after_api_call(self, client, system_control):
         async def func():
             await self.wait_for_disconnection_event(client=client)
             await asyncio.sleep(5)
-            await self.stop_dropping(net_control=net_control)
+            await self.stop_dropping(system_control=system_control)
             await self.wait_for_reconnection_event(client=client)
             await asyncio.sleep(5)
 
@@ -129,14 +129,14 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
 
     @pytest.fixture
     def before_api_call(
-        self, client, drop_mechanism, net_control, test_module_transport
+        self, client, drop_mechanism, system_control, test_module_transport
     ):
         async def func():
             await client.connect2()
             assert await client.get_connection_status() == "connected"
 
             await self.start_dropping(
-                net_control=net_control,
+                system_control=system_control,
                 drop_mechanism=drop_mechanism,
                 test_module_transport=test_module_transport,
             )
@@ -145,10 +145,10 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
         return func
 
     @pytest.fixture
-    def after_api_call(self, client, net_control):
+    def after_api_call(self, client, system_control):
         async def func():
             await asyncio.sleep(5)
-            await self.stop_dropping(net_control=net_control)
+            await self.stop_dropping(system_control=system_control)
             await self.wait_for_reconnection_event(client=client)
             await asyncio.sleep(5)
 

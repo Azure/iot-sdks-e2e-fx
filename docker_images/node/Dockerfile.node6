@@ -20,8 +20,8 @@ env DEBUG=rhea*,azure*
 EXPOSE 9229
 EXPOSE 8080
 
-WORKDIR /net_control_app
-COPY ./net_control_app .
+WORKDIR /system_control_app
+COPY ./system_control_app .
 RUN pip install -r requirements.txt
 
 # phase 1: grab the base branch and run prebuild

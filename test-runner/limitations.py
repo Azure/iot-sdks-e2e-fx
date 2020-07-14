@@ -84,11 +84,11 @@ def skip_test_for(client, languages, transports=all_transports):
         pytest.skip()
 
 
-def skip_if_no_net_control():
+def skip_if_no_system_control():
     """
-    Skip the test if we don't have a net_control API
+    Skip the test if we don't have a system_control API
     """
-    if not settings.net_control.adapter:
+    if not settings.system_control.adapter:
         pytest.skip()
 
 

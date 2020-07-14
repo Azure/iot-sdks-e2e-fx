@@ -12,18 +12,18 @@
     ],
     "tags": [
         {
-            "name": "net",
-            "description": "network control APIs"
+            "name": "systemControl",
+            "description": "systemControlwork control APIs"
         }
     ],
     "paths": {
-        "/net/setDestination/{ip}/{transportType}": {
+        "/systemControl/setNetworkDestination/{ip}/{transportType}": {
             "put": {
                 "tags": [
-                    "net"
+                    "systemControl"
                 ],
-                "summary": "Set destination for net disconnect ops",
-                "operationId": "Net_SetDestination",
+                "summary": "Set destination for network disconnect ops",
+                "operationId": "SystemControl_SetNetworkDestination",
                 "parameters": [
                     {
                         "name": "ip",
@@ -42,13 +42,13 @@
                 }
             }
         },
-        "/net/disconnect/{disconnectType}": {
+        "/systemControl/disconnectNetwork/{disconnectType}": {
             "put": {
                 "tags": [
-                    "net"
+                    "systemControl"
                 ],
                 "summary": "Simulate a network disconnection",
-                "operationId": "Net_Disconnect",
+                "operationId": "SystemControl_DisconnectNetwork",
                 "parameters": [
                     {
                         "$ref": "parameters.json#/disconnectType"
@@ -61,13 +61,13 @@
                 }
             }
         },
-        "/net/reconnect": {
+        "/systemControl/reconnectNetwork": {
             "put": {
                 "tags": [
-                    "net"
+                    "systemControl"
                 ],
-                "summary": "Reconnect the network after a simulated network disconnection",
-                "operationId": "Net_Reconnect",
+                "summary": "Reconnect th networrk after a simulated network disconnection",
+                "operationId": "SystemControl_ReconnectNetwork",
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -75,40 +75,27 @@
                 }
             }
         },
-        "/net/disconnectAfterC2d/{disconnectType}": {
-            "put": {
+        "/sytemControl/systemStats/{pid}": {
+            "get": {
                 "tags": [
-                    "net"
+                    "systemControl"
                 ],
-                "summary": "Simulate a disconnect after the next C2D transfer",
-                "operationId": "Net_DisconnectAfterC2d",
+                "summary": "Get statistics about the operation of the operating system",
+                "operationId": "SystemControl_GetSystemStats",
                 "parameters": [
                     {
-                        "$ref": "parameters.json#/disconnectType"
+                        "$ref": "parameters.json#/pid"
                     }
+                ],
+                "produces": [
+                    "application/json"
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/net/disconnectAfterD2c/{disconnectType}": {
-            "put": {
-                "tags": [
-                    "net"
-                ],
-                "summary": "Simulate a disconnect after the next D2C transfer",
-                "operationId": "Net_DisconnectAfterD2c",
-                "parameters": [
-                    {
-                        "$ref": "parameters.json#/disconnectType"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
                     }
                 }
             }

@@ -46,7 +46,7 @@ def get_capabilities_sync():
     caps = {
         "flags": {
             "v2_connect_group": True,
-            "net_control_app": True,
+            "system_control_app": True,
             "checks_for_leaks": True,
         }
     }

@@ -52,3 +52,9 @@ class ControlApi(AbstractControlApi):
         await self.rest_endpoint.cleanup(
             cmd, timeout=adapter_config.default_api_timeout
         )
+
+    @log_entry_and_exit
+    async def get_wrapper_stats(self):
+        return await self.rest_endpoint.get_wrapper_stats(
+            timeout=adapter_config.default_api_timeout
+        )

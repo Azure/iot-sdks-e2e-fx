@@ -66,23 +66,23 @@ def pytest_pyfunc_call(pyfuncitem):
         logger(traceback.format_exc())
 
 
-async def configure_net_control():
-    if settings.test_module.capabilities.net_control_app:
+async def configure_system_control():
+    if settings.test_module.capabilities.system_control_app:
         try:
-            await connections.get_adapter(settings.net_control)
+            await connections.get_adapter(settings.system_control)
         except Exception:
             print(
-                "network control server is unavailable.  Either start the server or set net_control.adapter_address to '' in _horton_settings.json"
+                "network control server is unavailable.  Either start the server or set system_control.adapter_address to '' in _horton_settings.json"
             )
-            settings.test_module.capabilities.net_control = False
+            settings.test_module.capabilities.system_control = False
 
-    if settings.net_control.adapter:
-        await settings.net_control.adapter.reconnect()
+    if settings.system_control.adapter:
+        await settings.system_control.adapter.reconnect_network()
 
 
 async def session_init():
     print(separator("SESSION INIT"))
-    await configure_net_control()
+    await configure_system_control()
 
 
 async def session_teardown():

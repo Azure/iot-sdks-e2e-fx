@@ -26,3 +26,7 @@ class AbstractControlApi:
     @abc.abstractmethod
     def cleanup(self):
         pass
+
+    @abc.abstractmethod
+    def get_wrapper_stats(self):
+        pass

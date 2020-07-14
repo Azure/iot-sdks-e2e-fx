@@ -6,23 +6,19 @@ import abc
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractNetApi:
+class AbstractSystemControlApi:
     @abc.abstractmethod
-    def set_destination(self, ip, transport):
+    def set_network_destination(self, ip, transport):
         pass
 
     @abc.abstractmethod
-    def disconnect(self, disconnect_type):
+    def disconnect_network(self, disconnect_type):
         pass
 
     @abc.abstractmethod
-    def reconnect(self):
+    def reconnect_network(self):
         pass
 
     @abc.abstractmethod
-    def disconnect_after_c2d(self, disconnect_type):
-        pass
-
-    @abc.abstractmethod
-    def disconnect_after_d2c(self, disconnect_type):
+    def get_system_stats(self, wrapper_pid):
         pass
