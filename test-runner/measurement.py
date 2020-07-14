@@ -12,6 +12,17 @@ def null_logger(*args, **kwargs):
     pass
 
 
+class NoLock(contextlib.AbstractContextManager):
+    def __init__(self):
+        self.thread = threading.current_thread()
+
+    def __enter__(self):
+        assert threading.current_thread() == self.thread
+
+    def __exit__(self, *args):
+        assert threading.current_thread() == self.thread
+
+
 class ReportGroup(object):
     def __init__(self, name, reports, logger=logger):
         self.lock = threading.Lock()
@@ -100,9 +111,9 @@ class ReportMax(object):
 
 
 class MeasureRunningCodeBlock(contextlib.AbstractContextManager):
-    def __init__(self, name, reports=[], logger=logger):
+    def __init__(self, name, reports=[], logger=logger, use_lock=True):
+        self.lock = threading.Lock() if use_lock else NoLock()
         self.count = 0
-        self.lock = threading.Lock()
         self.name = name
         self.logger = logger or null_logger
         self.at_zero = threading.Event()
@@ -155,15 +166,18 @@ class MeasureLatency(contextlib.AbstractContextManager):
             self.tracker.add_sample(self.get_latency())
 
     def get_latency(self):
-        if self.start_time and self.end_time:
-            return (self.end_time - self.start_time).total_seconds()
+        if self.start_time:
+            if self.end_time:
+                return (self.end_time - self.start_time).total_seconds()
+            else:
+                return (datetime.datetime.now() - self.start_time).total_seconds()
         else:
             return 0
 
 
 class TrackCount(object):
-    def __init__(self):
-        self.lock = threading.Lock()
+    def __init__(self, use_lock=True):
+        self.lock = threading.Lock() if use_lock else NoLock()
         self.count = 0
 
     def increment(self):
@@ -183,8 +197,8 @@ class TrackCount(object):
 
 
 class TrackMax(object):
-    def __init__(self):
-        self.lock = threading.Lock()
+    def __init__(self, use_lock=True):
+        self.lock = threading.Lock() if use_lock else NoLock()
         self.max = 0
 
     def add_sample(self, sample):

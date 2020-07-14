@@ -8,10 +8,10 @@ class LonghaulConfig(DictionaryObject):
     def __init__(self):
         super(LonghaulConfig, self).__init__()
         self.total_duration = datetime.timedelta()
-        self.timeout_interval = datetime.timedelta(minutes=2)
+        self.timeout_interval = datetime.timedelta(minutes=5)
         self.property_update_interval = datetime.timedelta(seconds=10)
         self.telenetry_interval = datetime.timedelta(seconds=10)
-        self.eventhub_renew_interval = datetime.timedelta(minutes=15)
+        self.eventhub_renew_interval = datetime.timedelta(minutes=1)
         self.d2c_enabled = False
         self.d2c_interval_length = 1
         self.d2c_ops_per_interval = 10
