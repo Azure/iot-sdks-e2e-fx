@@ -86,9 +86,9 @@ class IotEdge(SimpleObject):
         self.hostname = ""
 
 
-class System(ObjectWithAdapter):
+class SystemControl(ObjectWithAdapter):
     def __init__(self):
-        super(System, self).__init__("system", "system")
+        super(SystemControl, self).__init__("system_control", "system_control")
         self.test_destination = ""
 
 
@@ -116,7 +116,7 @@ class HortonSettings(DictionaryObject):
             "longhaul_control_device", "iothub_device"
         )
         self.device_provisioning = DeviceProvisioning()
-        self.system = System()
+        self.system_control = SystemControl()
 
         self._objects = [
             self.iothub,
@@ -125,7 +125,7 @@ class HortonSettings(DictionaryObject):
             self.friend_module,
             self.leaf_device,
             self.test_device,
-            self.system,
+            self.systm_control,
             self.horton,
             self.longhaul_control_device,
             self.device_provisioning,

@@ -6,17 +6,17 @@ import abc
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractSystemApi:
+class AbstractSystemControlApi:
     @abc.abstractmethod
-    def set_destination(self, ip, transport):
+    def set_network_destination(self, ip, transport):
         pass
 
     @abc.abstractmethod
-    def disconnect(self, disconnect_type):
+    def disconnect_network(self, disconnect_type):
         pass
 
     @abc.abstractmethod
-    def reconnect(self):
+    def reconnect_network(self):
         pass
 
     # BKTODO: schedule discussion
