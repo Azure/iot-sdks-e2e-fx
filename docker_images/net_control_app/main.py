@@ -41,10 +41,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.handle_disconnect()
             elif self.path.startswith("/net/reconnect"):
                 self.handle_reconnect()
-            elif self.path.startswith("/net/disconnect_after_c2d/"):
-                self.handle_disconnect_after_c2d()
-            elif self.path.startswith("/net/disconnect_after_d2c/"):
-                self.handle_disconnect_after_d2c()
             else:
                 self.send_response(404)
         except Exception:
@@ -91,32 +87,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.do_reconnect()
             self.send_response(200)
 
-    def handle_disconnet_after_c2d(self):
-        # /net/disconnect_after_c2d/<disconnect_type>/
-        logger.info("inside handle_disconnect_after_c2d")
-        parts = split_path(self.path)
-        logger.info("parts={}".format(parts))
-        if len(parts) != 3:
-            self.send_response(404)
-        elif parts[2] not in drop.all_disconnect_types:
-            self.send_response(404)
-        else:
-            self.do_disconnect_after_c2d(parts[2])
-            self.send_response(200)
-
-    def handle_disconnect_after_d2c(self):
-        # /net/disconnect_after_d2c/<disconnect_type>/
-        logger.info("inside handle_disconnect_after_d2c")
-        parts = split_path(self.path)
-        logger.info("parts={}".format(parts))
-        if len(parts) != 3:
-            self.send_response(404)
-        elif parts[2] not in drop.all_disconnect_types:
-            self.send_response(404)
-        else:
-            self.do_disconnect_after_d2c(parts[2])
-            self.send_response(200)
-
     def do_set_destination(self, ip, transport):
         global destination_ip
         global client_transport
@@ -129,14 +99,6 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_reconnect(self):
         drop.reconnect_port(client_transport)
-
-    def do_disconnect_after_c2d(self, disconnect_type):
-        # BKTODO
-        self.send_response(500)
-
-    def do_disconnect_after_d2c(self, disconnect_type):
-        # BKTODO
-        self.send_response(500)
 
 
 if __name__ == "__main__":

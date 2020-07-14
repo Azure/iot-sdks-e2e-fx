@@ -1,11 +1,9 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-from .generated.e2erestapi import AzureIOTEndToEndTestWrapperRestApi as GeneratedSyncApi
 from .generated.e2erestapi.aio import (
     AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
 )
-import msrest
 from .. import adapter_config
 from ..abstract_net_api import AbstractNetApi
 from .rest_decorators import log_entry_and_exit
@@ -31,15 +29,3 @@ class NetApi(AbstractNetApi):
     @log_entry_and_exit
     async def reconnect(self):
         await self.rest_endpoint.reconnect(timeout=adapter_config.control_api_timeout)
-
-    @log_entry_and_exit
-    async def disconnect_after_c2d(self, disconnect_type):
-        await self.rest_endpoint.disconnect_after_c2d(
-            disconnect_type, timeout=adapter_config.control_api_timeout
-        )
-
-    @log_entry_and_exit
-    async def disconnect_after_d2c(self, disconnect_type):
-        await self.rest_endpoint.disconnect_after_d2c(
-            disconnect_type, timeout=adapter_config.control_api_timeout
-        )

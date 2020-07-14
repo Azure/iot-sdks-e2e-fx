@@ -19,10 +19,9 @@ class AbstractNetApi:
     def reconnect(self):
         pass
 
-    @abc.abstractmethod
-    def disconnect_after_c2d(self, disconnect_type):
-        pass
+    # BKTODO: rename net control to system control?
+    # BKTODO: schedule discussion
 
     @abc.abstractmethod
-    def disconnect_after_d2c(self, disconnect_type):
+    def get_system_stats(self, wrapper_pid):
         pass
