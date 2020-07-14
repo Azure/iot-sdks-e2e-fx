@@ -28,19 +28,19 @@ class DroppedConnectionTestsBase(object):
 
     @pytest.mark.it("Can reconnect after dropped connection")
     async def test_client_dropped_connection(
-        self, client, net_control, drop_mechanism, test_module_transport
+        self, client, system_control, drop_mechanism, test_module_transport
     ):
         await client.connect2()
         assert await client.get_connection_status() == "connected"
 
         await self.start_dropping(
-            net_control=net_control,
+            system_control=system_control,
             drop_mechanism=drop_mechanism,
             test_module_transport=test_module_transport,
         )
         await self.wait_for_disconnection_event(client=client)
         await asyncio.sleep(10)
-        await self.stop_dropping(net_control=net_control)
+        await self.stop_dropping(system_control=system_control)
         await self.wait_for_reconnection_event(client=client)
 
 

@@ -105,7 +105,7 @@ class TimeLimit(object):
 class StressTest(object):
     @pytest.mark.it("Run for {}".format(pretty_time(test_run_time)))
     async def test_stress(
-        self, client, eventhub, service, registry, friend, leaf_device, net_control
+        self, client, eventhub, service, registry, friend, leaf_device, system_control
     ):
 
         adapter_config.default_api_timeout = api_timeout
@@ -132,7 +132,9 @@ class StressTest(object):
                     await asyncio.sleep(t)
 
                     logger("CHAOS: disconnecting")
-                    await net_control.disconnect(random.choice(["DROP", "REJECT"]))
+                    await system_control.disconnect_network(
+                        random.choice(["DROP", "REJECT"])
+                    )
 
                     t = random.randrange(*disconnect_duration)
                     time_limit.prefix = "disconnected for {}".format(
@@ -147,7 +149,7 @@ class StressTest(object):
                     await asyncio.sleep(t)
 
                     logger("CHAOS: reconnecting")
-                    await net_control.reconnect()
+                    await system_control.reconnect_network()
 
             except asyncio.CancelledError as e:
                 logger("Chaos function stopped because test is complete")
@@ -159,7 +161,7 @@ class StressTest(object):
 
             finally:
                 logger("CHAOS: final reconnect")
-                await net_control.reconnect()
+                await system_control.reconnect_network()
 
         chaos_future = asyncio.ensure_future(chaos_function())
 

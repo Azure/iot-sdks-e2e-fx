@@ -12,7 +12,7 @@ language_has_service_client = ("node", "csharp", "java", "c")
 class HortonCapabilities(object):
     def __init__(self):
         self.v2_connect_group = False
-        self.net_control_app = False
+        self.system_control_app = False
         self.checks_for_leaks = False
 
 

@@ -92,12 +92,12 @@ async def _get_service_client_adapter(settings_object):
     return adapter
 
 
-async def _get_net_control_adapter(settings_object):
+async def _get_system_control_adapter(settings_object):
     """
-    return an object that can be used to control the network
+    return an object that can be used to control the operating system
     """
-    adapter = adapters.create_adapter(settings_object.adapter_address, "net")
-    await adapter.set_destination(
+    adapter = adapters.create_adapter(settings_object.adapter_address, "system_control")
+    await adapter.set_network_destination(
         settings_object.test_destination, settings.test_module.transport
     )
     return adapter
@@ -121,8 +121,8 @@ async def get_adapter(settings_object):
         adapter = await _get_device_provisioning_client_adapter(settings_object)
     elif settings_object.object_type == "eventhub":
         adapter = await _get_eventhub_client_adapter(settings_object)
-    elif settings_object.object_type == "net_control":
-        adapter = await _get_net_control_adapter(settings_object)
+    elif settings_object.object_type == "system_control":
+        adapter = await _get_system_control_adapter(settings_object)
     else:
         assert "invalid object_type: {}".format(settings_object.object_type)
 

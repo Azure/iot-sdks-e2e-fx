@@ -21,7 +21,7 @@ from fixtures import (  # noqa: F401
     service,
     test_device,
     test_module,
-    net_control,
+    system_control,
     longhaul_control_device,
     telemetry_payload,
     device_provisioning,
@@ -159,10 +159,10 @@ def set_transport(transport):
     settings.test_device.transport = transport
 
 
-def set_local_net_control():
-    if settings.net_control.adapter_address:
-        settings.net_control.adapter_address = "http://localhost:{}".format(
-            settings.net_control.container_port
+def set_local_system_control():
+    if settings.system_control.adapter_address:
+        settings.system_control.adapter_address = "http://localhost:{}".format(
+            settings.system_control.container_port
         )
 
 
@@ -180,7 +180,7 @@ def set_local():
                 settings.test_module.container_port
             )
 
-    set_local_net_control()
+    set_local_system_control()
 
 
 def set_python_inproc():
@@ -191,7 +191,7 @@ def set_python_inproc():
     if settings.test_module.connection_type == "environment":
         settings.test_module.connection_type = "connection_string_with_edge_gateway"
 
-    set_local_net_control()
+    set_local_system_control()
 
 
 def set_sas_renewal():
