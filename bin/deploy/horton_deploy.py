@@ -24,21 +24,21 @@ def _deploy_common(test_image):
     settings.horton.id_base = utilities.get_random_device_name()
 
 
-def _deploy_system(host):
+def _deploy_system_control(host):
     if settings.horton.is_windows:
-        settings.system.adapter_address = None
+        settings.system_control.adapter_address = None
     else:
-        settings.system.test_destination = host
-        settings.system.host_port = 8140
-        settings.system.container_port = 8040
+        settings.system_control.test_destination = host
+        settings.system_control.host_port = 8140
+        settings.system_control.container_port = 8040
 
         if settings.horton.image == utilities.PYTHON_INPROC:
-            settings.system.adapter_address = "http://localhost:{}".format(
-                settings.system.container_port
+            settings.system_control.adapter_address = "http://localhost:{}".format(
+                settings.system_control.container_port
             )
         else:
-            settings.system.adapter_address = "http://localhost:{}".format(
-                settings.system.host_port
+            settings.system_control.adapter_address = "http://localhost:{}".format(
+                settings.system_control.host_port
             )
 
 
@@ -70,7 +70,7 @@ def deploy_for_iotedge(test_image):
     settings.leaf_device.container_name = settings.test_module.container_name
     settings.leaf_device.object_type = "leaf_device"
 
-    _deploy_system(host)
+    _deploy_system_control(host)
 
     edge_deployment.set_config_yaml()
     edge_deployment.restart_iotedge()
@@ -111,7 +111,7 @@ def deploy_for_iothub(test_image):
         settings.test_module.device_id, settings.test_module.module_id
     )
 
-    _deploy_system(host)
+    _deploy_system_control(host)
 
     if test_image != utilities.PYTHON_INPROC:
         utilities.create_docker_container(settings.test_module)
