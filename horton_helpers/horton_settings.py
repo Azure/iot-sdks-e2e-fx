@@ -125,7 +125,7 @@ class HortonSettings(DictionaryObject):
             self.friend_module,
             self.leaf_device,
             self.test_device,
-            self.systm_control,
+            self.system_control,
             self.horton,
             self.longhaul_control_device,
             self.device_provisioning,
