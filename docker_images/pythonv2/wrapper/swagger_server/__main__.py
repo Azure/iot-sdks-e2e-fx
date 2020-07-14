@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 this_module = sys.modules[__name__]
 this_path = os.path.dirname(this_module.__file__)
 try:
-    net_control_pid = subprocess.Popen(
-        "python {}/../../net_control_app/main.py".format(this_path).split(" ")
+    system_control_pid = subprocess.Popen(
+        "python {}/../../system_control_app/main.py".format(this_path).split(" ")
     )
 except Exception:
-    logger.error("Failed to launch net_control app", exc_info=True)
+    logger.error("Failed to launch system_control_app", exc_info=True)
 
 
 def main():

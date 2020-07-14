@@ -77,7 +77,7 @@ async def configure_system_control():
             settings.test_module.capabilities.system_control = False
 
     if settings.system_control.adapter:
-        await settings.system_control.adapter.reconnect()
+        await settings.system_control.adapter.reconnect_network()
 
 
 async def session_init():

@@ -110,7 +110,7 @@ async def system_control():
     finally:
         if adapter:
             logger("system_control finalizer".center(132, "-"))
-            await adapter.reconnect()
+            await adapter.reconnect_network()
 
 
 @pytest.fixture(
