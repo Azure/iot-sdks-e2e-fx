@@ -36,7 +36,7 @@ case $language in
         ;;
     yaml)
         swagger_language=swagger-yaml
-        tags="net control device module service registry"
+        tags="system control device module service registry"
         ;;
     *)
         colorecho _red "Unkonwn language: $(language)"

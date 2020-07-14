@@ -11,8 +11,8 @@ from msrest.exceptions import HttpOperationError
 from .. import models
 
 
-class NetOperations(object):
-    """NetOperations operations.
+class SystemOperations(object):
+    """SystemOperations operations.
 
     You should not instantiate directly this class, but create a Client instance that will create it for you and attach it as attribute.
 
@@ -34,7 +34,7 @@ class NetOperations(object):
 
     def set_destination(
             self, ip, transport_type, custom_headers=None, raw=False, **operation_config):
-        """Set destination for net disconnect ops.
+        """Set destination for system disconnect ops.
 
         :param ip:
         :type ip: str
@@ -77,11 +77,11 @@ class NetOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    set_destination.metadata = {'url': '/net/setDestination/{ip}/{transportType}'}
+    set_destination.metadata = {'url': '/system/setDestination/{ip}/{transportType}'}
 
     def disconnect(
             self, disconnect_type, custom_headers=None, raw=False, **operation_config):
-        """Simulate a network disconnection.
+        """Simulate a systemwork disconnection.
 
         :param disconnect_type: disconnect method for dropped connection
          tests. Possible values include: 'DROP', 'REJECT'
@@ -121,11 +121,11 @@ class NetOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect.metadata = {'url': '/net/disconnect/{disconnectType}'}
+    disconnect.metadata = {'url': '/system/disconnect/{disconnectType}'}
 
     def reconnect(
             self, custom_headers=None, raw=False, **operation_config):
-        """Reconnect the network after a simulated network disconnection.
+        """Reconnect the systemwork after a simulated network disconnection.
 
         :param dict custom_headers: headers that will be added to the request
         :param bool raw: returns the direct response alongside the
@@ -158,7 +158,7 @@ class NetOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    reconnect.metadata = {'url': '/net/reconnect'}
+    reconnect.metadata = {'url': '/system/reconnect'}
 
     def get_system_stats(
             self, pid, custom_headers=None, raw=False, **operation_config):

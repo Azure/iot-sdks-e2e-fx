@@ -93,6 +93,21 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "swagger_server.controllers.control_controller"
+  /control/wrapperStats:
+    get:
+      tags:
+      - "control"
+      summary: "Get statistics about the operation of the test wrapper"
+      operationId: "control_get_wrapper_stats"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "swagger_server.controllers.control_controller"
   /device/connect/{transportType}:
     put:
       tags:

@@ -4,9 +4,6 @@ import six
 from swagger_server.models.log_message import LogMessage  # noqa: E501
 from swagger_server import util
 
-# added 1 line in merge
-import control_glue
-
 
 def control_cleanup():  # noqa: E501
     """verify that the clients have cleaned themselves up completely
@@ -16,8 +13,7 @@ def control_cleanup():  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    control_glue.cleanup_resources()
+    return 'do some magic!'
 
 
 def control_get_capabilities():  # noqa: E501
@@ -28,8 +24,18 @@ def control_get_capabilities():  # noqa: E501
 
     :rtype: object
     """
-    # changed from return 'do some magic!'
-    return control_glue.get_capabilities()
+    return 'do some magic!'
+
+
+def control_get_wrapper_stats():  # noqa: E501
+    """Get statistics about the operation of the test wrapper
+
+     # noqa: E501
+
+
+    :rtype: object
+    """
+    return 'do some magic!'
 
 
 def control_log_message(logMessage):  # noqa: E501
@@ -44,8 +50,7 @@ def control_log_message(logMessage):  # noqa: E501
     """
     if connexion.request.is_json:
         logMessage = LogMessage.from_dict(connexion.request.get_json())  # noqa: E501
-    # changed from return 'do some magic!'
-    control_glue.log_message(logMessage.message)
+    return 'do some magic!'
 
 
 def control_send_command(cmd):  # noqa: E501
@@ -58,8 +63,7 @@ def control_send_command(cmd):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    control_glue.send_command(cmd)
+    return 'do some magic!'
 
 
 def control_set_flags(flags):  # noqa: E501
@@ -72,6 +76,4 @@ def control_set_flags(flags):  # noqa: E501
 
     :rtype: None
     """
-    # changed from return 'do some magic!'
-    control_glue.set_flags(flags)
-
+    return 'do some magic!'
