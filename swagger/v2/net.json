@@ -75,40 +75,27 @@
                 }
             }
         },
-        "/net/disconnectAfterC2d/{disconnectType}": {
-            "put": {
+        "/control/systemStats/{pid}": {
+            "get": {
                 "tags": [
                     "net"
                 ],
-                "summary": "Simulate a disconnect after the next C2D transfer",
-                "operationId": "Net_DisconnectAfterC2d",
+                "summary": "Get statistics about the operation of the operating system",
+                "operationId": "Net_GetSystemStats",
                 "parameters": [
                     {
-                        "$ref": "parameters.json#/disconnectType"
+                        "$ref": "parameters.json#/pid"
                     }
+                ],
+                "produces": [
+                    "application/json"
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/net/disconnectAfterD2c/{disconnectType}": {
-            "put": {
-                "tags": [
-                    "net"
-                ],
-                "summary": "Simulate a disconnect after the next D2C transfer",
-                "operationId": "Net_DisconnectAfterD2c",
-                "parameters": [
-                    {
-                        "$ref": "parameters.json#/disconnectType"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
                     }
                 }
             }

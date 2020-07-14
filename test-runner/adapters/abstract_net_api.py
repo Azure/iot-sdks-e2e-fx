@@ -19,7 +19,6 @@ class AbstractNetApi:
     def reconnect(self):
         pass
 
-    # BKTODO: rename net control to system control?
     # BKTODO: schedule discussion
 
     @abc.abstractmethod

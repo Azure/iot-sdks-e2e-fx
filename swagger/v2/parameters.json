@@ -183,5 +183,14 @@
     "description": "key to use for connection",
     "required": true,
     "type": "string"
+  },
+  "pid": {
+    "name": "pid",
+    "in": "path",
+    "description": "Process ID for the wrapper process",
+    "required": true,
+    "type": "integer"
   }
+}
+
 }

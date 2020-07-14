@@ -122,6 +122,26 @@
                     }
                 }
             }
+        },
+        "/control/wrapperStats": {
+            "get": {
+                "tags": [
+                    "control"
+                ],
+                "summary": "Get statistics about the operation of the test wrapper",
+                "operationId": "Control_GetWrapperStats",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
         }
     }
 }
