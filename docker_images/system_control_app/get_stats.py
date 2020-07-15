@@ -3,24 +3,38 @@
 # full license information.
 
 
-def get_memory_stats():
+memory_stats_to_collect = ["MemTotal", "MemFree", "MemAvailable"]
+process_stats_to_collect = [
+    "VmSize",
+    "VmRSS",
+    "RssFile",
+    "RssShmem",
+    "voluntary_ctxt_switches",
+    "nonvoluntary_ctxt_switches",
+]
+
+
+def get_stats(filename, prefix, stats_to_collect):
     """
-    return total memory, free memory, and available memory
+    collect status from a /prox/* file
     """
-    mem_total = 0
-    mem_free = 0
-    mem_available = 0
-    with open("/proc/meminfo") as stream:
+    stats = {}
+    with open(filename) as stream:
         lines = stream.readlines()
     for line in lines:
         words = line.split()
-        if words[0].startswith("MemTotal"):
-            mem_total = int(words[1]) * 1024
-        elif words[0].startswith("MemFree"):
-            mem_free = int(words[1]) * 1024
-        elif words[0].startswith("MemAvailable"):
-            mem_available = int(words[1]) * 1024
-    return mem_total, mem_free, mem_available
+        key = words[0].rstrip(":")
+        value = words[1]
+        if key in stats_to_collect:
+            stats[prefix + key] = value
+    return stats
+
+
+def get_memory_stats():
+    """
+    collect stats on system memory use
+    """
+    return get_stats("/proc/meminfo", "system_", memory_stats_to_collect)
 
 
 def get_system_uptime():
@@ -30,3 +44,12 @@ def get_system_uptime():
     with open("/proc/uptime") as stream:
         line = stream.readline()
     return float(line.split()[0])
+
+
+def get_process_stats(pid):
+    """
+    collect stats for process behavior
+    """
+    return get_stats(
+        "/proc/{}/status".format(pid), "process_", process_stats_to_collect
+    )

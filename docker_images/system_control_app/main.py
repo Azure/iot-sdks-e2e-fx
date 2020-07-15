@@ -8,6 +8,7 @@ import drop
 import logging
 import get_stats
 import json
+import traceback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("system_control_app." + __name__)
@@ -115,7 +116,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "text/json")
             self.end_headers()
-            self.wfile.write(json.dumps(stats).encode("utf-8"))
+            self.wfile.write(json.dumps(stats, indent=2).encode("utf-8"))
 
     def do_set_network_destination(self, ip, transport):
         global destination_ip
@@ -130,21 +131,23 @@ class RequestHandler(BaseHTTPRequestHandler):
         drop.reconnect_port(client_transport)
 
     def get_system_stats(self, pid):
-        mem_stats = get_stats.get_memory_stats()
         system_uptime = get_stats.get_system_uptime()
 
-        return {
-            "system_memory_total": mem_stats[0],
-            "system_memory_free": mem_stats[1],
-            "system_memory_available": mem_stats[2],
-            "system_uptime": system_uptime,
-            "wrapper_virtual_memory": 0,
-            "wrapper_physical_memory": 0,
-            "wrapper_shared_memory": 0,
-            "wrapper_cpu_percent": 0,
-            "wrapper_memory_percent": 0,
-            "wrapper_cpu_time": 0,
-        }
+        stats = {"system_uptime": system_uptime}
+
+        try:
+            stats.update(get_stats.get_memory_stats())
+        except Exception:
+            logger.info("Error getting memory stats")
+            logger.info(traceback.format_exc())
+
+        try:
+            stats.update(get_stats.get_process_stats(pid))
+        except Exception:
+            logger.info("Error getting process stats")
+            logger.info(traceback.format_exc())
+
+        return stats
 
 
 if __name__ == "__main__":
