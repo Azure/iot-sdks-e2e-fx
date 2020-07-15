@@ -14,7 +14,13 @@ import traceback
 
 from longhaul_config import LonghaulConfig
 from longhaul_telemetry import ExecutionProperties, D2cTelemetry, ExecutionTelemetry
-from measurement import TrackCount, TrackMax, MeasureRunningCodeBlock, MeasureLatency
+from measurement import (
+    TrackCount,
+    TrackMax,
+    MeasureRunningCodeBlock,
+    MeasureLatency,
+    NoLock,
+)
 from horton_logging import logger
 from sample_content import make_message_payload
 
@@ -119,19 +125,23 @@ class IntervalOperationLonghaul(IntervalOperation):
     def __init__(self, *args, **kwargs):
         super(IntervalOperationLonghaul, self).__init__(*args, **kwargs)
 
-        self.next_op_id = TrackCount()
+        self.next_op_id = TrackCount(use_lock=False)
 
-        self.count_sending = MeasureRunningCodeBlock("sending", logger=None)
-        self.count_verifying = MeasureRunningCodeBlock("verifying", logger=None)
+        self.count_sending = MeasureRunningCodeBlock(
+            "sending", logger=None, use_lock=False
+        )
+        self.count_verifying = MeasureRunningCodeBlock(
+            "verifying", logger=None, use_lock=False
+        )
 
-        self.count_total_completed = TrackCount()
-        self.count_total_failed = TrackCount()
+        self.count_total_completed = TrackCount(use_lock=False)
+        self.count_total_failed = TrackCount(use_lock=False)
 
-        self.track_max_send_latency = TrackMax()
-        self.track_max_verify_latency = TrackMax()
+        self.track_max_send_latency = TrackMax(use_lock=False)
+        self.track_max_verify_latency = TrackMax(use_lock=False)
 
         self.uncompleted_ops = set()
-        self.uncompleted_ops_lock = threading.Lock()
+        self.uncompleted_ops_lock = NoLock() or threading.Lock()
 
     @abc.abstractmethod
     async def do_send(self, op_id):
@@ -166,7 +176,7 @@ class IntervalOperationLonghaul(IntervalOperation):
 
         except Exception as e:
             logger("OP FAILED: Exception running op: {}".format(type(e)))
-            self.count_total_failed.increment()
+            self.count_failed.increment()
 
 
 not_received = "not received"
@@ -190,7 +200,8 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
         self.eventhub = eventhub
 
         self.op_id_list = {}
-        self.op_id_list_lock = threading.Lock()
+        self.op_id_list_lock = NoLock() or threading.Lock()
+
         self.listener = None
 
     async def do_send(self, op_id):
@@ -352,6 +363,7 @@ class IntervalOperationSendTestTelemetry(IntervalOperation):
         telemetry = ExecutionTelemetry()
         telemetry.pytest_gc_object_count = len(gc.get_objects())
 
+        logger("publishing: {}".format((telemetry.to_dict())))
         await self.longhaul_control_device.send_event(telemetry.to_dict())
 
     async def stop(self):
@@ -493,7 +505,7 @@ class LongHaulTest(object):
         )
 
         try:
-            one_second = 1
+            one_second = 1.0
             all_tasks = set()
 
             while not stop and (
@@ -520,8 +532,8 @@ class LongHaulTest(object):
 
                         all_tasks = pending
 
-                    if len(all_tasks) == 0:
-                        await asyncio.sleep(one_second - wait_time.get_latency())
+                        if len(all_tasks) == 0:
+                            await asyncio.sleep(one_second - wait_time.get_latency())
 
                 execution_properties.execution_elapsed_time = (
                     datetime.datetime.now() - execution_properties.execution_start_time
