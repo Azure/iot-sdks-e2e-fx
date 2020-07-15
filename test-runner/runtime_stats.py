@@ -22,8 +22,8 @@ class SystemProperties(DictionaryObject):
         super(SystemProperties, self).__init__()
 
         self.system_memory_total = 0
-        self.system_memory_used = 0
         self.system_memory_free = 0
+        self.system_memory_available = 0
         self.system_uptime = 0
 
         self.wrapper_virtual_memory

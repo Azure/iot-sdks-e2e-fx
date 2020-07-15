@@ -6,6 +6,8 @@ from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import posixpath
 import drop
 import logging
+import get_stats
+import json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("system_control_app." + __name__)
@@ -53,13 +55,16 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         logger.info("Received GET for{}".format(self.path))
         try:
-            if self.path.startswith("/systemControl/syystemStats/"):
+            if self.path.startswith("/systemControl/systemStats/"):
                 self.handle_get_system_stats()
             else:
                 self.send_response(404)
         except Exception:
             logger.error("exception in do_GET", exc_info=True)
             self.send_response(500)
+
+        self.end_headers()
+        logger.info("done handling GET for {}".format(self.path))
 
     def handle_set_network_destination(self):
         # /systemControl/setNetworkDestination/<IP>/<transport>/
@@ -107,14 +112,16 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_response(404)
         else:
             stats = self.get_system_stats(parts[2])
-            self.send_response(200, stats)
+            self.send_response(200)
+            self.send_header("Content-type", "text/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(stats).encode("utf-8"))
 
     def do_set_network_destination(self, ip, transport):
         global destination_ip
         global client_transport
         destination_ip = ip
         client_transport = transport
-        self.send_response(200)
 
     def do_disconnect_network(self, disconnect_type):
         drop.disconnect_port(disconnect_type, client_transport)
@@ -123,11 +130,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         drop.reconnect_port(client_transport)
 
     def get_system_stats(self, pid):
+        mem_stats = get_stats.get_memory_stats()
+        system_uptime = get_stats.get_system_uptime()
+
         return {
-            "system_memory_total": 0,
-            "system_memory_used": 0,
-            "system_memory_free": 0,
-            "system_uptime": 0,
+            "system_memory_total": mem_stats[0],
+            "system_memory_free": mem_stats[1],
+            "system_memory_available": mem_stats[2],
+            "system_uptime": system_uptime,
             "wrapper_virtual_memory": 0,
             "wrapper_physical_memory": 0,
             "wrapper_shared_memory": 0,
