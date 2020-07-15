@@ -40,7 +40,8 @@ def control_get_wrapper_stats():  # noqa: E501
 
     :rtype: object
     """
-    return 'do some magic!'
+    # changed from return 'do some magic!'
+    return control_glue.get_wrapper_stats()
 
 
 def control_log_message(logMessage):  # noqa: E501
@@ -85,4 +86,3 @@ def control_set_flags(flags):  # noqa: E501
     """
     # changed from return 'do some magic!'
     control_glue.set_flags(flags)
-

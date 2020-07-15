@@ -63,3 +63,13 @@ def send_command_sync(cmd):
         # logger.info("NOT CHECCKING FOR LEAKS")
     else:
         raise Exception("Unsupported Command")
+
+
+def get_wrapper_stats_sync():
+    return {
+        "sdkRepo": None,
+        "sdkBranch": None,
+        "sdkUri": None,
+        "gcObjectCount": None,
+        "wrapperPid": None,
+    }
