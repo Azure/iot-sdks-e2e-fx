@@ -50,6 +50,17 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         logger.info("done handling PUT for {}".format(self.path))
 
+    def do_GET(self):
+        logger.info("Received GET for{}".format(self.path))
+        try:
+            if self.path.startswith("/systemControl/syystemStats/"):
+                self.handle_get_system_stats()
+            else:
+                self.send_response(404)
+        except Exception:
+            logger.error("exception in do_GET", exc_info=True)
+            self.send_response(500)
+
     def handle_set_network_destination(self):
         # /systemControl/setNetworkDestination/<IP>/<transport>/
         logger.info("inside handle_set_network_destination")
@@ -87,6 +98,17 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.do_reconnect_network()
             self.send_response(200)
 
+    def handle_get_system_stats(self):
+        # /systemControl/systemStats/{pid}/
+        logger.info("inside handle_reconnect_network")
+        parts = split_path(self.path)
+        logger.info("parts={}".format(parts))
+        if len(parts) != 3:
+            self.send_response(404)
+        else:
+            stats = self.get_system_stats(parts[2])
+            self.send_response(200, stats)
+
     def do_set_network_destination(self, ip, transport):
         global destination_ip
         global client_transport
@@ -99,6 +121,20 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_reconnect_network(self):
         drop.reconnect_port(client_transport)
+
+    def get_system_stats(self, pid):
+        return {
+            "system_memory_total": 0,
+            "system_memory_used": 0,
+            "system_memory_free": 0,
+            "system_uptime": 0,
+            "wrapper_virtual_memory": 0,
+            "wrapper_physical_memory": 0,
+            "wrapper_shared_memory": 0,
+            "wrapper_cpu_percent": 0,
+            "wrapper_memory_percent": 0,
+            "wrapper_cpu_time": 0,
+        }
 
 
 if __name__ == "__main__":
