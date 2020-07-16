@@ -55,12 +55,12 @@ ExecutionTelemetry._defaults = ExecutionTelemetry()
 class D2cTelemetry(DictionaryObject):
     def __init__(self):
         super(D2cTelemetry, self).__init__()
-        self.count_total_d2c_completed = 0
-        self.count_total_d2c_failed = 0
-        self.count_current_d2c_sending = 0
-        self.count_current_d2c_verifying = 0
-        self.latency_d2c_send = 0
-        self.latency_d2c_verify = 0
+        self.total_count_d2c_completed = 0
+        self.total_count_d2c_failed = 0
+        self.current_count_d2c_sending = 0
+        self.current_count_d2c_verifying = 0
+        self.average_latency_d2c_send = 0
+        self.average_latency_d2c_verify = 0
         self.lock_attributes()
 
 

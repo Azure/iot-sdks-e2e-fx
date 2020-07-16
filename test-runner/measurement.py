@@ -44,8 +44,8 @@ class ReportGroup(object):
 
 
 class ReportAverage(object):
-    def __init__(self, name, logger=logger):
-        self.lock = threading.Lock()
+    def __init__(self, name, logger=logger, use_lock=True):
+        self.lock = threading.Lock() if use_lock else NoLock()
         self.name = name
         self.logger = logger or null_logger
         self.total = 0
@@ -59,6 +59,17 @@ class ReportAverage(object):
     def get_average(self):
         with self.lock:
             return self.total / self.sample_count
+
+    def reset(self):
+        with self.lock:
+            self.total = 0
+            self.sample_count = 0
+
+    def extract(self):
+        with self.lock:
+            average = self.get_average()
+            self.reset()
+            return average
 
     def print_report(self):
         with self.lock:
@@ -215,3 +226,32 @@ class TrackMax(object):
             max = self.max
             self.max = 0
             return max
+
+
+class TrackAverage(object):
+    def __init__(self, use_lock=True):
+        self.lock = threading.Lock() if use_lock else NoLock()
+        self.reset()
+
+    def reset(self):
+        with self.lock:
+            self.count = 0
+            self.total = 0
+
+    def add_sample(self, sample):
+        with self.lock:
+            self.total += sample
+            self.count += 1
+
+    def get_average(self):
+        with self.lock:
+            if self.count:
+                return self.total / self.count
+            else:
+                return 0
+
+    def extract(self):
+        with self.lock:
+            average = self.get_average
+            self.reset
+            return average

@@ -21,7 +21,7 @@ from longhaul_telemetry import (
 )
 from measurement import (
     TrackCount,
-    TrackMax,
+    TrackAverage,
     MeasureRunningCodeBlock,
     MeasureLatency,
     NoLock,
@@ -39,7 +39,7 @@ pytestmark = pytest.mark.asyncio
 longhaul_config = {
     "d2cEnabled": True,
     "d2cIntervalLength": 1,
-    "d2cOpsPerInterval": 15,
+    "d2cOpsPerInterval": 5,
     "TotalDuration": "00:00:30",
     # "totalDuration": "72:00:10",
 }
@@ -139,11 +139,11 @@ class IntervalOperationLonghaul(IntervalOperation):
             "verifying", logger=None, use_lock=False
         )
 
-        self.count_total_completed = TrackCount(use_lock=False)
-        self.count_total_failed = TrackCount(use_lock=False)
+        self.total_count_completed = TrackCount(use_lock=False)
+        self.total_count_failed = TrackCount(use_lock=False)
 
-        self.track_max_send_latency = TrackMax(use_lock=False)
-        self.track_max_verify_latency = TrackMax(use_lock=False)
+        self.track_average_send_latency = TrackAverage(use_lock=False)
+        self.track_average_verify_latency = TrackAverage(use_lock=False)
 
         self.uncompleted_ops = set()
         self.uncompleted_ops_lock = NoLock() or threading.Lock()
@@ -158,9 +158,11 @@ class IntervalOperationLonghaul(IntervalOperation):
 
     async def run_one_op(self):
         try:
-            measure_send_latency = MeasureLatency(tracker=self.track_max_send_latency)
+            measure_send_latency = MeasureLatency(
+                tracker=self.track_average_send_latency
+            )
             measure_verify_latency = MeasureLatency(
-                tracker=self.track_max_verify_latency
+                tracker=self.track_average_verify_latency
             )
 
             op_id = self.next_op_id.increment()
@@ -177,7 +179,7 @@ class IntervalOperationLonghaul(IntervalOperation):
             with self.uncompleted_ops_lock:
                 self.uncompleted_ops.remove(op_id)
 
-            self.count_total_completed.increment()
+            self.total_count_completed.increment()
 
         except Exception as e:
             logger("OP FAILED: Exception running op: {}".format(type(e)))
@@ -308,22 +310,25 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
     async def send_operation_telemetry(self):
         telemetry = D2cTelemetry()
 
-        telemetry.count_total_d2c_completed = self.count_total_completed.get_count()
-        telemetry.count_total_d2c_failed = self.count_total_failed.get_count()
-        telemetry.count_current_d2c_sending = self.count_sending.get_count()
-        telemetry.count_current_d2c_verifying = self.count_verifying.get_count()
-        telemetry.latency_d2c_send = self.track_max_send_latency.extract()
-        telemetry.latency_d2c_verify = self.track_max_verify_latency.extract()
+        telemetry.total_count_d2c_completed = self.total_count_completed.get_count()
+        telemetry.total_count_d2c_failed = self.total_count_failed.get_count()
+        telemetry.current_count_d2c_sending = self.count_sending.get_count()
+        telemetry.current_count_d2c_verifying = self.count_verifying.get_count()
+        telemetry.average_latency_d2c_send = self.track_average_send_latency.extract()
+        telemetry.average_latency_d2c_verify = (
+            self.track_average_verify_latency.extract()
+        )
 
+        logger("publishing {}".format(telemetry.to_dict()))
         await self.longhaul_control_device.send_event(telemetry.to_dict())
 
         if (
-            self.count_total_failed.get_count()
+            self.total_count_failed.get_count()
             > self.test_config.d2c_count_failures_allowed
         ):
             raise Exception(
                 "D2c failures ({}) exceeeded amount allowed ({})".format(
-                    self.count_total_failed.get_count(),
+                    self.total_count_failed.get_count(),
                     self.test_config.d2c_count_failures_allowed,
                 )
             )
@@ -368,7 +373,7 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
         self.client = client
         self.pid = pid
         self.system_control = system_control
-        self.last_vonuntary_context_switches = 0
+        self.last_voluntary_context_switches = 0
         self.last_nonvoluntary_context_switches = 0
 
     async def run_one_op(self):
