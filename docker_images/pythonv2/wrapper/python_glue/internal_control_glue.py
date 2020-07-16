@@ -3,6 +3,8 @@
 # full license information.
 import logging
 import leak_check
+import os
+import gc
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +69,9 @@ def send_command_sync(cmd):
 
 def get_wrapper_stats_sync():
     return {
-        "sdkRepo": None,
-        "sdkBranch": None,
-        "sdkUri": None,
-        "gcObjectCount": None,
-        "wrapperPid": None,
+        "sdkRepo": os.getenv("HORTON_REPO", ""),
+        "sdkCommit": os.getenv("HORTON_COMMIT", ""),
+        "sdkSha": os.getenv("HORTON_SHA", ""),
+        "wrapperCcObjectCount": len(gc.get_objects()),
+        "wrapperPid": os.getpid(),
     }
