@@ -372,8 +372,9 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
     async def run_one_op(self):
         telemetry = ExecutionTelemetry()
 
-        system_stats = await self.system_control.get_system_stats()
-        wrapper_stats = await self.client.wrapper_api.get_wrapper_stats()
+        wrapper_stats = await self.client.settings.wrapper_api.get_wrapper_stats()
+        breakpoint()
+        system_stats = await self.system_control.get_system_stats(self.pid)
 
         telemetry.pytest_gc_object_count = len(gc.get_objects())
 
@@ -488,16 +489,14 @@ class IntervalOperationRenewEventhub(IntervalOperation):
 
 
 async def set_platform_properties(*, client, longhaul_control_device):
-    stats = await client.wrapper_api.get_wrapper_stats()
-
-    breakpoint()
+    stats = await client.settings.wrapper_api.get_wrapper_stats()
 
     properties = PlatformProperties()
     properties.os = stats["osType"]
     properties.os_release = stats["osRelease"]
     properties.system_architecture = stats["systemArchitecture"]
     properties.language = stats["language"]
-    properties.language_verison = stats["languageVersion"]
+    properties.language_version = stats["languageVersion"]
     properties.sdk_repo = stats["sdkRepo"]
     properties.sdk_commit = stats["sdkCommit"]
     properties.sdk_sha = stats["sdkSha"]

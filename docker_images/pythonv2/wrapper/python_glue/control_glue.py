@@ -28,4 +28,4 @@ def send_command(cmd):
 
 
 def get_wrapper_stats():
-    return internal_control_glue.get_wrapper_stats()
+    return internal_control_glue.get_wrapper_stats_sync()
