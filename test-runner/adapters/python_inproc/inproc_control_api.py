@@ -26,5 +26,5 @@ class ControlApi(AbstractControlApi):
         pass
 
     @emulate_async
-    async def get_wrapper_stats(self):
+    def get_wrapper_stats(self):
         return internal_control_glue.get_wrapper_stats_sync()

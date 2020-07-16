@@ -34,6 +34,6 @@ class SystemControlApi(AbstractSystemControlApi):
 
     @log_entry_and_exit
     async def get_system_stats(self, wrapper_pid):
-        await self.rest_endpoint.get_system_stats(
+        return await self.rest_endpoint.get_system_stats(
             wrapper_pid, timeout=adapter_config.control_api_timeout
         )

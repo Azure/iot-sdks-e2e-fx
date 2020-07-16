@@ -373,7 +373,6 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
         telemetry = ExecutionTelemetry()
 
         wrapper_stats = await self.client.settings.wrapper_api.get_wrapper_stats()
-        breakpoint()
         system_stats = await self.system_control.get_system_stats(self.pid)
 
         telemetry.pytest_gc_object_count = len(gc.get_objects())
