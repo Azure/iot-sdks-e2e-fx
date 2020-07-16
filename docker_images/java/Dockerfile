@@ -11,7 +11,7 @@ RUN git config --global user.email "you@example.com" \
 EXPOSE 8080
 
 # phase 1: grab the base branch and run prebuild
-ARG HORTON_REPO
+ENV HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
@@ -19,8 +19,8 @@ COPY java/prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
-ARG HORTON_COMMIT_NAME
-ARG HORTON_COMMIT_SHA
+ENV HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA
 WORKDIR /sdk
 RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
