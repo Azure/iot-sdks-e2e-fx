@@ -252,6 +252,6 @@ class TrackAverage(object):
 
     def extract(self):
         with self.lock:
-            average = self.get_average
+            average = self.get_average()
             self.reset
             return average
