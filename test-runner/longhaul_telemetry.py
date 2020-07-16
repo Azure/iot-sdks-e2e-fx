@@ -33,7 +33,7 @@ class ExecutionTelemetry(DictionaryObject):
     def __init__(self):
         super(ExecutionTelemetry, self).__init__()
 
-        self.system_uptime = 0
+        self.system_uptime = 0.0
         self.system_memory_size = 0
         self.system_memory_free = 0
         self.system_memory_available = 0

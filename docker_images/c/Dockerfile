@@ -46,7 +46,7 @@ RUN git clone https://github.com/Corvusoft/restbed . \
     && rm -r dependency/asio/asio/src/examples
 
 
-ENV HORTON_REPO
+ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 RUN git submodule update --init
@@ -62,8 +62,8 @@ COPY c/prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
-ENV HORTON_COMMIT_NAME
-ENV HORTON_COMMIT_SHA
+ARG HORTON_COMMIT_NAME
+ARG HORTON_COMMIT_SHA
 WORKDIR /sdk
 RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
@@ -78,5 +78,9 @@ RUN git submodule update --init
 
 COPY c/rebuild.sh /
 RUN /rebuild.sh
+
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
 ENTRYPOINT ["/wrapper/build/edge_e2e_rest_server"]

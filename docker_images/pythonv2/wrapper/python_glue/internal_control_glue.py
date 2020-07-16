@@ -76,8 +76,8 @@ def get_wrapper_stats_sync():
         "osRelease": platform.version(),
         "systemArchitecture": platform.machine(),
         "sdkRepo": os.getenv("HORTON_REPO", ""),
-        "sdkCommit": os.getenv("HORTON_COMMIT", ""),
-        "sdkSha": os.getenv("HORTON_SHA", ""),
+        "sdkCommit": os.getenv("HORTON_COMMIT_NAME", ""),
+        "sdkSha": os.getenv("HORTON_COMMIT_SHA", ""),
         "wrapperGcObjectCount": len(gc.get_objects()),
         "wrapperPid": os.getpid(),
     }

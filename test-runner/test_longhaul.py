@@ -377,22 +377,22 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
 
         telemetry.pytest_gc_object_count = len(gc.get_objects())
 
-        self.system_uptime = system_stats.get("system_uptime", "")
-        self.system_memory_size = system_stats.get("system_MemTotal", 0)
-        self.system_memory_free = system_stats.get("system_MemFree", 0)
-        self.system_memory_available = system_stats.get("system_MemAvailable", 0)
+        self.system_uptime = float(system_stats.get("system_uptime", "0.0"))
+        self.system_memory_size = int(system_stats.get("system_MemTotal", 0))
+        self.system_memory_free = int(system_stats.get("system_MemFree", 0))
+        self.system_memory_available = int(system_stats.get("system_MemAvailable", 0))
 
-        self.process_gc_object_count = wrapper_stats.get("wrapperGcObjectCount", 0)
-        self.process_virtual_memory_size = system_stats.get("process_VmmSize", 0)
-        self.process_resident_memory = system_stats.get("process_VmRSS", 0)
-        self.process_shared_memory = system_stats.get(
-            "process_RssFile", 0
-        ) + system_stats.get("process.RssShmem", 0)
-        self.process_voluntary_context_switches = system_stats.get(
-            "process_voluntary_ctxt_switches", 0
+        self.process_gc_object_count = int(wrapper_stats.get("wrapperGcObjectCount", 0))
+        self.process_virtual_memory_size = int(system_stats.get("process_VmmSize", 0))
+        self.process_resident_memory = int(system_stats.get("process_VmRSS", 0))
+        self.process_shared_memory = int(system_stats.get("process_RssFile", 0)) + int(
+            system_stats.get("process.RssShmem", 0)
         )
-        self.process_nonvoluntary_contexxt_switches = system_stats.get(
-            "process_nonvoluntary_ctxt_switches", 0
+        self.process_voluntary_context_switches = int(
+            system_stats.get("process_voluntary_ctxt_switches", 0)
+        )
+        self.process_nonvoluntary_contexxt_switches = int(
+            system_stats.get("process_nonvoluntary_ctxt_switches", 0)
         )
 
         logger("publishing: {}".format((telemetry.to_dict())))
@@ -547,7 +547,7 @@ class LongHaulTest(object):
             execution_properties=execution_properties,
             longhaul_control_device=longhaul_control_device,
         )
-        send_test_telemetry = IntervalOperationSendExecutionTelemetry(
+        send_execution_telemetry = IntervalOperationSendExecutionTelemetry(
             test_config=test_config,
             longhaul_control_device=longhaul_control_device,
             client=client,
@@ -561,7 +561,7 @@ class LongHaulTest(object):
         )
 
         all_ops = set(longhaul_ops.values()) | set(
-            [update_test_report, send_test_telemetry, renew_eventhub]
+            [update_test_report, send_execution_telemetry, renew_eventhub]
         )
 
         try:
@@ -625,13 +625,13 @@ class LongHaulTest(object):
             await command_listener.stop()
 
             # stop all of our longhaul ops, then stop our reporting ops.
-            # order is important here since send_test_telemetry feeds data into
+            # order is important here since send_execution_telemetry feeds data into
             # update_test_report.
             logger("stopping all  ops")
             await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")
             await renew_eventhub.stop()
-            await send_test_telemetry.stop()
+            await send_execution_telemetry.stop()
             await update_test_report.stop()
 
 

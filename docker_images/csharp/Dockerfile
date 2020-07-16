@@ -29,7 +29,7 @@ RUN cat /root/.ssh/remote-debug.pub > /root/.ssh/authorized_keys
 RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
 
 # phase 1: grab the base branch and run prebuild
-ENV HORTON_REPO
+ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
@@ -45,8 +45,8 @@ RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
 WORKDIR /sdk
-ENV HORTON_COMMIT_NAME
-ENV HORTON_COMMIT_SHA
+ARG HORTON_COMMIT_NAME
+ARG HORTON_COMMIT_SHA
 RUN git pull 
 RUN git checkout $HORTON_COMMIT_SHA
 
@@ -57,6 +57,10 @@ RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 COPY csharp/rebuild.sh /
 run /rebuild.sh
+
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
 WORKDIR /app
 ENTRYPOINT ["/root/.dotnet/dotnet", "IO.Swagger.dll"]
