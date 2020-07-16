@@ -5,6 +5,7 @@ import logging
 import leak_check
 import os
 import gc
+import platform
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +70,14 @@ def send_command_sync(cmd):
 
 def get_wrapper_stats_sync():
     return {
+        "language": "python",
+        "languageVersion": platform.python_version(),
+        "osType": platform.system(),
+        "osRelease": platform.version(),
+        "systemArchitecture": platform.machine(),
         "sdkRepo": os.getenv("HORTON_REPO", ""),
         "sdkCommit": os.getenv("HORTON_COMMIT", ""),
         "sdkSha": os.getenv("HORTON_SHA", ""),
-        "wrapperCcObjectCount": len(gc.get_objects()),
+        "wrapperGcObjectCount": len(gc.get_objects()),
         "wrapperPid": os.getpid(),
     }
