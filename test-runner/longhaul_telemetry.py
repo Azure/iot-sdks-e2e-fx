@@ -33,17 +33,17 @@ class ExecutionTelemetry(DictionaryObject):
     def __init__(self):
         super(ExecutionTelemetry, self).__init__()
 
-        self.system_uptime = 0.0
-        self.system_memory_size = 0
-        self.system_memory_free = 0
-        self.system_memory_available = 0
+        self.system_uptime_in_seconds = 0.0
+        self.system_memory_size_in_kb = 0
+        self.system_memory_free_in_kb = 0
+        self.system_memory_available_in_kb = 0
 
         self.process_gc_object_count = 0
-        self.process_virtual_memory_size = 0
-        self.process_resident_memory = 0
-        self.process_shared_memory = 0
-        self.process_voluntary_context_switches = 0
-        self.process_nonvoluntary_contexxt_switches = 0
+        self.process_virtual_memory_size_in_kb = 0
+        self.process_resident_memory_in_kb = 0
+        self.process_shared_memory_in_kb = 0
+        self.process_voluntary_context_switches_per_second = 0
+        self.process_nonvoluntary_contexxt_switches_per_second = 0
 
         self.pytest_gc_object_count = 0
         self.lock_attributes()

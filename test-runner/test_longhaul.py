@@ -368,6 +368,8 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
         self.client = client
         self.pid = pid
         self.system_control = system_control
+        self.last_vonuntary_context_switches = 0
+        self.last_nonvoluntary_context_switches = 0
 
     async def run_one_op(self):
         telemetry = ExecutionTelemetry()
@@ -377,23 +379,44 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
 
         telemetry.pytest_gc_object_count = len(gc.get_objects())
 
-        self.system_uptime = float(system_stats.get("system_uptime", "0.0"))
-        self.system_memory_size = int(system_stats.get("system_MemTotal", 0))
-        self.system_memory_free = int(system_stats.get("system_MemFree", 0))
-        self.system_memory_available = int(system_stats.get("system_MemAvailable", 0))
-
-        self.process_gc_object_count = int(wrapper_stats.get("wrapperGcObjectCount", 0))
-        self.process_virtual_memory_size = int(system_stats.get("process_VmmSize", 0))
-        self.process_resident_memory = int(system_stats.get("process_VmRSS", 0))
-        self.process_shared_memory = int(system_stats.get("process_RssFile", 0)) + int(
-            system_stats.get("process.RssShmem", 0)
+        telemetry.system_uptime_in_seconds = float(
+            system_stats.get("system_uptime", "0.0")
         )
-        self.process_voluntary_context_switches = int(
+        telemetry.system_memory_size_in_kb = int(system_stats.get("system_MemTotal", 0))
+        telemetry.system_memory_free_in_kb = int(system_stats.get("system_MemFree", 0))
+        telemetry.system_memory_available_in_kb = int(
+            system_stats.get("system_MemAvailable", 0)
+        )
+
+        telemetry.process_gc_object_count = int(
+            wrapper_stats.get("wrapperGcObjectCount", 0)
+        )
+        telemetry.process_virtual_memory_size_in_kb = int(
+            system_stats.get("process_VmmSize", 0)
+        )
+        telemetry.process_resident_memory_in_kb = int(
+            system_stats.get("process_VmRSS", 0)
+        )
+        telemetry.process_shared_memory_in_kb = int(
+            system_stats.get("process_RssFile", 0)
+        ) + int(system_stats.get("process.RssShmem", 0))
+
+        voluntary_context_switches = int(
             system_stats.get("process_voluntary_ctxt_switches", 0)
         )
-        self.process_nonvoluntary_contexxt_switches = int(
+        nonvoluntary_context_switches = int(
             system_stats.get("process_nonvoluntary_ctxt_switches", 0)
         )
+
+        telemetry.process_voluntary_context_switches_per_second = (
+            voluntary_context_switches - self.last_voluntary_context_switches
+        ) / self.interval_length
+        telemetry.process_nonvoluntary_contexxt_switches_per_second = (
+            nonvoluntary_context_switches - self.last_nonvoluntary_context_switches
+        ) / self.interval_length
+
+        self.last_voluntary_context_switches = voluntary_context_switches
+        self.last_nonvoluntary_context_switches = nonvoluntary_context_switches
 
         logger("publishing: {}".format((telemetry.to_dict())))
         await self.longhaul_control_device.send_event(telemetry.to_dict())
