@@ -334,9 +334,9 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
             self.listener = None
 
 
-class IntervalOperationUpdateTestReport(IntervalOperation):
+class IntervalOperationUpdateExecutionProperties(IntervalOperation):
     def __init__(self, *, test_config, execution_properties, longhaul_control_device):
-        super(IntervalOperationUpdateTestReport, self).__init__(
+        super(IntervalOperationUpdateExecutionProperties, self).__init__(
             test_config=test_config,
             interval_length=_get_seconds(test_config.property_update_interval),
             ops_per_interval=1,
@@ -356,18 +356,44 @@ class IntervalOperationUpdateTestReport(IntervalOperation):
 
 
 class IntervalOperationSendExecutionTelemetry(IntervalOperation):
-    def __init__(self, *, test_config, longhaul_control_device, pid):
+    def __init__(
+        self, *, test_config, client, system_control, longhaul_control_device, pid
+    ):
         super(IntervalOperationSendExecutionTelemetry, self).__init__(
             test_config=test_config,
             interval_length=_get_seconds(test_config.telenetry_interval),
             ops_per_interval=1,
             longhaul_control_device=longhaul_control_device,
         )
+        self.client = client
         self.pid = pid
+        self.system_control = system_control
 
     async def run_one_op(self):
         telemetry = ExecutionTelemetry()
+
+        system_stats = await self.system_control.get_system_stats()
+        wrapper_stats = await self.client.wrapper_api.get_wrapper_stats()
+
         telemetry.pytest_gc_object_count = len(gc.get_objects())
+
+        self.system_uptime = system_stats.get("system_uptime", "")
+        self.system_memory_size = system_stats.get("system_MemTotal", 0)
+        self.system_memory_free = system_stats.get("system_MemFree", 0)
+        self.system_memory_available = system_stats.get("system_MemAvailable", 0)
+
+        self.process_gc_object_count = wrapper_stats.get("wrapperGcObjectCount", 0)
+        self.process_virtual_memory_size = system_stats.get("process_VmmSize", 0)
+        self.process_resident_memory = system_stats.get("process_VmRSS", 0)
+        self.process_shared_memory = system_stats.get(
+            "process_RssFile", 0
+        ) + system_stats.get("process.RssShmem", 0)
+        self.process_voluntary_context_switches = system_stats.get(
+            "process_voluntary_ctxt_switches", 0
+        )
+        self.process_nonvoluntary_contexxt_switches = system_stats.get(
+            "process_nonvoluntary_ctxt_switches", 0
+        )
 
         logger("publishing: {}".format((telemetry.to_dict())))
         await self.longhaul_control_device.send_event(telemetry.to_dict())
@@ -464,6 +490,8 @@ class IntervalOperationRenewEventhub(IntervalOperation):
 async def set_platform_properties(*, client, longhaul_control_device):
     stats = await client.wrapper_api.get_wrapper_stats()
 
+    breakpoint()
+
     properties = PlatformProperties()
     properties.os = stats["osType"]
     properties.os_release = stats["osRelease"]
@@ -483,7 +511,7 @@ async def set_platform_properties(*, client, longhaul_control_device):
 
 class LongHaulTest(object):
     async def test_longhaul(
-        self, client, eventhub, service, longhaul_control_device, caplog
+        self, client, eventhub, service, longhaul_control_device, system_control, caplog
     ):
         await eventhub.connect()
 
@@ -516,7 +544,7 @@ class LongHaulTest(object):
                 longhaul_control_device=longhaul_control_device,
             )
         }
-        update_test_report = IntervalOperationUpdateTestReport(
+        update_test_report = IntervalOperationUpdateExecutionProperties(
             test_config=test_config,
             execution_properties=execution_properties,
             longhaul_control_device=longhaul_control_device,
@@ -524,6 +552,8 @@ class LongHaulTest(object):
         send_test_telemetry = IntervalOperationSendExecutionTelemetry(
             test_config=test_config,
             longhaul_control_device=longhaul_control_device,
+            client=client,
+            system_control=system_control,
             pid=pid,
         )
         renew_eventhub = IntervalOperationRenewEventhub(
