@@ -40,8 +40,8 @@ longhaul_config = {
     "d2cEnabled": True,
     "d2cIntervalLength": 1,
     "d2cOpsPerInterval": 15,
-    "testRunTotalDuration": "00:00:30",
-    # "testRunTotalDuration": "72:00:10",
+    "TotalDuration": "00:00:30",
+    # "totalDuration": "72:00:10",
 }
 
 
@@ -517,7 +517,7 @@ class LongHaulTest(object):
 
         test_config = LonghaulConfig.from_dict(longhaul_config)
 
-        pid = set_platform_properties(
+        pid = await set_platform_properties(
             client=client, longhaul_control_device=longhaul_control_device
         )
 
