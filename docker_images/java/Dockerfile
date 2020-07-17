@@ -36,4 +36,8 @@ COPY java/wrapper /sdk/iot-e2e-tests/edge-e2e
 COPY java/rebuild.sh /
 RUN /rebuild.sh
 
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
+
 ENTRYPOINT ["/usr/local/openjdk-8/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]

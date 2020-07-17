@@ -33,7 +33,8 @@ class SystemControlOperations(object):
         self.config = config
 
     def set_network_destination(
-            self, ip, transport_type, custom_headers=None, raw=False, **operation_config):
+        self, ip, transport_type, custom_headers=None, raw=False, **operation_config
+    ):
         """Set destination for network disconnect ops.
 
         :param ip:
@@ -52,10 +53,12 @@ class SystemControlOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.set_network_destination.metadata['url']
+        url = self.set_network_destination.metadata["url"]
         path_format_arguments = {
-            'ip': self._serialize.url("ip", ip, 'str'),
-            'transportType': self._serialize.url("transport_type", transport_type, 'str')
+            "ip": self._serialize.url("ip", ip, "str"),
+            "transportType": self._serialize.url(
+                "transport_type", transport_type, "str"
+            ),
         }
         url = self._client.format_url(url, **path_format_arguments)
 
@@ -77,10 +80,14 @@ class SystemControlOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    set_network_destination.metadata = {'url': '/systemControl/setNetworkDestination/{ip}/{transportType}'}
+
+    set_network_destination.metadata = {
+        "url": "/systemControl/setNetworkDestination/{ip}/{transportType}"
+    }
 
     def disconnect_network(
-            self, disconnect_type, custom_headers=None, raw=False, **operation_config):
+        self, disconnect_type, custom_headers=None, raw=False, **operation_config
+    ):
         """Simulate a network disconnection.
 
         :param disconnect_type: disconnect method for dropped connection
@@ -97,9 +104,11 @@ class SystemControlOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.disconnect_network.metadata['url']
+        url = self.disconnect_network.metadata["url"]
         path_format_arguments = {
-            'disconnectType': self._serialize.url("disconnect_type", disconnect_type, 'str')
+            "disconnectType": self._serialize.url(
+                "disconnect_type", disconnect_type, "str"
+            )
         }
         url = self._client.format_url(url, **path_format_arguments)
 
@@ -121,10 +130,12 @@ class SystemControlOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    disconnect_network.metadata = {'url': '/systemControl/disconnectNetwork/{disconnectType}'}
 
-    def reconnect_network(
-            self, custom_headers=None, raw=False, **operation_config):
+    disconnect_network.metadata = {
+        "url": "/systemControl/disconnectNetwork/{disconnectType}"
+    }
+
+    def reconnect_network(self, custom_headers=None, raw=False, **operation_config):
         """Reconnect th networrk after a simulated network disconnection.
 
         :param dict custom_headers: headers that will be added to the request
@@ -138,7 +149,7 @@ class SystemControlOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.reconnect_network.metadata['url']
+        url = self.reconnect_network.metadata["url"]
 
         # Construct parameters
         query_parameters = {}
@@ -158,10 +169,10 @@ class SystemControlOperations(object):
         if raw:
             client_raw_response = ClientRawResponse(None, response)
             return client_raw_response
-    reconnect_network.metadata = {'url': '/systemControl/reconnectNetwork'}
 
-    def get_system_stats(
-            self, pid, custom_headers=None, raw=False, **operation_config):
+    reconnect_network.metadata = {"url": "/systemControl/reconnectNetwork"}
+
+    def get_system_stats(self, pid, custom_headers=None, raw=False, **operation_config):
         """Get statistics about the operation of the operating system.
 
         :param pid: Process ID for the wrapper process
@@ -177,10 +188,8 @@ class SystemControlOperations(object):
          :class:`HttpOperationError<msrest.exceptions.HttpOperationError>`
         """
         # Construct URL
-        url = self.get_system_stats.metadata['url']
-        path_format_arguments = {
-            'pid': self._serialize.url("pid", pid, 'int')
-        }
+        url = self.get_system_stats.metadata["url"]
+        path_format_arguments = {"pid": self._serialize.url("pid", pid, "int")}
         url = self._client.format_url(url, **path_format_arguments)
 
         # Construct parameters
@@ -188,7 +197,7 @@ class SystemControlOperations(object):
 
         # Construct headers
         header_parameters = {}
-        header_parameters['Accept'] = 'application/json'
+        header_parameters["Accept"] = "application/json"
         if custom_headers:
             header_parameters.update(custom_headers)
 
@@ -201,11 +210,12 @@ class SystemControlOperations(object):
 
         deserialized = None
         if response.status_code == 200:
-            deserialized = self._deserialize('object', response)
+            deserialized = self._deserialize("object", response)
 
         if raw:
             client_raw_response = ClientRawResponse(deserialized, response)
             return client_raw_response
 
         return deserialized
-    get_system_stats.metadata = {'url': '/sytemControl/systemStats/{pid}'}
+
+    get_system_stats.metadata = {"url": "/systemControl/systemStats/{pid}"}

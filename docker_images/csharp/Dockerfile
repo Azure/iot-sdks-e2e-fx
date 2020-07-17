@@ -58,5 +58,9 @@ RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 COPY csharp/rebuild.sh /
 run /rebuild.sh
 
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
+
 WORKDIR /app
 ENTRYPOINT ["/root/.dotnet/dotnet", "IO.Swagger.dll"]

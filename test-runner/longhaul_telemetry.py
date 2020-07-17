@@ -7,14 +7,13 @@ from dictionary_object import DictionaryObject
 class PlatformProperties(DictionaryObject):
     def __init__(self):
         self.os = ""
-
-        self.horton_repo = ""
-        self.horton_branch = ""
-        self.horton_uri = ""
-
+        self.os_release = ""
+        self.system_architecture = ""
+        self.language = ""
+        self.language_version = ""
         self.sdk_repo = ""
-        self.sdk_branch = ""
-        self.sdk_uri = ""
+        self.sdk_commit = ""
+        self.sdk_sha = ""
         self.lock_attributes()
 
 
@@ -30,26 +29,23 @@ class ExecutionProperties(DictionaryObject):
         self.lock_attributes()
 
 
-class PlatformTelemetry(DictionaryObject):
-    def __init__(self):
-        super(PlatformTelemetry, self).__init__()
-        self.procinfo_ram_total = 0
-        self.procinfo_ram_used = 0
-        self.procinfo_ram_free = 0
-        self.system_uptime = 0
-        self.user_time = 0
-        self.system_time = 0
-        self.lock_attributes()
-
-
-PlatformTelemetry._defaults = PlatformTelemetry()
-
-
 class ExecutionTelemetry(DictionaryObject):
     def __init__(self):
         super(ExecutionTelemetry, self).__init__()
+
+        self.system_uptime_in_seconds = 0.0
+        self.system_memory_size_in_kb = 0
+        self.system_memory_free_in_kb = 0
+        self.system_memory_available_in_kb = 0
+
+        self.process_gc_object_count = 0
+        self.process_virtual_memory_size_in_kb = 0
+        self.process_resident_memory_in_kb = 0
+        self.process_shared_memory_in_kb = 0
+        self.process_voluntary_context_switches_per_second = 0
+        self.process_nonvoluntary_contexxt_switches_per_second = 0
+
         self.pytest_gc_object_count = 0
-        self.sdk_gc_object_count = 0
         self.lock_attributes()
 
 
@@ -59,12 +55,12 @@ ExecutionTelemetry._defaults = ExecutionTelemetry()
 class D2cTelemetry(DictionaryObject):
     def __init__(self):
         super(D2cTelemetry, self).__init__()
-        self.count_total_d2c_completed = 0
-        self.count_total_d2c_failed = 0
-        self.count_current_d2c_sending = 0
-        self.count_current_d2c_verifying = 0
-        self.latency_d2c_send = 0
-        self.latency_d2c_verify = 0
+        self.total_count_d2c_completed = 0
+        self.total_count_d2c_failed = 0
+        self.current_count_d2c_sending = 0
+        self.current_count_d2c_verifying = 0
+        self.average_latency_d2c_send = 0
+        self.average_latency_d2c_verify = 0
         self.lock_attributes()
 
 

@@ -58,4 +58,8 @@ RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 COPY node/rebuild.sh /
 RUN /rebuild.sh
 
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
+
 ENTRYPOINT ["/usr/local/bin/node", "/src/wrapper/index.js"]

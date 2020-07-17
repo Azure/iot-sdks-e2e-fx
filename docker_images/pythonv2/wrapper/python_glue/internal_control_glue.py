@@ -3,6 +3,9 @@
 # full license information.
 import logging
 import leak_check
+import os
+import gc
+import platform
 
 logger = logging.getLogger(__name__)
 
@@ -63,3 +66,18 @@ def send_command_sync(cmd):
         # logger.info("NOT CHECCKING FOR LEAKS")
     else:
         raise Exception("Unsupported Command")
+
+
+def get_wrapper_stats_sync():
+    return {
+        "language": "python",
+        "languageVersion": platform.python_version(),
+        "osType": platform.system(),
+        "osRelease": platform.version(),
+        "systemArchitecture": platform.machine(),
+        "sdkRepo": os.getenv("HORTON_REPO", ""),
+        "sdkCommit": os.getenv("HORTON_COMMIT_NAME", ""),
+        "sdkSha": os.getenv("HORTON_COMMIT_SHA", ""),
+        "wrapperGcObjectCount": len(gc.get_objects()),
+        "wrapperPid": os.getpid(),
+    }

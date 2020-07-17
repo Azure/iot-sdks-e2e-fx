@@ -52,5 +52,9 @@ RUN pip install -r requirements.txt
 RUN python setup.py install
 RUN pip install -e python_glue
 
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
+
 ENTRYPOINT ["python", "-u", "-m", "swagger_server"]
 

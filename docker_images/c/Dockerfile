@@ -79,4 +79,8 @@ RUN git submodule update --init
 COPY c/rebuild.sh /
 RUN /rebuild.sh
 
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
+
 ENTRYPOINT ["/wrapper/build/edge_e2e_rest_server"]

@@ -25,3 +25,7 @@ def get_capabilities():
 
 def send_command(cmd):
     return internal_control_glue.send_command_sync(cmd)
+
+
+def get_wrapper_stats():
+    return internal_control_glue.get_wrapper_stats_sync()

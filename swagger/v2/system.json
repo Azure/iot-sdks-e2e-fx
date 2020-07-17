@@ -75,7 +75,7 @@
                 }
             }
         },
-        "/sytemControl/systemStats/{pid}": {
+        "/systemControl/systemStats/{pid}": {
             "get": {
                 "tags": [
                     "systemControl"

@@ -13,10 +13,15 @@ import datetime
 import traceback
 
 from longhaul_config import LonghaulConfig
-from longhaul_telemetry import ExecutionProperties, D2cTelemetry, ExecutionTelemetry
+from longhaul_telemetry import (
+    PlatformProperties,
+    ExecutionProperties,
+    D2cTelemetry,
+    ExecutionTelemetry,
+)
 from measurement import (
     TrackCount,
-    TrackMax,
+    TrackAverage,
     MeasureRunningCodeBlock,
     MeasureLatency,
     NoLock,
@@ -34,9 +39,9 @@ pytestmark = pytest.mark.asyncio
 longhaul_config = {
     "d2cEnabled": True,
     "d2cIntervalLength": 1,
-    "d2cOpsPerInterval": 15,
-    "testRunTotalDuration": "00:00:30",
-    # "testRunTotalDuration": "72:00:10",
+    "d2cOpsPerInterval": 5,
+    # "TotalDuration": "00:00:30",
+    "totalDuration": "72:00:10",
 }
 
 
@@ -87,7 +92,7 @@ class IntervalOperation(object):
         if self.interval_index == self.interval_length:
             self.interval_index = 0
 
-            await self.send_longhaul_telemetry()
+            await self.send_operation_telemetry()
 
             return set(
                 [
@@ -107,7 +112,7 @@ class IntervalOperation(object):
     async def run_one_op(self):
         pass
 
-    async def send_longhaul_telemetry(self):
+    async def send_operation_telemetry(self):
         pass
 
     async def stop(self):
@@ -134,28 +139,30 @@ class IntervalOperationLonghaul(IntervalOperation):
             "verifying", logger=None, use_lock=False
         )
 
-        self.count_total_completed = TrackCount(use_lock=False)
-        self.count_total_failed = TrackCount(use_lock=False)
+        self.total_count_completed = TrackCount(use_lock=False)
+        self.total_count_failed = TrackCount(use_lock=False)
 
-        self.track_max_send_latency = TrackMax(use_lock=False)
-        self.track_max_verify_latency = TrackMax(use_lock=False)
+        self.track_average_send_latency = TrackAverage(use_lock=False)
+        self.track_average_verify_latency = TrackAverage(use_lock=False)
 
         self.uncompleted_ops = set()
         self.uncompleted_ops_lock = NoLock() or threading.Lock()
 
     @abc.abstractmethod
-    async def do_send(self, op_id):
+    async def send_operation(self, op_id):
         pass
 
     @abc.abstractmethod
-    async def do_receive(self, op_id):
+    async def verify_operation(self, op_id):
         pass
 
     async def run_one_op(self):
         try:
-            measure_send_latency = MeasureLatency(tracker=self.track_max_send_latency)
+            measure_send_latency = MeasureLatency(
+                tracker=self.track_average_send_latency
+            )
             measure_verify_latency = MeasureLatency(
-                tracker=self.track_max_verify_latency
+                tracker=self.track_average_verify_latency
             )
 
             op_id = self.next_op_id.increment()
@@ -164,15 +171,15 @@ class IntervalOperationLonghaul(IntervalOperation):
                 self.uncompleted_ops.add(op_id)
 
             with self.count_sending, measure_send_latency:
-                await self.do_send(op_id)
+                await self.send_operation(op_id)
 
             with self.count_verifying, measure_verify_latency:
-                await self.do_receive(op_id)
+                await self.verify_operation(op_id)
 
             with self.uncompleted_ops_lock:
                 self.uncompleted_ops.remove(op_id)
 
-            self.count_total_completed.increment()
+            self.total_count_completed.increment()
 
         except Exception as e:
             logger("OP FAILED: Exception running op: {}".format(type(e)))
@@ -204,7 +211,7 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
 
         self.listener = None
 
-    async def do_send(self, op_id):
+    async def send_operation(self, op_id):
         telemetry = make_message_payload()
         telemetry["op_id"] = op_id
         with self.op_id_list_lock:
@@ -212,7 +219,7 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
             self.op_id_list[op_id] = not_received
         await self.client.send_event(telemetry)
 
-    async def do_receive(self, op_id):
+    async def verify_operation(self, op_id):
         await self.wait_for_completion(op_id)
 
     async def listen_on_eventhub(self):
@@ -300,25 +307,28 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
 
         await message_received
 
-    async def send_longhaul_telemetry(self):
+    async def send_operation_telemetry(self):
         telemetry = D2cTelemetry()
 
-        telemetry.count_total_d2c_completed = self.count_total_completed.get_count()
-        telemetry.count_total_d2c_failed = self.count_total_failed.get_count()
-        telemetry.count_current_d2c_sending = self.count_sending.get_count()
-        telemetry.count_current_d2c_verifying = self.count_verifying.get_count()
-        telemetry.latency_d2c_send = self.track_max_send_latency.extract()
-        telemetry.latency_d2c_verify = self.track_max_verify_latency.extract()
+        telemetry.total_count_d2c_completed = self.total_count_completed.get_count()
+        telemetry.total_count_d2c_failed = self.total_count_failed.get_count()
+        telemetry.current_count_d2c_sending = self.count_sending.get_count()
+        telemetry.current_count_d2c_verifying = self.count_verifying.get_count()
+        telemetry.average_latency_d2c_send = self.track_average_send_latency.extract()
+        telemetry.average_latency_d2c_verify = (
+            self.track_average_verify_latency.extract()
+        )
 
+        logger("publishing {}".format(telemetry.to_dict()))
         await self.longhaul_control_device.send_event(telemetry.to_dict())
 
         if (
-            self.count_total_failed.get_count()
+            self.total_count_failed.get_count()
             > self.test_config.d2c_count_failures_allowed
         ):
             raise Exception(
                 "D2c failures ({}) exceeeded amount allowed ({})".format(
-                    self.count_total_failed.get_count(),
+                    self.total_count_failed.get_count(),
                     self.test_config.d2c_count_failures_allowed,
                 )
             )
@@ -329,9 +339,9 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
             self.listener = None
 
 
-class IntervalOperationUpdateTestReport(IntervalOperation):
+class IntervalOperationUpdateExecutionProperties(IntervalOperation):
     def __init__(self, *, test_config, execution_properties, longhaul_control_device):
-        super(IntervalOperationUpdateTestReport, self).__init__(
+        super(IntervalOperationUpdateExecutionProperties, self).__init__(
             test_config=test_config,
             interval_length=_get_seconds(test_config.property_update_interval),
             ops_per_interval=1,
@@ -350,18 +360,68 @@ class IntervalOperationUpdateTestReport(IntervalOperation):
         await self.run_one_op()
 
 
-class IntervalOperationSendTestTelemetry(IntervalOperation):
-    def __init__(self, *, test_config, longhaul_control_device):
-        super(IntervalOperationSendTestTelemetry, self).__init__(
+class IntervalOperationSendExecutionTelemetry(IntervalOperation):
+    def __init__(
+        self, *, test_config, client, system_control, longhaul_control_device, pid
+    ):
+        super(IntervalOperationSendExecutionTelemetry, self).__init__(
             test_config=test_config,
             interval_length=_get_seconds(test_config.telenetry_interval),
             ops_per_interval=1,
             longhaul_control_device=longhaul_control_device,
         )
+        self.client = client
+        self.pid = pid
+        self.system_control = system_control
+        self.last_voluntary_context_switches = 0
+        self.last_nonvoluntary_context_switches = 0
 
     async def run_one_op(self):
         telemetry = ExecutionTelemetry()
+
+        wrapper_stats = await self.client.settings.wrapper_api.get_wrapper_stats()
+        system_stats = await self.system_control.get_system_stats(self.pid)
+
         telemetry.pytest_gc_object_count = len(gc.get_objects())
+
+        telemetry.system_uptime_in_seconds = float(
+            system_stats.get("system_uptime", "0.0")
+        )
+        telemetry.system_memory_size_in_kb = int(system_stats.get("system_MemTotal", 0))
+        telemetry.system_memory_free_in_kb = int(system_stats.get("system_MemFree", 0))
+        telemetry.system_memory_available_in_kb = int(
+            system_stats.get("system_MemAvailable", 0)
+        )
+
+        telemetry.process_gc_object_count = int(
+            wrapper_stats.get("wrapperGcObjectCount", 0)
+        )
+        telemetry.process_virtual_memory_size_in_kb = int(
+            system_stats.get("process_VmmSize", 0)
+        )
+        telemetry.process_resident_memory_in_kb = int(
+            system_stats.get("process_VmRSS", 0)
+        )
+        telemetry.process_shared_memory_in_kb = int(
+            system_stats.get("process_RssFile", 0)
+        ) + int(system_stats.get("process.RssShmem", 0))
+
+        voluntary_context_switches = int(
+            system_stats.get("process_voluntary_ctxt_switches", 0)
+        )
+        nonvoluntary_context_switches = int(
+            system_stats.get("process_nonvoluntary_ctxt_switches", 0)
+        )
+
+        telemetry.process_voluntary_context_switches_per_second = (
+            voluntary_context_switches - self.last_voluntary_context_switches
+        ) / self.interval_length
+        telemetry.process_nonvoluntary_contexxt_switches_per_second = (
+            nonvoluntary_context_switches - self.last_nonvoluntary_context_switches
+        ) / self.interval_length
+
+        self.last_voluntary_context_switches = voluntary_context_switches
+        self.last_nonvoluntary_context_switches = nonvoluntary_context_switches
 
         logger("publishing: {}".format((telemetry.to_dict())))
         await self.longhaul_control_device.send_event(telemetry.to_dict())
@@ -455,13 +515,37 @@ class IntervalOperationRenewEventhub(IntervalOperation):
         await self.eventhub.start_new_listener()
 
 
+async def set_platform_properties(*, client, longhaul_control_device):
+    stats = await client.settings.wrapper_api.get_wrapper_stats()
+
+    properties = PlatformProperties()
+    properties.os = stats["osType"]
+    properties.os_release = stats["osRelease"]
+    properties.system_architecture = stats["systemArchitecture"]
+    properties.language = stats["language"]
+    properties.language_version = stats["languageVersion"]
+    properties.sdk_repo = stats["sdkRepo"]
+    properties.sdk_commit = stats["sdkCommit"]
+    properties.sdk_sha = stats["sdkSha"]
+
+    patch = {"reported": properties.to_dict()}
+    logger("reporting: {}".format(patch))
+    await longhaul_control_device.patch_twin(patch)
+
+    return stats["wrapperPid"]
+
+
 class LongHaulTest(object):
     async def test_longhaul(
-        self, client, eventhub, service, longhaul_control_device, caplog
+        self, client, eventhub, service, longhaul_control_device, system_control, caplog
     ):
         await eventhub.connect()
 
         test_config = LonghaulConfig.from_dict(longhaul_config)
+
+        pid = await set_platform_properties(
+            client=client, longhaul_control_device=longhaul_control_device
+        )
 
         execution_properties = ExecutionProperties()
         execution_properties.execution_status = "new"
@@ -486,13 +570,17 @@ class LongHaulTest(object):
                 longhaul_control_device=longhaul_control_device,
             )
         }
-        update_test_report = IntervalOperationUpdateTestReport(
+        update_test_report = IntervalOperationUpdateExecutionProperties(
             test_config=test_config,
             execution_properties=execution_properties,
             longhaul_control_device=longhaul_control_device,
         )
-        send_test_telemetry = IntervalOperationSendTestTelemetry(
-            test_config=test_config, longhaul_control_device=longhaul_control_device
+        send_execution_telemetry = IntervalOperationSendExecutionTelemetry(
+            test_config=test_config,
+            longhaul_control_device=longhaul_control_device,
+            client=client,
+            system_control=system_control,
+            pid=pid,
         )
         renew_eventhub = IntervalOperationRenewEventhub(
             test_config=test_config,
@@ -501,7 +589,7 @@ class LongHaulTest(object):
         )
 
         all_ops = set(longhaul_ops.values()) | set(
-            [update_test_report, send_test_telemetry, renew_eventhub]
+            [update_test_report, send_execution_telemetry, renew_eventhub]
         )
 
         try:
@@ -565,13 +653,13 @@ class LongHaulTest(object):
             await command_listener.stop()
 
             # stop all of our longhaul ops, then stop our reporting ops.
-            # order is important here since send_test_telemetry feeds data into
+            # order is important here since send_execution_telemetry feeds data into
             # update_test_report.
             logger("stopping all  ops")
             await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")
             await renew_eventhub.stop()
-            await send_test_telemetry.stop()
+            await send_execution_telemetry.stop()
             await update_test_report.stop()
 
 
