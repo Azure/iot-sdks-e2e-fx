@@ -320,7 +320,7 @@ class DeviceOperations:
             return client_raw_response
 
         return deserialized
-    create_from_symmetric_key.metadata = {'url': '/device/createFromSymmetricKey/{transportType}'}
+    create_from_symmetric_key.metadata = {'url': '/device/createFromSymmetricKey/{deviceId}/{transportType}'}
 
     async def connect2(
             self, connection_id, *, custom_headers=None, raw=False, **operation_config):

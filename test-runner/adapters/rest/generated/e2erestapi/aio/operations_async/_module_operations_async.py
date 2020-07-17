@@ -428,7 +428,7 @@ class ModuleOperations:
             return client_raw_response
 
         return deserialized
-    create_from_symmetric_key.metadata = {'url': '/module/createFromSymmetricKey/{transportType}'}
+    create_from_symmetric_key.metadata = {'url': '/module/createFromSymmetricKey/{deviceId}/{moduleId}/{transportType}'}
 
     async def connect2(
             self, connection_id, *, custom_headers=None, raw=False, **operation_config):
