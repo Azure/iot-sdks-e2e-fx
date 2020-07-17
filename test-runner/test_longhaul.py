@@ -40,8 +40,8 @@ longhaul_config = {
     "d2cEnabled": True,
     "d2cIntervalLength": 1,
     "d2cOpsPerInterval": 5,
-    "TotalDuration": "00:00:30",
-    # "totalDuration": "72:00:10",
+    # "TotalDuration": "00:00:30",
+    "totalDuration": "72:00:10",
 }
 
 
