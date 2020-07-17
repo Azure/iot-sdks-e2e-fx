@@ -364,3 +364,16 @@ exports.module_WaitForInputMessage = function(connectionId,inputName) {
   });
 }
 
+/**
+ * Create a module client from a symmetric key
+ *
+ * transportType String Transport to use
+ * deviceId String 
+ * moduleId String 
+ * hostname String name of the host to connect to
+ * symmetricKey String key to use for connection
+ * returns connectResponse
+ **/
+exports.module_CreateFromSymmetricKey = function(transportType,deviceId,moduleId,hostname,symmetricKey) {
+  return glueUtils.returnNotImpl();
+}

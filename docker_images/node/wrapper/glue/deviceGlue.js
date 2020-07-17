@@ -278,3 +278,15 @@ exports.device_NotifyBlobUploadStatus = function(connectionId,correlationId,isSu
 }
 
 
+/**
+ * Create a device client from a symmetric key
+ *
+ * transportType String Transport to use
+ * deviceId String 
+ * hostname String name of the host to connect to
+ * symmetricKey String key to use for connection
+ * returns connectResponse
+ **/
+exports.device_CreateFromSymmetricKey = function(transportType,deviceId,hostname,symmetricKey) {
+  return glueUtils.returnNotImpl();
+}

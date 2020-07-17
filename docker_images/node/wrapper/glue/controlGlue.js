@@ -123,3 +123,12 @@ exports.control_SetFlags = function(flags) {
   return glueUtils.returnNotImpl()
 }
 
+/**
+ * Get statistics about the operation of the test wrapper
+ *
+ * returns Object
+ **/
+exports.control_GetWrapperStats = function() {
+  return glueUtils.returnNotImpl()
+}
+
