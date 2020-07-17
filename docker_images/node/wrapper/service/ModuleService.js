@@ -105,6 +105,31 @@ exports.module_CreateFromEnvironment = function(transportType) {
 
 
 /**
+ * Create a module client from a symmetric key
+ *
+ * transportType String Transport to use
+ * deviceId String 
+ * moduleId String 
+ * hostname String name of the host to connect to
+ * symmetricKey String key to use for connection
+ * returns connectResponse
+ **/
+exports.module_CreateFromSymmetricKey = function(transportType,deviceId,moduleId,hostname,symmetricKey) {
+  return new Promise(function(resolve, reject) {
+    var examples = {};
+    examples['application/json'] = {
+  "connectionId" : "connectionId"
+};
+    if (Object.keys(examples).length > 0) {
+      resolve(examples[Object.keys(examples)[0]]);
+    } else {
+      resolve();
+    }
+  });
+}
+
+
+/**
  * Create a module client from X509 credentials
  *
  * transportType String Transport to use

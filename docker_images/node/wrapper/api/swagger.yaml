@@ -97,6 +97,21 @@ paths:
         200:
           description: "OK"
       x-swagger-router-controller: "Control"
+  /control/wrapperStats:
+    get:
+      tags:
+      - "control"
+      summary: "Get statistics about the operation of the test wrapper"
+      operationId: "Control_GetWrapperStats"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            type: "object"
+      x-swagger-router-controller: "Control"
   /device/connect/{transportType}:
     put:
       tags:
@@ -210,6 +225,46 @@ paths:
         required: true
         schema:
           type: "object"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "Device"
+  /device/createFromSymmetricKey/{transportType}:
+    put:
+      tags:
+      - "device"
+      summary: "Create a device client from a symmetric key"
+      operationId: "Device_CreateFromSymmetricKey"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "hostname"
+        in: "query"
+        description: "name of the host to connect to"
+        required: true
+        type: "string"
+      - name: "symmetricKey"
+        in: "query"
+        description: "key to use for connection"
+        required: true
+        type: "string"
       responses:
         200:
           description: "OK"
@@ -744,6 +799,50 @@ paths:
         required: true
         schema:
           type: "object"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/connectResponse"
+      x-swagger-router-controller: "Module"
+  /module/createFromSymmetricKey/{transportType}:
+    put:
+      tags:
+      - "module"
+      summary: "Create a module client from a symmetric key"
+      operationId: "Module_CreateFromSymmetricKey"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "transportType"
+        in: "path"
+        description: "Transport to use"
+        required: true
+        type: "string"
+        enum:
+        - "amqp"
+        - "amqpws"
+        - "mqtt"
+        - "mqttws"
+        - "http"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "moduleId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "hostname"
+        in: "query"
+        description: "name of the host to connect to"
+        required: true
+        type: "string"
+      - name: "symmetricKey"
+        in: "query"
+        description: "key to use for connection"
+        required: true
+        type: "string"
       responses:
         200:
           description: "OK"
