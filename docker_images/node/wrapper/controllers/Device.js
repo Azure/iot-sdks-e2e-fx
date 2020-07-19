@@ -40,6 +40,20 @@ module.exports.device_CreateFromConnectionString = function device_CreateFromCon
     });
 };
 
+module.exports.device_CreateFromSymmetricKey = function device_CreateFromSymmetricKey (req, res, next) {
+  var transportType = req.swagger.params['transportType'].value;
+  var deviceId = req.swagger.params['deviceId'].value;
+  var hostname = req.swagger.params['hostname'].value;
+  var symmetricKey = req.swagger.params['symmetricKey'].value;
+  Device.device_CreateFromSymmetricKey(transportType,deviceId,hostname,symmetricKey)
+    .then(function (response) {
+      utils.writeJson(res, response);
+    })
+    .catch(function (response) {
+      utils.writeJson(res, response);
+    });
+};
+
 module.exports.device_CreateFromX509 = function device_CreateFromX509 (req, res, next) {
   var transportType = req.swagger.params['transportType'].value;
   var x509 = req.swagger.params['X509'].value;

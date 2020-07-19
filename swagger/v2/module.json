@@ -167,7 +167,7 @@
                 }
             }
         },
-        "/module/createFromSymmetricKey/{transportType}": {
+        "/module/createFromSymmetricKey/{deviceId}/{moduleId}/{transportType}": {
             "put": {
                 "tags": [
                     "module"

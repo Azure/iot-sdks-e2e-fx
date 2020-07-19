@@ -23,6 +23,16 @@ module.exports.control_GetCapabilities = function control_GetCapabilities (req, 
     });
 };
 
+module.exports.control_GetWrapperStats = function control_GetWrapperStats (req, res, next) {
+  Control.control_GetWrapperStats()
+    .then(function (response) {
+      utils.writeJson(res, response);
+    })
+    .catch(function (response) {
+      utils.writeJson(res, response);
+    });
+};
+
 module.exports.control_LogMessage = function control_LogMessage (req, res, next) {
   var logMessage = req.swagger.params['logMessage'].value;
   Control.control_LogMessage(logMessage)

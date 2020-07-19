@@ -62,6 +62,21 @@ module.exports.module_CreateFromEnvironment = function module_CreateFromEnvironm
     });
 };
 
+module.exports.module_CreateFromSymmetricKey = function module_CreateFromSymmetricKey (req, res, next) {
+  var transportType = req.swagger.params['transportType'].value;
+  var deviceId = req.swagger.params['deviceId'].value;
+  var moduleId = req.swagger.params['moduleId'].value;
+  var hostname = req.swagger.params['hostname'].value;
+  var symmetricKey = req.swagger.params['symmetricKey'].value;
+  Module.module_CreateFromSymmetricKey(transportType,deviceId,moduleId,hostname,symmetricKey)
+    .then(function (response) {
+      utils.writeJson(res, response);
+    })
+    .catch(function (response) {
+      utils.writeJson(res, response);
+    });
+};
+
 module.exports.module_CreateFromX509 = function module_CreateFromX509 (req, res, next) {
   var transportType = req.swagger.params['transportType'].value;
   var x509 = req.swagger.params['X509'].value;

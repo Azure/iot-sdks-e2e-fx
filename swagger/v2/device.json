@@ -134,7 +134,7 @@
                 }
             }
         },
-        "/device/createFromSymmetricKey/{transportType}": {
+        "/device/createFromSymmetricKey/{deviceId}/{transportType}": {
             "put": {
                 "tags": [
                     "device"

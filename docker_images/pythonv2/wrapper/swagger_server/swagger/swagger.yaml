@@ -227,7 +227,7 @@ paths:
           schema:
             $ref: "#/definitions/connectResponse"
       x-swagger-router-controller: "swagger_server.controllers.device_controller"
-  /device/createFromSymmetricKey/{transportType}:
+  /device/createFromSymmetricKey/{deviceId}/{transportType}:
     put:
       tags:
       - "device"
@@ -801,7 +801,7 @@ paths:
           schema:
             $ref: "#/definitions/connectResponse"
       x-swagger-router-controller: "swagger_server.controllers.module_controller"
-  /module/createFromSymmetricKey/{transportType}:
+  /module/createFromSymmetricKey/{deviceId}/{moduleId}/{transportType}:
     put:
       tags:
       - "module"
