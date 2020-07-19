@@ -263,6 +263,7 @@ def module_invoke_device_method(connectionId, deviceId, methodInvokeParameters):
 
     :rtype: object
     """
+    # removed from_dict call in merge
     # changed from return 'do some magic!'
     return module_glue.invoke_device_method_sync(
         connectionId, deviceId, methodInvokeParameters
@@ -286,8 +287,7 @@ def module_invoke_module_method(connectionId, deviceId, moduleId, methodInvokePa
 
     :rtype: object
     """
-    if connexion.request.is_json:
-        methodInvokeParameters = MethodInvoke.from_dict(connexion.request.get_json())  # noqa: E501
+    # removed from_dict call in merge
     # changed from return 'do some magic!'
     return module_glue.invoke_module_method_sync(
         connectionId, deviceId, moduleId, methodInvokeParameters
