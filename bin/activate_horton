@@ -12,8 +12,9 @@ root_dir=${script_dir}/..
 pushd $root_dir
 
 source "$root_dir/scripts/colorecho.sh"
+virtual_env_root="${script_dir}/_virtualenv/horton/"
 
-if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
+if [ ! -e ${virtual_env_root}/bin/activate ]; then
     colorecho $_yellow "Initializing horton environment"
 
     # Make sure we're running python 3.7 or higher
@@ -52,34 +53,35 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     colorecho $_yellow "Creating virtual evnronment"
 
     # If using WSL, we need to pass the winodws path when creating the virtual env
-    virtual_env_root="${script_dir}/_virtualenv/horton/"
     which wslpath
     if [ $? -eq 0 ]; then
         colorecho $_yellow "Runnin under WSL."
-        virtual_env_root=$(wslpath -w ${virtual_env_root})
-	echo "passing ${virtual_env_root} to virtualenv for environment creation"
+        passed_virtual_env_root=$(wslpath -w ${virtual_env_root})
+    else
+        passed_virtual_env_root=${virtual_env_root}
     fi
+    echo "passing ${virtual_env_root} to virtualenv for environment creation"
 
-    echo python3 -m virtualenv ${virtual_env_root} --prompt="Horton"
-    python -m virtualenv ${virtual_env_root}
+    echo python3 -m virtualenv ${passed_virtual_env_root} --prompt="Horton"
+    python -m virtualenv ${passed_virtual_env_root}
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
 
     colorecho $_green "Horton environment created"
 
-    if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
+    if [ ! -e ${virtual_env_root}/bin/activate ]; then
       # Using Windows python from bash pyts shortcuts in Scripts instead of bin.  Fix this up.
       colorecho $_yelow "Fixing WSL python shortcut"
 
-      ln -s ${script_dir}/_virtualenv/horton/Scripts ${script_dir}/_virtualenv/horton/bin
+      ln -s ${virtual_env_root}/Scripts ${virtual_env_root}/bin
       [ $? -eq 0 ] || { colorecho $_red "ln Scripts bin failed"; return 1; }
 
       # need path otherwise WSL under mobaxterm fails
-      /usr/bin/dos2unix ${script_dir}/_virtualenv/horton/bin/activate 
+      /usr/bin/dos2unix ${virtual_env_root}/bin/activate 
       [ $? -eq 0 ] || { colorecho $_red "dos2unix failed or not installed"; return 1; }
     fi
 
     colorecho $_yellow "activating horton environment"
-    source ${script_dir}/_virtualenv/horton/bin/activate
+    source ${virtual_env_root}/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
     colorecho $_yellow "installing required python libraries"
@@ -90,7 +92,7 @@ if [ ! -e ${script_dir}/_virtualenv/horton/bin/activate ]; then
     [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
 
 else
-    source ${script_dir}/_virtualenv/horton/bin/activate
+    source ${virtual_env_root}/bin/activate
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 fi
 

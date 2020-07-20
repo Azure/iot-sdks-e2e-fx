@@ -78,6 +78,7 @@ set(glue_cpp_files
     glue/ControlGlue.cpp
     glue/RegistryGlue.cpp
     glue/ServiceGlue.cpp
+    glue/json.cpp
 )
 
 set(glue_h_files
@@ -88,6 +89,8 @@ set(glue_h_files
     glue/ControlGlue.h
     glue/RegistryGlue.h
     glue/ServiceGlue.h
+    glue/json.h
+    glue/iothub_sdk.h
 )
 
 add_executable(edge_e2e_rest_server

@@ -6,6 +6,7 @@
 #include "ModuleGlue.h"
 #include "RegistryGlue.h"
 #include "ServiceGlue.h"
+#include "json.h"
 
 using namespace std;
 
@@ -56,6 +57,15 @@ void ControlGlue::PrintMessage(const char* message)
 }
 
 std::string ControlGlue::GetCapabilities()
+{
+    Json json;
+    json.setBool("flags.v2_connect_group", false);
+    json.setBool("flags.system_control_app", false);
+    return json.serializeToString();
+}
+
+
+std::string ControlGlue::GetWrapperStats()
 {
     return "{ " \
             "\"flags\": { " \

@@ -1,119 +1,87 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-#include "GlueUtils.h"
+#include <iostream>
+#include <mutex>
+#include <condition_variable>
 #include <stdexcept>
-
-using namespace std;
+#include "GlueUtils.h"
+#include "json.h"
 
 static const char* const PARSON_ERROR = "parson error";
 
-string getJsonString(JSON_Object* root_object, string dotname)
+#ifndef MU_ENUM_TO_STRING
+#define MU_ENUM_TO_STRING ENUM_TO_STRING
+#endif
+
+void ThrowIfFailed(IOTHUB_CLIENT_RESULT ret, std::string functionName)
 {
-    const char *str;
-    if ((str = json_object_dotget_string(root_object, dotname.c_str())) == NULL)
+    if (ret != IOTHUB_CLIENT_OK)
     {
-        throw new runtime_error(PARSON_ERROR);
+        throw new std::runtime_error(std::string(functionName) + " returned " + MU_ENUM_TO_STRING(IOTHUB_CLIENT_RESULT, ret));
     }
-    string result = str;
-    return result;
 }
 
-string getJsonObjectAsString(JSON_Object* root_object, string dotname)
+void ThrowIfFailed(IOTHUB_MESSAGING_RESULT ret, std::string functionName)
 {
-    JSON_Value *subObject;
-    char *subString;
-    if ((subObject = json_object_dotget_value(root_object, dotname.c_str())) == NULL)
+    if (ret != IOTHUB_MESSAGING_OK)
     {
-        throw new runtime_error(PARSON_ERROR);
-    }
-    if ((subString = json_serialize_to_string(subObject)) == NULL)
-    {
-        throw new runtime_error(PARSON_ERROR);
-    }
-    string result = subString;
-    json_free_serialized_string(subString);
-    return result;
-}
-
-string getJsonSubObject(string root_string, string dotname)
-{
-    JSON_Value *root_value = NULL;
-
-    try
-    {
-        JSON_Object *root_object;
-        string sub_object;
-
-        if ((root_value = json_parse_string(root_string.c_str())) == NULL)
-        {
-            throw new runtime_error("parson error");
-        }
-        else if ((root_object = json_value_get_object(root_value)) == NULL)
-        {
-            throw new runtime_error("parson error");
-        }
-
-        sub_object = getJsonObjectAsString(root_object, dotname.c_str());
-        json_value_free(root_value); //implicitly frees root_object as well
-        
-        return sub_object;
-    }
-    catch (...)
-    {
-        if (root_value)
-        {
-            json_value_free(root_value); //implicitly frees root_object as well
-        }
-        throw;
-
+        throw new std::runtime_error(std::string(functionName) + " returned " + MU_ENUM_TO_STRING(IOTHUB_MESSAGING_RESULT, ret));
     }
 }
 
 
-void parseMethodInvokeParameters(string methodInvokeParameters, string *methodName, string *payload, unsigned int *timeout)
+IOTHUB_CLIENT_TRANSPORT_PROVIDER protocolFromTransportName(std::string transportType)
 {
-    JSON_Value* root_value;
-    JSON_Object* root_object;
-    if ((root_value = json_parse_string(methodInvokeParameters.c_str())) == NULL)
+    if (strcmp(transportType.c_str(), "mqtt") == 0)
     {
-        throw new runtime_error(PARSON_ERROR);
+        return MQTT_Protocol;
     }
-    else if ((root_object = json_value_get_object(root_value)) == NULL)
+    else if (strcmp(transportType.c_str(), "mqttws") == 0)
     {
-        throw new runtime_error(PARSON_ERROR);
+        return MQTT_WebSocket_Protocol;
     }
-    *methodName = getJsonString(root_object, "methodName");
-    *payload = getJsonObjectAsString(root_object, "payload");
-    *timeout = (unsigned int)json_object_get_number(root_object, "responseTimeoutInSeconds");
-
-    json_value_free(root_value); //implicitly frees root_object as well
+    else if (strcmp(transportType.c_str(), "amqp") == 0)
+    {
+        return AMQP_Protocol;
+    }
+    else if (strcmp(transportType.c_str(), "amqpws") == 0)
+    {
+        return AMQP_Protocol_over_WebSocketsTls;
+    }
+    else
+    {
+        std::string transport_string = "Unknown transport: ";
+        throw new std::runtime_error(transport_string + transportType);
+    }
 }
 
-string makeInvokeResponse(int statusCode, string payload)
+
+void parseMethodInvokeParameters(std::string methodInvokeParameters, std::string *methodName, std::string *payload, unsigned int *timeout)
 {
-    JSON_Value* root_value;
-    JSON_Object* root_object;
-    if ((root_value = json_parse_string("{}")) == NULL)
-    {
-        throw new runtime_error(PARSON_ERROR);
-    }
-    else if ((root_object = json_value_get_object(root_value)) == NULL)
-    {
-        throw new runtime_error(PARSON_ERROR);
-    }
-    else if (json_object_set_number(root_object, "status", (double)statusCode) != JSONSuccess)
-    {
-        throw new runtime_error(PARSON_ERROR);
-    }
-    else if (json_object_set_string(root_object, "payload", payload.c_str()) != JSONSuccess)
-    {
-        throw new runtime_error(PARSON_ERROR);
-    }
-    char *str = json_serialize_to_string(root_value);
-    string result = str;
-    json_free_serialized_string(str);
-    return result;
+    Json json(methodInvokeParameters);
+
+    *methodName = json.getString("methodName");
+    *payload = json.getSubObject("payload");
+    *timeout = (unsigned int)json.getNumber("responseTimeoutInSeconds");
 }
+
+std::string makeInvokeResponse(int statusCode, std::string payload)
+{
+    Json json;
+    json.setNumber("status", (double)statusCode);
+    json.setString("payload", payload);
+    return json.serializeToString();
+}
+
+
+void parseMethodRequestAndResponse(std::string requestAndResponse, std::string *expectedRequest, std::string *response, int *statusCode)
+{
+    Json json(requestAndResponse);
+    *expectedRequest = json.getSubObject("requestPayload.payload");
+    *response = json.getSubObject("responsePayload");
+    *statusCode = (int)json.getNumber("statusCode");
+}
+
 
 std::string addJsonWrapperObject(std::string old_root_string, std::string wrapperDotname)
 {
@@ -126,23 +94,23 @@ std::string addJsonWrapperObject(std::string old_root_string, std::string wrappe
         JSON_Object* new_root_object;
         if ((old_root_value = json_parse_string(old_root_string.c_str())) == NULL)
         {
-            throw new runtime_error(PARSON_ERROR);
+            throw new std::runtime_error(PARSON_ERROR);
         }
         else if ((new_root_value = json_value_init_object()) == NULL)
         {
-            throw new runtime_error(PARSON_ERROR);
+            throw new std::runtime_error(PARSON_ERROR);
         }
         else if ((new_root_object = json_value_get_object(new_root_value)) == NULL)
         {
-            throw new runtime_error(PARSON_ERROR);
+            throw new std::runtime_error(PARSON_ERROR);
         }
         else if (json_object_dotset_value(new_root_object, wrapperDotname.c_str(), old_root_value) != JSONSuccess)
         {
-            throw new runtime_error(PARSON_ERROR);
+            throw new std::runtime_error(PARSON_ERROR);
         }
 
         new_string = json_serialize_to_string(new_root_value);
-        string result = new_string;
+        std::string result = new_string;
         json_free_serialized_string(new_string);
         new_string = NULL;
 
@@ -174,3 +142,17 @@ std::string addJsonWrapperObject(std::string old_root_string, std::string wrappe
         throw;
     }
 }
+
+IOTHUB_MESSAGE_HANDLE stringToMessage(std::string eventBody)
+{
+    return IoTHubMessage_CreateFromString(Json(eventBody).getSubObject("body").c_str());
+}
+
+void sendEventCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback)
+{
+    std::cout << "sendEventCallback called with " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result) << std::endl;
+    std::condition_variable *cv = (std::condition_variable *)userContextCallback;
+    cv->notify_one();
+}
+
+

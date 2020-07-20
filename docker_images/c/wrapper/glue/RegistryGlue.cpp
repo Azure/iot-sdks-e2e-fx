@@ -6,6 +6,7 @@
 #include "iothub_service_client_auth.h"
 #include "iothub_devicetwin.h"
 #include "GlueUtils.h"
+#include "json.h"
 
 using namespace std;
 
@@ -92,12 +93,12 @@ string RegistryGlue::GetModuleTwin(string connectionId, string deviceId, string 
     cout << "Calling IoTHubDeviceTwin_GetModuleTwin" << endl;
     if ((deviceTwinJson = IoTHubDeviceTwin_GetModuleTwin(twin, deviceId.c_str(), moduleId.c_str())) == NULL)
     {
-        throw new runtime_error("IoTHubDeviceTwin_GetDeviceTwin failed");
+        throw new runtime_error("IoTHubDeviceTwin_GetModuleTwin failed");
     }
     string result = deviceTwinJson;
     free(deviceTwinJson);
     cout << "device twin: " << result << endl;
-    return getJsonSubObject(result, "properties");
+    return Json(result).getSubObject("properties");
 }
 
 void RegistryGlue::PatchModuleTwin(string connectionId, string deviceId, string moduleId, string patch)
@@ -117,6 +118,51 @@ void RegistryGlue::PatchModuleTwin(string connectionId, string deviceId, string 
     if ((deviceTwinJson = IoTHubDeviceTwin_UpdateModuleTwin(twin, deviceId.c_str(), moduleId.c_str(), wrappedPatch.c_str())) == NULL)
     {
         throw new runtime_error("IoTHubDeviceTwin_UpdateModuleTwin failed");
+    }
+    cout << "Updated twin:" << deviceTwinJson << endl;
+    free(deviceTwinJson);
+}
+
+string RegistryGlue::GetDeviceTwin(string connectionId, string deviceId)
+{
+    cout << "GetDeviceTwin called for deviceid = " << deviceId << endl;
+
+    IOTHUB_SERVICE_CLIENT_DEVICE_TWIN_HANDLE twin = (IOTHUB_SERVICE_CLIENT_DEVICE_TWIN_HANDLE)this->twinMap[connectionId];
+    if (!twin)
+    {
+        throw new runtime_error("client is not opened");
+    }
+
+
+    char* deviceTwinJson;
+    cout << "Calling IoTHubDeviceTwin_GetTwin" << endl;
+    if ((deviceTwinJson = IoTHubDeviceTwin_GetTwin(twin, deviceId.c_str()))== NULL)
+    {
+        throw new runtime_error("IoTHubDeviceTwin_GetTwin failed");
+    }
+    string result = deviceTwinJson;
+    free(deviceTwinJson);
+    cout << "device twin: " << result << endl;
+    return Json(result).getSubObject("properties");
+}
+
+void RegistryGlue::PatchDeviceTwin(string connectionId, string deviceId, string patch)
+{
+    cout << "patchModuleTwin called for deviceid = " << deviceId << endl;
+    cout << patch << endl;
+
+    IOTHUB_SERVICE_CLIENT_DEVICE_TWIN_HANDLE twin = (IOTHUB_SERVICE_CLIENT_DEVICE_TWIN_HANDLE)this->twinMap[connectionId];
+    if (!twin)
+    {
+        throw new runtime_error("client is not opened");
+    }
+
+    string wrappedPatch = addJsonWrapperObject(patch, "properties");
+    char* deviceTwinJson;
+    cout << "calling IoTHubDeviceTwin_UpdateModuleTwin" << endl;
+    if ((deviceTwinJson = IoTHubDeviceTwin_UpdateTwin(twin, deviceId.c_str(), wrappedPatch.c_str())) == NULL)
+    {
+        throw new runtime_error("IoTHubDeviceTwin_UpdateTwin failed");
     }
     cout << "Updated twin:" << deviceTwinJson << endl;
     free(deviceTwinJson);
