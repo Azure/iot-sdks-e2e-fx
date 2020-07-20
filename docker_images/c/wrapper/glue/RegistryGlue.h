@@ -12,8 +12,12 @@ public:
 
     std::string Connect(std::string connectionString);
     void Disconnect(std::string connectionId);
+
     std::string GetModuleTwin(std::string connectionId, std::string deviceId, std::string moduleId);
     void PatchModuleTwin(std::string connectionId, std::string deviceId, std::string moduleId, std::string patch);
+
+    std::string GetDeviceTwin(std::string connectionId, std::string deviceId);
+    void PatchDeviceTwin(std::string connectionId, std::string deviceId, std::string patch);
 
     void CleanupResources();
 

@@ -54,7 +54,6 @@ RUN git submodule update --init
 # copy the wrapper over and move restbed in place
 COPY c/wrapper /wrapper
 WORKDIR /wrapper/deps
-RUN if [ -d restbed ]; then rm -r restbed; fi
 RUN ln -s /restbed .
 
 # and prebuild

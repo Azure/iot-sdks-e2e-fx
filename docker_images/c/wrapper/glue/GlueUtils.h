@@ -4,12 +4,17 @@
 #pragma once
 
 #include <string>
-#include <parson.h>
+#include "iothub_sdk.h"
 
+void ThrowIfFailed(IOTHUB_CLIENT_RESULT ret, std::string functionName);
+void ThrowIfFailed(IOTHUB_MESSAGING_RESULT ret, std::string functionName);
 
-std::string getJsonString(JSON_Object* root_object, std::string dotname);
-std::string getJsonObjectAsString(JSON_Object* root_object, std::string dotname);
+IOTHUB_CLIENT_TRANSPORT_PROVIDER protocolFromTransportName(std::string transportType);
+IOTHUB_MESSAGE_HANDLE stringToMessage(std::string eventBody);
+
 void parseMethodInvokeParameters(std::string methodInvokeParameters, std::string *methodName, std::string *payload, unsigned int *timeout);
+void parseMethodRequestAndResponse(std::string requestAndResponse, std::string *expectedRequest, std::string *response, int *statusCode);
 std::string makeInvokeResponse(int statusCode, std::string payload);
-std::string getJsonSubObject(std::string root_string, std::string dotname);
 std::string addJsonWrapperObject(std::string root_string, std::string wrapperName);
+
+void sendEventCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback);

@@ -13,6 +13,9 @@ public:
     DeviceGlue();
     virtual ~DeviceGlue();
 
+    void EnableC2dMessages(std::string connectionId);
+    std::string WaitForC2dMessage(std::string connectionId);
+
 private:
     virtual std::string getNextClientId();
 };

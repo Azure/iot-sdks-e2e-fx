@@ -2,4 +2,6 @@
 **/node_modules
 **/*.pyc
 **/__pycache__
+**/c/wrapper/build
+**/c/wrapper/deps
 

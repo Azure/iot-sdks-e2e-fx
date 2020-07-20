@@ -14,4 +14,5 @@ public:
     void CleanupResources();
     void PrintMessage(const char* message);
     std::string GetCapabilities();
+    std::string GetWrapperStats();
 };
