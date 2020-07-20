@@ -9,6 +9,9 @@ message("Using C SDK from ${C_SDK_ROOT}" )
 set(use_edge_modules ON CACHE BOOL "include edge module code")
 set(BUILD_SSL OFF CACHE BOOL "use SSL for restbed server")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHORTON_COMPILER=${CMAKE_CXX_COMPILER_ID}_${CMAKE_CXX_COMPILER_VERSION}_${CMAKE_BUILD_TYPE}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHORTON_COMPILER=${CMAKE_C_COMPILER_ID}_${CMAKE_C_COMPILER_VERSION}_${CMAKE_BUILD_TYPE}")
+
 add_subdirectory( "${C_SDK_ROOT}" azure-iot-sdk-c )
 add_subdirectory( "${PROJECT_SOURCE_DIR}/deps/restbed/" )
 
