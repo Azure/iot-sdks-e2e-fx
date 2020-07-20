@@ -56,6 +56,7 @@ RUN pip install --upgrade pip
 WORKDIR /system_control_app
 COPY ./system_control_app .
 RUN pip install -r requirements.txt
+EXPOSE 8040
 
 ARG HORTON_REPO
 WORKDIR /sdk
