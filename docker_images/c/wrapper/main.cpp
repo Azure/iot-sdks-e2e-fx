@@ -16,9 +16,34 @@
 #include "DeviceApi.h"
 #include "logger.h"
 
+#if unix
+#include "unistd.h"
+#endif
+
 using namespace std;
 using namespace restbed;
 using namespace io::swagger::server::api;
+
+void launch_system_control_app()
+{
+#if unix
+    pid_t new_pid = fork();
+    if (new_pid == 0)
+    {
+        const char *argv[] = { "/usr/bin/python", "/system_control_app/main.py", NULL}; 
+        const char* env[] = {NULL};
+        if (execve(argv[0], (char**)argv, (char**)env) == -1) 
+        {
+            std::cout << "execve falied" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    } 
+    else if (new_pid == -1)
+    {
+        std::cout << "fork failed" << std::endl;
+    }
+#endif
+}
 
 class MergedApi : public ModuleApi, public ControlApi, public RegistryApi, public ServiceApi, public DeviceApi
 {
@@ -47,6 +72,8 @@ int port = 8082;
 
 int main(const int, const char**)
 {
+    launch_system_control_app();
+
     auto api = make_shared< MergedApi >();
     cout << "listening on port " << std::to_string(port) << endl;
     api->set_logger( make_shared< CustomLogger >( ) );
