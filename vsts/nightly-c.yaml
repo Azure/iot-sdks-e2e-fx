@@ -18,14 +18,14 @@ jobs:
     - "build_linux_amd64"
   strategy:
     matrix:
-      c_mqtt_iothub_module:     { suite: c_mqtt_iothub_module }
-      c_mqtt_edgehub_module:    { suite: c_mqtt_edgehub_module }
-      c_mqttws_iothub_module:   { suite: c_mqttws_iothub_module }
-      c_mqttws_edgehub_module:  { suite: c_mqttws_edgehub_module }
-      c_amqp_iothub_module:     { suite: c_amqp_iothub_module }
-      c_amqp_edgehub_module:    { suite: c_amqp_edgehub_module }
-      c_amqpws_iothub_module:   { suite: c_amqpws_iothub_module }
-      c_amqpws_edgehub_module:  { suite: c_amqpws_edgehub_module }
+      c_mqtt_iothub_module_and_device:      { suite: c_mqtt_iothub_module_and_device }
+      c_mqtt_edgehub_module:                { suite: c_mqtt_edgehub_module }
+      c_mqttws_iothub_module_and_device:    { suite: c_mqttws_iothub_module_and_device }
+      c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
+      c_amqp_iothub_module_and_device:      { suite: c_amqp_iothub_module_and_device }
+      c_amqp_edgehub_module:                { suite: c_amqp_edgehub_module }
+      c_amqpws_iothub_module_and_device:    { suite: c_amqpws_iothub_module_and_device }
+      c_amqpws_edgehub_module:              { suite: c_amqpws_edgehub_module }
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
