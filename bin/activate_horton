@@ -76,7 +76,7 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
       [ $? -eq 0 ] || { colorecho $_red "ln Scripts bin failed"; return 1; }
 
       # need path otherwise WSL under mobaxterm fails
-      /usr/bin/dos2unix ${virtual_env_root}/activate 
+      /usr/bin/dos2unix ${virtual_env_root}/bin/activate 
       [ $? -eq 0 ] || { colorecho $_red "dos2unix failed or not installed"; return 1; }
     fi
 
