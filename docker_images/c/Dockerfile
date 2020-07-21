@@ -13,6 +13,9 @@ RUN apt update \
     gdbserver \
     openssh-server \
     ca-certificates \
+    python \
+    python-pip \
+    iptables \
   &&  rm -rf /var/lib/apt/lists/*
 
 RUN git config --global user.email "you@example.com" \
@@ -47,8 +50,6 @@ RUN git clone https://github.com/Corvusoft/restbed . \
 
 RUN apt update \
   && apt install --fix-missing --no-install-recommends   -y \
-    python \
-    python-pip \
   &&  rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip 
