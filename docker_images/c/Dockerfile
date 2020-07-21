@@ -48,10 +48,6 @@ RUN git clone https://github.com/Corvusoft/restbed . \
     && rm -r dependency/asio/asio/src/tests \
     && rm -r dependency/asio/asio/src/examples
 
-RUN apt update \
-  && apt install --fix-missing --no-install-recommends   -y \
-  &&  rm -rf /var/lib/apt/lists/*
-
 RUN pip install --upgrade pip 
 
 WORKDIR /system_control_app
