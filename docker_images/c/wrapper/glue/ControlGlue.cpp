@@ -64,11 +64,12 @@ std::string ControlGlue::GetCapabilities()
 {
     Json json;
     json.setBool("flags.v2_connect_group", false);
-    json.setBool("flags.system_control_app", false);
+    json.setBool("flags.system_control_app", true);
     return json.serializeToString();
 }
 
-#define stringize(s) #s
+#define stringize_expand(x) (#x)
+#define stringize(x) stringize_expand(x)
 
 std::string ControlGlue::GetWrapperStats()
 {
