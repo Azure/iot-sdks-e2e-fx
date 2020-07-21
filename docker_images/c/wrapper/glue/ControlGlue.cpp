@@ -8,6 +8,10 @@
 #include "ServiceGlue.h"
 #include "json.h"
 
+#if unix
+#include "unistd.h"
+#endif
+
 using namespace std;
 
 extern ModuleGlue module_glue;
@@ -60,19 +64,22 @@ std::string ControlGlue::GetCapabilities()
 {
     Json json;
     json.setBool("flags.v2_connect_group", false);
-    json.setBool("flags.system_control_app", false);
+    json.setBool("flags.system_control_app", true);
     return json.serializeToString();
 }
 
+#define stringize_expand(x) (#x)
+#define stringize(x) stringize_expand(x)
 
 std::string ControlGlue::GetWrapperStats()
 {
-    return "{ " \
-            "\"flags\": { " \
-                "\"v2_connect_group\" : false, " \
-                "\"system_control_app\" : false " \
-            "} " \
-        "} ";
+    Json json;
+    json.setString("language", "C");
+    json.setString("languageVersion", stringize(HORTON_COMPILER));
+#if unix
+    json.setNumber("wrapperPid", getpid());
+#endif
+    return json.serializeToString();
 }
 
 

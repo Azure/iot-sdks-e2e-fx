@@ -156,6 +156,8 @@ void ControlApiControlWrapperStatsResource::GET_method_handler(const std::shared
 	const auto request = session->get_request();
 
 
+            // Added 1 line in merge                                                                        
+            std::string result = control_glue.GetWrapperStats(); 
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -166,8 +168,8 @@ void ControlApiControlWrapperStatsResource::GET_method_handler(const std::shared
 			 */
 
 			if (status_code == 200) {
-				// removed "OK in merge"
-				session->close(200, "", { {"Connection", "close"} });
+				// changed one parameter in merge
+				session->close(200, result, { {"Connection", "close"} });
 				return;
 			}
 

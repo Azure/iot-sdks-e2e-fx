@@ -13,6 +13,9 @@ RUN apt update \
     gdbserver \
     openssh-server \
     ca-certificates \
+    python \
+    python-pip \
+    iptables \
   &&  rm -rf /var/lib/apt/lists/*
 
 RUN git config --global user.email "you@example.com" \
@@ -45,6 +48,12 @@ RUN git clone https://github.com/Corvusoft/restbed . \
     && rm -r dependency/asio/asio/src/tests \
     && rm -r dependency/asio/asio/src/examples
 
+RUN pip install --upgrade pip 
+
+WORKDIR /system_control_app
+COPY ./system_control_app .
+RUN pip install -r requirements.txt
+EXPOSE 8040
 
 ARG HORTON_REPO
 WORKDIR /sdk

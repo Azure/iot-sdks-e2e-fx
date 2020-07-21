@@ -519,14 +519,14 @@ async def set_platform_properties(*, client, longhaul_control_device):
     stats = await client.settings.wrapper_api.get_wrapper_stats()
 
     properties = PlatformProperties()
-    properties.os = stats["osType"]
-    properties.os_release = stats["osRelease"]
-    properties.system_architecture = stats["systemArchitecture"]
-    properties.language = stats["language"]
-    properties.language_version = stats["languageVersion"]
-    properties.sdk_repo = stats["sdkRepo"]
-    properties.sdk_commit = stats["sdkCommit"]
-    properties.sdk_sha = stats["sdkSha"]
+    properties.os = stats.get("osType", "")
+    properties.os_release = stats.get("osRelease", "")
+    properties.system_architecture = stats.get("systemArchitecture", "")
+    properties.language = stats.get("language", "")
+    properties.language_version = stats.get("languageVersion", "")
+    properties.sdk_repo = stats.get("sdkRepo", "")
+    properties.sdk_commit = stats.get("sdkCommit", "")
+    properties.sdk_sha = stats.get("sdkSha", "")
 
     patch = {"reported": properties.to_dict()}
     logger("reporting: {}".format(patch))
