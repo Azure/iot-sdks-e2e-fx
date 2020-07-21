@@ -31,8 +31,7 @@ void launch_system_control_app()
     if (new_pid == 0)
     {
         const char *argv[] = { "/usr/bin/python", "/system_control_app/main.py", NULL}; 
-        const char* env[] = {NULL};
-        if (execve(argv[0], (char**)argv, (char**)env) == -1) 
+        if (execvp(argv[0], (char**)argv) == -1) 
         {
             std::cout << "execve falied" << std::endl;
             exit(EXIT_FAILURE);
