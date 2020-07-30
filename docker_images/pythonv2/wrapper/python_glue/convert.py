@@ -14,7 +14,10 @@ def test_script_object_to_outgoing_message(payload):
     can pass into the iothub sdk.
     """
 
-    return Message(bytearray(json.dumps(payload.body), "utf-8"))
+    msg = Message(bytearray(json.dumps(payload.body), "utf-8"))
+    msg.content_type = "application/JSON"
+    msg.content_encoding = "utf-8"
+    return msg
 
 
 def incoming_message_to_test_script_object(message):
