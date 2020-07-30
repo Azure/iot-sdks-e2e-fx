@@ -300,6 +300,7 @@ class RegressionTests(object):
         await client.wait_for_connection_status_change("connected")
         assert status == "connected"
 
+    @pytest.mark.skip("re-enable afer python keepalive hack in Horton is fixed")
     @pytest.mark.it("Can retry send_event with different failure conditions")
     async def test_regression_reconnect_send_event_different_timing(
         self, system_control, client, drop_mechanism, eventhub
