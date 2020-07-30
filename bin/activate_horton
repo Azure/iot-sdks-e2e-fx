@@ -62,7 +62,7 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
     fi
     echo "passing ${virtual_env_root} to virtualenv for environment creation"
 
-    echo python3 -m virtualenv ${passed_virtual_env_root} --prompt="Horton"
+    echo python3 -m virtualenv ${passed_virtual_env_root} --prompt="Horton" --symlinks=False
     python -m virtualenv ${passed_virtual_env_root}
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
 
