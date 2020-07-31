@@ -406,7 +406,7 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
         telemetry.process_voluntary_context_switches_per_second = (
             voluntary_context_switches - self.last_voluntary_context_switches
         ) / self.interval_length
-        telemetry.process_nonvoluntary_contexxt_switches_per_second = (
+        telemetry.process_nonvoluntary_context_switches_per_second = (
             nonvoluntary_context_switches - self.last_nonvoluntary_context_switches
         ) / self.interval_length
 
