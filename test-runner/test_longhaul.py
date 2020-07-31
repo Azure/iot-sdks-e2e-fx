@@ -31,17 +31,13 @@ from sample_content import make_message_payload
 
 pytestmark = pytest.mark.asyncio
 
-# BKTODO:
-# add events for connected, disconnected
-# change stop to a function
-
 
 longhaul_config = {
     "d2cEnabled": True,
     "d2cIntervalLength": 1,
     "d2cOpsPerInterval": 5,
-    # "TotalDuration": "00:00:30",
-    "totalDuration": "72:00:10",
+    "TotalDuration": "00:00:30",
+    # "totalDuration": "72:00:10",
 }
 
 
@@ -142,8 +138,8 @@ class IntervalOperationLonghaul(IntervalOperation):
         self.total_count_completed = TrackCount(use_lock=False)
         self.total_count_failed = TrackCount(use_lock=False)
 
-        self.track_average_send_latency = TrackAverage(use_lock=False)
-        self.track_average_verify_latency = TrackAverage(use_lock=False)
+        self.average_send_latency = TrackAverage(use_lock=False)
+        self.average_verify_latency = TrackAverage(use_lock=False)
 
         self.uncompleted_ops = set()
         self.uncompleted_ops_lock = NoLock() or threading.Lock()
@@ -158,12 +154,8 @@ class IntervalOperationLonghaul(IntervalOperation):
 
     async def run_one_op(self):
         try:
-            measure_send_latency = MeasureLatency(
-                tracker=self.track_average_send_latency
-            )
-            measure_verify_latency = MeasureLatency(
-                tracker=self.track_average_verify_latency
-            )
+            measure_send_latency = MeasureLatency(tracker=self.average_send_latency)
+            measure_verify_latency = MeasureLatency(tracker=self.average_verify_latency)
 
             op_id = self.next_op_id.increment()
 
@@ -183,7 +175,7 @@ class IntervalOperationLonghaul(IntervalOperation):
 
         except Exception as e:
             logger("OP FAILED: Exception running op: {}".format(type(e)))
-            self.count_failed.increment()
+            self.total_count_failed.increment()
 
 
 not_received = "not received"
@@ -314,10 +306,8 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
         telemetry.total_count_d2c_failed = self.total_count_failed.get_count()
         telemetry.current_count_d2c_sending = self.count_sending.get_count()
         telemetry.current_count_d2c_verifying = self.count_verifying.get_count()
-        telemetry.average_latency_d2c_send = self.track_average_send_latency.extract()
-        telemetry.average_latency_d2c_verify = (
-            self.track_average_verify_latency.extract()
-        )
+        telemetry.average_latency_d2c_send = self.average_send_latency.extract()
+        telemetry.average_latency_d2c_verify = self.average_verify_latency.extract()
 
         logger("publishing {}".format(telemetry.to_dict()))
         await self.longhaul_control_device.send_event(telemetry.to_dict())
@@ -476,45 +466,6 @@ class RobustListener(object):
             self.wait_for_completion()
 
 
-class CommandListener(RobustListener):
-    def __init__(self, longhaul_control_device, coro):
-        super(CommandListener, self).__init__()
-        self.longhaul_control_device = longhaul_control_device
-        self.coro = coro
-
-    async def listener_function(self):
-        logger("In listener function")
-        while True:
-            command = await self.longhaul_control_device.wait_for_c2d_message()
-            logger("Listener received command {}".format(command.__dict__))
-            if command.body == "stop":
-                await self.prevent_restart()
-                await self.coro()
-                return
-
-    async def stop(self):
-        await self.prevent_restart()
-        await self.coro()
-        await self.wait_for_completion()
-        self.longhaul_control_device = None
-        self.coro = None
-
-
-class IntervalOperationRenewEventhub(IntervalOperation):
-    def __init__(self, *, test_config, eventhub, longhaul_control_device):
-        super(IntervalOperationRenewEventhub, self).__init__(
-            test_config=test_config,
-            interval_length=_get_seconds(test_config.eventhub_renew_interval),
-            ops_per_interval=1,
-            longhaul_control_device=longhaul_control_device,
-        )
-        self.eventhub = eventhub
-
-    async def run_one_op(self):
-        logger("renewing eventhub listener")
-        await self.eventhub.start_new_listener()
-
-
 async def set_platform_properties(*, client, longhaul_control_device):
     stats = await client.settings.wrapper_api.get_wrapper_stats()
 
@@ -537,7 +488,7 @@ async def set_platform_properties(*, client, longhaul_control_device):
 
 class LongHaulTest(object):
     async def test_longhaul(
-        self, client, eventhub, service, longhaul_control_device, system_control, caplog
+        self, client, eventhub, longhaul_control_device, system_control, caplog
     ):
         await eventhub.connect()
 
@@ -559,9 +510,6 @@ class LongHaulTest(object):
             logger("stop = True")
             stop = True
 
-        command_listener = CommandListener(longhaul_control_device, set_stop_flag)
-        await command_listener.start()
-
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
                 test_config=test_config,
@@ -582,14 +530,9 @@ class LongHaulTest(object):
             system_control=system_control,
             pid=pid,
         )
-        renew_eventhub = IntervalOperationRenewEventhub(
-            test_config=test_config,
-            eventhub=eventhub,
-            longhaul_control_device=longhaul_control_device,
-        )
 
         all_ops = set(longhaul_ops.values()) | set(
-            [update_test_report, send_execution_telemetry, renew_eventhub]
+            [update_test_report, send_execution_telemetry]
         )
 
         try:
@@ -648,17 +591,12 @@ class LongHaulTest(object):
             raise
 
         finally:
-            logger("Stopping command listener")
-            await service.send_c2d(longhaul_control_device.device_id, "stop")
-            await command_listener.stop()
-
             # stop all of our longhaul ops, then stop our reporting ops.
             # order is important here since send_execution_telemetry feeds data into
             # update_test_report.
             logger("stopping all  ops")
             await asyncio.gather(*(op.stop() for op in longhaul_ops.values()))
             logger("sending last telemetry and updating reported properties")
-            await renew_eventhub.stop()
             await send_execution_telemetry.stop()
             await update_test_report.stop()
 
