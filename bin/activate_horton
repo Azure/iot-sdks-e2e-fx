@@ -62,7 +62,7 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
     fi
     echo "passing ${virtual_env_root} to virtualenv for environment creation"
 
-    echo python3 -m virtualenv ${passed_virtual_env_root} --prompt="Horton"
+    echo python3 -m virtualenv ${passed_virtual_env_root} --prompt="Horton" --symlinks=False
     python -m virtualenv ${passed_virtual_env_root}
     [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
 
@@ -85,8 +85,7 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
     [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
 
     colorecho $_yellow "installing required python libraries"
-    pip install -q --upgrade pip && \
-        pip install -q -r ${root_dir}/requirements.txt && \
+    pip install -q -r ${root_dir}/requirements.txt && \
         pip install -q -e ${root_dir}/horton_helpers/ && \
         pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/ 
     [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
