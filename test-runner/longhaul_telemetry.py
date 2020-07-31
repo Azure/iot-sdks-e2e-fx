@@ -43,7 +43,7 @@ class ExecutionTelemetry(DictionaryObject):
         self.process_resident_memory_in_kb = 0
         self.process_shared_memory_in_kb = 0
         self.process_voluntary_context_switches_per_second = 0
-        self.process_nonvoluntary_contexxt_switches_per_second = 0
+        self.process_nonvoluntary_context_switches_per_second = 0
 
         self.pytest_gc_object_count = 0
         self.lock_attributes()

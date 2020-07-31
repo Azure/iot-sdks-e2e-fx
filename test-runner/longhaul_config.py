@@ -11,7 +11,6 @@ class LonghaulConfig(DictionaryObject):
         self.timeout_interval = datetime.timedelta(minutes=5)
         self.property_update_interval = datetime.timedelta(seconds=10)
         self.telenetry_interval = datetime.timedelta(seconds=10)
-        self.eventhub_renew_interval = datetime.timedelta(minutes=1)
         self.d2c_enabled = False
         self.d2c_interval_length = 1
         self.d2c_ops_per_interval = 10
