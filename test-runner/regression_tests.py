@@ -278,6 +278,7 @@ class RegressionTests(object):
     @pytest.mark.it(
         "Enables automatic reconnection even if connect is not called directly"
     )
+    @pytest.mark.skip("re-enable afer python keepalive hack in Horton is fixed")
     async def test_regression_autoconnect_without_calling_connect(
         self, system_control, client, drop_mechanism
     ):
