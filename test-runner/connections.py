@@ -3,6 +3,8 @@
 # full license information.
 import adapters
 import base64
+import hmac
+import hashlib
 from horton_settings import settings
 from horton_logging import logger
 
@@ -42,7 +44,7 @@ async def _get_device_client_adapter(settings_object):
     """
     get a device client adapter for the given settings object
     """
-    if not settings_object.device_id and not settings_object.registration_id:
+    if not settings_object.device_id and not settings_object.id_scope:
         return None
 
     adapter = adapters.create_adapter(settings_object.adapter_address, "device_client")
@@ -56,9 +58,6 @@ async def _get_device_provisioning_client_adapter(settings_object):
     """
     get a device client adapter for the given settings object
     """
-    if not settings_object.id_scope:
-        return None
-
     adapter = adapters.create_adapter(
         settings_object.adapter_address, "device_provisioning"
     )
@@ -133,38 +132,74 @@ async def get_adapter(settings_object):
     return adapter
 
 
+def _derive_device_key(registration_id, group_symmetric_key):
+    """
+    The unique device ID and the group master key should be encoded into "utf-8"
+    After this the encoded group master key must be used to compute an HMAC-SHA256 of the encoded registration ID.
+    Finally the result must be converted into Base64 format.
+    The device key is the "utf-8" decoding of the above result.
+    """
+    message = registration_id.encode("utf-8")
+    signing_key = base64.b64decode(group_symmetric_key.encode("utf-8"))
+    signed_hmac = hmac.HMAC(signing_key, message, hashlib.sha256)
+    device_key_encoded = base64.b64encode(signed_hmac.digest())
+    return device_key_encoded.decode("utf-8")
+
+
+async def _create_client_using_dps(settings_object, device_provisioning):
+    adapter = settings_object.adapter
+
+    await device_provisioning.create_from_symmetric_key(
+        transport="mqtt",
+        provisioning_host=settings_object.provisioning_host_name,
+        registration_id=settings_object.registration_id,
+        id_scope=settings_object.id_scope,
+        symmetric_key=settings_object.symmetric_key,
+    )
+    if settings_object.capability_model_id:
+        await device_provisioning.set_provisioning_payload(
+            {"iotcModelId": settings_object.capability_model_id}
+        )
+
+    result = await device_provisioning.register()
+    await device_provisioning.destroy()
+
+    if result.status != "assigned":
+        raise Exception("Invalid rgistration status: {}".result.status)
+
+    settings_object.device_id = result.device_id
+    settings_object.iothub_host_name = result.assigned_hub
+    adapter.device_id = settings_object.device_id
+
+    await adapter.create_from_symmetric_key(
+        settings_object.transport,
+        hostname=settings_object.iothub_host_name,
+        symmetric_key=settings_object.symmetric_key,
+        device_id=settings_object.device_id,
+    )
+
+
+async def _create_client_using_dps_group(settings_object, device_provisioning):
+    settings_object.symmetric_key = _derive_device_key(
+        settings_object.registration_id, settings_object.group_symmetric_key
+    )
+
+    await _create_client_using_dps(settings_object, device_provisioning)
+
+
 async def create_client(settings_object, device_provisioning=None):
     adapter = settings_object.adapter
 
+    if settings_object.connection_type == "dps_symmetric_key_group":
+        await _create_client_using_dps_group(settings_object, device_provisioning)
+
     if settings_object.connection_type == "dps_symmetric_key":
-        await device_provisioning.create_from_symmetric_key(
-            transport="mqtt",
-            provisioning_host=device_provisioning.settings.provisioning_host,
-            registration_id=settings_object.registration_id,
-            id_scope=device_provisioning.settings.id_scope,
-            symmetric_key=settings_object.symmetric_key,
-        )
-        result = await device_provisioning.register()
-        await device_provisioning.destroy()
-
-        if result.status != "assigned":
-            raise Exception("Invalid rgistration status: {}".result.status)
-
-        settings_object.device_id = result.device_id
-        settings_object.hostname = result.assigned_hub
-        adapter.device_id = settings_object.device_id
-
-        await adapter.create_from_symmetric_key(
-            settings_object.transport,
-            hostname=settings_object.hostname,
-            symmetric_key=settings_object.symmetric_key,
-            device_id=settings_object.device_id,
-        )
+        await _create_client_using_dps(settings_object, device_provisioning)
 
     elif settings_object.connection_type == "symmetric_key":
         await adapter.create_from_symmetric_key(
             settings_object.transport,
-            hostname=settings_object.hostname,
+            hostname=settings_object.iothub_host_name,
             symmetric_key=settings_object.symmetric_key,
             device_id=settings_object.device_id,
         )

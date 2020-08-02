@@ -33,6 +33,7 @@ def add_edge_modules(testMod_image):
     settings.friend_module.connection_type = "environment"
     settings.friend_module.object_type = "iotedge_module"
     settings.friend_module.container_name = "friendMod"
+    settings.friend_module.iothub_host_name = settings.iothub.iothub_host_name
     utilities.set_args_from_image(settings.friend_module, friendMod_image)
 
     settings.test_module.host_port = testMod_host_port
@@ -41,6 +42,7 @@ def add_edge_modules(testMod_image):
     settings.test_module.connection_type = "environment"
     settings.test_module.object_type = "iotedge_module"
     settings.test_module.container_name = "testMod"
+    settings.test_module.iothub_host_name = settings.iothub.iothub_host_name
     utilities.set_args_from_image(settings.test_module, testMod_image)
 
 

@@ -22,6 +22,9 @@ class InternalDeviceProvisioningGlueAsync(object):
         # BKTODO
         pass
 
+    async def set_provisioning_payload(self, payload):
+        self.client.provisioning_payload = payload
+
     async def register(self):
         # BKTODO
         pass

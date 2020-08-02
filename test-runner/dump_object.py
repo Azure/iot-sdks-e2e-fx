@@ -24,8 +24,9 @@ def _can_serialize(obj_name, obj):
 def obj_to_dict(obj, object_name=None):
     if object_name == "connection_string":
         return connection_string.obfuscate_connection_string(obj)
+        return "REDACTED"
     elif isinstance(obj, str):
-        if "cert" in object_name or "x509" in object_name:
+        if "cert" in object_name or "x509" in object_name or "_key" in object_name:
             return "REDACTED"
         else:
             return obj
