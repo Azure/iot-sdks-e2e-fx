@@ -505,10 +505,22 @@ class LongHaulTest(object):
             system_control=system_control,
         )
 
+        start_time = datetime.datetime.now()
+
         execution_properties = ExecutionProperties()
-        execution_properties.execution_status = "new"
-        execution_properties.execution_start_time = datetime.datetime.now()
+        execution_properties.execution_status = "running"
+        execution_properties.execution_start_time = start_time
         execution_properties.execution_elapsed_time = datetime.timedelta(0)
+
+        # send initial execution properties
+        patch = {"reported": execution_properties.to_dict()}
+        logger("reporting: {}".format(patch))
+        await longhaul_control_device.patch_twin(patch)
+
+        # no need to send start time every time
+        execution_properties.execution_start_time = (
+            ExecutionProperties._defaults.execution_start_time
+        )
 
         stop = False
 
@@ -574,7 +586,7 @@ class LongHaulTest(object):
                             await asyncio.sleep(one_second - wait_time.get_latency())
 
                 execution_properties.execution_elapsed_time = (
-                    datetime.datetime.now() - execution_properties.execution_start_time
+                    datetime.datetime.now() - start_time
                 )
 
             await asyncio.gather(*all_tasks)
