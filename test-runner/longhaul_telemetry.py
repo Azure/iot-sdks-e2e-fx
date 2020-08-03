@@ -33,6 +33,9 @@ class ExecutionProperties(DictionaryObject):
         self.lock_attributes()
 
 
+ExecutionProperties._defaults = ExecutionProperties()
+
+
 class ExecutionTelemetry(DictionaryObject):
     def __init__(self):
         super(ExecutionTelemetry, self).__init__()

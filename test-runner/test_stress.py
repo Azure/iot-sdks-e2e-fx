@@ -408,7 +408,7 @@ class StressTest(object):
 @pytest.mark.testgroup_iothub_module_stress
 @pytest.mark.describe("Module Client Stress")
 @pytest.mark.timeout(test_timeout)
-class TestModuleClient2HourStress(StressTest):
+class _TestModuleClient2HourStress(StressTest):
     @pytest.fixture
     def client(self, test_module):
         return test_module
@@ -417,7 +417,7 @@ class TestModuleClient2HourStress(StressTest):
 @pytest.mark.testgroup_iothub_device_stress
 @pytest.mark.describe("Device Client Stress")
 @pytest.mark.timeout(test_timeout)
-class TestDeviceClient2HourStress(StressTest):
+class _TestDeviceClient2HourStress(StressTest):
     @pytest.fixture
     def client(self, test_device):
         return test_device

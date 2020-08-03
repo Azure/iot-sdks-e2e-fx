@@ -141,11 +141,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             logger.info("Error getting memory stats")
             logger.info(traceback.format_exc())
 
-        try:
-            stats.update(get_stats.get_process_stats(pid))
-        except Exception:
-            logger.info("Error getting process stats")
-            logger.info(traceback.format_exc())
+        if pid:
+            try:
+                stats.update(get_stats.get_process_stats(pid))
+            except Exception:
+                logger.info("Error getting process stats")
+                logger.info(traceback.format_exc())
 
         return stats
 
