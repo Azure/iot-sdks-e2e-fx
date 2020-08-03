@@ -508,9 +508,9 @@ class LongHaulTest(object):
         start_time = datetime.datetime.now()
 
         execution_properties = ExecutionProperties()
-        execution_properties.execution_status = "running"
-        execution_properties.execution_start_time = start_time
-        execution_properties.execution_elapsed_time = datetime.timedelta(0)
+        execution_properties.longhaul_status = "running"
+        execution_properties.longhaul_start_time = start_time
+        execution_properties.longhaul_elapsed_time = datetime.timedelta(0)
 
         # send initial execution properties
         patch = {"reported": execution_properties.to_dict()}
@@ -518,16 +518,9 @@ class LongHaulTest(object):
         await longhaul_control_device.patch_twin(patch)
 
         # no need to send start time every time
-        execution_properties.execution_start_time = (
-            ExecutionProperties._defaults.execution_start_time
+        execution_properties.longhaul_start_time = (
+            ExecutionProperties._defaults.longhaul_start_time
         )
-
-        stop = False
-
-        async def set_stop_flag():
-            nonlocal stop
-            logger("stop = True")
-            stop = True
 
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
@@ -558,9 +551,9 @@ class LongHaulTest(object):
             one_second = 1.0
             all_tasks = set()
 
-            while not stop and (
-                execution_properties.execution_elapsed_time < test_config.total_duration
-                or execution_properties.execution_elapsed_time == datetime.timedelta(0)
+            while (
+                execution_properties.longhaul_elapsed_time < test_config.total_duration
+                or execution_properties.longhaul_elapsed_time == datetime.timedelta(0)
             ):
                 # pytest caches all messages.  We don't want that, but I couldn't find a way
                 # to turn it off, so we just clear it once a second.
@@ -585,19 +578,19 @@ class LongHaulTest(object):
                         if len(all_tasks) == 0:
                             await asyncio.sleep(one_second - wait_time.get_latency())
 
-                execution_properties.execution_elapsed_time = (
+                execution_properties.longhaul_elapsed_time = (
                     datetime.datetime.now() - start_time
                 )
 
             await asyncio.gather(*all_tasks)
 
             logger("Marking test as complete")
-            execution_properties.execution_status = "completed"
+            execution_properties.longhaul_status = "completed"
 
         except Exception:
             logger("Marking test as failed")
             logger(traceback.format_exc())
-            execution_properties.execution_status = "failed"
+            execution_properties.longhaul_status = "failed"
 
             for op in longhaul_ops.values():
                 if len(op.uncompleted_ops):

@@ -27,9 +27,9 @@ PlatformProperties._defaults = PlatformProperties()
 class ExecutionProperties(DictionaryObject):
     def __init__(self):
         super(ExecutionProperties, self).__init__()
-        self.execution_status = "new"
-        self.execution_start_time = datetime.datetime.min
-        self.execution_elapsed_time = datetime.timedelta(0)
+        self.longhaul_status = "not_started"
+        self.longhaul_start_time = datetime.datetime.min
+        self.longhaul_elapsed_time = datetime.timedelta(0)
         self.lock_attributes()
 
 
