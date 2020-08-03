@@ -35,6 +35,9 @@ class DeviceProvisioningApi(AbstractDeviceProvisioningApi):
             transport, provisioning_host, registration_id, id_scope, x509
         )
 
+    async def set_provisioning_payload(self, payload):
+        await self.glue.set_provisioning_payload(payload)
+
     async def register(self):
         result = await self.glue.register()
         obj = PythonDirectRegistrationResult()

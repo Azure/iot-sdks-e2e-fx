@@ -28,6 +28,9 @@ class InternalDeviceProvisioningGlueSync(object):
                 websockets=True,
             )
 
+    def set_provisioning_payload_sync(self, payload):
+        self.client.provisioning_payload = payload
+
     def create_from_x509_sync(
         self, transport, provisioning_host, registration_id, id_scope, x509
     ):

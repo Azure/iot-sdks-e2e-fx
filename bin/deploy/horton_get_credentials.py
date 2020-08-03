@@ -22,11 +22,7 @@ def populate_credentials():
     if settings.iotedge.device_id:
         settings.iotedge.ca_cert_base64 = get_edge_ca_cert_base64()
 
-    for device in (
-        settings.leaf_device,
-        settings.test_device,
-        settings.longhaul_control_device,
-    ):
+    for device in (settings.leaf_device, settings.test_device):
         if device.device_id:
             if device.connection_type.startswith("connection_string"):
                 device.connection_string = iothub_service_helper.get_device_connection_string(
@@ -34,7 +30,7 @@ def populate_credentials():
                 )
                 if device.connection_type.endswith("_with_edge_gateway"):
                     device.connection_string += ";GatewayHostName={}".format(
-                        settings.iotedge.hostname
+                        settings.iotedge.iotedge_host_name
                     )
                 print(
                     "Added connection string for {} device {}".format(
@@ -57,7 +53,7 @@ def populate_credentials():
                     or module.connection_type == "environment"
                 ):
                     module.connection_string += ";GatewayHostName={}".format(
-                        settings.iotedge.hostname
+                        settings.iotedge.iotedge_host_name
                     )
 
                 print(

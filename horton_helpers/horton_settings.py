@@ -8,8 +8,20 @@ horton_settings_file_name = str(
     Path(__file__).parent.parent.joinpath("_horton_settings.json")
 )
 
-IOTHUB_CONNECTION_STRING_OLD_NAME = "IOTHUB_E2E_CONNECTION_STRING"
-IOTEDGE_DEBUG_LOG_OLD_NAME = "IOTEDGE_DEBUG_LOG"
+
+all_environment_variables = {
+    # old legacy variable names
+    "IOTHUB_E2E_CONNECTION_STRING": "iothub.connection_string",
+    "IOTEDGE_DEBUG_LOG": "iotedge.debug_log",
+    # new variable names
+    "HORTON_IOTHUB_CONNECTION_STRING": "iothub.connection_string",
+    "HORTON_IOTEDGE_DEBUG_LOG": "iotedge.debug_log",
+    "HORTON_LONGHAUL_CONTROL_DEVICE_ID_SCOPE": "longhaul_control_device.id_scope",
+    "HORTON_LONGHAUL_CONTROL_DEVICE_PROVISIONING_HOST_NAME": "longhaul_control_device.provisioning_host_name",
+    "HORTON_LONGHAUL_CONTROL_DEVICE_GROUP_SYMMETRIC_KEY": "longhaul_control_device.group_symmetric_key",
+    "HORTON_LONGHAUL_CONTROL_DEVICE_CAPABILITY_MODEL_ID": "longhaul_control_device.capability_model_id",
+}
+
 
 # set defaults to "" or 0.  If we use "None", then the serialization in dictionary_object.py
 # saves all the None values to json and we don't want that.
@@ -23,37 +35,48 @@ class ObjectWithAdapter(SimpleObject):
         self.image = ""
         self.language = ""
         self.adapter_address = ""
-        self.adapter = None
+        self.adapter = ""
         self.host_port = ""
         self.container_port = ""
         self.container_name = ""
-        self.capabilities = None
+        self.capabilities = ""
 
 
 class HortonDeviceSettings(ObjectWithAdapter):
     def __init__(self, name, object_type):
         super(HortonDeviceSettings, self).__init__(name, object_type)
-        self.device_id = ""
+        self.transport = ""
         self.connection_type = ""
+        self.device_id = ""
+        self.iothub_host_name = ""
+        # for connection string connection
         self.connection_string = ""
+        # for x5009 connection
         self.x509_cert_path = ""
         self.x509_key_path = ""
-        self.transport = "mqtt"
-        self.registration_id = ""
+        # for symmetric key connection
         self.symmetric_key = ""
-        self.hostname = ""
+        # for DPS registration
+        self.id_scope = ""
+        self.registration_id = ""
+        self.provisioning_host_name = ""
+        self.capability_model_id = ""
+        self.group_symmetric_key = ""
 
 
 class HortonModuleSettings(ObjectWithAdapter):
     def __init__(self, name, object_type):
         super(HortonModuleSettings, self).__init__(name, object_type)
+        self.transport = ""
+        self.connection_type = ""
         self.device_id = ""
         self.module_id = ""
-        self.connection_type = ""
+        self.iothub_host_name = ""
+        # for connection string connection
         self.connection_string = ""
+        # for x509 connection
         self.x509_cert_path = ""
         self.x509_key_path = ""
-        self.transport = "mqtt"
 
 
 class Horton(SimpleObject):
@@ -65,6 +88,9 @@ class Horton(SimpleObject):
         self.transport = ""
         self.id_base = ""
         self.is_windows = ""
+        self.machine_name = ""
+        self.user_name = ""
+        self.time_tag = ""
 
 
 class IotHub(SimpleObject):
@@ -72,6 +98,7 @@ class IotHub(SimpleObject):
         super(IotHub, self).__init__()
         self.name = "iothub"
         self.connection_string = ""
+        self.iothub_host_name = ""
 
 
 class IotEdge(SimpleObject):
@@ -83,7 +110,7 @@ class IotEdge(SimpleObject):
         self.connection_string = ""
         self.ca_cert_base64 = ""
         self.debug_log = ""
-        self.hostname = ""
+        self.iotedge_host_name = ""
 
 
 class SystemControl(ObjectWithAdapter):
@@ -97,8 +124,6 @@ class DeviceProvisioning(ObjectWithAdapter):
         super(DeviceProvisioning, self).__init__(
             "device_provisioning", "device_provisioning"
         )
-        self.provisioning_host = ""
-        self.id_scope = ""
 
 
 class HortonSettings(DictionaryObject):
@@ -131,14 +156,27 @@ class HortonSettings(DictionaryObject):
             self.device_provisioning,
         ]
 
-    def load_deprecated_environment_variables(self):
-        if IOTHUB_CONNECTION_STRING_OLD_NAME in os.environ:
-            self.iothub.connection_string = os.environ[
-                IOTHUB_CONNECTION_STRING_OLD_NAME
-            ]
+    def load_environment_variables(self):
+        """
+        load environment variables into the HortonSettings object
+        """
 
-        if IOTEDGE_DEBUG_LOG_OLD_NAME in os.environ:
-            self.iotedge.debug_log = os.environ[IOTEDGE_DEBUG_LOG_OLD_NAME]
+        for var_name in all_environment_variables:
+            if var_name in os.environ:
+                var_path = all_environment_variables[var_name]
+                var_value = os.environ[var_name]
+
+                # split the path into segments
+                segments = var_path.split(".")
+                segments.reverse()  # so we can use pop()
+
+                # walk down the tree to find the node that holds the value
+                obj = self
+                while len(segments) > 1:
+                    obj = getattr(obj, segments.pop())
+
+                # set the value
+                setattr(obj, segments.pop(), var_value)
 
     def clear_object(self, obj):
         print("clearing {} object".format(obj.name))
@@ -157,4 +195,4 @@ try:
 except FileNotFoundError:
     settings = HortonSettings()
 
-settings.load_deprecated_environment_variables()
+settings.load_environment_variables()

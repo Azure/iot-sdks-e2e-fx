@@ -377,7 +377,6 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
         telemetry.system_uptime_in_seconds = float(
             system_stats.get("system_uptime", "0.0")
         )
-        telemetry.system_memory_size_in_kb = int(system_stats.get("system_MemTotal", 0))
         telemetry.system_memory_free_in_kb = int(system_stats.get("system_MemFree", 0))
         telemetry.system_memory_available_in_kb = int(
             system_stats.get("system_MemAvailable", 0)
@@ -466,24 +465,30 @@ class RobustListener(object):
             self.wait_for_completion()
 
 
-async def set_platform_properties(*, client, longhaul_control_device):
-    stats = await client.settings.wrapper_api.get_wrapper_stats()
+async def set_platform_properties(*, client, longhaul_control_device, system_control):
+    wrapper_stats = await client.settings.wrapper_api.get_wrapper_stats()
+    system_stats = await system_control.get_system_stats(0)
 
     properties = PlatformProperties()
-    properties.os = stats.get("osType", "")
-    properties.os_release = stats.get("osRelease", "")
-    properties.system_architecture = stats.get("systemArchitecture", "")
-    properties.language = stats.get("language", "")
-    properties.language_version = stats.get("languageVersion", "")
-    properties.sdk_repo = stats.get("sdkRepo", "")
-    properties.sdk_commit = stats.get("sdkCommit", "")
-    properties.sdk_sha = stats.get("sdkSha", "")
+    properties.os = wrapper_stats.get("osType", "")
+    properties.os_release = wrapper_stats.get("osRelease", "")
+    properties.system_architecture = wrapper_stats.get("systemArchitecture", "")
+    properties.language = wrapper_stats.get("language", "")
+    properties.language_version = wrapper_stats.get("languageVersion", "")
+    properties.sdk_repo = wrapper_stats.get("sdkRepo", "")
+    properties.sdk_commit = wrapper_stats.get("sdkCommit", "")
+    properties.sdk_sha = wrapper_stats.get("sdkSha", "")
+    properties.test_hub_name = client.settings.iothub_host_name
+    properties.test_device_id = client.device_id
+    properties.test_module_id = getattr(client, "module_id", "")
+
+    properties.system_memory_size_in_kb = int(system_stats.get("system_MemTotal", 0))
 
     patch = {"reported": properties.to_dict()}
     logger("reporting: {}".format(patch))
     await longhaul_control_device.patch_twin(patch)
 
-    return stats["wrapperPid"]
+    return wrapper_stats["wrapperPid"]
 
 
 class LongHaulTest(object):
@@ -495,7 +500,9 @@ class LongHaulTest(object):
         test_config = LonghaulConfig.from_dict(longhaul_config)
 
         pid = await set_platform_properties(
-            client=client, longhaul_control_device=longhaul_control_device
+            client=client,
+            longhaul_control_device=longhaul_control_device,
+            system_control=system_control,
         )
 
         execution_properties = ExecutionProperties()

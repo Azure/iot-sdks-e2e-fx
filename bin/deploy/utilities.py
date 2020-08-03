@@ -6,11 +6,16 @@ import os
 import socket
 import random
 import string
+import datetime
 from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 
 
-PYTHON_INPROC = "python-inproc-debugging"
+PYTHON_INPROC_IMAGE = "python-inproc-debugging"
+PYTHON_INPROC_ADAPTER_ADDRESS = "python_inproc"
+
+all_languages = ["pythonv2", "java", "csharp", "node", "c"]
+all_variants = ["py27", "py35", "py36", "py37", "py38", "node6", "node8", "node10"]
 
 
 def is_windows():
@@ -22,6 +27,13 @@ def is_pi():
 
 
 sudo_prefix_value = None
+
+
+def get_time_tag():
+    now = datetime.datetime.now().timetuple()
+    return "{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}".format(
+        now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec
+    )
 
 
 def sudo_prefix():
@@ -80,13 +92,12 @@ def get_cp_from_language(language):
 
 
 def get_language_from_image_name(image):
-    if image == PYTHON_INPROC:
+    if image == PYTHON_INPROC_IMAGE:
         return "pythonv2"
     elif "default-friend-module" in image:
         return "node"
     else:
-        languages = ["pythonv2", "java", "csharp", "node", "c"]
-        for language in languages:
+        for language in all_languages:
             if language + "-e2e" in image:
                 return language
         raise Exception(
@@ -96,10 +107,10 @@ def get_language_from_image_name(image):
 
 def set_args_from_image(obj, image):
     obj.language = get_language_from_image_name(image)
-    if image == PYTHON_INPROC:
+    if image == PYTHON_INPROC_IMAGE:
         obj.container_port = ""
         obj.host_port = ""
-        obj.adapter_address = "python_inproc"
+        obj.adapter_address = PYTHON_INPROC_ADAPTER_ADDRESS
     else:
         obj.container_port = get_cp_from_language(obj.language)
         obj.adapter_address = "http://{}:{}".format("localhost", obj.host_port)
@@ -149,11 +160,10 @@ def remove_old_instances():
     remove_instance(settings.leaf_device)
     remove_instance(settings.system_control)
     remove_instance(settings.horton)
-    remove_instance(settings.longhaul_control_device)
 
 
 def pull_docker_image(image):
-    if image != PYTHON_INPROC:
+    if image != PYTHON_INPROC_IMAGE:
         run_elevated_shell_command("docker pull {image}".format(image=image))
 
 

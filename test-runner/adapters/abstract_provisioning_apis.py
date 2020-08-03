@@ -20,6 +20,10 @@ class AbstractDeviceProvisioningApi(object):
         pass
 
     @abc.abstractmethod
+    def set_provisioning_payload(self, payload):
+        pass
+
+    @abc.abstractmethod
     def register(self):
         pass
 

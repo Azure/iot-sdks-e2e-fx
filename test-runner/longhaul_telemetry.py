@@ -14,6 +14,10 @@ class PlatformProperties(DictionaryObject):
         self.sdk_repo = ""
         self.sdk_commit = ""
         self.sdk_sha = ""
+        self.test_hub_name = ""
+        self.test_device_id = ""
+        self.test_module_id = ""
+        self.system_memory_size_in_kb = 0
         self.lock_attributes()
 
 
@@ -34,7 +38,6 @@ class ExecutionTelemetry(DictionaryObject):
         super(ExecutionTelemetry, self).__init__()
 
         self.system_uptime_in_seconds = 0.0
-        self.system_memory_size_in_kb = 0
         self.system_memory_free_in_kb = 0
         self.system_memory_available_in_kb = 0
 
