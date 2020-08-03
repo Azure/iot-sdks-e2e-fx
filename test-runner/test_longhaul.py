@@ -467,14 +467,17 @@ async def set_platform_properties(*, client, longhaul_control_device, system_con
     system_stats = await system_control.get_system_stats(0)
 
     properties = PlatformProperties()
-    properties.os = wrapper_stats.get("osType", "")
-    properties.os_release = wrapper_stats.get("osRelease", "")
-    properties.system_architecture = wrapper_stats.get("systemArchitecture", "")
     properties.language = wrapper_stats.get("language", "")
     properties.language_version = wrapper_stats.get("languageVersion", "")
-    properties.sdk_repo = wrapper_stats.get("sdkRepo", "")
-    properties.sdk_commit = wrapper_stats.get("sdkCommit", "")
-    properties.sdk_sha = wrapper_stats.get("sdkSha", "")
+
+    properties.os = system_stats.get("osType", "")
+    properties.os_release = system_stats.get("osRelease", "")
+    properties.system_architecture = system_stats.get("systemArchitecture", "")
+
+    properties.sdk_repo = system_stats.get("sdkRepo", "")
+    properties.sdk_commit = system_stats.get("sdkCommit", "")
+    properties.sdk_sha = system_stats.get("sdkSha", "")
+
     properties.test_hub_name = client.settings.iothub_host_name
     properties.test_device_id = client.device_id
     properties.test_module_id = getattr(client, "module_id", "")

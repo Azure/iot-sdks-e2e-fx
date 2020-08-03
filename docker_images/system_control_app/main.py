@@ -135,6 +135,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         stats = {"system_uptime": system_uptime}
 
+        stats.update(get_stats.get_os_stats())
+
         try:
             stats.update(get_stats.get_memory_stats())
         except Exception:
