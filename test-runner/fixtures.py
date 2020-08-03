@@ -40,8 +40,13 @@ async def service():
 @pytest.fixture
 async def friend():
     obj = settings.friend_module
-    adapter = await get_adapter(obj)
-    await create_client(obj)
+
+    if obj.device_id and obj.module_id:
+        adapter = await get_adapter(obj)
+        await create_client(obj)
+    else:
+        adapter = None
+
     try:
         yield adapter
     finally:
@@ -51,8 +56,13 @@ async def friend():
 @pytest.fixture
 async def test_module():
     obj = settings.test_module
-    adapter = await get_adapter(obj)
-    await create_client(obj)
+
+    if obj.device_id and obj.module_id:
+        adapter = await get_adapter(obj)
+        await create_client(obj)
+    else:
+        adapter = None
+
     try:
         yield adapter
     finally:
@@ -62,8 +72,13 @@ async def test_module():
 @pytest.fixture
 async def leaf_device():
     obj = settings.leaf_device
-    adapter = await get_adapter(obj)
-    await create_client(obj)
+
+    if obj.device_id:
+        adapter = await get_adapter(obj)
+        await create_client(obj)
+    else:
+        adapter = None
+
     try:
         yield adapter
     finally:
@@ -71,10 +86,15 @@ async def leaf_device():
 
 
 @pytest.fixture
-async def test_device(device_provisioning):
+async def test_device():
     obj = settings.test_device
-    adapter = await get_adapter(obj)
-    await create_client(obj, device_provisioning)
+
+    if obj.device_id:
+        adapter = await get_adapter(obj)
+        await create_client(obj)
+    else:
+        adapter = None
+
     try:
         yield adapter
     finally:
@@ -84,6 +104,7 @@ async def test_device(device_provisioning):
 @pytest.fixture
 async def longhaul_control_device(device_provisioning):
     obj = settings.longhaul_control_device
+
     adapter = await get_adapter(obj)
     await create_client(obj, device_provisioning)
     try:

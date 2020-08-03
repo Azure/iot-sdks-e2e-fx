@@ -24,7 +24,6 @@ from measurement import (
     TrackAverage,
     MeasureRunningCodeBlock,
     MeasureLatency,
-    NoLock,
 )
 from horton_logging import logger
 from sample_content import make_message_payload
@@ -126,23 +125,20 @@ class IntervalOperationLonghaul(IntervalOperation):
     def __init__(self, *args, **kwargs):
         super(IntervalOperationLonghaul, self).__init__(*args, **kwargs)
 
-        self.next_op_id = TrackCount(use_lock=False)
+        self.next_op_id = TrackCount()
 
-        self.count_sending = MeasureRunningCodeBlock(
-            "sending", logger=None, use_lock=False
-        )
-        self.count_verifying = MeasureRunningCodeBlock(
-            "verifying", logger=None, use_lock=False
-        )
+        self.count_sending = MeasureRunningCodeBlock("sending")
+        self.count_verifying = MeasureRunningCodeBlock("verifying")
 
-        self.total_count_completed = TrackCount(use_lock=False)
-        self.total_count_failed = TrackCount(use_lock=False)
+        self.total_count_completed = TrackCount()
+        self.total_count_failed = TrackCount()
 
-        self.average_send_latency = TrackAverage(use_lock=False)
-        self.average_verify_latency = TrackAverage(use_lock=False)
+        self.average_send_latency = TrackAverage()
+        self.average_verify_latency = TrackAverage()
 
+        # BKTODO: do we need any locks in here?
         self.uncompleted_ops = set()
-        self.uncompleted_ops_lock = NoLock() or threading.Lock()
+        self.uncompleted_ops_lock = threading.Lock()
 
     @abc.abstractmethod
     async def send_operation(self, op_id):
@@ -175,6 +171,7 @@ class IntervalOperationLonghaul(IntervalOperation):
 
         except Exception as e:
             logger("OP FAILED: Exception running op: {}".format(type(e)))
+            logger(traceback.format_exc())
             self.total_count_failed.increment()
 
 
@@ -199,7 +196,7 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
         self.eventhub = eventhub
 
         self.op_id_list = {}
-        self.op_id_list_lock = NoLock() or threading.Lock()
+        self.op_id_list_lock = threading.Lock()
 
         self.listener = None
 
