@@ -57,7 +57,7 @@ def get_process_stats(pid):
     )
 
 
-def get_os_stats(pid):
+def get_os_stats():
     return {
         "osType": platform.system(),
         "osRelease": platform.version(),
