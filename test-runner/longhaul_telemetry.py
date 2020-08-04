@@ -6,39 +6,48 @@ from dictionary_object import DictionaryObject
 
 class PlatformProperties(DictionaryObject):
     def __init__(self):
+        super(PlatformProperties, self).__init__()
+
         self.os = ""
         self.os_release = ""
+
         self.system_architecture = ""
+        self.system_memory_size_in_kb = 0
+
         self.language = ""
         self.language_version = ""
+
         self.sdk_repo = ""
         self.sdk_commit = ""
         self.sdk_sha = ""
+
         self.test_hub_name = ""
         self.test_device_id = ""
         self.test_module_id = ""
-        self.system_memory_size_in_kb = 0
+
         self.lock_attributes()
 
 
 PlatformProperties._defaults = PlatformProperties()
 
 
-class ExecutionProperties(DictionaryObject):
+class LonghaulProperties(DictionaryObject):
     def __init__(self):
-        super(ExecutionProperties, self).__init__()
-        self.execution_status = "new"
-        self.execution_start_time = datetime.datetime.min
-        self.execution_elapsed_time = datetime.timedelta(0)
+        super(LonghaulProperties, self).__init__()
+
+        self.longhaul_status = "not_started"
+        self.longhaul_start_time = datetime.datetime.min
+        self.longhaul_elapsed_time = datetime.timedelta(0)
+
         self.lock_attributes()
 
 
-ExecutionProperties._defaults = ExecutionProperties()
+LonghaulProperties._defaults = LonghaulProperties()
 
 
-class ExecutionTelemetry(DictionaryObject):
+class LonghaulTelemetry(DictionaryObject):
     def __init__(self):
-        super(ExecutionTelemetry, self).__init__()
+        super(LonghaulTelemetry, self).__init__()
 
         self.system_uptime_in_seconds = 0.0
         self.system_memory_free_in_kb = 0
@@ -52,15 +61,16 @@ class ExecutionTelemetry(DictionaryObject):
         self.process_nonvoluntary_context_switches_per_second = 0
 
         self.pytest_gc_object_count = 0
+
         self.lock_attributes()
 
 
-ExecutionTelemetry._defaults = ExecutionTelemetry()
+LonghaulTelemetry._defaults = LonghaulTelemetry()
 
 
-class D2cTelemetry(DictionaryObject):
+class LonghaulD2cTelemetry(DictionaryObject):
     def __init__(self):
-        super(D2cTelemetry, self).__init__()
+        super(LonghaulD2cTelemetry, self).__init__()
         self.total_count_d2c_completed = 0
         self.total_count_d2c_failed = 0
         self.current_count_d2c_sending = 0
@@ -70,4 +80,4 @@ class D2cTelemetry(DictionaryObject):
         self.lock_attributes()
 
 
-D2cTelemetry.__defaults = D2cTelemetry()
+LonghaulD2cTelemetry.__defaults = LonghaulD2cTelemetry()

@@ -1,0 +1,36 @@
+{
+    "event": {
+        "origin": "pythonv2_bertk-hp_20200803_092233",
+        "module": "",
+        "interface": "",
+        "component": "",
+        "properties": {
+            "system": {
+                "content_encoding": "utf-8",
+                "content_type": "application/JSON"
+            },
+            "application": {
+                "iotc-app-id": "4ddfaec9-4b27-4c5f-a512-b6991c2603da",
+                "iotc-hub-name": "iotc-cb262d3a-3009-41c7-a782-950a3071b2a4"
+            }
+        },
+        "annotations": {
+            "iothub-connection-device-id": "pythonv2_bertk-hp_20200803_092233",
+            "iothub-connection-auth-method": "{\"scope\":\"device\",\"type\":\"sas\",\"issuer\":\"iothub\",\"acceptingIpFilterRule\":null}",
+            "iothub-connection-auth-generation-id": "637320686460982122",
+            "iothub-enqueuedtime": 1596472182329,
+            "iothub-message-source": "Telemetry",
+            "x-opt-sequence-number": 6,
+            "x-opt-offset": "4112",
+            "x-opt-enqueued-time": 1596472182361
+        },
+        "payload": {
+            "averageLatencyD2cSend": 0,
+            "averageLatencyD2cVerify": 0,
+            "currentCountD2cSending": 0,
+            "currentCountD2cVerifying": 0,
+            "totalCountD2cCompleted": 0,
+            "totalCountD2cFailed": 0
+        }
+    }
+}

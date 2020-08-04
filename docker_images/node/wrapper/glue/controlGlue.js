@@ -10,8 +10,6 @@ var moduleGlue = require('./moduleGlue');
 var registryGlue = require('./registryGlue');
 var serviceGlue = require('./serviceGlue');
 var deviceGlue = require('./deviceGlue');
-var getos = require('getos');
-var os = require('os');
 var process = require('process')
 
 /**
@@ -137,27 +135,9 @@ exports.control_GetWrapperStats = function() {
     var stats = {
         'language': 'node',
         'languageVersion': process.version,
-        'osType': os.platform(),
-        'osRelease': '',
-        'systemArchitecture': os.arch(),
-        'sdkRepo': process.env.HORTON_REPO || '',
-        'sdkCommit': process.env.HORTON_COMMIT_NAME || '',
-        'sdkSha': process.env.HORTON_COMMIT_SHA || '',
         'wrapperPid': process.pid
     };
-    if (stats.osType === 'linux') {
-      getos((err, osVer) => {
-        if (err) {
-          stats.osRelease = "unknown";
-        } else {
-          stats.osRelease = osVer.dist + ' ' +  osVer.release;
-        }
-        resolve(stats);
-      });
-    } else {
-      stats.osRelease = os.type() + " " + os.release();
-      resolve(stats);
-    }
+    resolve(stats);
   });
 }
 

@@ -1,4 +1,4 @@
-# Copyrigh (c) Microsoft. All rights reserved.
+# Copyrigh (c Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
@@ -15,9 +15,9 @@ import traceback
 from longhaul_config import LonghaulConfig
 from longhaul_telemetry import (
     PlatformProperties,
-    ExecutionProperties,
-    D2cTelemetry,
-    ExecutionTelemetry,
+    LonghaulProperties,
+    LonghaulD2cTelemetry,
+    LonghaulTelemetry,
 )
 from measurement import (
     TrackCount,
@@ -32,11 +32,11 @@ pytestmark = pytest.mark.asyncio
 
 
 longhaul_config = {
-    "d2cEnabled": True,
-    "d2cIntervalLength": 1,
-    "d2cOpsPerInterval": 5,
-    "TotalDuration": "00:00:30",
-    # "totalDuration": "72:00:10",
+    "longhaulD2cEnabled": True,
+    "LonghaulD2cIntervalLength": 1,
+    "LonghaulD2cOpsPerInterval": 5,
+    "LonghaulTotalDuration": "00:00:30",
+    # "LonghaulTotalDuration": "72:00:10",
 }
 
 
@@ -187,8 +187,8 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
     def __init__(self, *, test_config, client, eventhub, longhaul_control_device):
         super(IntervalOperationD2c, self).__init__(
             test_config=test_config,
-            interval_length=test_config.d2c_interval_length,
-            ops_per_interval=test_config.d2c_ops_per_interval,
+            interval_length=test_config.longhaul_d2c_interval_length,
+            ops_per_interval=test_config.longhaul_d2c_ops_per_interval,
             longhaul_control_device=longhaul_control_device,
         )
 
@@ -297,7 +297,7 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
         await message_received
 
     async def send_operation_telemetry(self):
-        telemetry = D2cTelemetry()
+        telemetry = LonghaulD2cTelemetry()
 
         telemetry.total_count_d2c_completed = self.total_count_completed.get_count()
         telemetry.total_count_d2c_failed = self.total_count_failed.get_count()
@@ -311,12 +311,12 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
 
         if (
             self.total_count_failed.get_count()
-            > self.test_config.d2c_count_failures_allowed
+            > self.test_config.longhaul_d2c_count_failures_allowed
         ):
             raise Exception(
                 "D2c failures ({}) exceeeded amount allowed ({})".format(
                     self.total_count_failed.get_count(),
-                    self.test_config.d2c_count_failures_allowed,
+                    self.test_config.longhaul_d2c_count_failures_allowed,
                 )
             )
 
@@ -326,11 +326,11 @@ class IntervalOperationD2c(IntervalOperationLonghaul):
             self.listener = None
 
 
-class IntervalOperationUpdateExecutionProperties(IntervalOperation):
+class IntervalOperationUpdateLonghaulProperties(IntervalOperation):
     def __init__(self, *, test_config, execution_properties, longhaul_control_device):
-        super(IntervalOperationUpdateExecutionProperties, self).__init__(
+        super(IntervalOperationUpdateLonghaulProperties, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.property_update_interval),
+            interval_length=_get_seconds(test_config.longhaul_property_update_interval),
             ops_per_interval=1,
             longhaul_control_device=longhaul_control_device,
         )
@@ -347,13 +347,13 @@ class IntervalOperationUpdateExecutionProperties(IntervalOperation):
         await self.run_one_op()
 
 
-class IntervalOperationSendExecutionTelemetry(IntervalOperation):
+class IntervalOperationSendLonghaulTelemetry(IntervalOperation):
     def __init__(
         self, *, test_config, client, system_control, longhaul_control_device, pid
     ):
-        super(IntervalOperationSendExecutionTelemetry, self).__init__(
+        super(IntervalOperationSendLonghaulTelemetry, self).__init__(
             test_config=test_config,
-            interval_length=_get_seconds(test_config.telenetry_interval),
+            interval_length=_get_seconds(test_config.longhaul_telemetry_interval),
             ops_per_interval=1,
             longhaul_control_device=longhaul_control_device,
         )
@@ -364,7 +364,7 @@ class IntervalOperationSendExecutionTelemetry(IntervalOperation):
         self.last_nonvoluntary_context_switches = 0
 
     async def run_one_op(self):
-        telemetry = ExecutionTelemetry()
+        telemetry = LonghaulTelemetry()
 
         wrapper_stats = await self.client.settings.wrapper_api.get_wrapper_stats()
         system_stats = await self.system_control.get_system_stats(self.pid)
@@ -467,14 +467,17 @@ async def set_platform_properties(*, client, longhaul_control_device, system_con
     system_stats = await system_control.get_system_stats(0)
 
     properties = PlatformProperties()
-    properties.os = wrapper_stats.get("osType", "")
-    properties.os_release = wrapper_stats.get("osRelease", "")
-    properties.system_architecture = wrapper_stats.get("systemArchitecture", "")
     properties.language = wrapper_stats.get("language", "")
     properties.language_version = wrapper_stats.get("languageVersion", "")
-    properties.sdk_repo = wrapper_stats.get("sdkRepo", "")
-    properties.sdk_commit = wrapper_stats.get("sdkCommit", "")
-    properties.sdk_sha = wrapper_stats.get("sdkSha", "")
+
+    properties.os = system_stats.get("osType", "")
+    properties.os_release = system_stats.get("osRelease", "")
+    properties.system_architecture = system_stats.get("systemArchitecture", "")
+
+    properties.sdk_repo = system_stats.get("sdkRepo", "")
+    properties.sdk_commit = system_stats.get("sdkCommit", "")
+    properties.sdk_sha = system_stats.get("sdkSha", "")
+
     properties.test_hub_name = client.settings.iothub_host_name
     properties.test_device_id = client.device_id
     properties.test_module_id = getattr(client, "module_id", "")
@@ -504,10 +507,10 @@ class LongHaulTest(object):
 
         start_time = datetime.datetime.now()
 
-        execution_properties = ExecutionProperties()
-        execution_properties.execution_status = "running"
-        execution_properties.execution_start_time = start_time
-        execution_properties.execution_elapsed_time = datetime.timedelta(0)
+        execution_properties = LonghaulProperties()
+        execution_properties.longhaul_status = "running"
+        execution_properties.longhaul_start_time = start_time
+        execution_properties.longhaul_elapsed_time = datetime.timedelta(0)
 
         # send initial execution properties
         patch = {"reported": execution_properties.to_dict()}
@@ -515,16 +518,9 @@ class LongHaulTest(object):
         await longhaul_control_device.patch_twin(patch)
 
         # no need to send start time every time
-        execution_properties.execution_start_time = (
-            ExecutionProperties._defaults.execution_start_time
+        execution_properties.longhaul_start_time = (
+            LonghaulProperties._defaults.longhaul_start_time
         )
-
-        stop = False
-
-        async def set_stop_flag():
-            nonlocal stop
-            logger("stop = True")
-            stop = True
 
         longhaul_ops = {
             "d2c": IntervalOperationD2c(
@@ -534,12 +530,12 @@ class LongHaulTest(object):
                 longhaul_control_device=longhaul_control_device,
             )
         }
-        update_test_report = IntervalOperationUpdateExecutionProperties(
+        update_test_report = IntervalOperationUpdateLonghaulProperties(
             test_config=test_config,
             execution_properties=execution_properties,
             longhaul_control_device=longhaul_control_device,
         )
-        send_execution_telemetry = IntervalOperationSendExecutionTelemetry(
+        send_execution_telemetry = IntervalOperationSendLonghaulTelemetry(
             test_config=test_config,
             longhaul_control_device=longhaul_control_device,
             client=client,
@@ -555,9 +551,10 @@ class LongHaulTest(object):
             one_second = 1.0
             all_tasks = set()
 
-            while not stop and (
-                execution_properties.execution_elapsed_time < test_config.total_duration
-                or execution_properties.execution_elapsed_time == datetime.timedelta(0)
+            while (
+                execution_properties.longhaul_elapsed_time
+                < test_config.longhaul_total_duration
+                or execution_properties.longhaul_elapsed_time == datetime.timedelta(0)
             ):
                 # pytest caches all messages.  We don't want that, but I couldn't find a way
                 # to turn it off, so we just clear it once a second.
@@ -582,19 +579,19 @@ class LongHaulTest(object):
                         if len(all_tasks) == 0:
                             await asyncio.sleep(one_second - wait_time.get_latency())
 
-                execution_properties.execution_elapsed_time = (
+                execution_properties.longhaul_elapsed_time = (
                     datetime.datetime.now() - start_time
                 )
 
             await asyncio.gather(*all_tasks)
 
             logger("Marking test as complete")
-            execution_properties.execution_status = "completed"
+            execution_properties.longhaul_status = "completed"
 
         except Exception:
             logger("Marking test as failed")
             logger(traceback.format_exc())
-            execution_properties.execution_status = "failed"
+            execution_properties.longhaul_status = "failed"
 
             for op in longhaul_ops.values():
                 if len(op.uncompleted_ops):
