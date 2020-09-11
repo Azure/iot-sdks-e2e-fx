@@ -13,5 +13,5 @@ node /fixLerna.js
 lerna bootstrap --hoist
 [ $? -eq 0 ] || { echo "lerna bootstrap failed"; exit 1; }
 
-lerna run build --scope iot-sdk-device-client-rest-api --include-dependencies
+lerna run build
 [ $? -eq 0 ] || { echo "lerna run build failed"; exit 1; }
