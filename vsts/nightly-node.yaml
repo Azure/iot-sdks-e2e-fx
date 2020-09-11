@@ -8,7 +8,6 @@ jobs:
     vmImage: 'Ubuntu 16.04'
   strategy:
     matrix:
-      node6:  { variant: node6 }
       node8:  { variant: node8 }
       node10: { variant: node10 }
   steps:
@@ -23,15 +22,6 @@ jobs:
     - "build_linux_amd64"
   strategy:
     matrix:
-      node6_mqtt_iothub_module_and_device:      { suite: node6_mqtt_iothub_module_and_device }
-      node6_mqtt_edgehub_module:                { suite: node6_mqtt_edgehub_module }
-      node6_mqttws_iothub_module_and_device:    { suite: node6_mqttws_iothub_module_and_device }
-      node6_mqttws_edgehub_module:              { suite: node6_mqttws_edgehub_module }
-      node6_amqp_iothub_module_and_device:      { suite: node6_amqp_iothub_module_and_device }
-      node6_amqp_edgehub_module:                { suite: node6_amqp_edgehub_module }
-      node6_amqpws_iothub_module_and_device:    { suite: node6_amqpws_iothub_module_and_device }
-      node6_amqpws_edgehub_module:              { suite: node6_amqpws_edgehub_module }
-
       node8_mqtt_iothub_module_and_device:      { suite: node8_mqtt_iothub_module_and_device }
       node8_mqtt_edgehub_module:                { suite: node8_mqtt_edgehub_module }
       node8_mqttws_iothub_module_and_device:    { suite: node8_mqttws_iothub_module_and_device }
