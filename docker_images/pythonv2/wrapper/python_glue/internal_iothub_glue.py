@@ -67,7 +67,10 @@ class Connect(ConnectionStatus):
     def destroy_sync(self):
         if self.client:
             try:
-                self.client.disconnect()
+                if hasattr(self.client, "shutdown"):
+                    self.client.shutdown()
+                else:
+                    self.client.disconnect()
             finally:
                 self.client = None
 
