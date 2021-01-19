@@ -18,7 +18,7 @@ jobs:
         py35:   { variant: py35 }
         py36:   { variant: py36 }
         py37:   { variant: py37 }
-        #py38:   { variant: py38 }
+        py38:   { variant: py38 }
 
   steps:
   - template: templates/steps-build-docker-image.yaml
