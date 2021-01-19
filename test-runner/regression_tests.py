@@ -278,12 +278,10 @@ class RegressionTests(object):
     @pytest.mark.it(
         "Enables automatic reconnection even if connect is not called directly"
     )
-    @pytest.mark.skip("re-enable afer python keepalive hack in Horton is fixed")
     async def test_regression_autoconnect_without_calling_connect(
         self, system_control, client, drop_mechanism
     ):
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_test_for(client, "node", ["mqtt", "mqttws"])
+        limitations.only_run_test_for(client, ["pythonv2"])
         limitations.skip_if_no_system_control()
 
         payload = sample_content.make_message_payload()
@@ -301,7 +299,6 @@ class RegressionTests(object):
         await client.wait_for_connection_status_change("connected")
         assert status == "connected"
 
-    @pytest.mark.skip("re-enable afer python keepalive hack in Horton is fixed")
     @pytest.mark.it("Can retry send_event with different failure conditions")
     async def test_regression_reconnect_send_event_different_timing(
         self, system_control, client, drop_mechanism, eventhub
@@ -309,8 +306,7 @@ class RegressionTests(object):
         payloads = []
         send_futures = []
 
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
-        limitations.skip_test_for(client, "node", ["mqtt", "mqttws"])
+        limitations.only_run_test_for(client, ["pythonv2"])
         limitations.skip_if_no_system_control()
 
         logger("connecting")
@@ -415,14 +411,13 @@ class RegressionTests(object):
         received_message = await test_input_future
         assert received_message.body == test_payload
 
-    @pytest.mark.skip("node keepalive changes aren't working")
     @pytest.mark.it("Lets us have a short keepalive interval")
     @pytest.mark.timeout(45)
     async def test_keepalive_interval(self, client, system_control, drop_mechanism):
         # We want the keepalive to be low to make these tests fast.  This
         # test is marked with a 45 second timeout.  Keepalive should be closer
         # to 10 seconds, so 45 to connect and notice the drop should be enough
-        limitations.only_run_test_for(client, ["node", "pythonv2"])
+        limitations.only_run_test_for(client, ["pythonv2"])
         limitations.skip_if_no_system_control()
 
         await client.connect2()
