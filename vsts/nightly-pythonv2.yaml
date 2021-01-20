@@ -41,75 +41,36 @@ jobs:
 
       py35_mqtt_iothub_module_and_device:           { suite: py35_mqtt_iothub_module_and_device }
       py35_mqtt_edgehub_module:                     { suite: py35_mqtt_edgehub_module }
-      py35_mqtt_iothub_module_full_drop:            { suite: py35_mqtt_iothub_module_full_drop }
-      py35_mqtt_iothub_device_full_drop:            { suite: py35_mqtt_iothub_device_full_drop }
-      py35_mqtt_edgehub_module_full_drop:           { suite: py35_mqtt_edgehub_module_full_drop }
-
-      py35_mqttws_iothub_module_and_device:         { suite: py35_mqttws_iothub_module_and_device }
-      py35_mqttws_edgehub_module:                   { suite: py35_mqttws_edgehub_module }
-      py35_mqttws_iothub_module_full_drop:          { suite: py35_mqttws_iothub_module_full_drop }
-      py35_mqttws_iothub_device_full_drop:          { suite: py35_mqttws_iothub_device_full_drop }
-      py35_mqttws_edgehub_module_full_drop:         { suite: py35_mqttws_edgehub_module_full_drop }
 
       py35_async_mqtt_iothub_module_and_device:     { suite: py35_async_mqtt_iothub_module_and_device }
       py35_async_mqtt_edgehub_module:               { suite: py35_async_mqtt_edgehub_module }
-      py35_async_mqtt_iothub_module_full_drop:      { suite: py35_async_mqtt_iothub_module_full_drop }
-      py35_async_mqtt_iothub_device_full_drop:      { suite: py35_async_mqtt_iothub_device_full_drop }
-      py35_async_mqtt_edgehub_module_full_drop:     { suite: py35_async_mqtt_edgehub_module_full_drop }
 
       py35_async_mqttws_iothub_module_and_device:   { suite: py35_async_mqttws_iothub_module_and_device }
       py35_async_mqttws_edgehub_module:             { suite: py35_async_mqttws_edgehub_module }
-      py35_async_mqttws_iothub_module_full_drop:    { suite: py35_async_mqttws_iothub_module_full_drop }
-      py35_async_mqttws_iothub_device_full_drop:    { suite: py35_async_mqttws_iothub_device_full_drop }
-      py35_async_mqttws_edgehub_module_full_drop:   { suite: py35_async_mqttws_edgehub_module_full_drop }
 
       py36_mqtt_iothub_module_and_device:           { suite: py36_mqtt_iothub_module_and_device }
       py36_mqtt_edgehub_module:                     { suite: py36_mqtt_edgehub_module }
-      py36_mqtt_iothub_module_full_drop:            { suite: py36_mqtt_iothub_module_full_drop }
-      py36_mqtt_iothub_device_full_drop:            { suite: py36_mqtt_iothub_device_full_drop }
-      py36_mqtt_edgehub_module_full_drop:           { suite: py36_mqtt_edgehub_module_full_drop }
 
       py36_mqttws_iothub_module_and_device:         { suite: py36_mqttws_iothub_module_and_device }
       py36_mqttws_edgehub_module:                   { suite: py36_mqttws_edgehub_module }
-      py36_mqttws_iothub_module_full_drop:          { suite: py36_mqttws_iothub_module_full_drop }
-      py36_mqttws_iothub_device_full_drop:          { suite: py36_mqttws_iothub_device_full_drop }
-      py36_mqttws_edgehub_module_full_drop:         { suite: py36_mqttws_edgehub_module_full_drop }
 
       py36_async_mqtt_iothub_module_and_device:     { suite: py36_async_mqtt_iothub_module_and_device }
       py36_async_mqtt_edgehub_module:               { suite: py36_async_mqtt_edgehub_module }
-      py36_async_mqtt_iothub_module_full_drop:      { suite: py36_async_mqtt_iothub_module_full_drop }
-      py36_async_mqtt_iothub_device_full_drop:      { suite: py36_async_mqtt_iothub_device_full_drop }
-      py36_async_mqtt_edgehub_module_full_drop:     { suite: py36_async_mqtt_edgehub_module_full_drop }
 
       py36_async_mqttws_iothub_module_and_device:   { suite: py36_async_mqttws_iothub_module_and_device }
       py36_async_mqttws_edgehub_module:             { suite: py36_async_mqttws_edgehub_module }
-      py36_async_mqttws_iothub_module_full_drop:    { suite: py36_async_mqttws_iothub_module_full_drop }
-      py36_async_mqttws_iothub_device_full_drop:    { suite: py36_async_mqttws_iothub_device_full_drop }
-      py36_async_mqttws_edgehub_module_full_drop:   { suite: py36_async_mqttws_edgehub_module_full_drop }
 
       py37_mqtt_iothub_module_and_device:           { suite: py37_mqtt_iothub_module_and_device }
       py37_mqtt_edgehub_module:                     { suite: py37_mqtt_edgehub_module }
-      py37_mqtt_iothub_module_full_drop:            { suite: py37_mqtt_iothub_module_full_drop }
-      py37_mqtt_iothub_device_full_drop:            { suite: py37_mqtt_iothub_device_full_drop }
-      py37_mqtt_edgehub_module_full_drop:           { suite: py37_mqtt_edgehub_module_full_drop }
 
       py37_mqttws_iothub_module_and_device:         { suite: py37_mqttws_iothub_module_and_device }
       py37_mqttws_edgehub_module:                   { suite: py37_mqttws_edgehub_module }
-      py37_mqttws_iothub_module_full_drop:          { suite: py37_mqttws_iothub_module_full_drop }
-      py37_mqttws_iothub_device_full_drop:          { suite: py37_mqttws_iothub_device_full_drop }
-      py37_mqttws_edgehub_module_full_drop:         { suite: py37_mqttws_edgehub_module_full_drop }
 
       py37_async_mqtt_iothub_module_and_device:     { suite: py37_async_mqtt_iothub_module_and_device }
       py37_async_mqtt_edgehub_module:               { suite: py37_async_mqtt_edgehub_module }
-      py37_async_mqtt_iothub_module_full_drop:      { suite: py37_async_mqtt_iothub_module_full_drop }
-      py37_async_mqtt_iothub_device_full_drop:      { suite: py37_async_mqtt_iothub_device_full_drop }
-      py37_async_mqtt_edgehub_module_full_drop:     { suite: py37_async_mqtt_edgehub_module_full_drop }
 
       py37_async_mqttws_iothub_module_and_device:   { suite: py37_async_mqttws_iothub_module_and_device }
       py37_async_mqttws_edgehub_module:             { suite: py37_async_mqttws_edgehub_module }
-      py37_async_mqttws_iothub_module_full_drop:    { suite: py37_async_mqttws_iothub_module_full_drop }
-      py37_async_mqttws_iothub_device_full_drop:    { suite: py37_async_mqttws_iothub_device_full_drop }
-      py37_async_mqttws_edgehub_module_full_drop:   { suite: py37_async_mqttws_edgehub_module_full_drop }
 
       py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
       py38_mqtt_edgehub_module:                     { suite: py38_mqtt_edgehub_module }
@@ -142,11 +103,42 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
 
+- job: "test_linux_python_inproc"
+  pool:
+      vmImage: 'Ubuntu 18.04'
+  strategy:
+    matrix:
+      python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
+      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
+      python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
+      python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      suite: $(suite)
+
+- job: "test_windows_python_inproc"
+  pool:
+      vmImage: 'windows-latest'
+  strategy:
+    matrix:
+      python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
+      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
+      python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
+      python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
+  steps:
+  - template: templates/steps-deploy-and-run-pytest.yaml
+    parameters:
+      suite: $(suite)
+
 - job: "tag_lkg_amd64"
   pool:
       vmImage: 'Ubuntu 16.04'
   dependsOn:
-     "test_linux_amd64"
+    - "test_linux_amd64"
+    - "test_linux_python_inproc"
+    - "test_windows_python_inproc"
+    
   steps:
   - template: templates/steps-tag-lkg.yaml
     parameters:
