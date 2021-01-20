@@ -122,9 +122,7 @@ jobs:
       vmImage: 'windows-latest'
   strategy:
     matrix:
-      python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
       python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
-      python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
       python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
