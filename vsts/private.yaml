@@ -33,7 +33,7 @@ jobs:
 
   strategy:
     matrix:
-      #c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
+      c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
       #c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
       #java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
       #csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
