@@ -27,7 +27,7 @@ RUN git checkout $HORTON_COMMIT_SHA
 
 COPY java/patchfile /
 # our base image might have some files checked out.  revert these.
-RUN git reset HEAD && git checkout && git clean  -df
+RUN git reset HEAD && git checkout . && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 RUN rm -r /sdk/iot-e2e-tests/edge-e2e
