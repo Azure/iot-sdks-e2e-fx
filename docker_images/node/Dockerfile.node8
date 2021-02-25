@@ -53,10 +53,13 @@ RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
 
 COPY node/patchfile /
+WORKDIR /src/sdk
+RUN git reset HEAD && git checkout . && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 COPY node/rebuild.sh /
 RUN /rebuild.sh
+RUN git checkout *package-lock.json
 
 ENV HORTON_REPO=$HORTON_REPO
 ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
