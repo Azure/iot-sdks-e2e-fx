@@ -1,17 +1,13 @@
 package glue;
 
 import com.microsoft.azure.sdk.iot.device.*;
-import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodCallback;
-import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodData;
-import com.microsoft.azure.sdk.iot.device.DeviceTwin.Property;
-import com.microsoft.azure.sdk.iot.device.DeviceTwin.TwinPropertyCallBack;
 import com.microsoft.azure.sdk.iot.device.edge.MethodRequest;
 import com.microsoft.azure.sdk.iot.device.edge.MethodResult;
 import com.microsoft.azure.sdk.iot.device.exceptions.ModuleClientException;
-import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
-import com.microsoft.azure.sdk.iot.device.transport.ExponentialBackoffWithJitter;
-import com.microsoft.azure.sdk.iot.device.transport.RetryDecision;
-import com.microsoft.azure.sdk.iot.device.transport.RetryPolicy;
+import com.microsoft.azure.sdk.iot.device.twin.DeviceMethodCallback;
+import com.microsoft.azure.sdk.iot.device.twin.DeviceMethodData;
+import com.microsoft.azure.sdk.iot.device.twin.Property;
+import com.microsoft.azure.sdk.iot.device.twin.TwinPropertyCallback;
 import io.swagger.server.api.model.*;
 import io.swagger.server.api.MainApiException;
 import io.vertx.core.AsyncResult;
@@ -19,7 +15,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import org.junit.Assert;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -131,7 +126,7 @@ public class ModuleGlue
             ConnectResponse cr = new ConnectResponse();
             cr.setConnectionId(connectionId);
             handler.handle(Future.succeededFuture(cr));
-        } catch (ModuleClientException | URISyntaxException | IOException e)
+        } catch (URISyntaxException | IOException e)
         {
             handler.handle(Future.failedFuture(e));
         }
@@ -169,7 +164,7 @@ public class ModuleGlue
             this._deviceTwinStatusCallback.setHandler(null);
             try
             {
-                client.closeNow();
+                client.close();
                 this._map.remove(connectionId);
             } catch (IOException e)
             {
@@ -199,7 +194,7 @@ public class ModuleGlue
         }
     }
 
-    private static class ModuleTwinPropertyCallBack implements TwinPropertyCallBack
+    private static class ModuleTwinPropertyCallBack implements TwinPropertyCallback
     {
         private Twin _twin = null;
         private Handler<AsyncResult<Twin>> _handler;
@@ -220,7 +215,7 @@ public class ModuleGlue
         }
 
         @Override
-        public void TwinPropertyCallBack(Property property, Object context)
+        public void onPropertyChanged(Property property, Object context)
         {
             System.out.println(
                     "onProperty callback for " + (property.getIsReported() ? "reported" : "desired") +
@@ -335,7 +330,7 @@ public class ModuleGlue
                     {
                         try
                         {
-                            client.subscribeToTwinDesiredProperties(null);
+                            client.subscribeToTwinDesiredPropertiesAsync(null);
                         } catch (IOException e)
                         {
                             this._deviceTwinStatusCallback.setHandler(null);
@@ -347,7 +342,7 @@ public class ModuleGlue
                     this._deviceTwinStatusCallback.setHandler(null);
                 });
                 System.out.println("calling startTwin");
-                client.startTwin(this._deviceTwinStatusCallback, null, this._deviceTwinPropertyCallback, null);
+                client.startTwinAsync(this._deviceTwinStatusCallback, null, this._deviceTwinPropertyCallback, null);
             } catch (IOException e)
             {
                 handler.handle(Future.failedFuture((e)));
@@ -503,7 +498,7 @@ public class ModuleGlue
             callback.setHandler(handler);
             try
             {
-                client.subscribeToMethod(this._methodCallback, null, callback, null);
+                client.subscribeToMethodsAsync(this._methodCallback, null, callback, null);
             } catch (IOException e)
             {
                 handler.handle(Future.failedFuture(e));
@@ -612,7 +607,7 @@ public class ModuleGlue
             this._deviceTwinPropertyCallback.setHandler(handler);
             try
             {
-                client.getTwin();
+                client.getTwinAsync();
             } catch (IOException e)
             {
                 this._deviceTwinPropertyCallback.setHandler(null);
@@ -649,7 +644,7 @@ public class ModuleGlue
             this._deviceTwinStatusCallback.setHandler(handler);
             try
             {
-                client.sendReportedProperties(propSet);
+                client.sendReportedPropertiesAsync(propSet);
             } catch (IOException e)
             {
                 this._deviceTwinStatusCallback.setHandler(null);
