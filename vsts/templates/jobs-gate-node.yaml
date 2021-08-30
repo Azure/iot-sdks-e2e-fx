@@ -5,7 +5,7 @@ jobs:
   steps:
   - template: steps-build-docker-image.yaml
     parameters:
-      variant: node8
+      variant: node12
 
 - job: "test_linux_amd64"
   pool:
@@ -14,14 +14,14 @@ jobs:
     - "build_linux_amd64"
   strategy:
     matrix:
-      node8_mqtt_iothub_module:      { suite: node8_mqtt_iothub_module }
-      node8_mqtt_edgehub_module:     { suite: node8_mqtt_edgehub_module }
-      node8_mqttws_iothub_module:    { suite: node8_mqttws_iothub_module }
-      node8_mqttws_edgehub_module:   { suite: node8_mqttws_edgehub_module }
-      node8_amqp_iothub_module:      { suite: node8_amqp_iothub_module }
-      node8_amqp_edgehub_module:     { suite: node8_amqp_edgehub_module }
-      node8_amqpws_iothub_module:    { suite: node8_amqpws_iothub_module }
-      node8_amqpws_edgehub_module:   { suite: node8_amqpws_edgehub_module }
+      node12_mqtt_iothub_module:      { suite: node12_mqtt_iothub_module }
+      node12_mqtt_edgehub_module:     { suite: node12_mqtt_edgehub_module }
+      node12_mqttws_iothub_module:    { suite: node12_mqttws_iothub_module }
+      node12_mqttws_edgehub_module:   { suite: node12_mqttws_edgehub_module }
+      node12_amqp_iothub_module:      { suite: node12_amqp_iothub_module }
+      node12_amqp_edgehub_module:     { suite: node12_amqp_edgehub_module }
+      node12_amqpws_iothub_module:    { suite: node12_amqpws_iothub_module }
+      node12_amqpws_edgehub_module:   { suite: node12_amqpws_edgehub_module }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml

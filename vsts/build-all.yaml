@@ -11,7 +11,7 @@ jobs:
         c:      { language: c }
         java:   { language: java }
         csharp: { language: csharp }
-        node10: { variant: node10 }
+        node12: { variant: node12 }
         py38:   { variant: py38 }
 
   steps:
@@ -54,14 +54,14 @@ jobs:
       java_amqpws_iothub_module:    { suite: java_amqpws_iothub_module }
       java_amqpws_edgehub_module:   { suite: java_amqpws_edgehub_module }
 
-      node10_mqtt_iothub_module:    { suite: node10_mqtt_iothub_module }
-      node10_mqtt_edgehub_module:   { suite: node10_mqtt_edgehub_module }
-      node10_mqttws_iothub_module:  { suite: node10_mqttws_iothub_module }
-      node10_mqttws_edgehub_module: { suite: node10_mqttws_edgehub_module }
-      node10_amqp_iothub_module:    { suite: node10_amqp_iothub_module }
-      node10_amqp_edgehub_module:   { suite: node10_amqp_edgehub_module }
-      node10_amqpws_iothub_module:  { suite: node10_amqpws_iothub_module }
-      node10_amqpws_edgehub_module: { suite: node10_amqpws_edgehub_module }
+      node12_mqtt_iothub_module:    { suite: node12_mqtt_iothub_module }
+      node12_mqtt_edgehub_module:   { suite: node12_mqtt_edgehub_module }
+      node12_mqttws_iothub_module:  { suite: node12_mqttws_iothub_module }
+      node12_mqttws_edgehub_module: { suite: node12_mqttws_edgehub_module }
+      node12_amqp_iothub_module:    { suite: node12_amqp_iothub_module }
+      node12_amqp_edgehub_module:   { suite: node12_amqp_edgehub_module }
+      node12_amqpws_iothub_module:  { suite: node12_amqpws_iothub_module }
+      node12_amqpws_edgehub_module: { suite: node12_amqpws_edgehub_module }
 
       py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
       py38_mqtt_edgehub_module:                     { suite: py38_mqtt_edgehub_module }
