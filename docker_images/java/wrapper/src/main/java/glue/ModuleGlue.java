@@ -9,6 +9,7 @@ import com.microsoft.azure.sdk.iot.device.edge.MethodRequest;
 import com.microsoft.azure.sdk.iot.device.edge.MethodResult;
 import com.microsoft.azure.sdk.iot.device.exceptions.ModuleClientException;
 import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 import com.microsoft.azure.sdk.iot.device.transport.ExponentialBackoffWithJitter;
 import com.microsoft.azure.sdk.iot.device.transport.RetryDecision;
 import com.microsoft.azure.sdk.iot.device.transport.RetryPolicy;
@@ -98,6 +99,28 @@ public class ModuleGlue
         else
         {
             return null;
+        }
+    }
+
+        protected static class DeviceTwinStatusCallBack implements IotHubEventCallback
+    {
+        @Override
+        public void execute(IotHubStatusCode status, Object context)
+        {
+            System.out.println("DEVICETWINCALLBACK IoT Hub responded to device twin operation with status " + status.name());
+        }
+    }
+
+    protected static class onProperty implements TwinPropertyCallBack
+    {
+        @Override
+        public void TwinPropertyCallBack(Property property, Object context)
+        {
+            System.out.println(
+                    "onProperty callback for " + (property.getIsReported()?"reported": "desired") +
+                            " property " + property.getKey() +
+                            " to " + property.getValue() +
+                            ", Properties version:" + property.getVersion());
         }
     }
 
