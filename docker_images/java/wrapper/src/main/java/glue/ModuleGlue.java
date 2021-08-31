@@ -8,27 +8,27 @@ import com.microsoft.azure.sdk.iot.device.DeviceTwin.TwinPropertyCallBack;
 import com.microsoft.azure.sdk.iot.device.edge.MethodRequest;
 import com.microsoft.azure.sdk.iot.device.edge.MethodResult;
 import com.microsoft.azure.sdk.iot.device.exceptions.ModuleClientException;
-import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
-import io.swagger.server.api.model.Certificate;
-import io.swagger.server.api.model.ConnectResponse;
+import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
+import com.microsoft.azure.sdk.iot.device.transport.ExponentialBackoffWithJitter;
+import com.microsoft.azure.sdk.iot.device.transport.RetryDecision;
+import com.microsoft.azure.sdk.iot.device.transport.RetryPolicy;
+import io.swagger.server.api.model.*;
 import io.swagger.server.api.MainApiException;
-import io.swagger.server.api.model.RoundtripMethodCallBody;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import org.junit.Assert;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.URISyntaxException;
 import java.util.*;
 
 
-@SuppressWarnings("ALL")
 public class ModuleGlue
 {
     private static final long OPEN_RETRY_TIMEOUT = 3 * 60 * 1000;
-    private static final String UNIX_SCHEME = "unix";
 
     private IotHubClientProtocol transportFromString(String protocolStr)
     {
@@ -63,37 +63,6 @@ public class ModuleGlue
     public void connectFromEnvironment(String transportType, Handler<AsyncResult<ConnectResponse>> handler)
     {
         System.out.printf("ConnectFromEnvironment called with transport %s%n", transportType);
-
-        //This is the default URL stream handler factory
-        URLStreamHandlerFactory fac = protocol -> {
-            if (protocol.equals("http"))
-            {
-                return new sun.net.www.protocol.http.Handler();
-            }
-            else if(protocol.equals("https"))
-            {
-                return new sun.net.www.protocol.https.Handler();
-            }
-
-            return null;
-        };
-
-        try
-        {
-            /*
-            This line of code used to be run in older versions of the SDK, and it caused bugs when this library builds
-            a module client from environment through the edgelet in conjunction with any other library that called this API.
-            This API can only be called once per JVM process, so we had to remove the call to this API from our SDK to maintain
-            compatibility with other libraries that call this API. We call this API in this test now so that we guarantee
-            that our module client code works even when this API is used beforehand to avoid regression
-             */
-            URL.setURLStreamHandlerFactory(fac);
-
-        }
-        catch (Error e)
-        {
-            //this function only throws if the factory has already been set, so we can ignore this error
-        }
 
         IotHubClientProtocol protocol = this.transportFromString(transportType);
         if (protocol == null)
@@ -132,28 +101,6 @@ public class ModuleGlue
         }
     }
 
-    protected static class DeviceTwinStatusCallBack implements IotHubEventCallback
-    {
-        @Override
-        public void execute(IotHubStatusCode status, Object context)
-        {
-            System.out.println("DEVICETWINCALLBACK IoT Hub responded to device twin operation with status " + status.name());
-        }
-    }
-
-    protected static class onProperty implements TwinPropertyCallBack
-    {
-        @Override
-        public void TwinPropertyCallBack(Property property, Object context)
-        {
-            System.out.println(
-                    "onProperty callback for " + (property.getIsReported()?"reported": "desired") +
-                            " property " + property.getKey() +
-                            " to " + property.getValue() +
-                            ", Properties version:" + property.getVersion());
-        }
-    }
-
     public void connect(String transportType, String connectionString, Certificate caCertificate, Handler<AsyncResult<ConnectResponse>> handler)
     {
         System.out.printf("Connect called with transport %s%n", transportType);
@@ -168,6 +115,10 @@ public class ModuleGlue
         try
         {
             ModuleClient client = new ModuleClient(connectionString, protocol);
+
+            System.out.println("device id: " + client.getConfig().getDeviceId());
+            System.out.println("module id: " + client.getConfig().getModuleId());
+            System.out.println("hubname: " + client.getConfig().getIotHubName());
 
             client.registerConnectionStatusChangeCallback(new IotHubConnectionStatusChangeCallback()
             {
@@ -229,7 +180,7 @@ public class ModuleGlue
     }
 
 
-    public void invokeDeviceMethod(String connectionId, String deviceId, Object methodInvokeParameters, Handler<AsyncResult<Object>> handler)
+    public void invokeDeviceMethod(String connectionId, String deviceId, MethodInvoke methodInvokeParameters, Handler<AsyncResult<Object>> handler)
     {
         ModuleClient client = getClient(connectionId);
         if (client == null)
@@ -238,12 +189,7 @@ public class ModuleGlue
         }
         else
         {
-            JsonObject params = (JsonObject) methodInvokeParameters;
-            String methodName = params.getString("methodName");
-            String payload = params.getString("payload");
-            int responseTimeout = params.getInteger("responseTimeoutInSeconds", 0);
-            int connectionTimeout = params.getInteger("connectTimeoutInSeconds", 0);
-            MethodRequest request = new MethodRequest(methodName, payload, responseTimeout, connectionTimeout);
+            MethodRequest request = new MethodRequest(methodInvokeParameters.getMethodName(), Json.encode(methodInvokeParameters.getPayload()), methodInvokeParameters.getResponseTimeoutInSeconds(), methodInvokeParameters.getConnectTimeoutInSeconds());
             try
             {
                 MethodResult result = client.invokeMethod(deviceId, request);
@@ -297,25 +243,20 @@ public class ModuleGlue
 
     private static class ModuleTwinPropertyCallBack implements TwinPropertyCallBack
     {
-        private JsonObject _props = null;
-        private Handler<AsyncResult<Object>> _handler;
+        private Twin _twin = null;
+        private Handler<AsyncResult<Twin>> _handler;
         private Timer _timer = null;
 
-        public void setHandler(Handler<AsyncResult<Object>> handler)
+        public void setHandler(Handler<AsyncResult<Twin>> handler)
         {
             if (handler == null)
             {
-                this._props = null;
+                this._twin = null;
             }
             else
             {
-                this._props = new JsonObject()
-                {
-                    {
-                        put("desired", new JsonObject());
-                        put("reported", new JsonObject());
-                    }
-                };
+                this._twin = new Twin(new JsonObject(), new JsonObject());
+
             }
             this._handler = handler;
         }
@@ -328,7 +269,7 @@ public class ModuleGlue
                             " property " + property.getKey() +
                             " to " + property.getValue() +
                             ", Properties version:" + property.getVersion());
-            if (this._props == null)
+            if (this._twin == null)
             {
                 System.out.println("nobody is listening for desired properties.  ignoring.");
             }
@@ -336,13 +277,13 @@ public class ModuleGlue
             {
                 if (property.getIsReported())
                 {
-                    this._props.getJsonObject("reported").getMap().put(property.getKey(), property.getValue());
+                    ((JsonObject) this._twin.getReported()).getMap().put(property.getKey(), property.getValue());
                 }
                 else
                 {
-                    this._props.getJsonObject("desired").getMap().put(property.getKey(), property.getValue());
+                    ((JsonObject) this._twin.getDesired()).getMap().put(property.getKey(), property.getValue());
                 }
-                System.out.println(this._props.toString());
+                System.out.println(this._twin.toString());
                 System.out.println("scheduling timer");
                 this.rescheduleHandler();
             }
@@ -367,17 +308,11 @@ public class ModuleGlue
                 public void run()
                 {
                     _timer = null;
-                    if (_handler != null && _props != null)
+                    if (_handler != null && _twin != null)
                     {
                         System.out.println("It's been 2 seconds since last desired property arrived.  Calling handler");
-                        JsonObject twin = new JsonObject()
-                        {
-                            {
-                                put("properties", _props);
-                            }
-                        };
-                        System.out.println(twin.toString());
-                        _handler.handle(Future.succeededFuture(twin));
+                        System.out.println(_twin.toString());
+                        _handler.handle(Future.succeededFuture(_twin));
                         _handler = null;
                     }
                 }
@@ -385,7 +320,7 @@ public class ModuleGlue
         }
     }
 
-    private final ModuleTwinPropertyCallBack _deviceTwinPropertyCallback = new ModuleTwinPropertyCallBack();
+    private ModuleTwinPropertyCallBack _deviceTwinPropertyCallback = new ModuleTwinPropertyCallBack();
 
     private static class IotHubEventCallbackImpl implements IotHubEventCallback
     {
@@ -416,7 +351,7 @@ public class ModuleGlue
         }
     }
 
-    private final IotHubEventCallbackImpl _deviceTwinStatusCallback = new IotHubEventCallbackImpl();
+    private IotHubEventCallbackImpl _deviceTwinStatusCallback = new IotHubEventCallbackImpl();
 
 
     public void enableTwin(String connectionId, final Handler<AsyncResult<Void>> handler)
@@ -495,20 +430,20 @@ public class ModuleGlue
         }
     }
 
-    public void sendEvent(String connectionId, String eventBody, Handler<AsyncResult<Void>> handler)
+    public void sendEvent(String connectionId, EventBody eventBody, Handler<AsyncResult<Void>> handler)
     {
         System.out.printf("moduleConnectionIdEventPut called for %s%n", connectionId);
         System.out.println(eventBody);
-        this.sendEventHelper(connectionId, new Message(eventBody), handler);
+        this.sendEventHelper(connectionId, new Message(Json.encode(eventBody.getBody())), handler);
     }
 
     protected static class MessageCallback implements com.microsoft.azure.sdk.iot.device.MessageCallback
     {
         ModuleClient _client;
-        Handler<AsyncResult<String>> _handler;
+        Handler<AsyncResult<EventBody>> _handler;
         String _inputName;
 
-        public MessageCallback(ModuleClient client, String inputName, Handler<AsyncResult<String>> handler)
+        public MessageCallback(ModuleClient client, String inputName, Handler<AsyncResult<EventBody>> handler)
         {
             this._client = client;
             this._inputName = inputName;
@@ -521,22 +456,15 @@ public class ModuleGlue
             this._client.setMessageCallback(this._inputName, null, null);
             String result = new String(msg.getBytes(), Message.DEFAULT_IOTHUB_MESSAGE_CHARSET);
             System.out.printf("result = %s%n", result);
-            try
+            if (this._handler != null)
             {
-                if (this._handler != null)
-                {
-                    this._handler.handle(Future.succeededFuture(result));
-                }
-            } catch (Exception e)
-            {
-                System.out.printf("Ignoring exception %s%n", e.toString());
-
+                this._handler.handle(Future.succeededFuture(new EventBody(new JsonObject(result), new JsonObject(), new JsonObject())));
             }
             return IotHubMessageResult.COMPLETE;
         }
     }
 
-    public void waitForInputMessage(String connectionId, String inputName, Handler<AsyncResult<String>> handler)
+    public void waitForInputMessage(String connectionId, String inputName, Handler<AsyncResult<EventBody>> handler)
     {
         System.out.printf("waitForInputMessage with %s, %s%n", connectionId, inputName);
 
@@ -574,20 +502,11 @@ public class ModuleGlue
             System.out.printf("method %s called%n", methodName);
             if (methodName.equals(this._methodName))
             {
-                String methodDataString;
-                try
-                {
-                    methodDataString = Json.mapper.readValue(new String((byte[]) methodData), String.class);
-                } catch (IOException e)
-                {
-                    this._handler.handle(Future.failedFuture(e));
-                    this.reset();
-                    return new DeviceMethodData(500, "exception parsing methodData");
-                }
+                String methodDataString = new String((byte[]) methodData);
                 System.out.printf("methodData: %s%n", methodDataString);
 
                 if (methodDataString.equals(this._requestBody) ||
-                    Json.encode(methodDataString).equals(this._requestBody))
+                        Json.encode(methodDataString).equals(this._requestBody))
                 {
                     System.out.printf("Method data looks correct.  Returning result: %s%n", _responseBody);
                     this._handler.handle(Future.succeededFuture());
@@ -635,7 +554,7 @@ public class ModuleGlue
         }
     }
 
-    public void roundtripMethodCall(String connectionId, String methodName, RoundtripMethodCallBody requestAndResponse, Handler<AsyncResult<Void>> handler)
+    public void WaitForMethodAndReturnResponse(String connectionId, String methodName, MethodRequestAndResponse requestAndResponse, Handler<AsyncResult<Void>> handler)
     {
         ModuleClient client = getClient(connectionId);
         if (client == null)
@@ -645,7 +564,7 @@ public class ModuleGlue
         else
         {
             _methodCallback._handler = handler;
-            _methodCallback._requestBody = (String) (((LinkedHashMap) requestAndResponse.getRequestPayload()).get("payload"));
+            _methodCallback._requestBody = Json.encode(((LinkedHashMap) requestAndResponse.getRequestPayload()).get("payload"));
             _methodCallback._responseBody = Json.encode(requestAndResponse.getResponsePayload());
             _methodCallback._statusCode = requestAndResponse.getStatusCode();
             _methodCallback._client = client;
@@ -657,7 +576,7 @@ public class ModuleGlue
     {
         // Our JSON encoder doesn't like the way the MethodClass implements getPayload and getPayloadObject.  It
         // produces JSON that had both fields and the we want to return payloadObject, but we want to return it
-        // in the field called "payload".  The easiest workaround is to make an empty JsonObject and copy the
+        // in the field called "payload".  The easiest workaroudn is to make an empty JsonObject and copy the
         // values over manually.  I'm sure there's a better way, but this is test code.
         JsonObject fixedObject = new JsonObject();
         fixedObject.put("status", result.getStatus());
@@ -666,7 +585,7 @@ public class ModuleGlue
     }
 
 
-    public void invokeModuleMethod(String connectionId, String deviceId, String moduleId, Object methodInvokeParameters, Handler<AsyncResult<Object>> handler)
+    public void invokeModuleMethod(String connectionId, String deviceId, String moduleId, MethodInvoke methodInvokeParameters, Handler<AsyncResult<Object>> handler)
     {
         ModuleClient client = getClient(connectionId);
         if (client == null)
@@ -675,12 +594,7 @@ public class ModuleGlue
         }
         else
         {
-            JsonObject params = (JsonObject) methodInvokeParameters;
-            String methodName = params.getString("methodName");
-            String payload = params.getString("payload");
-            int responseTimeout = params.getInteger("responseTimeoutInSeconds", 0);
-            int connectionTimeout = params.getInteger("connectTimeoutInSeconds", 0);
-            MethodRequest request = new MethodRequest(methodName, payload, responseTimeout, connectionTimeout);
+            MethodRequest request = new MethodRequest(methodInvokeParameters.getMethodName(), Json.encode(methodInvokeParameters.getPayload()), methodInvokeParameters.getResponseTimeoutInSeconds(), methodInvokeParameters.getConnectTimeoutInSeconds());
             try
             {
                 MethodResult result = client.invokeMethod(deviceId, moduleId, request);
@@ -692,16 +606,16 @@ public class ModuleGlue
         }
     }
 
-    public void sendOutputEvent(String connectionId, String outputName, String eventBody, Handler<AsyncResult<Void>> handler)
+    public void sendOutputEvent(String connectionId, String outputName, EventBody eventBody, Handler<AsyncResult<Void>> handler)
     {
         System.out.printf("sendOutputEvent called for %s, %s%n", connectionId, outputName);
         System.out.println(eventBody);
-        Message msg = new Message(eventBody);
+        Message msg = new Message(Json.encode(eventBody.getBody()));
         msg.setOutputName(outputName);
         this.sendEventHelper(connectionId, msg, handler);
     }
 
-    public void waitForDesiredPropertyPatch(String connectionId, Handler<AsyncResult<Object>> handler)
+    public void waitForDesiredPropertyPatch(String connectionId, Handler<AsyncResult<Twin>> handler)
     {
         System.out.printf("waitForDesiredPropertyPatch with %s%n", connectionId);
 
@@ -715,9 +629,7 @@ public class ModuleGlue
             this._deviceTwinPropertyCallback.setHandler(res -> {
                 if (res.succeeded())
                 {
-                    JsonObject obj = (JsonObject) res.result();
-                    Object desiredProps = obj.getJsonObject("properties").getJsonObject("desired");
-                    handler.handle(Future.succeededFuture(desiredProps));
+                    handler.handle(Future.succeededFuture(res.result()));
                 }
                 else
                 {
@@ -728,7 +640,7 @@ public class ModuleGlue
         }
     }
 
-    public void getTwin(String connectionId, Handler<AsyncResult<Object>> handler)
+    public void getTwin(String connectionId, Handler<AsyncResult<Twin>> handler)
     {
         System.out.printf("getTwin with %s%n", connectionId);
 
@@ -751,30 +663,31 @@ public class ModuleGlue
         }
     }
 
-    private Set<Property> objectToPropSet(JsonObject props)
+    private Set<Property> objectToPropSet(LinkedHashMap<String, Object> props)
     {
-        Set<Property> propSet = new HashSet<>();
-        for (String key : props.fieldNames())
+        Set<Property> propSet = new HashSet<Property>();
+        for (String key : props.keySet())
         {
             // TODO: we may need to make this function recursive.
-            propSet.add(new Property(key, props.getMap().get(key)));
+            propSet.add(new Property(key, props.get(key)));
         }
         return propSet;
     }
 
-    public void sendTwinPatch(String connectionId, Object props, Handler<AsyncResult<Void>> handler)
+    public void sendTwinPatch(String connectionId, Twin twin, Handler<AsyncResult<Void>> handler)
     {
         System.out.printf("sendTwinPatch called for %s%n", connectionId);
-        System.out.println(props.toString());
+        System.out.println(twin.toString());
 
         ModuleClient client = getClient(connectionId);
         if (client == null)
         {
+
             handler.handle(Future.failedFuture(new MainApiException(500, "invalid connection id")));
         }
         else
         {
-            Set<Property> propSet = objectToPropSet((JsonObject) props);
+            Set<Property> propSet = objectToPropSet((LinkedHashMap<String, Object>)twin.getReported());
             this._deviceTwinStatusCallback.setHandler(handler);
             try
             {
