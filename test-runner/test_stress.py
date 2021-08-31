@@ -103,6 +103,7 @@ class TimeLimit(object):
 
 
 class StressTest(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Run for {}".format(pretty_time(test_run_time)))
     async def test_stress(
         self, client, eventhub, service, registry, friend, leaf_device, system_control
@@ -404,6 +405,7 @@ class StressTest(object):
             await run_method_call_test(source=client, destination=leaf_device)
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.testgroup_edgehub_module_stress
 @pytest.mark.testgroup_iothub_module_stress
 @pytest.mark.describe("Module Client Stress")
@@ -414,6 +416,7 @@ class _TestModuleClient2HourStress(StressTest):
         return test_module
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.testgroup_iothub_device_stress
 @pytest.mark.describe("Device Client Stress")
 @pytest.mark.timeout(test_timeout)

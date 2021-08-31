@@ -41,14 +41,17 @@ async def move_blob_status_into_eventhub(service, client):
 
 class BlobUploadTests(object):
     @pytest.fixture
+    @pytest.mark.skip(reason="")
     def blob_name(self):
         return utilities.random_string()
 
     @pytest.fixture
+    @pytest.mark.skip(reason="")
     def typical_blob_data(self):
         return utilities.next_random_string("typical_blob", length=257)
 
     @pytest.mark.it("Fails updating status for invalid correlation id")
+    @pytest.mark.skip(reason="")
     async def test_blob_invalid_correlation_id(self, client):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
@@ -58,6 +61,7 @@ class BlobUploadTests(object):
             )
 
     @pytest.mark.it("Can report a failed blob upload")
+    @pytest.mark.skip(reason="")
     async def test_failed_blob_upload(self, client, blob_name):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
@@ -75,6 +79,7 @@ class BlobUploadTests(object):
         )
 
     @pytest.mark.it("Fails to report success if noting was uploaded")
+    @pytest.mark.skip(reason="")
     async def test_success_without_upload(self, client, blob_name):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
@@ -90,6 +95,7 @@ class BlobUploadTests(object):
         )
 
     @pytest.mark.it("Can be used to successfully upload a blob")
+    @pytest.mark.skip(reason="")
     async def test_upload(
         self, client, service, eventhub, blob_name, typical_blob_data
     ):

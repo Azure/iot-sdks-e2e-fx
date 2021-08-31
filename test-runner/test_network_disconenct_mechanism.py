@@ -11,6 +11,7 @@ import limitations
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.describe("Network Disconnection Mechanism")
 @pytest.mark.testgroup_iothub_device_client
 @pytest.mark.testgroup_iothub_module_client

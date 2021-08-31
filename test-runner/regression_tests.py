@@ -53,6 +53,7 @@ class RegressionTests(object):
         """
         return request.param
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Fails to connect if part of the connection string is wrong")
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
@@ -81,6 +82,7 @@ class RegressionTests(object):
             await client.connect2()
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Fails to send a message if part of the connection string is wrong")
     @pytest.mark.parametrize(
         "field_name, new_field_value", invalid_symmetric_key_fields
@@ -111,6 +113,7 @@ class RegressionTests(object):
             await client.send_event(payload)
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("fails to send messages over 256 kb in size")
     async def test_regression_send_message_fails_with_message_over_256K(self, client):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
@@ -121,6 +124,7 @@ class RegressionTests(object):
             await client.send_event(big_payload)
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("fails to send output messages over 256 kb in size")
     async def test_regression_send_output_message_fails_with_message_over_256K(
         self, client
@@ -136,6 +140,7 @@ class RegressionTests(object):
             )
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it(
         "does not break the client on failure sending messages over 256 kb in size"
     )
@@ -161,6 +166,7 @@ class RegressionTests(object):
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it(
         "fails a connect operation if connection fails for the first time connecting"
     )
@@ -177,6 +183,7 @@ class RegressionTests(object):
 
         assert is_api_failure_exception(e._excinfo[1])
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it(
         "fails a send_event operation if connection fails for the first time connecting"
     )
@@ -278,6 +285,7 @@ class RegressionTests(object):
         await connect_future_2
         await connect_future_3
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it(
         "Enables automatic reconnection even if connect is not called directly"
     )
@@ -302,6 +310,7 @@ class RegressionTests(object):
         await client.wait_for_connection_status_change("connected")
         assert status == "connected"
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can retry send_event with different failure conditions")
     async def test_regression_reconnect_send_event_different_timing(
         self, system_control, client, drop_mechanism, eventhub
@@ -415,6 +424,7 @@ class RegressionTests(object):
         received_message = await test_input_future
         assert received_message.body == test_payload
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Lets us have a short keepalive interval")
     @pytest.mark.timeout(45)
     async def test_keepalive_interval(self, client, system_control, drop_mechanism):

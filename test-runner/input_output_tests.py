@@ -26,12 +26,14 @@ class InputOutputTests(object):
     def input_name_from_test_client(self, client):
         return "from" + client.module_id
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can connect, enable input messages, and disconnect")
     async def test_inputoutput_connect_enable_input_messages_disconnect(self, client):
         await client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
         await asyncio.sleep(2)
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can send an output message which gets routed to another module")
     async def test_inputoutput_module_to_friend_routing(
         self, client, friend, input_name_from_test_client
@@ -55,6 +57,7 @@ class InputOutputTests(object):
         logger("received message")
         assert received_message.body == payload
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can receive an input message which is routed from another module")
     async def test_inputoutput_friend_to_module_routing(
         self, client, friend, output_name_to_test_client
@@ -79,6 +82,7 @@ class InputOutputTests(object):
         received_message = await test_input_future
         assert received_message.body == payload
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it(
         "Can send a message that gets routed to a friend and then receive a message in reply"
     )
@@ -116,6 +120,7 @@ class InputOutputTests(object):
         received_message = await test_input_future
         assert received_message.body == payload_2
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can send a message that gets routed to eventhub")
     async def test_inputoutput_module_output_routed_upstream(self, client, eventhub):
         limitations.skip_test_for(client, languages="c", transports=["amqp", "amqpws"])

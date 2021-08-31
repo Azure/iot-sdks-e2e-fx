@@ -614,6 +614,7 @@ class LongHaulTest(object):
             await update_test_report.stop()
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.testgroup_iothub_device_stress
 @pytest.mark.describe("Device Client Long Run")
 class TestDeviceClientLongHaul(LongHaulTest):
@@ -622,6 +623,7 @@ class TestDeviceClientLongHaul(LongHaulTest):
         return test_device
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.testgroup_iothub_module_stress
 @pytest.mark.describe("Device Client Long Run")
 class TestModuleClientLongHaul(LongHaulTest):

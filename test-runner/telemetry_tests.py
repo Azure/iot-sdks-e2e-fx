@@ -52,14 +52,6 @@ class TelemetryTests(object):
 
         await eventhub.connect()
 
-        logger('sending "{}"'.format(telemetry_payload))
-
-        await client.send_event(telemetry_payload)
-
-        received_message = await eventhub.wait_for_next_event(
-            client.device_id, expected=telemetry_payload
-        )
-        assert received_message is not None, "Message not received"
 
     @pytest.mark.it("Can send 5 telemetry events directly to iothub")
     async def test_send_5_telemetry_events_to_iothub(self, client, eventhub):

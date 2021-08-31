@@ -76,6 +76,7 @@ async def run_method_call_test(source, destination):
 
 
 class BaseReceiveMethodCallTests(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can receive a method call from the IoTHub service")
     @pytest.mark.it("Can connect, enable methods, and disconnect")
     async def test_module_client_connect_enable_methods_disconnect(self, client):
@@ -83,18 +84,21 @@ class BaseReceiveMethodCallTests(object):
 
 
 class ReceiveMethodCallFromServiceTests(BaseReceiveMethodCallTests):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can receive a method call from the IoTHub service")
     async def test_method_call_invoked_from_service(self, client, service):
         await run_method_call_test(source=service, destination=client)
 
 
 class ReceiveMethodCallFromModuleTests(BaseReceiveMethodCallTests):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can receive a method call from an EdgeHub module")
     async def test_method_call_invoked_from_friend(self, client, friend):
         await run_method_call_test(source=friend, destination=client)
 
 
 class InvokeMethodCallOnModuleTests(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can invoke a method call on an EdgeHub module")
     async def test_method_call_invoked_on_friend(self, client, friend):
         if limitations.uses_shared_key_auth(client):
@@ -104,6 +108,7 @@ class InvokeMethodCallOnModuleTests(object):
 
 
 class InvokeMethodCallOnLeafDeviceTests(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can invoke a method call on an EdgeHub leaf device")
     async def test_method_call_invoked_on_leaf_device(self, client, leaf_device):
         if limitations.uses_shared_key_auth(client):

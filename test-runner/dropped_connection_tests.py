@@ -14,6 +14,7 @@ output_name_to_friend = "toFriend"
 
 
 class DroppedConnectionTestsBase(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Shows if the client is connected or disconnected")
     async def test_connection_status(self, client):
 
@@ -26,6 +27,7 @@ class DroppedConnectionTestsBase(object):
         await client.connect2()
         assert await client.get_connection_status() == "connected"
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reconnect after dropped connection")
     async def test_client_dropped_connection(
         self, client, system_control, drop_mechanism, test_module_transport
@@ -45,6 +47,7 @@ class DroppedConnectionTestsBase(object):
 
 
 class DroppedConnectionTestsTelemetry(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably send an event")
     async def test_client_dropped_send_event(
         self, client, before_api_call, after_api_call, eventhub
@@ -76,6 +79,7 @@ class DroppedConnectionTestsTelemetry(object):
 
 
 class DroppedConnectionTestsC2d(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably reveive c2d (1st-time possible subscribe)")
     async def test_dropped_c2d_1st_call(
         self, client, service, before_api_call, after_api_call
@@ -98,6 +102,7 @@ class DroppedConnectionTestsC2d(object):
         received_message = await test_input_future
         assert received_message.body == payload
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably reveive c2d (2nd-time)")
     async def test_dropped_c2d_2nd_call(
         self, client, service, before_api_call, after_api_call
@@ -128,6 +133,7 @@ class DroppedConnectionTestsC2d(object):
 
 
 class DroppedConnectionTestsTwin(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it(
         "Can reliably update reported properties (1st time - possible subscribe)"
     )
@@ -146,6 +152,7 @@ class DroppedConnectionTestsTwin(object):
             properties_sent=props, client=client, registry=registry
         )
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably update reported properties (2nd time)")
     async def test_twin_dropped_reported_properties_publish_2nd_call(
         self, client, before_api_call, after_api_call, registry
@@ -162,6 +169,7 @@ class DroppedConnectionTestsTwin(object):
             properties_sent=props, client=client, registry=registry
         )
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably get the twin (1st call - possible subscribe)")
     async def test_twin_dropped_get_twin_1st_call(
         self, client, before_api_call, after_api_call
@@ -173,6 +181,7 @@ class DroppedConnectionTestsTwin(object):
         twin = await get_twin_future
         assert twin["desired"]["$version"]
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably get the twin (2nd call)")
     async def test_twin_dropped_get_twin_2nd_call(
         self, client, before_api_call, after_api_call
@@ -204,6 +213,7 @@ class DroppedConnectionTestsInputOutput(object):
     def input_name_from_test_client(self, client):
         return "from" + client.module_id
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably send an output event")
     async def test_dropped_send_output(
         self,
@@ -231,6 +241,7 @@ class DroppedConnectionTestsInputOutput(object):
         print("received message")
         assert received_message.body == test_payload
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can reliably send 5 output events")
     async def test_dropped_send_output_5x(
         self, client, eventhub, before_api_call, after_api_call

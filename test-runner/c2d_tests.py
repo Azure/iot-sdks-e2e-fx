@@ -8,10 +8,12 @@ import sample_content
 
 
 class C2dTests(object):
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can connect, enable C2D, and disconnect")
     async def test_client_connect_enable_c2d_disconnect(self, client):
         await client.enable_c2d()
 
+    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can receive C2D messages from the IoTHub Service")
     async def test_device_receive_c2d(self, client, service):
         test_payload = sample_content.make_message_payload()

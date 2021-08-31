@@ -21,6 +21,7 @@ class IoTHubModuleClient(object):
         return test_module
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.describe("IoTHubModuleClient")
 @pytest.mark.testgroup_iothub_module_client
 @pytest.mark.timeout(timeouts.generic_test_timeout)
@@ -35,6 +36,7 @@ class TestIotHubModuleClient(
     pass
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.describe(
     "IoTHub ModuleClient dropped connections - network glitched and client still connected"
 )
@@ -49,6 +51,7 @@ class TestIoTHubModuleNetworkGlitchClientConnected(
     pass
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.describe(
     "IoTHub ModuleClient dropped connections - network glitched and client disconencted"
 )
