@@ -27,7 +27,6 @@ class EdgeHubModuleClient(object):
         return test_module
 
 
-@pytest.mark.skip(reason="")
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.describe("EdgeHub ModuleClient")
 @pytest.mark.timeout(timeouts.generic_test_timeout)
@@ -46,7 +45,6 @@ class TestEdgeHubModuleClient(
     pass
 
 
-@pytest.mark.skip(reason="")
 @pytest.mark.describe(
     "EdgeHub ModuleClient dropped connections - network glitched and client still connected"
 )
@@ -61,7 +59,6 @@ class TestEdgeHubModuleNetworkGlitchClientConnected(
     pass
 
 
-@pytest.mark.skip(reason="")
 @pytest.mark.describe(
     "EdgeHub ModuleClient dropped connections - network glitched and client disconencted"
 )
