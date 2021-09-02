@@ -458,7 +458,7 @@ public class ModuleGlue
                 Thread.sleep(15 * 60 * 1000);//15 minutes
 
                 handler.handle(Future.succeededFuture());
-            } catch (IOException e)
+            } catch (IOException | InterruptedException e)
             {
                 handler.handle(Future.failedFuture((e)));
             }
