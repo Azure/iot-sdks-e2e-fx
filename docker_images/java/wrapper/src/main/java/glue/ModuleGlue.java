@@ -386,6 +386,45 @@ public class ModuleGlue
         }
         else
         {
+            System.out.println("device id: " + client.getConfig().getDeviceId());
+            System.out.println("module id: " + client.getConfig().getModuleId());
+            System.out.println("hubname: " + client.getConfig().getIotHubName());
+
+            client.registerConnectionStatusChangeCallback(new IotHubConnectionStatusChangeCallback()
+            {
+                @Override
+                public void execute(IotHubConnectionStatus status, IotHubConnectionStatusChangeReason statusChangeReason, Throwable throwable, Object callbackContext)
+                {
+                    System.out.println();
+                    System.out.println("CONNECTION STATUS UPDATE: " + status);
+                    System.out.println("CONNECTION STATUS REASON: " + statusChangeReason);
+                    System.out.println("CONNECTION STATUS THROWABLE: " + (throwable == null ? "null" : throwable.getMessage()));
+                    System.out.println();
+
+                    if (throwable != null)
+                    {
+                        throwable.printStackTrace();
+                    }
+
+                    if (status == IotHubConnectionStatus.DISCONNECTED)
+                    {
+                        System.out.println("The connection was lost, and is not being re-established." +
+                                " Look at provided exception for how to resolve this issue." +
+                                " Cannot send messages until this issue is resolved, and you manually re-open the device client");
+                    }
+                    else if (status == IotHubConnectionStatus.DISCONNECTED_RETRYING)
+                    {
+                        System.out.println("The connection was lost, but is being re-established." +
+                                " Can still send messages, but they won't be sent until the connection is re-established");
+                    }
+                    else if (status == IotHubConnectionStatus.CONNECTED)
+                    {
+                        System.out.println("The connection was successfully established. Can send messages.");
+                    }
+                }
+            }, null);
+
+
             try
             {
                 // After we start the twin, we want to subscribe to twin properties.  This lambda will do that for us.
