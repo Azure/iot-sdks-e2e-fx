@@ -389,6 +389,7 @@ public class ModuleGlue
             System.out.println("device id: " + client.getConfig().getDeviceId());
             System.out.println("module id: " + client.getConfig().getModuleId());
             System.out.println("hubname: " + client.getConfig().getIotHubName());
+            System.out.println("This is the fx repo");
 
             client.registerConnectionStatusChangeCallback(new IotHubConnectionStatusChangeCallback()
             {
@@ -446,12 +447,17 @@ public class ModuleGlue
                             handler.handle(Future.failedFuture(e));
                             return;
                         }
-                        handler.handle(Future.succeededFuture());
                     }
                     this._deviceTwinStatusCallback.setHandler(null);
                 });
                 System.out.println("calling startTwin");
                 client.startTwin(this._deviceTwinStatusCallback, null, this._deviceTwinPropertyCallback, null);
+                System.out.println("done calling start twin");
+
+                System.out.println("Sleeping for a bit");
+                Thread.sleep(15 * 60 * 1000);//15 minutes
+
+                handler.handle(Future.succeededFuture());
             } catch (IOException e)
             {
                 handler.handle(Future.failedFuture((e)));
