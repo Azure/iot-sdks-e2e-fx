@@ -75,7 +75,6 @@ async def wait_for_desired_properties_patch(*, client, expected_twin, mistakes=1
 
 
 class TwinTests(object):
-    @pytest.mark.skip(reason="")
     @pytest.mark.it("Can connect, enable twin, and disconnect")
     async def test_client_connect_enable_twin_disconnect(self, client):
         await client.enable_twin()

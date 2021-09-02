@@ -13,6 +13,7 @@ from method_tests import (
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.skip(reason="")
 @pytest.mark.testgroup_edgehub_module_client
 @pytest.mark.describe("Edge Leaf Device")
 @pytest.mark.timeout(timeouts.generic_test_timeout)
