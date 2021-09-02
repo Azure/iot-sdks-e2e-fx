@@ -54,7 +54,7 @@ public class MainApiVerticle extends AbstractVerticle {
                 Router swaggerRouter = SwaggerRouter.swaggerRouter(router, swagger, vertx.eventBus(), new OperationIdServiceIdResolver(), new Function<RoutingContext, DeliveryOptions>() {
                     @Override
                     public DeliveryOptions apply(RoutingContext t) {
-                        return new DeliveryOptions().setSendTimeout(90000);
+                        return new DeliveryOptions().setSendTimeout(90000000);
                     }
                 });
                 deployVerticles(startFuture);
