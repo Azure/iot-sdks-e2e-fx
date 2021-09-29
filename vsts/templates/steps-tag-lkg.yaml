@@ -9,4 +9,4 @@ steps:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
-  condition: and(succeeded(), eq(variables['Horton.Commit'],'master'))
+  condition: and(succeeded(), or(eq(variables['Horton.Commit'],'master'), eq(variables['Horton.Commit'],'main'))
