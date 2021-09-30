@@ -52,7 +52,7 @@ steps:
     Write-Host " 5 ${CommitToPass}"
 
     if ( ($LanguageToPass -like "java") -and ($CommitToPass -like "master") ) {
-      WriteHost "CHANGING IT"
+      Write-Host "CHANGING IT"
       $CommitToPass="main"
     } 
 
