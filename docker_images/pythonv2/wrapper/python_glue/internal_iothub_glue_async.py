@@ -55,7 +55,10 @@ class Connect(ConnectionStatus):
     async def destroy(self):
         if self.client:
             try:
-                await self.client.disconnect()
+                if hasattr(self.client, "shutdown"):
+                    await self.client.shutdown()
+                else:
+                    await self.client.disconnect()
             finally:
                 self.client = None
 

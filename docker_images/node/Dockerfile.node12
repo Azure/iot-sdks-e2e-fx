@@ -1,4 +1,4 @@
-FROM node:10.15.3-stretch-slim
+FROM node:12.22.5-stretch-slim
 
 RUN apt update \
   && apt install --fix-missing -y \
@@ -47,16 +47,18 @@ COPY node/wrapper .
 ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
 WORKDIR /src/sdk
+RUN git reset HEAD && git checkout . && git clean  -df
 RUN git pull 
 RUN git checkout $HORTON_COMMIT_SHA
 
 COPY node/patchfile /
-# our base image might have some files checked out.  revert these.
-RUN git reset HEAD && git checkout && git clean  -df
+WORKDIR /src/sdk
+RUN git reset HEAD && git checkout . && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 COPY node/rebuild.sh /
 RUN /rebuild.sh
+RUN git checkout *package-lock.json
 
 ENV HORTON_REPO=$HORTON_REPO
 ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME

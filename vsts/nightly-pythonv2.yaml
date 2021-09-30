@@ -24,7 +24,7 @@ jobs:
   dependsOn:
     - "build_linux_amd64"
   strategy:
-    maxParallel: 20
+    maxParallel: 10
     matrix:
 
       py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }

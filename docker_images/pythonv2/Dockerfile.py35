@@ -3,7 +3,14 @@ from python:3.5.7-slim-stretch
 RUN apt update \
  && apt install -y \
     git \
-    iptables
+    iptables \
+    build-essential \
+    libssl-dev \
+    uuid-dev \
+    cmake \
+    libcurl4-openssl-dev \
+    pkg-config \
+    python3-dev
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
@@ -38,7 +45,7 @@ RUN git checkout $HORTON_COMMIT_SHA
 
 COPY pythonv2/patchfile /
 # our base image might have some files checked out.  revert these.
-RUN git reset HEAD && git checkout && git clean  -df
+RUN git reset HEAD && git checkout . && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 COPY pythonv2/rebuild.sh /

@@ -6,7 +6,6 @@ import convert
 import internal_control_glue
 from connection_status import ConnectionStatus
 from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodResponse
-from azure.iot.device.common import mqtt_transport
 
 
 logger = logging.getLogger(__name__)
@@ -18,6 +17,7 @@ DEFAULT_KEEPALIVE = 8
 def get_kwargs(transport_type):
     kwargs = {}
 
+    kwargs["keep_alive"] = DEFAULT_KEEPALIVE
     if transport_type == "mqttws":
         kwargs["websockets"] = True
     if internal_control_glue.sas_renewal_interval:
@@ -46,7 +46,6 @@ class Connect(ConnectionStatus):
             self.client = self.client_class.create_from_connection_string(
                 connection_string, **kwargs
             )
-        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
     def create_from_x509_sync(self, transport_type, x509):
@@ -67,7 +66,10 @@ class Connect(ConnectionStatus):
     def destroy_sync(self):
         if self.client:
             try:
-                self.client.disconnect()
+                if hasattr(self.client, "shutdown"):
+                    self.client.shutdown()
+                else:
+                    self.client.disconnect()
             finally:
                 self.client = None
 
@@ -82,7 +84,6 @@ class DeviceConnect(object):
             symmetric_key, hostname, device_id, **kwargs
         )
 
-        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
 
@@ -95,7 +96,6 @@ class ModuleConnect(object):
 
         self.client = self.client_class.create_from_edge_environment(**kwargs)
 
-        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
     def create_from_symmetric_key_sync(
@@ -107,7 +107,6 @@ class ModuleConnect(object):
             symmetric_key, hostname, device_id, module_id, **kwargs
         )
 
-        mqtt_transport.DEFAULT_KEEPALIVE = DEFAULT_KEEPALIVE
         self._attach_connect_event_watcher()
 
 

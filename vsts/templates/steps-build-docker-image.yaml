@@ -37,7 +37,11 @@ steps:
     $VariantToPass = $env:Variant
 
     if (IsEmpty($CommitToPass)) {
-        $CommitToPass="master"
+        if ($LanguageToPass -like "java") {
+          $CommitToPass="main"
+        } else {
+          $CommitToPass="master"
+        }
     }
 
     if (IsEmpty($VariantToPass)) {
@@ -45,11 +49,7 @@ steps:
     }
 
     if (IsEmpty($LanguageToPass)) {
-        if ($VariantToPass -like "node6") {
-            $LanguageToPass="node"
-        } elseif ($VariantToPass -like "node8") {
-            $LanguageToPass="node"
-        } elseif ($VariantToPass -like "node10") {
+        if ($VariantToPass -like "node12") {
             $LanguageToPass="node"
         } elseif ($VariantToPass -like "py27") {
             $LanguageToPass="pythonv2"

@@ -8,17 +8,15 @@ jobs:
     vmImage: 'Ubuntu 16.04'
   strategy:
     matrix:
-        #node6:  { variant: node6 }
-        #node8:  { variant: node8 }
-        node10:  { variant: node10 }
-        #c:      { language: c }
-        #java:   { language: java }
-        #csharp: { language: csharp }
-        #py27:   { variant: py27 }
-        #y35:   { variant: py35 }
-        # py36:   { variant: py36 }
-        #py37:   { variant: py37 }
-        #py38:   { variant: py38 }
+      # node12:  { variant: node12 }
+      # c:      { language: c }
+      # java:   { language: java }
+        # # csharp: { language: csharp }
+        # py27:   { variant: py27 }
+        # py35:   { variant: py35 }
+        py36:   { variant: py36 }
+        # py37:   { variant: py37 }
+        # py38:   { variant: py38 }
 
   steps:
   - template: templates/steps-build-docker-image.yaml
@@ -34,7 +32,7 @@ jobs:
 
   strategy:
     matrix:
-      #c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
+      # c_mqtt_iothub_module:                 { suite: c_mqtt_iothub_module }
       #c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
       #java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
       #csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
@@ -42,13 +40,16 @@ jobs:
       #py27_mqtt_edgehub_module:                     { suite: py27_mqtt_edgehub_module }
       #py27_mqtt_iothub_module_and_device:           { suite: py27_mqtt_iothub_module_and_device }
       #py35_mqtt_edgehub_module:                     { suite: py35_mqtt_edgehub_module }
-      #y36_mqtt_iothub_module_and_device:           { suite: py36_mqtt_iothub_module_and_device }
+      py36_mqtt_iothub_module_and_device:           { suite: py36_mqtt_iothub_module_and_device }
       #py37_mqtt_iothub_module_and_device_async:     { suite: py37_mqtt_iothub_module_and_device_async }
       #py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
       #py27_mqtt_edgehub_module_quick_drop:          { suite: py27_mqtt_edgehub_module_quick_drop }
       #py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
       #py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
-      
+      #py27_mqtt_edgehub_module_full_drop:          { suite: py27_mqtt_edgehub_module_full_drop }
+      #py38_mqtt_iothub_module_full_drop:           { suite: py38_mqtt_iothub_module_full_drop }
+      #py36_mqtt_iothub_device_full_drop:           { suite: py38_mqtt_iothub_device_full_drop }
+
       #node6_mqtt_iothub_module_and_device:     { suite: node6_mqtt_iothub_module_and_device }
       #node6_mqtt_edgehub_module:    { suite: node6_mqtt_edgehub_module }
       #node6_mqttws_iothub_module_and_device:   { suite: node6_mqttws_iothub_module_and_device }
@@ -58,31 +59,33 @@ jobs:
       #node6_amqpws_iothub_module_and_device:   { suite: node6_amqpws_iothub_module_and_device }
       #node6_amqpws_edgehub_module:  { suite: node6_amqpws_edgehub_module }
 
-      #node8_mqtt_iothub_module_and_device:     { suite: node8_mqtt_iothub_module_and_device }
-      #node8_mqtt_edgehub_module:                { suite: node8_mqtt_edgehub_module }
-      #node8_mqttws_iothub_module_and_device:   { suite: node8_mqttws_iothub_module_and_device }
-      #node8_mqttws_edgehub_module:              { suite: node8_mqttws_edgehub_module }
-      #node8_amqp_iothub_module_and_device:     { suite: node8_amqp_iothub_module_and_device }
-      #node8_amqp_edgehub_module:                { suite: node8_amqp_edgehub_module }
-      #node8_amqpws_iothub_module_and_device:   { suite: node8_amqpws_iothub_module_and_device }
-      #node8_amqpws_edgehub_module:              { suite: node8_amqpws_edgehub_module }
+      #node12_mqtt_iothub_module_and_device:     { suite: node12_mqtt_iothub_module_and_device }
+      #node12_mqtt_edgehub_module:                { suite: node12_mqtt_edgehub_module }
+      #node12_mqttws_iothub_module_and_device:   { suite: node12_mqttws_iothub_module_and_device }
+      #node12_mqttws_edgehub_module:              { suite: node12_mqttws_edgehub_module }
+      #node12_amqp_iothub_module_and_device:     { suite: node12_amqp_iothub_module_and_device }
+      #node12_amqp_edgehub_module:                { suite: node12_amqp_edgehub_module }
+      #node12_amqpws_iothub_module_and_device:   { suite: node12_amqpws_iothub_module_and_device }
+      #node12_amqpws_edgehub_module:              { suite: node12_amqpws_edgehub_module }
 
-      node10_mqtt_iothub_module_and_device:    { suite: node10_mqtt_iothub_module_and_device }
-      node10_mqtt_edgehub_module:   { suite: node10_mqtt_edgehub_module }
-      node10_mqttws_iothub_module_and_device:  { suite: node10_mqttws_iothub_module_and_device }
-      node10_mqttws_edgehub_module: { suite: node10_mqttws_edgehub_module }
-      node10_amqp_iothub_module_and_device:    { suite: node10_amqp_iothub_module_and_device }
-      node10_amqp_edgehub_module:   { suite: node10_amqp_edgehub_module }
-      node10_amqpws_iothub_module_and_device:  { suite: node10_amqpws_iothub_module_and_device }
-      node10_amqpws_edgehub_module: { suite: node10_amqpws_edgehub_module }
+      #csharp_mqtt_iothub_module:    { suite: csharp_mqtt_iothub_module }
+      #csharp_mqtt_edgehub_module:   { suite: csharp_mqtt_edgehub_module }
+      #csharp_mqttws_iothub_module:  { suite: csharp_mqttws_iothub_module }
+      #csharp_mqttws_edgehub_module: { suite: csharp_mqttws_edgehub_module }
+      #csharp_amqp_iothub_module:    { suite: csharp_amqp_iothub_module }
+      #csharp_amqp_edgehub_module:   { suite: csharp_amqp_edgehub_module }
+      #csharp_amqpws_iothub_module:  { suite: csharp_amqpws_iothub_module }
+      #csharp_amqpws_edgehub_module: { suite: csharp_amqpws_edgehub_module }
+
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
       # testcase: '-k friend_to_mod'
-  
+
 - job: "test_linux_python_inproc"
+  condition: false
   pool:
       vmImage: 'Ubuntu 18.04'
   strategy:
@@ -98,6 +101,7 @@ jobs:
       suite: $(suite)
 
 - job: "test_windows_python_inproc"
+  condition: false
   pool:
       vmImage: 'windows-latest'
   strategy:
