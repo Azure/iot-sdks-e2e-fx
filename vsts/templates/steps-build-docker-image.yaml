@@ -37,12 +37,11 @@ steps:
     $VariantToPass = $env:Variant
 
     if (IsEmpty($CommitToPass)) {
-        if ($LanguageToPass -like "java") {
-          $CommitToPass="main"
-        } else {
-          $CommitToPass="master"
-        }
+        $CommitToPass="master"
     }
+    if ( ($LanguageToPass -like "java") -and ($CommitToPass -like "master") ) {
+      $CommitToPass="main"
+    } 
 
     if (IsEmpty($VariantToPass)) {
         $VariantToPass=""
