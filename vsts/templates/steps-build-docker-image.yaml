@@ -36,6 +36,11 @@ steps:
     $CommitToPass = $env:Commit
     $VariantToPass = $env:Variant
 
+    Write-Host "on entry CommitToPass=${CommitToPass}"
+    Write-Host "on entry LanguageToPass=${LanguageToPass}"
+
+
+
     if (IsEmpty($CommitToPass)) {
         $CommitToPass="master"
     }
