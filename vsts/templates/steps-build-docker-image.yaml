@@ -44,7 +44,15 @@ steps:
     if (IsEmpty($CommitToPass)) {
         $CommitToPass="master"
     }
+
+    Write-Host " mid CommitToPass=${CommitToPass}"
+    Write-Host " 2 $LanguageToPass"
+    Write-Host " 3 $CommitToPass"
+    Write-Host " 4 ${LanguageToPass}"
+    Write-Host " 5 ${CommitToPass}"
+
     if ( ($LanguageToPass -like "java") -and ($CommitToPass -like "master") ) {
+      WriteHost "CHANGING IT"
       $CommitToPass="main"
     } 
 
