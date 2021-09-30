@@ -10,6 +10,9 @@ RUN git config --global user.email "you@example.com" \
 
 EXPOSE 8080
 
+# force container rebuild when switching from master to main
+RUN echo "switch to main" > /horton_tag.txt
+
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
 WORKDIR /sdk
