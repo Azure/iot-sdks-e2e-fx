@@ -127,6 +127,21 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
     this and retry the operation until it succeeds.
     """
 
+    @pytest.fixture(
+        params=[
+            pytest.param("DROP", id="Drop using iptables DROP"),
+            # REJECT tests no longer work here after state machine changes
+            # pytest.param("REJECT", id="Drop using iptables REJECT"),
+        ]
+    )
+    def drop_mechanism(self, request):
+        """
+        Parametrized fixture which lets our tests run against the full set
+        of dropping mechanisms.  Every test in this file will run using each value
+        for this array of parameters.
+        """
+        return request.param
+
     @pytest.fixture
     def before_api_call(
         self, client, drop_mechanism, system_control, test_module_transport
