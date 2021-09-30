@@ -36,25 +36,9 @@ steps:
     $CommitToPass = $env:Commit
     $VariantToPass = $env:Variant
 
-    Write-Host "on entry CommitToPass=${CommitToPass}"
-    Write-Host "on entry LanguageToPass=${LanguageToPass}"
-
-
-
     if (IsEmpty($CommitToPass)) {
         $CommitToPass="master"
     }
-
-    Write-Host " mid CommitToPass=${CommitToPass}"
-    Write-Host " 2 $LanguageToPass"
-    Write-Host " 3 $CommitToPass"
-    Write-Host " 4 ${LanguageToPass}"
-    Write-Host " 5 ${CommitToPass}"
-
-    if ( ($LanguageToPass -like "java") -and ($CommitToPass -like "master") ) {
-      Write-Host "CHANGING IT"
-      $CommitToPass="main"
-    } 
 
     if (IsEmpty($VariantToPass)) {
         $VariantToPass=""
@@ -98,6 +82,11 @@ steps:
       $CommitToPass = $env:SYSTEM_PULLREQUEST_TARGETBRANCH
       $IsPr = "yes"
     }
+
+    if ( ($LanguageToPass -like "java") -and ($CommitToPass -like "master") ) {
+      $CommitToPass="main"
+    } 
+
 
     $Architecture=GetArchitecture
 
