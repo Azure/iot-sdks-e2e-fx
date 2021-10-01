@@ -3,7 +3,7 @@ from python:2.7.16-alpine3.9
 RUN apk add \
     git \
     iptables \
-    g++ cmake make openssl-dev
+    g++ cmake make openssl-dev build-base python2-dev
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
