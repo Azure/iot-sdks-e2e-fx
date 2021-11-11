@@ -1,14 +1,13 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+set -e
+
 cd /sdk
-[ $? -eq 0 ] || { echo "cd sdk failed "; exit 1; }
-
-python env_setup.py --no_dev
-[ $? -eq 0 ] || { echo "env_setup.py failed "; exit 1; }
-
+pip install 
+pip install --upgrade pip
+pip install -U --upgrade-strategy eager -e azure-iot-device
+pip install -U --upgrade-strategy eager -e azure-iot-hub
 cd /wrapper
 pip install -r requirements.txt
-[ $? -eq 0 ] || { echo "pip install requirements.txt"; exit 1; }
-
 
