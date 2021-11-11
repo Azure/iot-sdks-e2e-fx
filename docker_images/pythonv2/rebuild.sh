@@ -4,7 +4,6 @@
 set -e
 
 cd /sdk
-pip install 
 pip install --upgrade pip
 pip install -U --upgrade-strategy eager -e azure-iot-device
 pip install -U --upgrade-strategy eager -e azure-iot-hub
