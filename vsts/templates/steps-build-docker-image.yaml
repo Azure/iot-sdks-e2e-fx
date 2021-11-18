@@ -83,8 +83,12 @@ steps:
       $IsPr = "yes"
     }
 
-    if ( ($LanguageToPass -like "java") -and ($CommitToPass -like "master") ) {
-      $CommitToPass="main"
+    if ( $CommitToPass -like "master" ) {
+      if ( ($LanguageToPass -like "java") -or 
+           ($LanguageToPass -like "node") -or 
+           ($LanguageToPass -like "pythonv2") ) {
+              $CommitToPass="main"
+      }
     } 
 
 
