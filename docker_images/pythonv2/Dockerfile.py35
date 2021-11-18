@@ -27,6 +27,8 @@ WORKDIR /wrapper
 COPY pythonv2/wrapper/requirements.txt .
 RUN pip install -r requirements.txt
 
+# force container rebuild when switching from master to main
+RUN echo "switch to main" > /horton_tag.txt
 
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
