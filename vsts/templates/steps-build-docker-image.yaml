@@ -85,6 +85,7 @@ steps:
 
     if ( $CommitToPass -like "master" ) {
       if ( ($LanguageToPass -like "java") -or 
+           ($LanguageToPass -like 'c') -or
            ($LanguageToPass -like "node") -or 
            ($LanguageToPass -like "pythonv2") ) {
               $CommitToPass="main"
