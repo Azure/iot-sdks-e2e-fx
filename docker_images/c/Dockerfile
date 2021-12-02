@@ -55,6 +55,9 @@ COPY ./system_control_app .
 RUN pip install -r requirements.txt
 EXPOSE 8040
 
+# force container rebuild when switching from master to main
+RUN echo "switch to main" > /horton_tag.txt
+
 ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
