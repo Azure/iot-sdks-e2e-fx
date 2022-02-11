@@ -23,7 +23,7 @@ if [ -d "/wrapper/src" ]; then
     cd /wrapper/src
     [ $? -eq 0 ] || { echo "cd wrapper failed"; exit 1; }
 
-    dotnet publish --no-dependencies --output /app/ --framework=netcoreapp2.2 edge-e2e.csproj
+    dotnet publish --no-dependencies --output /app/ --framework=netcoreapp3.0 edge-e2e.csproj
     [ $? -eq 0 ] || { echo "publish wrapper failed"; exit 1; }
 fi
 

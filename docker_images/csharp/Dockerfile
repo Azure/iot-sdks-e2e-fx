@@ -14,9 +14,6 @@ RUN git config --global user.email "you@example.com" \
 EXPOSE 80/tcp
 EXPOSE 22/tcp
 
-# install aspnetcore 2.2 runtime
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 2.2 -Runtime aspnetcore
-
 # get ready for ssh keys
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys
 
@@ -63,4 +60,4 @@ ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
 ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
 WORKDIR /app
-ENTRYPOINT ["/root/.dotnet/dotnet", "IO.Swagger.dll"]
+ENTRYPOINT ["/usr/bin/dotnet", "IO.Swagger.dll"]

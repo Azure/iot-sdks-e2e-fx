@@ -22,18 +22,34 @@ using Newtonsoft.Json;
 namespace IO.Swagger.Models
 { 
     /// <summary>
-    /// result of a connection to a service, device, or module client
+    /// body for an invoming or outgoing event or message
     /// </summary>
     [DataContract]
-    public partial class ConnectResponse : IEquatable<ConnectResponse>
+    public partial class DefinitionsJsoneventBody : IEquatable<DefinitionsJsoneventBody>
     { 
         /// <summary>
-        /// unique identifier for this connection
+        /// payload to send to the method
         /// </summary>
-        /// <value>unique identifier for this connection</value>
+        /// <value>payload to send to the method</value>
 
-        [DataMember(Name="connectionId")]
-        public string ConnectionId { get; set; }
+        [DataMember(Name="body")]
+        public Object Body { get; set; }
+
+        /// <summary>
+        /// flags used by horton
+        /// </summary>
+        /// <value>flags used by horton</value>
+
+        [DataMember(Name="horton_flags")]
+        public Object HortonFlags { get; set; }
+
+        /// <summary>
+        /// Message attributes
+        /// </summary>
+        /// <value>Message attributes</value>
+
+        [DataMember(Name="attributes")]
+        public Object Attributes { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object
@@ -42,8 +58,10 @@ namespace IO.Swagger.Models
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append("class ConnectResponse {\n");
-            sb.Append("  ConnectionId: ").Append(ConnectionId).Append("\n");
+            sb.Append("class DefinitionsJsoneventBody {\n");
+            sb.Append("  Body: ").Append(Body).Append("\n");
+            sb.Append("  HortonFlags: ").Append(HortonFlags).Append("\n");
+            sb.Append("  Attributes: ").Append(Attributes).Append("\n");
             sb.Append("}\n");
             return sb.ToString();
         }
@@ -66,24 +84,34 @@ namespace IO.Swagger.Models
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((ConnectResponse)obj);
+            return obj.GetType() == GetType() && Equals((DefinitionsJsoneventBody)obj);
         }
 
         /// <summary>
-        /// Returns true if ConnectResponse instances are equal
+        /// Returns true if DefinitionsJsoneventBody instances are equal
         /// </summary>
-        /// <param name="other">Instance of ConnectResponse to be compared</param>
+        /// <param name="other">Instance of DefinitionsJsoneventBody to be compared</param>
         /// <returns>Boolean</returns>
-        public bool Equals(ConnectResponse other)
+        public bool Equals(DefinitionsJsoneventBody other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return 
                 (
-                    ConnectionId == other.ConnectionId ||
-                    ConnectionId != null &&
-                    ConnectionId.Equals(other.ConnectionId)
+                    Body == other.Body ||
+                    Body != null &&
+                    Body.Equals(other.Body)
+                ) && 
+                (
+                    HortonFlags == other.HortonFlags ||
+                    HortonFlags != null &&
+                    HortonFlags.Equals(other.HortonFlags)
+                ) && 
+                (
+                    Attributes == other.Attributes ||
+                    Attributes != null &&
+                    Attributes.Equals(other.Attributes)
                 );
         }
 
@@ -97,8 +125,12 @@ namespace IO.Swagger.Models
             {
                 var hashCode = 41;
                 // Suitable nullity checks etc, of course :)
-                    if (ConnectionId != null)
-                    hashCode = hashCode * 59 + ConnectionId.GetHashCode();
+                    if (Body != null)
+                    hashCode = hashCode * 59 + Body.GetHashCode();
+                    if (HortonFlags != null)
+                    hashCode = hashCode * 59 + HortonFlags.GetHashCode();
+                    if (Attributes != null)
+                    hashCode = hashCode * 59 + Attributes.GetHashCode();
                 return hashCode;
             }
         }
@@ -106,12 +138,12 @@ namespace IO.Swagger.Models
         #region Operators
         #pragma warning disable 1591
 
-        public static bool operator ==(ConnectResponse left, ConnectResponse right)
+        public static bool operator ==(DefinitionsJsoneventBody left, DefinitionsJsoneventBody right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(ConnectResponse left, ConnectResponse right)
+        public static bool operator !=(DefinitionsJsoneventBody left, DefinitionsJsoneventBody right)
         {
             return !Equals(left, right);
         }
