@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore;
 // Added 1 line in merge
 using System.Diagnostics.Tracing;
@@ -24,19 +18,18 @@ namespace IO.Swagger
         {
             // Added 1 line in merge
             ConsoleEventListener _listener = new ConsoleEventListener("Microsoft-Azure-");
-            BuildWebHost(args).Run();
+            CreateWebHostBuilder(args).Build().Run();
         }
 
         /// <summary>
-        /// Build Web Host
+        /// Create the web host builder.
         /// </summary>
         /// <param name="args"></param>
-        /// <returns>Webhost</returns>
-        public static IWebHost BuildWebHost(string[] args) =>
+        /// <returns>IWebHostBuilder</returns>
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 // added 1 line
-                .UseUrls("http://*:80")
-                .Build();
+                .UseUrls("http://*:80");
     }
 }

@@ -59,7 +59,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-docker run --rm -v ${script_dir}:/local swaggerapi/swagger-codegen-cli:2.4.2 generate \
+docker run --rm -v ${script_dir}:/local swaggerapi/swagger-codegen-cli:2.4.25 generate \
     --config /local/config_${language}.json \
     --input-spec /local/v2/swagger.json \
     --lang $swagger_language \

@@ -22,18 +22,26 @@ using Newtonsoft.Json;
 namespace IO.Swagger.Models
 { 
     /// <summary>
-    /// result of a connection to a service, device, or module client
+    /// device twin or module twin
     /// </summary>
     [DataContract]
-    public partial class ConnectResponse : IEquatable<ConnectResponse>
+    public partial class DefinitionsJsontwin : IEquatable<DefinitionsJsontwin>
     { 
         /// <summary>
-        /// unique identifier for this connection
+        /// desired properties
         /// </summary>
-        /// <value>unique identifier for this connection</value>
+        /// <value>desired properties</value>
 
-        [DataMember(Name="connectionId")]
-        public string ConnectionId { get; set; }
+        [DataMember(Name="desired")]
+        public Object Desired { get; set; }
+
+        /// <summary>
+        /// reported properties
+        /// </summary>
+        /// <value>reported properties</value>
+
+        [DataMember(Name="reported")]
+        public Object Reported { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object
@@ -42,8 +50,9 @@ namespace IO.Swagger.Models
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append("class ConnectResponse {\n");
-            sb.Append("  ConnectionId: ").Append(ConnectionId).Append("\n");
+            sb.Append("class DefinitionsJsontwin {\n");
+            sb.Append("  Desired: ").Append(Desired).Append("\n");
+            sb.Append("  Reported: ").Append(Reported).Append("\n");
             sb.Append("}\n");
             return sb.ToString();
         }
@@ -66,24 +75,29 @@ namespace IO.Swagger.Models
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((ConnectResponse)obj);
+            return obj.GetType() == GetType() && Equals((DefinitionsJsontwin)obj);
         }
 
         /// <summary>
-        /// Returns true if ConnectResponse instances are equal
+        /// Returns true if DefinitionsJsontwin instances are equal
         /// </summary>
-        /// <param name="other">Instance of ConnectResponse to be compared</param>
+        /// <param name="other">Instance of DefinitionsJsontwin to be compared</param>
         /// <returns>Boolean</returns>
-        public bool Equals(ConnectResponse other)
+        public bool Equals(DefinitionsJsontwin other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
 
             return 
                 (
-                    ConnectionId == other.ConnectionId ||
-                    ConnectionId != null &&
-                    ConnectionId.Equals(other.ConnectionId)
+                    Desired == other.Desired ||
+                    Desired != null &&
+                    Desired.Equals(other.Desired)
+                ) && 
+                (
+                    Reported == other.Reported ||
+                    Reported != null &&
+                    Reported.Equals(other.Reported)
                 );
         }
 
@@ -97,8 +111,10 @@ namespace IO.Swagger.Models
             {
                 var hashCode = 41;
                 // Suitable nullity checks etc, of course :)
-                    if (ConnectionId != null)
-                    hashCode = hashCode * 59 + ConnectionId.GetHashCode();
+                    if (Desired != null)
+                    hashCode = hashCode * 59 + Desired.GetHashCode();
+                    if (Reported != null)
+                    hashCode = hashCode * 59 + Reported.GetHashCode();
                 return hashCode;
             }
         }
@@ -106,12 +122,12 @@ namespace IO.Swagger.Models
         #region Operators
         #pragma warning disable 1591
 
-        public static bool operator ==(ConnectResponse left, ConnectResponse right)
+        public static bool operator ==(DefinitionsJsontwin left, DefinitionsJsontwin right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(ConnectResponse left, ConnectResponse right)
+        public static bool operator !=(DefinitionsJsontwin left, DefinitionsJsontwin right)
         {
             return !Equals(left, right);
         }
