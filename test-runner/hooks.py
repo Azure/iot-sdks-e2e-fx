@@ -6,9 +6,10 @@ import asyncio
 import pytest
 import traceback
 import connections
+import functools
+from typing import Callable, Awaitable, Any
 from horton_settings import settings
 from horton_logging import logger
-from pytest_asyncio.plugin import wrap_in_sync
 
 
 def separator(message=""):
@@ -97,6 +98,29 @@ async def session_teardown():
         raise
     finally:
         logger("HORTON: post-session cleanup complete")
+
+
+def wrap_in_sync(func: Callable[..., Awaitable[Any]], _loop: asyncio.AbstractEventLoop):
+    """Return a sync wrapper around an async function executing it in the
+    current event loop."""
+
+    # adapted form code in pytest_asyncio/plugin.py
+
+    @functools.wraps(func)
+    def inner(**kwargs):
+        coro = func(**kwargs)
+        task = asyncio.ensure_future(coro, loop=_loop)
+        try:
+            _loop.run_until_complete(task)
+        except BaseException:
+            # run_until_complete doesn't get the result from exceptions
+            # that are not subclasses of `Exception`. Consume all
+            # exceptions to prevent asyncio's warning from logging.
+            if task.done() and not task.cancelled():
+                task.exception()
+            raise
+
+    return inner
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

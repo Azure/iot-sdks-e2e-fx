@@ -82,7 +82,7 @@ namespace IO.Swagger
                            Url = new Uri("https://github.com/swagger-api/swagger-codegen"),
                            Email = ""
                         },
-                        TermsOfService = new Uri("")
+                        TermsOfService = new Uri("https://github.com/Azure/iot-sdks-e2e-fx/blob/master/LICENSE")
                     });
                     c.CustomSchemaIds(type => type.FullName);
                     c.IncludeXmlComments($"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{_hostingEnv.ApplicationName}.xml");
@@ -104,18 +104,18 @@ namespace IO.Swagger
             app.UseRouting();
 
             //TODO: Uncomment this if you need wwwroot folder
-            // app.UseStaticFiles();
+             app.UseStaticFiles();
 
-            app.UseAuthorization();
+            // app.UseAuthorization();
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 //TODO: Either use the SwaggerGen generated Swagger contract (generated from C# classes)
-                c.SwaggerEndpoint("/swagger/1.0.0/swagger.json", "Azure IOT End-to-End Test Wrapper Rest Api");
+                // c.SwaggerEndpoint("/swagger/1.0.0/swagger.json", "Azure IOT End-to-End Test Wrapper Rest Api");
 
                 //TODO: Or alternatively use the original Swagger contract that's included in the static files
-                // c.SwaggerEndpoint("/swagger-original.json", "Azure IOT End-to-End Test Wrapper Rest Api Original");
+                c.SwaggerEndpoint("/swagger-original.json", "Azure IOT End-to-End Test Wrapper Rest Api Original");
             });
 
             //TODO: Use Https Redirection
