@@ -8,7 +8,6 @@ jobs:
   pool: "Horton_Raspi_Python"
   strategy:
     matrix:
-      py27: { variant: py27 }
       py38: { variant: py38 }
       node12: { variant: node12 }
       c: { language: c }
@@ -25,7 +24,6 @@ jobs:
     - "build_linux_arm"
   strategy:
     matrix:
-      py27_mqtt_iothub_module_and_device:     { suite: py27_mqtt_iothub_module_and_device }
       py38_mqtt_iothub_module_and_device:     { suite: py38_mqtt_iothub_module_and_device }
       node12_mqtt_iothub_module_and_device:     { suite: node12_mqtt_iothub_module }
       c_mqtt_iothub_module_and_device:          { suite: c_mqtt_iothub_module }
