@@ -38,12 +38,6 @@ steps:
     } elseif ($env:Suite.StartsWith("node12_")) {
         $Language = "node"
         $Variant = "node12"
-    } elseif ($env:Suite.StartsWith("py27_")) {
-        $Language = "pythonv2"
-        $Variant = "py27"
-    } elseif ($env:Suite.StartsWith("py35_")) {
-        $Language = "pythonv2"
-        $Variant = "py35"
     } elseif ($env:Suite.StartsWith("py36_")) {
         $Language = "pythonv2"
         $Variant = "py36"

@@ -15,7 +15,7 @@ PYTHON_INPROC_IMAGE = "python-inproc-debugging"
 PYTHON_INPROC_ADAPTER_ADDRESS = "python_inproc"
 
 all_languages = ["pythonv2", "java", "csharp", "node", "c"]
-all_variants = ["py27", "py35", "py36", "py37", "py38", "node12"]
+all_variants = ["py36", "py37", "py38", "node12"]
 
 
 def is_windows():
