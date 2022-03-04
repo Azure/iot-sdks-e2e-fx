@@ -54,8 +54,6 @@ steps:
   displayName: 'Publish Guardian Artifacts'
   inputs:
     ArtifactName: GuardianLogs
-- task: securedevelopmentteam.vss-secure-development-tools.build-task-publishsecurityanalysislogs.PublishSecurityAnalysisLogs@2
-  displayName: 'Publish Security Analysis Logs'
 - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@2
   displayName: 'Post Analysis'
   inputs:
@@ -71,8 +69,3 @@ steps:
   inputs:
     GdnPublishTsaOnboard: false
     GdnPublishTsaConfigFile: '$(Build.SourcesDirectory)\newtsaupload.gdntsa'
-- task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
-  displayName: 'Post Analysis'
-  inputs:
-    CredScan: true
-    PoliCheck: true
