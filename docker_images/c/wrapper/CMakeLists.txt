@@ -79,8 +79,6 @@ set(glue_cpp_files
     glue/DeviceGlue.cpp
     glue/ModuleGlue.cpp
     glue/ControlGlue.cpp
-    glue/RegistryGlue.cpp
-    glue/ServiceGlue.cpp
     glue/json.cpp
 )
 
@@ -90,8 +88,6 @@ set(glue_h_files
     glue/DeviceGlue.h
     glue/ModuleGlue.h
     glue/ControlGlue.h
-    glue/RegistryGlue.h
-    glue/ServiceGlue.h
     glue/json.h
     glue/iothub_sdk.h
 )
