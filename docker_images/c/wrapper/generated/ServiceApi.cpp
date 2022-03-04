@@ -18,10 +18,6 @@
 
 #include "ServiceApi.h"
 
-// Added 2 lines in merge
-#include "ServiceGlue.h"
-ServiceGlue service_glue;
-
 namespace io {
 namespace swagger {
 namespace server {
@@ -82,9 +78,6 @@ void ServiceApiServiceConnectResource::PUT_method_handler(const std::shared_ptr<
 			// Getting the query params
 			const std::string connectionString = request->get_query_parameter("connectionString", "");
 
-			// 1 line added in merge
-			std::string result = service_glue.Connect(connectionString);
-
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
 
@@ -93,8 +86,7 @@ void ServiceApiServiceConnectResource::PUT_method_handler(const std::shared_ptr<
 			 */
 
 			if (status_code == 200) {
-				// Changed 1 parameter in merge
-				session->close(200, result, { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -120,9 +112,6 @@ void ServiceApiServiceConnectionIdDisconnectResource::PUT_method_handler(const s
 
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
-
-			// 1 line added in merge
-			service_glue.Disconnect(connectionId);
 
 
 			// Change the value of this variable to the appropriate response before sending the response
@@ -173,9 +162,6 @@ void ServiceApiServiceConnectionIdDeviceMethodDeviceIdResource::PUT_method_handl
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 			const std::string deviceId = request->get_path_parameter("deviceId", "");
 
-			// 1 line addded in merge
-			std::string result = service_glue.InvokeDeviceMethod(connectionId, deviceId, requestBody);
-
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -185,8 +171,7 @@ void ServiceApiServiceConnectionIdDeviceMethodDeviceIdResource::PUT_method_handl
 			 */
 
 			if (status_code == 200) {
-				// Changed 1 parameter in merge
-				session->close(200, result, { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -227,9 +212,6 @@ void ServiceApiServiceConnectionIdModuleMethodDeviceIdModuleIdResource::PUT_meth
 			const std::string deviceId = request->get_path_parameter("deviceId", "");
 			const std::string moduleId = request->get_path_parameter("moduleId", "");
 
-			// 1 line added in merge
-			std::string result = service_glue.InvokeModuleMethod(connectionId, deviceId, moduleId, requestBody);
-
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;
@@ -239,8 +221,7 @@ void ServiceApiServiceConnectionIdModuleMethodDeviceIdModuleIdResource::PUT_meth
 			 */
 
 			if (status_code == 200) {
-				// chaneged one parameter in merge
-				session->close(200, result, { {"Connection", "close"} });
+				session->close(200, "", { {"Connection", "close"} });
 				return;
 			}
 
@@ -279,9 +260,6 @@ void ServiceApiServiceConnectionIdSendC2dDeviceIdResource::PUT_method_handler(co
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 			const std::string deviceId = request->get_path_parameter("deviceId", "");
-
-            // 1 line added in merge
-            service_glue.SendC2dMessage(connectionId, deviceId, requestBody);
 
 			// Change the value of this variable to the appropriate response before sending the response
 			int status_code = 200;

@@ -6,7 +6,7 @@ from horton_settings import settings
 
 language_has_full_device_client = ("pythonv2", "node", "c")
 language_has_leaf_device_client = ("node",)
-language_has_service_client = ("node", "csharp", "java", "c")
+language_has_service_client = ("node", "csharp", "java")
 
 
 class HortonCapabilities(object):
