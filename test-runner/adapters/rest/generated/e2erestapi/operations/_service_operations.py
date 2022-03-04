@@ -69,7 +69,7 @@ class ServiceOperations(object):
         request = self._client.put(url, query_parameters, header_parameters)
         response = self._client.send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -121,7 +121,7 @@ class ServiceOperations(object):
         request = self._client.put(url, query_parameters, header_parameters)
         response = self._client.send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -177,7 +177,7 @@ class ServiceOperations(object):
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = self._client.send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -236,7 +236,7 @@ class ServiceOperations(object):
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = self._client.send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -294,7 +294,7 @@ class ServiceOperations(object):
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = self._client.send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:

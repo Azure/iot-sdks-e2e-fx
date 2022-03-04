@@ -82,7 +82,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -131,7 +131,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -178,7 +178,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -242,7 +242,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -294,7 +294,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -352,7 +352,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -416,7 +416,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -465,7 +465,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -512,7 +512,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -555,7 +555,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -598,7 +598,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -641,7 +641,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -684,7 +684,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -727,7 +727,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -771,7 +771,7 @@ class ModuleOperations:
         request = self._client.get(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -826,7 +826,7 @@ class ModuleOperations:
         request = self._client.patch(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -870,7 +870,7 @@ class ModuleOperations:
         request = self._client.get(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -925,7 +925,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -977,7 +977,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -1025,7 +1025,7 @@ class ModuleOperations:
         request = self._client.get(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -1092,7 +1092,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         if raw:
@@ -1148,7 +1148,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -1207,7 +1207,7 @@ class ModuleOperations:
         request = self._client.put(url, query_parameters, header_parameters, body_content)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -1257,7 +1257,7 @@ class ModuleOperations:
         request = self._client.get(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
@@ -1312,7 +1312,7 @@ class ModuleOperations:
         request = self._client.get(url, query_parameters, header_parameters)
         response = await self._client.async_send(request, stream=False, **operation_config)
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 204]:
             raise HttpOperationError(self._deserialize, response)
 
         deserialized = None
