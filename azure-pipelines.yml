@@ -7,7 +7,7 @@ trigger:
 - master
 
 pool:
-  vmImage: 'vs2017-win2016'
+  vmImage: 'windows-latest'
 
 steps:
 - powershell: |
@@ -30,8 +30,42 @@ steps:
   displayName: 'Run PoliCheck'
   inputs:
     targetType: F
-- task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-bandit.Bandit@1
+  displayName: 'Run Bandit'
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-guardian.Guardian@1
+  displayName: 'Run Guardian'
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-vulnerabilityassessment.VulnerabilityAssessment@0
+  displayName: 'Run Vulnerability Assessment'
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-report.SdtReport@2
+  displayName: 'Guardian Export'
+  inputs:
+    GdnExportAllTools: false
+    GdnExportGdnToolBandit: true
+    GdnExportGdnToolBanditSeverity: Error
+    GdnExportGdnToolBinSkim: true
+    GdnExportGdnToolBinSkimSeverity: Error
+    GdnExportGdnToolCodesignValidation: true
+    GdnExportGdnToolCodesignValidationSeverity: Error
+    GdnExportGdnToolCredScan: true
+    GdnExportGdnToolCredScanSeverity: Error
+    GdnExportGdnToolPoliCheck: true
+    GdnExportGdnToolPoliCheckSeverity: Error
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-publishsecurityanalysislogs.PublishSecurityAnalysisLogs@3
+  displayName: 'Publish Guardian Artifacts'
+  inputs:
+    ArtifactName: GuardianLogs
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@2
   displayName: 'Post Analysis'
   inputs:
-    CredScan: true
-    PoliCheck: true
+    GdnBreakAllTools: false
+    GdnBreakGdnToolBandit: true
+    GdnBreakGdnToolBanditSeverity: Error
+    GdnBreakGdnToolBinSkim: true
+    GdnBreakGdnToolBinSkimSeverity: Error
+    GdnBreakGdnToolCredScan: true
+    GdnBreakGdnToolCredScanSeverity: Error
+- task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@2
+  displayName: 'TSA upload'
+  inputs:
+    GdnPublishTsaOnboard: false
+    GdnPublishTsaConfigFile: '$(Build.SourcesDirectory)\newtsaupload.gdntsa'

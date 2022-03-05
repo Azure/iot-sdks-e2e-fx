@@ -1,8 +1,8 @@
 azure-eventhub==5.0.1
 azure.storage.blob
 certifi
-colorama>=0.4.1
-docker>=3.5.0
+colorama
+docker
 junitparser==1.4.1
 msrest
 pre-commit
@@ -12,11 +12,11 @@ pytest-repeat
 pytest-testdox
 pytest-timeout
 python_dateutil
-requests>=2.20.0
-ruamel.yaml>=0.15.71
+requests
+ruamel.yaml
 setuptools
 six
 uamqp
-urllib3>=1.25.8
-PyYAML>=5.3.1
+urllib3
+PyYAML
 inflection==0.5.0

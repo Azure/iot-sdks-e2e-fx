@@ -16,10 +16,11 @@
     <Folder Include="wwwroot\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-rc4"/>
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.0.0-rc4"/>
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="5.0.0-rc4"/>
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="5.0.0-rc4" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.3"/>
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3"/>
+      <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.6.3"/>
+      <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="5.6.3"/>
+      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="5.6.3"/>
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.4" />
