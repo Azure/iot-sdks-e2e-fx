@@ -40,6 +40,7 @@ public class UnixDomainSocketChannelImpl implements UnixDomainSocketChannel
         System.arraycopy(inputByteBuffer.array(), 0, inputBuffer, 0, inputByteBuffer.capacity());
 
         String readContents = new String(inputBuffer.clone());
+        System.out.println("Read " + bytesRead + " bytes from unix domain socket");
         System.out.println("Read content from unix domain socket:");
         System.out.println(readContents);
 
