@@ -129,6 +129,8 @@ public class ModuleGlue
 
             ModuleClient client = new ModuleClient(connectionString, protocol, clientOptionsBuilder.build());
 
+            client.open(true);
+
             this._clientCount++;
             String connectionId = "moduleClient_" + this._clientCount;
             this._map.put(connectionId, client);
