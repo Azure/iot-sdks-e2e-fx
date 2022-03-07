@@ -614,6 +614,7 @@ public class ModuleGlue
             try
             {
                 client.updateReportedProperties(reportedProperties);
+                handler.handle(Future.succeededFuture());
             }
             catch (TimeoutException | InterruptedException e)
             {
