@@ -312,7 +312,7 @@ public class ModuleGlue
         {
             try
             {
-                System.out.println("calling startTwin");
+                System.out.println("calling subscribeToDesiredProperties to start twin");
                 client.subscribeToDesiredProperties(
                     (twin, context) ->
                     {
@@ -323,6 +323,8 @@ public class ModuleGlue
                         }
                     },
                     null);
+
+                handler.handle(Future.succeededFuture());
             }
             catch (TimeoutException | InterruptedException e)
             {
