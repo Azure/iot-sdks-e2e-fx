@@ -1,16 +1,15 @@
 package glue;
 
-import com.microsoft.azure.sdk.iot.service.devicetwin.DeviceMethod;
-import com.microsoft.azure.sdk.iot.service.devicetwin.MethodResult;
 import com.microsoft.azure.sdk.iot.service.exceptions.IotHubException;
+import com.microsoft.azure.sdk.iot.service.methods.DirectMethodRequestOptions;
+import com.microsoft.azure.sdk.iot.service.methods.DirectMethodsClient;
+import com.microsoft.azure.sdk.iot.service.methods.MethodResult;
 import io.swagger.server.api.MainApiException;
 import io.swagger.server.api.model.ConnectResponse;
 import io.swagger.server.api.model.MethodInvoke;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -18,20 +17,13 @@ import java.util.Set;
 
 public class ServiceGlue
 {
-    HashMap<String, DeviceMethod> _map = new HashMap<>();
+    HashMap<String, DirectMethodsClient> _map = new HashMap<>();
     int _clientCount = 0;
 
     public void connect(String connectionString, Handler<AsyncResult<ConnectResponse>> handler)
     {
         System.out.printf("connect called%n");
-        DeviceMethod client = null;
-        try
-        {
-            client = DeviceMethod.createFromConnectionString(connectionString);
-        } catch (IOException e)
-        {
-            handler.handle(Future.failedFuture(e));
-        }
+        DirectMethodsClient client = new DirectMethodsClient(connectionString);
 
         this._clientCount++;
         String connectionId = "serviceClient_" + this._clientCount;
@@ -42,23 +34,16 @@ public class ServiceGlue
         handler.handle(Future.succeededFuture(cr));
     }
 
-    private DeviceMethod getClient(String connectionId)
+    private DirectMethodsClient getClient(String connectionId)
     {
-        if (this._map.containsKey(connectionId))
-        {
-            return this._map.get(connectionId);
-        }
-        else
-        {
-            return null;
-        }
+        return this._map.getOrDefault(connectionId, null);
     }
 
 
     private void _closeConnection(String connectionId)
     {
         System.out.printf("Disconnect for %s%n", connectionId);
-        DeviceMethod client = getClient(connectionId);
+        DirectMethodsClient client = getClient(connectionId);
         if (client != null)
         {
             this._map.remove(connectionId);
@@ -76,7 +61,7 @@ public class ServiceGlue
         System.out.printf("invoking method on %s with deviceId = %s moduleId = %s%n", connectionId, deviceId, moduleId);
         System.out.println(methodInvokeParameters);
 
-        DeviceMethod client = getClient(connectionId);
+        DirectMethodsClient client = getClient(connectionId);
         if (client == null)
         {
             handler.handle(Future.failedFuture(new MainApiException(500, "invalid connection id")));
@@ -85,19 +70,24 @@ public class ServiceGlue
         {
             String methodName = methodInvokeParameters.getMethodName();
             Object payload = methodInvokeParameters.getPayload();
-            Long responseTimeout = new Long(methodInvokeParameters.getResponseTimeoutInSeconds());
-            Long connectionTimeout = new Long(methodInvokeParameters.getConnectTimeoutInSeconds());
+            DirectMethodRequestOptions requestOptions =
+                DirectMethodRequestOptions.builder()
+                    .methodResponseTimeoutSeconds(methodInvokeParameters.getResponseTimeoutInSeconds())
+                    .methodConnectTimeoutSeconds(methodInvokeParameters.getConnectTimeoutInSeconds())
+                    .payload(payload)
+                    .build();
+
             MethodResult result = null;
             System.out.printf("invoking%n");
             try
             {
                 if (moduleId == null)
                 {
-                    result = client.invoke(deviceId, methodName, responseTimeout, connectionTimeout, payload);
+                    result = client.invoke(deviceId, methodName, requestOptions);
                 }
                 else
                 {
-                    result = client.invoke(deviceId, moduleId, methodName, responseTimeout, connectionTimeout, payload);
+                    result = client.invoke(deviceId, moduleId, methodName, requestOptions);
                 }
             }
             catch (IotHubException e)
