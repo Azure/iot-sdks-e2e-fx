@@ -8,9 +8,9 @@ import com.microsoft.azure.sdk.iot.device.IotHubStatusCode;
 import com.microsoft.azure.sdk.iot.device.Message;
 import com.microsoft.azure.sdk.iot.device.ModuleClient;
 import com.microsoft.azure.sdk.iot.device.auth.IotHubSSLContext;
-import com.microsoft.azure.sdk.iot.device.edge.MethodRequest;
-import com.microsoft.azure.sdk.iot.device.edge.MethodResult;
+import com.microsoft.azure.sdk.iot.device.edge.DirectMethodRequest;
 import com.microsoft.azure.sdk.iot.device.exceptions.ModuleClientException;
+import com.microsoft.azure.sdk.iot.device.twin.DirectMethodPayload;
 import com.microsoft.azure.sdk.iot.device.twin.DirectMethodResponse;
 import com.microsoft.azure.sdk.iot.device.twin.MethodCallback;
 import com.microsoft.azure.sdk.iot.device.twin.Property;
@@ -154,10 +154,10 @@ public class ModuleGlue
         }
         else
         {
-            MethodRequest request = new MethodRequest(methodInvokeParameters.getMethodName(), Json.encode(methodInvokeParameters.getPayload()), methodInvokeParameters.getResponseTimeoutInSeconds(), methodInvokeParameters.getConnectTimeoutInSeconds());
+            DirectMethodRequest request = new DirectMethodRequest(methodInvokeParameters.getMethodName(), Json.encode(methodInvokeParameters.getPayload()), methodInvokeParameters.getResponseTimeoutInSeconds(), methodInvokeParameters.getConnectTimeoutInSeconds());
             try
             {
-                MethodResult result = client.invokeMethod(deviceId, request);
+                com.microsoft.azure.sdk.iot.device.edge.DirectMethodResponse result = client.invokeMethod(deviceId, request);
                 handler.handle(Future.succeededFuture(makeMethodResultThatEncodesCorrectly(result)));
             } catch (ModuleClientException e)
             {
@@ -435,12 +435,12 @@ public class ModuleGlue
         }
 
         @Override
-        public DirectMethodResponse onMethodInvoked(String methodName, Object methodData, Object context)
+        public DirectMethodResponse onMethodInvoked(String methodName, DirectMethodPayload methodData, Object context)
         {
             System.out.printf("method %s called%n", methodName);
             if (methodName.equals(this._methodName))
             {
-                String methodDataString = new String((byte[]) methodData);
+                String methodDataString = methodData.getPayload(String.class);
                 System.out.printf("methodData: %s%n", methodDataString);
 
                 if (methodDataString.equals(this._requestBody) ||
@@ -503,7 +503,7 @@ public class ModuleGlue
         }
     }
 
-    private JsonObject makeMethodResultThatEncodesCorrectly(MethodResult result)
+    private JsonObject makeMethodResultThatEncodesCorrectly(com.microsoft.azure.sdk.iot.device.edge.DirectMethodResponse result)
     {
         // Our JSON encoder doesn't like the way the MethodClass implements getPayload and getPayloadObject.  It
         // produces JSON that had both fields and the we want to return payloadObject, but we want to return it
@@ -511,7 +511,7 @@ public class ModuleGlue
         // values over manually.  I'm sure there's a better way, but this is test code.
         JsonObject fixedObject = new JsonObject();
         fixedObject.put("status", result.getStatus());
-        fixedObject.put("payload", result.getPayloadObject());
+        fixedObject.put("payload", result.getPayloadAsJsonElement());
         return fixedObject;
     }
 
@@ -525,10 +525,10 @@ public class ModuleGlue
         }
         else
         {
-            MethodRequest request = new MethodRequest(methodInvokeParameters.getMethodName(), Json.encode(methodInvokeParameters.getPayload()), methodInvokeParameters.getResponseTimeoutInSeconds(), methodInvokeParameters.getConnectTimeoutInSeconds());
+            DirectMethodRequest request = new DirectMethodRequest(methodInvokeParameters.getMethodName(), Json.encode(methodInvokeParameters.getPayload()), methodInvokeParameters.getResponseTimeoutInSeconds(), methodInvokeParameters.getConnectTimeoutInSeconds());
             try
             {
-                MethodResult result = client.invokeMethod(deviceId, moduleId, request);
+                com.microsoft.azure.sdk.iot.device.edge.DirectMethodResponse result = client.invokeMethod(deviceId, moduleId, request);
                 handler.handle(Future.succeededFuture(makeMethodResultThatEncodesCorrectly(result)));
             } catch (ModuleClientException e)
             {
