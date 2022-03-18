@@ -3,16 +3,18 @@ package glue;
 import com.microsoft.azure.sdk.iot.service.exceptions.IotHubException;
 import com.microsoft.azure.sdk.iot.service.methods.DirectMethodRequestOptions;
 import com.microsoft.azure.sdk.iot.service.methods.DirectMethodsClient;
-import com.microsoft.azure.sdk.iot.service.methods.MethodResult;
+import com.microsoft.azure.sdk.iot.service.methods.DirectMethodResponse;
 import io.swagger.server.api.MainApiException;
 import io.swagger.server.api.model.ConnectResponse;
 import io.swagger.server.api.model.MethodInvoke;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class ServiceGlue
@@ -70,6 +72,9 @@ public class ServiceGlue
         {
             String methodName = methodInvokeParameters.getMethodName();
             Object payload = methodInvokeParameters.getPayload();
+
+            System.out.println("The payload type is: " + payload.getClass());
+
             DirectMethodRequestOptions requestOptions =
                 DirectMethodRequestOptions.builder()
                     .methodResponseTimeoutSeconds(methodInvokeParameters.getResponseTimeoutInSeconds())
@@ -77,7 +82,7 @@ public class ServiceGlue
                     .payload(payload)
                     .build();
 
-            MethodResult result = null;
+            DirectMethodResponse result = null;
             System.out.printf("invoking%n");
             try
             {
@@ -99,8 +104,19 @@ public class ServiceGlue
             }
             System.out.printf("invoke returned%n");
             System.out.println(result);
-            handler.handle(Future.succeededFuture(result));
+            handler.handle(Future.succeededFuture(makeMethodResultThatEncodesCorrectly(result)));
         }
+    }
+
+    private JsonObject makeMethodResultThatEncodesCorrectly(DirectMethodResponse result)
+    {
+        // Our JSON encoder doesn't like the way the MethodClass implements getPayload. The easiest
+        // workaround is to make an empty JsonObject and copy the values over manually.  I'm sure
+        // there's a better way, but this is test code.
+        JsonObject fixedObject = new JsonObject();
+        fixedObject.put("status", result.getStatus());
+        fixedObject.put("payload", result.getPayload(String.class));
+        return fixedObject;
     }
 
     public void invokeDeviceMethod(String connectionId, String deviceId, MethodInvoke methodInvokeParameters, Handler<AsyncResult<Object>> handler)
