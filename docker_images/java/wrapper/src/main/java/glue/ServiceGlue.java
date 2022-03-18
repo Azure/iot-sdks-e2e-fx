@@ -115,7 +115,7 @@ public class ServiceGlue
         // there's a better way, but this is test code.
         JsonObject fixedObject = new JsonObject();
         fixedObject.put("status", result.getStatus());
-        fixedObject.put("payload", result.getPayload(Map.class));
+        fixedObject.put("payload", result.getPayload(String.class));
         return fixedObject;
     }
 
