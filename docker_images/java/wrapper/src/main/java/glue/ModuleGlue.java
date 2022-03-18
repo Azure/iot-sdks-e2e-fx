@@ -440,7 +440,7 @@ public class ModuleGlue
             System.out.printf("method %s called%n", methodName);
             if (methodName.equals(this._methodName))
             {
-                String methodDataString = methodData.getPayload(String.class);
+                String methodDataString = methodData.getPayloadAsJsonString();
                 System.out.printf("methodData: %s%n", methodDataString);
 
                 if (methodDataString.equals(this._requestBody) ||
