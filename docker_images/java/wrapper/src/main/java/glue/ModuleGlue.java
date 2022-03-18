@@ -35,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -440,11 +441,11 @@ public class ModuleGlue
             System.out.printf("method %s called%n", methodName);
             if (methodName.equals(this._methodName))
             {
-                String methodDataString = methodData.getPayloadAsJsonString();
-                System.out.printf("methodData: %s%n", methodDataString);
+                Object methodDataObject = methodData.getPayload(Map.class);
+                System.out.printf("methodData: %s%n", methodDataObject);
 
-                if (methodDataString.equals(this._requestBody) ||
-                    Json.encode(methodDataString).equals(this._requestBody))
+                if (methodDataObject.equals(this._requestBody) ||
+                    Json.encode(methodDataObject).equals(this._requestBody))
                 {
                     System.out.printf("Method data looks correct.  Returning result: %s%n", _responseBody);
                     this._handler.handle(Future.succeededFuture());
