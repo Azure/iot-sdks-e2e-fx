@@ -10,6 +10,7 @@ import io.swagger.server.api.model.MethodInvoke;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -99,8 +100,20 @@ public class ServiceGlue
             }
             System.out.printf("invoke returned%n");
             System.out.println(result);
-            handler.handle(Future.succeededFuture(result));
+            handler.handle(Future.succeededFuture(makeMethodResultThatEncodesCorrectly(result)));
         }
+    }
+
+    private JsonObject makeMethodResultThatEncodesCorrectly(DirectMethodResponse result)
+    {
+        // Our JSON encoder doesn't like the way the MethodClass implements getPayload and getPayloadObject.  It
+        // produces JSON that had both fields and the we want to return payloadObject, but we want to return it
+        // in the field called "payload".  The easiest workaroudn is to make an empty JsonObject and copy the
+        // values over manually.  I'm sure there's a better way, but this is test code.
+        JsonObject fixedObject = new JsonObject();
+        fixedObject.put("status", result.getStatus());
+        fixedObject.put("payload", result.getPayloadAsJsonElement());
+        return fixedObject;
     }
 
     public void invokeDeviceMethod(String connectionId, String deviceId, MethodInvoke methodInvokeParameters, Handler<AsyncResult<Object>> handler)
