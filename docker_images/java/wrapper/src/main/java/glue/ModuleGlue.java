@@ -441,6 +441,9 @@ public class ModuleGlue
             System.out.printf("method %s called%n", methodName);
             if (methodName.equals(this._methodName))
             {
+                System.out.println("Received payload:");
+                System.out.println(methodData.getPayloadAsJsonString());
+
                 Object methodDataObject = methodData.getPayload(Map.class);
                 System.out.printf("methodData: %s%n", methodDataObject);
 

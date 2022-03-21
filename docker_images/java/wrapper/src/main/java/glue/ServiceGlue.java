@@ -1,5 +1,6 @@
 package glue;
 
+import com.google.gson.JsonSyntaxException;
 import com.microsoft.azure.sdk.iot.service.exceptions.IotHubException;
 import com.microsoft.azure.sdk.iot.service.methods.DirectMethodRequestOptions;
 import com.microsoft.azure.sdk.iot.service.methods.DirectMethodsClient;
@@ -123,7 +124,7 @@ public class ServiceGlue
         {
             fixedObject.put("payload", result.getPayload(String.class));
         }
-        catch (IllegalStateException e)
+        catch (JsonSyntaxException e)
         {
             System.out.println("Could not parse payload as a string, will try to parse it as a map");
             fixedObject.put("payload", result.getPayload(Map.class));
