@@ -115,7 +115,17 @@ public class ServiceGlue
         // there's a better way, but this is test code.
         JsonObject fixedObject = new JsonObject();
         fixedObject.put("status", result.getStatus());
-        fixedObject.put("payload", result.getPayload(String.class));
+
+        try
+        {
+            fixedObject.put("payload", result.getPayload(String.class));
+        }
+        catch (IllegalStateException e)
+        {
+            System.out.println("Could not parse payload as a string, will try to parse it as a map");
+            fixedObject.put("payload", result.getPayload(Map.class));
+        }
+
         return fixedObject;
     }
 

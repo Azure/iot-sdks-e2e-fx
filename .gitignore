@@ -19,3 +19,8 @@ _horton_settings.json
 bin/_virtualenv/*
 bin/_python/*
 
+
+
+# Java files to ignore
+*.class
+*.iml
