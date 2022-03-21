@@ -116,6 +116,9 @@ public class ServiceGlue
         JsonObject fixedObject = new JsonObject();
         fixedObject.put("status", result.getStatus());
 
+        System.out.println("Received payload:");
+        System.out.println(result.getPayloadAsJsonString());
+
         try
         {
             fixedObject.put("payload", result.getPayload(String.class));
