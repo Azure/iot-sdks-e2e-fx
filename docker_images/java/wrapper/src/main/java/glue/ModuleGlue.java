@@ -97,7 +97,7 @@ public class ModuleGlue
             ConnectResponse cr = new ConnectResponse();
             cr.setConnectionId(connectionId);
             handler.handle(Future.succeededFuture(cr));
-        } catch (ModuleClientException | IOException e)
+        } catch (Exception e)
         {
             handler.handle(Future.failedFuture(e));
         }
@@ -139,7 +139,7 @@ public class ModuleGlue
             ConnectResponse cr = new ConnectResponse();
             cr.setConnectionId(connectionId);
             handler.handle(Future.succeededFuture(cr));
-        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException | KeyManagementException e)
+        } catch (Exception e)
         {
             handler.handle(Future.failedFuture(e));
         }
@@ -160,7 +160,7 @@ public class ModuleGlue
             {
                 com.microsoft.azure.sdk.iot.device.edge.DirectMethodResponse result = client.invokeMethod(deviceId, request);
                 handler.handle(Future.succeededFuture(makeMethodResultThatEncodesCorrectly(result)));
-            } catch (ModuleClientException e)
+            } catch (Exception e)
             {
                 handler.handle(Future.failedFuture(e));
             }
@@ -329,7 +329,7 @@ public class ModuleGlue
 
                 handler.handle(Future.succeededFuture());
             }
-            catch (TimeoutException | InterruptedException e)
+            catch (Exception e)
             {
                 handler.handle(Future.failedFuture((e)));
             }
@@ -537,7 +537,7 @@ public class ModuleGlue
             {
                 com.microsoft.azure.sdk.iot.device.edge.DirectMethodResponse result = client.invokeMethod(deviceId, moduleId, request);
                 handler.handle(Future.succeededFuture(makeMethodResultThatEncodesCorrectly(result)));
-            } catch (ModuleClientException e)
+            } catch (Exception e)
             {
                 handler.handle(Future.failedFuture(e));
             }
@@ -598,7 +598,7 @@ public class ModuleGlue
                 {
                     onPropertyChanged(new Property(key, desiredProperties.get(key)), null);
                 }
-            } catch (InterruptedException | TimeoutException e)
+            } catch (Exception e)
             {
                 this.setTwinHandler(null);
                 handler.handle(Future.failedFuture(e));
@@ -625,7 +625,7 @@ public class ModuleGlue
                 client.updateReportedProperties(reportedProperties);
                 handler.handle(Future.succeededFuture());
             }
-            catch (TimeoutException | InterruptedException e)
+            catch (Exception e)
             {
                 this._deviceTwinStatusCallback.setHandler(null);
                 handler.handle(Future.failedFuture(e));

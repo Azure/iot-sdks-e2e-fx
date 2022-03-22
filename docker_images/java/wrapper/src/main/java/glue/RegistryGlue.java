@@ -73,7 +73,7 @@ public class RegistryGlue
                 Twin hortonTwin = new Twin(new JsonObject(twin.getDesiredProperties()), new JsonObject(twin.getReportedProperties()));
                 handler.handle(Future.succeededFuture(hortonTwin));
             }
-            catch (IOException | IotHubException e)
+            catch (Exception e)
             {
                 handler.handle(Future.failedFuture(e));
             }
@@ -101,7 +101,7 @@ public class RegistryGlue
             {
                 client.patch(serviceTwin);
             }
-            catch (IotHubException | IOException e)
+            catch (Exception e)
             {
                 handler.handle(Future.failedFuture(e));
             }
