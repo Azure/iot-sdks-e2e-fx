@@ -10,11 +10,7 @@ import com.microsoft.azure.sdk.iot.device.ModuleClient;
 import com.microsoft.azure.sdk.iot.device.auth.IotHubSSLContext;
 import com.microsoft.azure.sdk.iot.device.edge.DirectMethodRequest;
 import com.microsoft.azure.sdk.iot.device.exceptions.ModuleClientException;
-import com.microsoft.azure.sdk.iot.device.twin.DirectMethodPayload;
-import com.microsoft.azure.sdk.iot.device.twin.DirectMethodResponse;
-import com.microsoft.azure.sdk.iot.device.twin.MethodCallback;
-import com.microsoft.azure.sdk.iot.device.twin.Property;
-import com.microsoft.azure.sdk.iot.device.twin.TwinCollection;
+import com.microsoft.azure.sdk.iot.device.twin.*;
 import io.swagger.server.api.MainApiException;
 import io.swagger.server.api.model.Certificate;
 import io.swagger.server.api.model.ConnectResponse;
@@ -624,7 +620,8 @@ public class ModuleGlue
             this._deviceTwinStatusCallback.setHandler(handler);
             try
             {
-                client.updateReportedProperties(reportedProperties);
+                ReportedPropertiesUpdateResponse response = client.updateReportedProperties(reportedProperties);
+                System.out.println("update reported properties finished with status code " + response.getStatusCode());
                 handler.handle(Future.succeededFuture());
             }
             catch (Exception e)
