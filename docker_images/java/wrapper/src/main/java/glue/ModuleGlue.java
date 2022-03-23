@@ -620,7 +620,6 @@ public class ModuleGlue
             this._deviceTwinStatusCallback.setHandler(handler);
             try
             {
-                reportedProperties.setVersion(client.getTwin().getReportedProperties().getVersion());
                 ReportedPropertiesUpdateResponse response = client.updateReportedProperties(reportedProperties);
                 System.out.println("update reported properties finished with status code " + response.getStatusCode());
                 handler.handle(Future.succeededFuture());
