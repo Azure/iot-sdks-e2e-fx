@@ -619,8 +619,6 @@ public class ModuleGlue
         else
         {
             TwinCollection reportedProperties = new TwinCollection((LinkedHashMap<String, Object>)twin.getReported());
-            System.out.println("reported properties size" + reportedProperties.size());
-            System.out.println("reported properties:" + reportedProperties);
             this._deviceTwinStatusCallback.setHandler(handler);
             try
             {
