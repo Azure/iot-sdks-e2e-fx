@@ -96,12 +96,9 @@ public class ServiceGlue
                     result = client.invoke(deviceId, moduleId, methodName, requestOptions);
                 }
             }
-            catch (IotHubException e)
+            catch (Exception e)
             {
                 handler.handle(Future.failedFuture(e));
-            } catch (IOException e)
-            {
-                e.printStackTrace();
             }
             System.out.printf("invoke returned%n");
             System.out.println(result);

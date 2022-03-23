@@ -1,9 +1,7 @@
 package glue;
 
 import com.microsoft.azure.sdk.iot.service.exceptions.IotHubException;
-import com.microsoft.azure.sdk.iot.service.twin.Pair;
 import com.microsoft.azure.sdk.iot.service.twin.TwinClient;
-import com.microsoft.azure.sdk.iot.service.twin.TwinCollection;
 import io.swagger.server.api.MainApiException;
 import io.swagger.server.api.model.ConnectResponse;
 import io.swagger.server.api.model.Twin;
@@ -14,7 +12,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,26 +55,6 @@ public class RegistryGlue
         handler.handle(Future.succeededFuture());
     }
 
-    private TwinCollection setToMap(Set<Pair> set)
-    {
-        TwinCollection map = new TwinCollection();
-
-        if (set != null)
-        {
-            for (Pair p : set)
-            {
-                if (map.containsKey(p.getKey()))
-                {
-                    throw new IllegalArgumentException("Set must not contain multiple pairs with the same keys. Duplicate key: " + p.getKey());
-                }
-
-                map.put(p.getKey(), p.getValue());
-            }
-        }
-
-        return map;
-    }
-
     public void getModuleTwin(String connectionId, String deviceId, String moduleId, Handler<AsyncResult<Twin>> handler)
     {
         System.out.printf("getModuleTwin called for %s with deviceId = %s and moduleId = %s%n", connectionId, deviceId, moduleId);
@@ -93,10 +70,10 @@ public class RegistryGlue
             try
             {
                 twin = client.get(deviceId, moduleId);
-                Twin hortonTwin = new Twin(new JsonObject(setToMap(twin.getDesiredProperties())), new JsonObject(setToMap(twin.getReportedProperties())));
+                Twin hortonTwin = new Twin(new JsonObject(twin.getDesiredProperties()), new JsonObject(twin.getReportedProperties()));
                 handler.handle(Future.succeededFuture(hortonTwin));
             }
-            catch (IOException | IotHubException e)
+            catch (Exception e)
             {
                 handler.handle(Future.failedFuture(e));
             }
@@ -117,18 +94,14 @@ public class RegistryGlue
         {
             com.microsoft.azure.sdk.iot.service.twin.Twin serviceTwin = new com.microsoft.azure.sdk.iot.service.twin.Twin(deviceId, moduleId);
 
-            Set<Pair> newProps = new HashSet<>();
             Map<String, Object> desiredProps = (Map<String, Object>)twin.getDesired();
-            for (String key : desiredProps.keySet())
-            {
-                newProps.add(new Pair(key, desiredProps.get(key)));
-            }
-            serviceTwin.setDesiredProperties(newProps);
+            serviceTwin.getDesiredProperties().putAll(desiredProps);
+
             try
             {
                 client.patch(serviceTwin);
             }
-            catch (IotHubException | IOException e)
+            catch (Exception e)
             {
                 handler.handle(Future.failedFuture(e));
             }
