@@ -70,14 +70,7 @@ public class RegistryGlue
             try
             {
                 twin = client.get(deviceId, moduleId);
-                System.out.println("Desired properties:" + twin.getDesiredProperties().toString());
-                System.out.println("Reported properties:" + twin.getDesiredProperties().toString());
-                JsonObject reportedProperties = new JsonObject(twin.getReportedProperties());
-                System.out.println("Reported properties size" + reportedProperties.size());
-                JsonObject desiredProperties = new JsonObject(twin.getDesiredProperties());
-                System.out.println("Desired properties size" + desiredProperties.size());
-                Twin hortonTwin = new Twin(desiredProperties, reportedProperties);
-                System.out.println(hortonTwin);
+                Twin hortonTwin = new Twin(new JsonObject(twin.getDesiredProperties()), new JsonObject(twin.getReportedProperties()));
                 handler.handle(Future.succeededFuture(hortonTwin));
             }
             catch (Exception e)
