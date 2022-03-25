@@ -24,4 +24,5 @@ setup(
     ],
     install_requires=[],
     python_requires=">=2.7, <4",
+    packages=find_packages(),
 )
