@@ -1,45 +1,20 @@
 package glue;
 
-import com.microsoft.azure.sdk.iot.device.ClientOptions;
-import com.microsoft.azure.sdk.iot.device.IotHubClientProtocol;
-import com.microsoft.azure.sdk.iot.device.IotHubEventCallback;
-import com.microsoft.azure.sdk.iot.device.IotHubMessageResult;
-import com.microsoft.azure.sdk.iot.device.IotHubStatusCode;
-import com.microsoft.azure.sdk.iot.device.Message;
-import com.microsoft.azure.sdk.iot.device.ModuleClient;
+import com.microsoft.azure.sdk.iot.device.*;
 import com.microsoft.azure.sdk.iot.device.auth.IotHubSSLContext;
 import com.microsoft.azure.sdk.iot.device.edge.DirectMethodRequest;
-import com.microsoft.azure.sdk.iot.device.exceptions.ModuleClientException;
-import com.microsoft.azure.sdk.iot.device.twin.DirectMethodPayload;
-import com.microsoft.azure.sdk.iot.device.twin.DirectMethodResponse;
-import com.microsoft.azure.sdk.iot.device.twin.MethodCallback;
-import com.microsoft.azure.sdk.iot.device.twin.Property;
-import com.microsoft.azure.sdk.iot.device.twin.TwinCollection;
+import com.microsoft.azure.sdk.iot.device.exceptions.IotHubClientException;
+import com.microsoft.azure.sdk.iot.device.twin.*;
 import io.swagger.server.api.MainApiException;
-import io.swagger.server.api.model.Certificate;
-import io.swagger.server.api.model.ConnectResponse;
-import io.swagger.server.api.model.EventBody;
-import io.swagger.server.api.model.MethodInvoke;
-import io.swagger.server.api.model.MethodRequestAndResponse;
 import io.swagger.server.api.model.Twin;
+import io.swagger.server.api.model.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
 
 
 public class ModuleGlue
@@ -273,7 +248,7 @@ public class ModuleGlue
         }, 2000);
     }
 
-    private static class IotHubEventCallbackImpl implements IotHubEventCallback
+    private static class IotHubEventCallbackImpl implements SubscriptionAcknowledgedCallback
     {
         Handler<AsyncResult<Void>> _handler = null;
 
@@ -283,19 +258,20 @@ public class ModuleGlue
         }
 
         @Override
-        public void execute(IotHubStatusCode status, Object context)
+        public void onSubscriptionAcknowledged(IotHubClientException e, Object context)
         {
-            System.out.println("IoT Hub responded to operation with status " + status.name());
             Handler<AsyncResult<Void>> handler = this._handler;
             this._handler = null;
             if (handler != null)
             {
-                if (status == IotHubStatusCode.OK)
+                if (e == null)
                 {
+                    System.out.println("IoT Hub responded to operation with status " + IotHubStatusCode.OK);
                     handler.handle(Future.succeededFuture());
                 }
                 else
                 {
+                    System.out.println("IoT Hub responded to operation with status " + e.getStatusCode().name());
                     handler.handle(Future.failedFuture(new MainApiException(500, "operation failed")));
                 }
             }
@@ -336,7 +312,7 @@ public class ModuleGlue
         }
     }
 
-    private static class EventCallback implements IotHubEventCallback
+    private static class EventCallback implements MessageSentCallback
     {
         Handler<AsyncResult<Void>> _handler;
 
@@ -345,10 +321,18 @@ public class ModuleGlue
             this._handler = handler;
         }
 
-        public synchronized void execute(IotHubStatusCode status, Object context)
+        public synchronized void onMessageSent(Message sentMessage, IotHubClientException e, Object context)
         {
-            System.out.printf("EventCallback called with status %s%n", status.toString());
-            this._handler.handle(Future.succeededFuture());
+            if (e == null)
+            {
+                System.out.printf("EventCallback called with status %s%n", IotHubStatusCode.OK);
+                this._handler.handle(Future.succeededFuture());
+            }
+            else
+            {
+                System.out.printf("EventCallback called with status %s%n", e.getStatusCode().toString());
+                this._handler.handle(Future.failedFuture(e));
+            }
         }
     }
 
@@ -389,7 +373,7 @@ public class ModuleGlue
             this._handler = handler;
         }
 
-        public synchronized IotHubMessageResult execute(Message msg, Object context)
+        public synchronized IotHubMessageResult onCloudToDeviceMessageReceived(Message msg, Object context)
         {
             System.out.println("MessageCallback called");
             this._client.setMessageCallback(this._inputName, null, null);
