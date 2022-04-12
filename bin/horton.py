@@ -3,14 +3,21 @@
 # full license information.
 import argparse
 from deploy import horton_deploy, horton_undeploy, horton_get_credentials
-from build import horton_build
+
+try:
+    from build import horton_build
+except ModuleNotFoundError:
+    # Fails on Windows.  Exclude this option
+    horton_build = None
 
 subcommands = {
     "deploy": horton_deploy,
     "undeploy": horton_undeploy,
     "get_credentials": horton_get_credentials,
-    "build": horton_build,
 }
+
+if horton_build:
+    subcommands["build"] = horton_build
 
 
 def set_command_args(parser):
