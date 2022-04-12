@@ -2,7 +2,7 @@ azure-eventhub==5.0.1
 azure.storage.blob
 certifi
 colorama
-docker
+docker; sys_platform != 'win32' # we don't use it on Windows.  Exclude it to avoid CVE-2021-32559
 junitparser==1.4.1
 msrest
 pre-commit
