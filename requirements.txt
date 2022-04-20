@@ -8,7 +8,6 @@ msrest
 pre-commit
 pytest
 pytest-asyncio
-pytest-repeat
 pytest-testdox
 pytest-timeout
 python_dateutil
