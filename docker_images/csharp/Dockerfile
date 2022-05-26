@@ -1,12 +1,10 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1
+FROM mcr.microsoft.com/dotnet/sdk:5.0-cbl-mariner1.0
 
-RUN apt update \
-  && apt install --fix-missing -y \
+RUN yum install -y \
     git \
     curl \
     unzip \
-    openssh-server \
-  && apt clean
+    openssh-server 
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
