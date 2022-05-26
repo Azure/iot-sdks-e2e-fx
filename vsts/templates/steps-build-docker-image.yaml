@@ -45,13 +45,17 @@ steps:
     }
 
     if (IsEmpty($LanguageToPass)) {
-        if ($VariantToPass -like "node12") {
+        if ($VariantToPass -like "node16") {
             $LanguageToPass="node"
-        } elseif ($VariantToPass -like "py36") {
-            $LanguageToPass="pythonv2"
+        } elseif ($VariantToPass -like "node18") {
+            $LanguageToPass="node"
         } elseif ($VariantToPass -like "py37") {
             $LanguageToPass="pythonv2"
         } elseif ($VariantToPass -like "py38") {
+            $LanguageToPass="pythonv2"
+        } elseif ($VariantToPass -like "py39") {
+            $LanguageToPass="pythonv2"
+        } elseif ($VariantToPass -like "py310") {
             $LanguageToPass="pythonv2"
         }
     }

@@ -1,0 +1,75 @@
+FROM mcr.microsoft.com/mirror/docker/library/node:16
+
+RUN apt update \
+  && apt install --fix-missing -y \
+    git \
+    iptables \
+    python3 \
+    python3-pip \
+  && apt clean
+
+RUN update-alternatives --install /usr/bin/python python $(which python3) 50 \
+&&  update-alternatives --install /usr/bin/pip pip $(which pip3) 50 
+
+RUN npm install lerna -g
+
+RUN pip install --upgrade pip 
+
+RUN git config --global user.email "you@example.com" \
+&&  git config --global user.name "Your Name" \
+&&  git config --global core.autocrlf true
+
+env DEBUG=rhea*,azure*
+EXPOSE 9229
+EXPOSE 8080
+
+WORKDIR /system_control_app
+COPY ./system_control_app .
+RUN pip install -r requirements.txt
+
+# force container rebuild when switching from master to main
+RUN echo "switch to main" > /horton_tag.txt
+
+# phase 1: grab the base branch and run prebuild
+ARG HORTON_REPO
+WORKDIR /src/sdk
+RUN git clone https://github.com/$HORTON_REPO .
+
+# grab package.json so we can run lerna bootstrap before we grab the full wrpper
+workdir /src/wrapper
+COPY node/wrapper/package.json .
+
+
+
+WORKDIR /src/sdk
+COPY node/prebuild.sh /
+COPY node/fixLerna.js /
+RUN /prebuild.sh
+RUN git checkout **/package-lock.json || echo "no package-lock.json"
+
+# now grab the full wrapper.
+workdir /src/wrapper
+COPY node/wrapper .
+
+# phase 2: grab the code we want to test and rebuild
+ARG HORTON_COMMIT_NAME
+ARG HORTON_COMMIT_SHA
+WORKDIR /src/sdk
+RUN git reset HEAD && git checkout . && git clean  -df
+RUN git pull 
+RUN git checkout $HORTON_COMMIT_SHA
+
+COPY node/patchfile /
+WORKDIR /src/sdk
+RUN git reset HEAD && git checkout . && git clean  -df
+RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
+
+COPY node/rebuild.sh /
+RUN /rebuild.sh
+RUN git checkout **/package-lock.json || echo "no package-lock.json"
+
+ENV HORTON_REPO=$HORTON_REPO
+ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
+ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
+
+ENTRYPOINT ["/usr/local/bin/node", "/src/wrapper/index.js"]

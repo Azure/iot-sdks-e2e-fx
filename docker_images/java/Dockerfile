@@ -1,9 +1,11 @@
-from maven:3.6.3-jdk-8-slim
+from mcr.microsoft.com/openjdk/jdk:11-mariner
 
 ENV MAVEN_CONFIG=/usr/share/maven/ref
 
-RUN apt update && apt install --fix-missing -y \
+RUN yum install -y \
+  maven \
   git 
+COPY java/settings-docker.xml /usr/share/maven/ref/settings-docker.xml
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"

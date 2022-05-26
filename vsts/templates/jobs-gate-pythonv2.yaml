@@ -6,7 +6,7 @@ jobs:
     matrix:
       py38: { variant: py38 }
       py37: { variant: py37 }
-      py36: { variant: py36 }
+      py39: { variant: py39 }
   steps:
   - template: steps-build-docker-image.yaml
     parameters:
@@ -23,11 +23,11 @@ jobs:
         py38_mqttws_async_edgehub_module:           { suite: py38_mqttws_async_edgehub_module }
         py37_mqtt_edgehub_module:                   { suite: py37_mqtt_edgehub_module }
         py37_mqttws_async_iothub_module_and_device: { suite: py37_mqttws_async_iothub_module_and_device }
-        py36_mqtt_async_edgehub_module:             { suite: py36_mqtt_async_edgehub_module }
-        py36_mqtt_async_iothub_module_and_device:   { suite: py36_mqtt_async_iothub_module_and_device }
+        py39_mqtt_async_edgehub_module:             { suite: py39_mqtt_async_edgehub_module }
+        py39_mqtt_async_iothub_module_and_device:   { suite: py39_mqtt_async_iothub_module_and_device }
         py38_mqtt_iothub_module_quick_drop:         { suite: py38_mqtt_iothub_module_quick_drop }
         py37_mqtt_edgehub_module_quick_drop:        { suite: py37_mqtt_edgehub_module_quick_drop }
-        py36_mqtt_iothub_device_quick_drop:         { suite: py36_mqtt_iothub_device_quick_drop }
+        py39_mqtt_iothub_device_quick_drop:         { suite: py39_mqtt_iothub_device_quick_drop }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml

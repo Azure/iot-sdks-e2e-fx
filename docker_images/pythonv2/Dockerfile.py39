@@ -1,9 +1,12 @@
-from mcr.microsoft.com/mirror/docker/library/python:3.7-slim-buster
+from mcr.microsoft.com/mirror/docker/library/alpine:3.15
 
-RUN apt update \
- && apt install -y \
+RUN apk add \
     git \
-    iptables
+    iptables \
+    g++ cmake make openssl-dev build-base python3-dev \
+    py3-pip
+
+RUN ln /usr/bin/python3 /usr/bin/python
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
@@ -19,6 +22,9 @@ RUN pip install -r requirements.txt
 WORKDIR /wrapper
 COPY pythonv2/wrapper/requirements.txt .
 RUN pip install -r requirements.txt
+
+# Install uamqp for azure-iot-hub
+RUN pip install uamqp
 
 # force container rebuild when switching from master to main
 RUN echo "switch to main" > /horton_tag.txt
