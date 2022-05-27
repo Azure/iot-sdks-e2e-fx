@@ -27,10 +27,10 @@ esac
 variants=""
 case "$language" in
   node)
-    variants="node12"
+    variants="node16 node18"
     ;;
   pythonv2)
-    variants="py36 py37 py38"
+    variants="py37 py38 py39 py310"
     ;;
 esac
 

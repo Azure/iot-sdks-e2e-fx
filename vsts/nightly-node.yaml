@@ -8,7 +8,7 @@ jobs:
     vmImage: 'Ubuntu 18.04'
   strategy:
     matrix:
-      node12:  { variant: node12 }
+      node18:  { variant: node18 }
   steps:
   - template: templates/steps-build-docker-image.yaml
     parameters:
@@ -21,14 +21,14 @@ jobs:
     - "build_linux_amd64"
   strategy:
     matrix:
-      node12_mqtt_iothub_module_and_device:      { suite: node12_mqtt_iothub_module_and_device }
-      node12_mqtt_edgehub_module:                { suite: node12_mqtt_edgehub_module }
-      node12_mqttws_iothub_module_and_device:    { suite: node12_mqttws_iothub_module_and_device }
-      node12_mqttws_edgehub_module:              { suite: node12_mqttws_edgehub_module }
-      node12_amqp_iothub_module_and_device:      { suite: node12_amqp_iothub_module_and_device }
-      node12_amqp_edgehub_module:                { suite: node12_amqp_edgehub_module }
-      node12_amqpws_iothub_module_and_device:    { suite: node12_amqpws_iothub_module_and_device }
-      node12_amqpws_edgehub_module:              { suite: node12_amqpws_edgehub_module }
+      node18_mqtt_iothub_module_and_device:      { suite: node18_mqtt_iothub_module_and_device }
+      node18_mqtt_edgehub_module:                { suite: node18_mqtt_edgehub_module }
+      node18_mqttws_iothub_module_and_device:    { suite: node18_mqttws_iothub_module_and_device }
+      node18_mqttws_edgehub_module:              { suite: node18_mqttws_edgehub_module }
+      node18_amqp_iothub_module_and_device:      { suite: node18_amqp_iothub_module_and_device }
+      node18_amqp_edgehub_module:                { suite: node18_amqp_edgehub_module }
+      node18_amqpws_iothub_module_and_device:    { suite: node18_amqpws_iothub_module_and_device }
+      node18_amqpws_edgehub_module:              { suite: node18_amqpws_edgehub_module }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml

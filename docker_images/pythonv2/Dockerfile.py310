@@ -1,4 +1,4 @@
-from python:3.6.8-slim-stretch
+from mcr.microsoft.com/mirror/docker/library/python:3.10-slim-buster
 
 RUN apt update \
  && apt install -y \

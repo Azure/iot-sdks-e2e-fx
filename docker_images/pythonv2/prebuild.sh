@@ -5,8 +5,8 @@ set -e
 
 cd /sdk
 pip install --upgrade pip
-pip install -U --upgrade-strategy eager -e azure-iot-device
-pip install -U --upgrade-strategy eager -e azure-iot-hub
+pip install -U --upgrade-strategy eager -e azure-iot-device --ignore-installed packaging
+pip install -U --upgrade-strategy eager -e azure-iot-hub --ignore-installed packaging
 cd /wrapper
 pip install -r requirements.txt
 

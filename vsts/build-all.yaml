@@ -11,7 +11,7 @@ jobs:
         c:      { language: c }
         java:   { language: java }
         csharp: { language: csharp }
-        node12: { variant: node12 }
+        node18: { variant: node18 }
         py38:   { variant: py38 }
 
   steps:
@@ -54,14 +54,23 @@ jobs:
       java_amqpws_iothub_module:    { suite: java_amqpws_iothub_module }
       java_amqpws_edgehub_module:   { suite: java_amqpws_edgehub_module }
 
-      node12_mqtt_iothub_module:    { suite: node12_mqtt_iothub_module }
-      node12_mqtt_edgehub_module:   { suite: node12_mqtt_edgehub_module }
-      node12_mqttws_iothub_module:  { suite: node12_mqttws_iothub_module }
-      node12_mqttws_edgehub_module: { suite: node12_mqttws_edgehub_module }
-      node12_amqp_iothub_module:    { suite: node12_amqp_iothub_module }
-      node12_amqp_edgehub_module:   { suite: node12_amqp_edgehub_module }
-      node12_amqpws_iothub_module:  { suite: node12_amqpws_iothub_module }
-      node12_amqpws_edgehub_module: { suite: node12_amqpws_edgehub_module }
+      node18_mqtt_iothub_module:    { suite: node18_mqtt_iothub_module }
+      node18_mqtt_edgehub_module:   { suite: node18_mqtt_edgehub_module }
+      node18_mqttws_iothub_module:  { suite: node18_mqttws_iothub_module }
+      node18_mqttws_edgehub_module: { suite: node18_mqttws_edgehub_module }
+      node18_amqp_iothub_module:    { suite: node18_amqp_iothub_module }
+      node18_amqp_edgehub_module:   { suite: node18_amqp_edgehub_module }
+      node18_amqpws_iothub_module:  { suite: node18_amqpws_iothub_module }
+      node18_amqpws_edgehub_module: { suite: node18_amqpws_edgehub_module }
+
+      node16_mqtt_iothub_module:    { suite: node16_mqtt_iothub_module }
+      node16_mqtt_edgehub_module:   { suite: node16_mqtt_edgehub_module }
+      node16_mqttws_iothub_module:  { suite: node16_mqttws_iothub_module }
+      node16_mqttws_edgehub_module: { suite: node16_mqttws_edgehub_module }
+      node16_amqp_iothub_module:    { suite: node16_amqp_iothub_module }
+      node16_amqp_edgehub_module:   { suite: node16_amqp_edgehub_module }
+      node16_amqpws_iothub_module:  { suite: node16_amqpws_iothub_module }
+      node16_amqpws_edgehub_module: { suite: node16_amqpws_edgehub_module }
 
       py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
       py38_mqtt_edgehub_module:                     { suite: py38_mqtt_edgehub_module }

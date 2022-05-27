@@ -1,9 +1,11 @@
-from maven:3.6.3-jdk-8-slim
+from mcr.microsoft.com/openjdk/jdk:11-mariner
 
 ENV MAVEN_CONFIG=/usr/share/maven/ref
 
-RUN apt update && apt install --fix-missing -y \
+RUN yum install -y \
+  maven \
   git 
+COPY java/settings-docker.xml /usr/share/maven/ref/settings-docker.xml
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
@@ -43,4 +45,4 @@ ENV HORTON_REPO=$HORTON_REPO
 ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
 ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
-ENTRYPOINT ["/usr/local/openjdk-8/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
+ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]

@@ -1,18 +1,20 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1
+FROM mcr.microsoft.com/dotnet/sdk:5.0-cbl-mariner1.0
 
-RUN apt update \
-  && apt install --fix-missing -y \
+RUN yum install -y \
     git \
     curl \
     unzip \
-    openssh-server \
-  && apt clean
+    openssh-server 
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
 
 EXPOSE 80/tcp
 EXPOSE 22/tcp
+
+# install aspnetcore 3.1 runtime
+RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 3.1 -Runtime aspnetcore
+
 
 # get ready for ssh keys
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys
@@ -60,4 +62,4 @@ ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
 ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
 WORKDIR /app
-ENTRYPOINT ["/usr/bin/dotnet", "IO.Swagger.dll"]
+ENTRYPOINT ["/root/.dotnet/dotnet", "IO.Swagger.dll"]

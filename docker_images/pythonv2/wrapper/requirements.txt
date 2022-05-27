@@ -1,5 +1,5 @@
 connexion
-Werkzeug
+Werkzeug>=2.1.1
 python_dateutil
 setuptools
 PyYAML

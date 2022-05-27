@@ -8,11 +8,11 @@ jobs:
     vmImage: 'Ubuntu 18.04'
   strategy:
     matrix:
-      # node12:  { variant: node12 }
+      # node18:  { variant: node18 }
       # c:      { language: c }
       # java:   { language: java }
         # # csharp: { language: csharp }
-        py36:   { variant: py36 }
+        py39:   { variant: py39 }
         # py37:   { variant: py37 }
         # py38:   { variant: py38 }
 
@@ -35,13 +35,13 @@ jobs:
       #java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
       #csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
       #csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
-      py36_mqtt_iothub_module_and_device:           { suite: py36_mqtt_iothub_module_and_device }
+      py39_mqtt_iothub_module_and_device:           { suite: py39_mqtt_iothub_module_and_device }
       #py37_mqtt_iothub_module_and_device_async:     { suite: py37_mqtt_iothub_module_and_device_async }
       #py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
       #py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
       #py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
       #py38_mqtt_iothub_module_full_drop:           { suite: py38_mqtt_iothub_module_full_drop }
-      #py36_mqtt_iothub_device_full_drop:           { suite: py38_mqtt_iothub_device_full_drop }
+      #py39_mqtt_iothub_device_full_drop:           { suite: py38_mqtt_iothub_device_full_drop }
 
       #node6_mqtt_iothub_module_and_device:     { suite: node6_mqtt_iothub_module_and_device }
       #node6_mqtt_edgehub_module:    { suite: node6_mqtt_edgehub_module }
@@ -52,14 +52,14 @@ jobs:
       #node6_amqpws_iothub_module_and_device:   { suite: node6_amqpws_iothub_module_and_device }
       #node6_amqpws_edgehub_module:  { suite: node6_amqpws_edgehub_module }
 
-      #node12_mqtt_iothub_module_and_device:     { suite: node12_mqtt_iothub_module_and_device }
-      #node12_mqtt_edgehub_module:                { suite: node12_mqtt_edgehub_module }
-      #node12_mqttws_iothub_module_and_device:   { suite: node12_mqttws_iothub_module_and_device }
-      #node12_mqttws_edgehub_module:              { suite: node12_mqttws_edgehub_module }
-      #node12_amqp_iothub_module_and_device:     { suite: node12_amqp_iothub_module_and_device }
-      #node12_amqp_edgehub_module:                { suite: node12_amqp_edgehub_module }
-      #node12_amqpws_iothub_module_and_device:   { suite: node12_amqpws_iothub_module_and_device }
-      #node12_amqpws_edgehub_module:              { suite: node12_amqpws_edgehub_module }
+      #node18_mqtt_iothub_module_and_device:     { suite: node18_mqtt_iothub_module_and_device }
+      #node18_mqtt_edgehub_module:                { suite: node18_mqtt_edgehub_module }
+      #node18_mqttws_iothub_module_and_device:   { suite: node18_mqttws_iothub_module_and_device }
+      #node18_mqttws_edgehub_module:              { suite: node18_mqttws_edgehub_module }
+      #node18_amqp_iothub_module_and_device:     { suite: node18_amqp_iothub_module_and_device }
+      #node18_amqp_edgehub_module:                { suite: node18_amqp_edgehub_module }
+      #node18_amqpws_iothub_module_and_device:   { suite: node18_amqpws_iothub_module_and_device }
+      #node18_amqpws_edgehub_module:              { suite: node18_amqpws_edgehub_module }
 
       #csharp_mqtt_iothub_module:    { suite: csharp_mqtt_iothub_module }
       #csharp_mqtt_edgehub_module:   { suite: csharp_mqtt_edgehub_module }
