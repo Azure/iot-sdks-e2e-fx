@@ -2,13 +2,14 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import pytest
+import pytest_asyncio
 from connections import get_adapter, create_client, cleanup_adapter
 import sample_content
 from horton_settings import settings
 from horton_logging import logger
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def eventhub(event_loop):
     # we need the event_loop fixture so pytest_async creates the event loop before celling this.
     # Otherwise we get errors realted to mis-matched event loops when cleaning up this object.
@@ -19,7 +20,7 @@ async def eventhub(event_loop):
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def registry():
     obj = settings.registry
     try:
@@ -28,7 +29,7 @@ async def registry():
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def service():
     obj = settings.service
     try:
@@ -37,7 +38,7 @@ async def service():
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def friend():
     obj = settings.friend_module
 
@@ -53,7 +54,7 @@ async def friend():
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_module():
     obj = settings.test_module
 
@@ -69,7 +70,7 @@ async def test_module():
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def leaf_device():
     obj = settings.leaf_device
 
@@ -85,7 +86,7 @@ async def leaf_device():
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_device():
     obj = settings.test_device
 
@@ -101,7 +102,7 @@ async def test_device():
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def longhaul_control_device(device_provisioning):
     obj = settings.longhaul_control_device
 
@@ -113,7 +114,7 @@ async def longhaul_control_device(device_provisioning):
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def device_provisioning():
     obj = settings.device_provisioning
     adapter = await get_adapter(obj)
@@ -123,7 +124,7 @@ async def device_provisioning():
         await cleanup_adapter(obj)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def system_control():
     adapter = getattr(settings.system_control, "adapter", None)
     try:
