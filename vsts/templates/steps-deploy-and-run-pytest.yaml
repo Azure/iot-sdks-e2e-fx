@@ -235,12 +235,12 @@ steps:
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
+- template: steps-ensure-python-repo.yaml
+
 - bash: 
     source ${HORTON_FRAMEWORKROOT}/bin/activate_horton
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
-
-- template: steps-ensure-python-repo.yaml
 
 - template: steps-pre-test.yaml
   parameters:
