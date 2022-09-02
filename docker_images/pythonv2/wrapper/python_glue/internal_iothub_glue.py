@@ -282,7 +282,6 @@ class InternalDeviceGlueSync(
         self.c2d_queue = queue.Queue()
         self.twin_patch_queue = queue.Queue()
         self.method_queues = {}
-        self.input_queues = {}
         self.lock = threading.Lock()
 
 
@@ -303,3 +302,4 @@ class InternalModuleGlueSync(
         self.twin_patch_queue = queue.Queue()
         self.method_queues = {}
         self.lock = threading.Lock()
+        self.input_queues = {}
