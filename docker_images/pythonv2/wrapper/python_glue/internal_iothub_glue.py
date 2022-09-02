@@ -4,6 +4,8 @@
 import logging
 import convert
 import internal_control_glue
+import queue
+import threading
 from connection_status import ConnectionStatus
 from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodResponse
 
@@ -112,13 +114,22 @@ class ModuleConnect(object):
 
 class HandleMethods(object):
     def enable_methods_sync(self):
-        # Unnecessary, methods are enabled implicity when method operations are initiated.
-        pass
+        def on_method_request_received(req):
+            with self.lock:
+                if req.name not in self.method_queues:
+                    self.method_queues[req.name] = queue.Queue()
+            self.method_queues[req.name].put(req)
+
+        self.client.on_method_request_received = on_method_request_received
 
     def wait_for_method_and_return_response_sync(self, methodName, requestAndResponse):
+        with self.lock:
+            if methodName not in self.method_queues:
+                self.method_queues[methodName] = queue.Queue()
+
         # receive method request
         logger.info("Waiting for method request")
-        request = self.client.receive_method_request(methodName)
+        request = self.method_queues[methodName].get()
         logger.info("Method request received")
 
         # verify name and payload
@@ -152,11 +163,14 @@ class HandleMethods(object):
 
 class Twin(object):
     def enable_twin_sync(self):
-        pass
+        def on_patch_received(patch):
+            self.twin_patch_queue.put(patch)
+
+        self.client.on_twin_desired_properties_patch_received = on_patch_received
 
     def wait_for_desired_property_patch_sync(self):
         logger.info("Waiting for desired property patch")
-        patch = self.client.receive_twin_desired_properties_patch()
+        patch = self.twin_patch_queue.get()
         logger.info("patch received")
         logger.info(str(patch))
         return {"desired": patch}
@@ -175,12 +189,14 @@ class Twin(object):
 
 class C2d(object):
     def enable_c2d_sync(self):
-        # Unnecessary, C2D messages are enabled implicitly when C2D operations are initiated.
-        pass
+        def on_message_received(msg):
+            self.c2d_queue.put(msg)
+
+        self.client.on_message_received = on_message_received
 
     def wait_for_c2d_message_sync(self):
         logger.info("Waiting for c2d message")
-        message = self.client.receive_message()
+        message = self.c2d_queue.get()
         logger.info("Message received")
         return convert.incoming_message_to_test_script_object(message)
 
@@ -194,12 +210,21 @@ class Telemetry(object):
 
 class InputsAndOutputs(object):
     def enable_input_messages_sync(self):
-        # Unnecessary, input messages are enabled implicitly when input operations are initiated.
-        pass
+        def on_message_received(msg):
+            with self.lock:
+                if msg.input_name not in self.input_queues:
+                    self.input_queues[msg.input_name] = queue.Queue()
+            self.input_queues[msg.input_name].put(msg)
+
+        self.client.on_message_received = on_message_received
 
     def wait_for_input_message_sync(self, input_name):
+        with self.lock:
+            if input_name not in self.input_queues:
+                self.input_queues[input_name] = queue.Queue()
+
         logger.info("Waiting for input message")
-        message = self.client.receive_message_on_input(input_name)
+        message = self.input_queues[input_name].get()
         logger.info("Message received")
         logger.info(str(message))
         converted = convert.incoming_message_to_test_script_object(message)
@@ -254,6 +279,11 @@ class InternalDeviceGlueSync(
     def __init__(self):
         self.client_class = IoTHubDeviceClient
         self.client = None
+        self.c2d_queue = queue.Queue()
+        self.twin_patch_queue = queue.Queue()
+        self.method_queues = {}
+        self.input_queues = {}
+        self.lock = threading.Lock()
 
 
 class InternalModuleGlueSync(
@@ -269,3 +299,7 @@ class InternalModuleGlueSync(
     def __init__(self):
         self.client_class = IoTHubModuleClient
         self.client = None
+        self.c2d_queue = queue.Queue()
+        self.twin_patch_queue = queue.Queue()
+        self.method_queues = {}
+        self.lock = threading.Lock()
