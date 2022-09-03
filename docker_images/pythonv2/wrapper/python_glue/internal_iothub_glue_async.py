@@ -8,6 +8,9 @@ from azure.iot.device import MethodResponse
 from azure.iot.device.aio import IoTHubDeviceClient, IoTHubModuleClient
 from azure.iot.device.common import mqtt_transport
 from internal_iothub_glue import get_kwargs
+import asyncio
+import threading
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +27,7 @@ class Connect(ConnectionStatus):
     async def create_from_connection_string(
         self, transport_type, connection_string, cert
     ):
+        self.event_loop = asyncio.get_event_loop()
         kwargs = get_kwargs(transport_type)
 
         if "GatewayHostName" in connection_string:
@@ -67,6 +71,7 @@ class DeviceConnect(object):
     async def create_from_symmetric_key(
         self, transport_type, device_id, hostname, symmetric_key
     ):
+        self.event_loop = asyncio.get_event_loop()
         kwargs = get_kwargs(transport_type)
 
         self.client = self.client_class.create_from_symmetric_key(
@@ -82,6 +87,7 @@ class ModuleConnect(object):
         assert False
 
     async def create_from_environment(self, transport_type):
+        self.event_loop = asyncio.get_event_loop()
         kwargs = get_kwargs(transport_type)
 
         self.client = IoTHubModuleClient.create_from_edge_environment(**kwargs)
@@ -91,6 +97,7 @@ class ModuleConnect(object):
     async def create_from_symmetric_key(
         self, transport_type, device_id, module_id, hostname, symmetric_key
     ):
+        self.event_loop = asyncio.get_event_loop()
         kwargs = get_kwargs(transport_type)
 
         self.client = self.client_class.create_from_symmetric_key(
@@ -103,13 +110,26 @@ class ModuleConnect(object):
 
 class HandleMethods(object):
     async def enable_methods(self):
-        # Unnecessary, methods are enabled implicity when method operations are initiated.
-        pass
+        def on_method_request_received(req):
+            async def handle():
+                with self.lock:
+                    if req.name not in self.method_queues:
+                        self.method_queues[req.name] = asyncio.Queue()
+
+                await self.method_queues[req.name].put(req)
+
+            return asyncio.run_coroutine_threadsafe(handle(), self.event_loop)
+
+        self.client.on_method_request_received = on_method_request_received
 
     async def wait_for_method_and_return_response(self, methodName, requestAndResponse):
+        with self.lock:
+            if methodName not in self.method_queues:
+                self.method_queues[methodName] = asyncio.Queue()
+
         # receive method request
         logger.info("Waiting for method request")
-        request = await self.client.receive_method_request(methodName)
+        request = await self.method_queues[methodName].get()
         logger.info("Method request received")
 
         # verify name and payload
@@ -143,11 +163,17 @@ class HandleMethods(object):
 
 class Twin(object):
     async def enable_twin(self):
-        pass
+        def on_patch_received(patch):
+            async def handle():
+                await self.twin_patch_queue.put(patch)
+
+            return asyncio.run_coroutine_threadsafe(handle(), self.event_loop)
+
+        self.client.on_twin_desired_properties_patch_received = on_patch_received
 
     async def wait_for_desired_property_patch(self):
         logger.info("Waiting for desired property patch")
-        patch = await self.client.receive_twin_desired_properties_patch()
+        patch = await self.twin_patch_queue.get()
         logger.info("patch received")
         return {"desired": patch}
 
@@ -165,12 +191,17 @@ class Twin(object):
 
 class C2d(object):
     async def enable_c2d(self):
-        # Unnecessary, C2D messages are enabled implicitly when C2D operations are initiated.
-        pass
+        def on_message_received(msg):
+            async def handle():
+                await self.c2d_queue.put(msg)
+
+            return asyncio.run_coroutine_threadsafe(handle(), self.event_loop)
+
+        self.client.on_message_received = on_message_received
 
     async def wait_for_c2d_message(self):
         logger.info("Waiting for c2d message")
-        message = await self.client.receive_message()
+        message = await self.c2d_queue.get()
         logger.info("Message received")
         return convert.incoming_message_to_test_script_object(message)
 
@@ -186,12 +217,25 @@ class Telemetry(object):
 
 class InputsAndOutputs(object):
     async def enable_input_messages(self):
-        # Unnecessary, input messages are enabled implicitly when input operations are initiated.
-        pass
+        def on_message_received(msg):
+            async def handle():
+                with self.lock:
+                    if msg.input_name not in self.input_queues:
+                        self.input_queues[msg.input_name] = asyncio.Queue()
+
+                await self.input_queues[msg.input_name].put(msg)
+
+            return asyncio.run_coroutine_threadsafe(handle(), self.event_loop)
+
+        self.client.on_message_received = on_message_received
 
     async def wait_for_input_message(self, input_name):
+        with self.lock:
+            if input_name not in self.input_queues:
+                self.input_queues[input_name] = asyncio.Queue()
+
         logger.info("Waiting for input message")
-        message = await self.client.receive_message_on_input(input_name)
+        message = await self.input_queues[input_name].get()
         logger.info("Message received")
         return convert.incoming_message_to_test_script_object(message)
 
@@ -245,6 +289,11 @@ class InternalDeviceGlueAsync(
         self.client = None
         self.client_class = IoTHubDeviceClient
         self.connected = False
+        self.c2d_queue = asyncio.Queue()
+        self.twin_patch_queue = asyncio.Queue()
+        self.method_queues = {}
+        self.lock = threading.Lock()
+        self.event_loop = None
 
 
 class InternalModuleGlueAsync(
@@ -261,3 +310,9 @@ class InternalModuleGlueAsync(
         self.client = None
         self.client_class = IoTHubModuleClient
         self.connected = False
+        self.c2d_queue = asyncio.Queue()
+        self.twin_patch_queue = asyncio.Queue()
+        self.method_queues = {}
+        self.lock = threading.Lock()
+        self.input_queues = {}
+        self.event_loop = None
