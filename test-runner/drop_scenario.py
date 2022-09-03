@@ -9,6 +9,11 @@ from adapters import adapter_config
 from horton_settings import settings
 from horton_logging import logger
 
+try:
+    async_fixture = pytest_asyncio.fixture
+except AttributeError:
+    async_fixture = pytest.fixture
+
 
 class DropScenarioBaseClass(object):
     @pytest.fixture(scope="class", autouse=True)
@@ -49,7 +54,7 @@ class DropScenarioBaseClass(object):
     def test_module_transport(self):
         return settings.test_module.transport
 
-    @pytest_asyncio.fixture(autouse=True)
+    @async_fixture(autouse=True)
     async def reconnect_after_each_test(self, system_control):
         # if this test is going to drop packets, add a finalizer to make sure we always stop
         # stop dropping it when we're done.  Calling reconnect twice in a row is allowed.
