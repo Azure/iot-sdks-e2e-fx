@@ -5,7 +5,7 @@ colorama
 docker; sys_platform != 'win32' # we don't use it on Windows.  Exclude it to avoid CVE-2021-32559
 junitparser==1.4.1
 msrest
-oauthlib==3.2.1
+oauthlib>=3.2.1 # >= 3.2.1 because of CVE-2022-36087. If MSRest gets an update that increments the oauthlib dependency version up above 3.2.1, then this line can be deleted
 pre-commit
 pytest
 pytest-asyncio
