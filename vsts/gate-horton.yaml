@@ -21,7 +21,7 @@ jobs:
 
 - job: "test_linux_amd64"
   pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'Ubuntu 18.04'
   dependsOn:
     - "build_linux_amd64"
   strategy:
@@ -46,7 +46,7 @@ jobs:
 
 - job: "test_linux_python_inproc"
   pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'Ubuntu 18.04'
   strategy:
     matrix:
       python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
