@@ -9,7 +9,7 @@ jobs:
 
 - job: "test_linux_amd64"
   pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'Ubuntu 18.04'
 
   dependsOn:
     - "build_linux_amd64"
