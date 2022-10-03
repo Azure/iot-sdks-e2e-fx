@@ -5,7 +5,7 @@ variables:
 jobs:
 - job: "build_linux_amd64"
   pool:
-    vmImage: 'Ubuntu 22.04'
+    vmImage: 'ubuntu-latest'
   strategy:
     matrix:
       py38: { variant: py38 }
@@ -18,7 +18,7 @@ jobs:
 
 - job: "test_linux_amd64"
   pool:
-      vmImage: 'Ubuntu 22.04'
+      vmImage: 'ubuntu-latest'
   dependsOn:
     - "build_linux_amd64"
   strategy:
@@ -106,7 +106,7 @@ jobs:
 
 - job: "tag_lkg_amd64"
   pool:
-      vmImage: 'Ubuntu 22.04'
+      vmImage: 'ubuntu-latest'
   dependsOn:
      "test_linux_amd64"
   steps:
