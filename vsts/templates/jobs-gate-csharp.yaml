@@ -1,7 +1,7 @@
 jobs:
 - job: "build_linux_amd64"
   pool:
-    vmImage: 'Ubuntu 22.04'
+    vmImage: 'ubuntu-latest'
   steps:
   - template: steps-build-docker-image.yaml
     parameters:
@@ -9,7 +9,7 @@ jobs:
 
 - job: "test_linux_amd64"
   pool:
-      vmImage: 'Ubuntu 22.04'
+      vmImage: 'ubuntu-latest'
 
   dependsOn:
     - "build_linux_amd64"
