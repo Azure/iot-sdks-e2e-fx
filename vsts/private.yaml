@@ -5,7 +5,7 @@ variables:
 jobs:
 - job: "build_linux_amd64"
   pool:
-    vmImage: 'Ubuntu 18.04'
+    vmImage: 'Ubuntu 22.04'
   strategy:
     matrix:
       # node18:  { variant: node18 }
@@ -24,7 +24,7 @@ jobs:
 
 - job: "test_linux_amd64"
   pool:
-      vmImage: 'Ubuntu 18.04'
+      vmImage: 'Ubuntu 22.04'
   dependsOn:
     - "build_linux_amd64"
 
@@ -80,7 +80,7 @@ jobs:
 - job: "test_linux_python_inproc"
   condition: false
   pool:
-      vmImage: 'Ubuntu 18.04'
+      vmImage: 'Ubuntu 22.04'
   strategy:
     matrix:
       python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
