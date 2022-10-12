@@ -122,6 +122,11 @@ class HandleMethods(object):
 
         self.client.on_method_request_received = on_method_request_received
 
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_method_request_receive"):
+            self.client.enable_method_request_receive()
+
+
     def wait_for_method_and_return_response_sync(self, methodName, requestAndResponse):
         with self.lock:
             if methodName not in self.method_queues:
@@ -168,6 +173,10 @@ class Twin(object):
 
         self.client.on_twin_desired_properties_patch_received = on_patch_received
 
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_twin_desired_properties_patch_receive"):
+            self.client.enable_twin_desired_properties_patch_receive()
+
     def wait_for_desired_property_patch_sync(self):
         logger.info("Waiting for desired property patch")
         patch = self.twin_patch_queue.get()
@@ -194,6 +203,10 @@ class C2d(object):
 
         self.client.on_message_received = on_message_received
 
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_message_receive"):
+            self.client.enable_message_receive()
+
     def wait_for_c2d_message_sync(self):
         logger.info("Waiting for c2d message")
         message = self.c2d_queue.get()
@@ -217,6 +230,10 @@ class InputsAndOutputs(object):
             self.input_queues[msg.input_name].put(msg)
 
         self.client.on_message_received = on_message_received
+
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_message_receive"):
+            self.client.enable_message_receive()
 
     def wait_for_input_message_sync(self, input_name):
         with self.lock:
