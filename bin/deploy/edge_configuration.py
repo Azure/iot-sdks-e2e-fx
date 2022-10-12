@@ -117,7 +117,7 @@ class EdgeConfiguration:
         self.config["moduleContent"]["$edgeAgent"]["properties.desired"]["modules"][
             name
         ] = {
-            "version": "1.0",
+            "version": "1.1",
             "type": "docker",
             "status": "running",
             "restartPolicy": "always",
