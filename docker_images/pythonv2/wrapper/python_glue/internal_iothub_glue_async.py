@@ -116,6 +116,10 @@ class HandleMethods(object):
 
         self.client.on_method_request_received = on_method_request_received
 
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_method_request_receive"):
+            await self.client.enable_method_request_receive()
+
     async def wait_for_method_and_return_response(self, methodName, requestAndResponse):
         with self.lock:
             if methodName not in self.method_queues:
@@ -164,6 +168,10 @@ class Twin(object):
 
         self.client.on_twin_desired_properties_patch_received = on_patch_received
 
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_twin_desired_properties_patch_receive"):
+            await self.client.enable_twin_desired_properties_patch_receive()
+
     async def wait_for_desired_property_patch(self):
         logger.info("Waiting for desired property patch")
         patch = await asyncio.get_event_loop().run_in_executor(
@@ -190,6 +198,10 @@ class C2d(object):
             self.c2d_queue.put(msg)
 
         self.client.on_message_received = on_message_received
+
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_message_receive"):
+            await self.client.enable_message_receive()
 
     async def wait_for_c2d_message(self):
         logger.info("Waiting for c2d message")
@@ -219,6 +231,10 @@ class InputsAndOutputs(object):
             self.input_queues[msg.input_name].put(msg)
 
         self.client.on_message_received = on_message_received
+
+        # Python SDK 3.x needs to make an additional invocation
+        if hasattr(self.client, "enable_message_receive"):
+            await self.client.enable_message_receive()
 
     async def wait_for_input_message(self, input_name):
         with self.lock:
