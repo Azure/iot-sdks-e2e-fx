@@ -75,7 +75,7 @@ class IoTHubServiceHelper:
         if device_scope:
             device.device_scope = device_scope
 
-        self.registry_manager.protocol.devices.create_or_update_identity(
+        device = self.registry_manager.protocol.devices.create_or_update_identity(
             device_id, device
         )
         return device
@@ -88,9 +88,10 @@ class IoTHubServiceHelper:
         except HttpOperationError:
             module = Module(device_id=device_id, module_id=module_id)
 
-        self.registry_manager.protocol.modules.create_or_update_identity(
+        module = self.registry_manager.protocol.modules.create_or_update_identity(
             device_id, module_id, module
         )
+        return module
 
     def try_delete_device(self, device_id):
         try:
