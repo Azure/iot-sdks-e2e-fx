@@ -72,6 +72,9 @@ class IoTHubServiceHelper:
         if is_edge:
             device.capabilities = DeviceCapabilities(iot_edge=True)
 
+        if device_scope:
+            device.device_scope = device_scope
+
         self.registry_manager.protocol.devices.create_or_update_identity(
             device_id, device
         )
