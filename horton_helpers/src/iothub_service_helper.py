@@ -61,7 +61,7 @@ class IoTHubServiceHelper:
             device_id, content
         )
 
-    def create_device(self, device_id, is_edge=False):
+    def create_device(self, device_id, is_edge=False, device_scope=None):
         print("creating device {}".format(device_id))
         try:
             device = self.registry_manager.get_device(device_id)
@@ -75,6 +75,7 @@ class IoTHubServiceHelper:
         self.registry_manager.protocol.devices.create_or_update_identity(
             device_id, device
         )
+        return device
 
     def create_device_module(self, device_id, module_id):
         print("creating module {}/{}".format(device_id, module_id))
