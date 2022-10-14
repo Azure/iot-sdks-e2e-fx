@@ -79,14 +79,14 @@ def deploy_for_iotedge(test_image):
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
     settings.iotedge.device_id = settings.horton.id_base + "_iotedge"
-    iothub_service_helper.create_device(settings.iotedge.device_id, True)
+    edge_device = iothub_service_helper.create_device(settings.iotedge.device_id, is_edge=True)
 
     edge_deployment.add_edge_modules(test_image)
     edge_deployment.set_edge_configuration()
 
     # default leaf device to use test_module connection.  Fix this in conftest.py if we need to use friend_module
     settings.leaf_device.device_id = settings.horton.id_base + "_leaf_device"
-    iothub_service_helper.create_device(settings.leaf_device.device_id, False)
+    iothub_service_helper.create_device(settings.leaf_device.device_id, is_edge=False, device_scope=edge_device.device_scope)
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
     settings.leaf_device.adapter_address = settings.test_module.adapter_address

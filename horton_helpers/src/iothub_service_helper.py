@@ -61,7 +61,7 @@ class IoTHubServiceHelper:
             device_id, content
         )
 
-    def create_device(self, device_id, is_edge=False):
+    def create_device(self, device_id, is_edge=False, device_scope=None):
         print("creating device {}".format(device_id))
         try:
             device = self.registry_manager.get_device(device_id)
@@ -72,9 +72,13 @@ class IoTHubServiceHelper:
         if is_edge:
             device.capabilities = DeviceCapabilities(iot_edge=True)
 
-        self.registry_manager.protocol.devices.create_or_update_identity(
+        if device_scope:
+            device.device_scope = device_scope
+
+        device = self.registry_manager.protocol.devices.create_or_update_identity(
             device_id, device
         )
+        return device
 
     def create_device_module(self, device_id, module_id):
         print("creating module {}/{}".format(device_id, module_id))
@@ -84,9 +88,10 @@ class IoTHubServiceHelper:
         except HttpOperationError:
             module = Module(device_id=device_id, module_id=module_id)
 
-        self.registry_manager.protocol.modules.create_or_update_identity(
+        module = self.registry_manager.protocol.modules.create_or_update_identity(
             device_id, module_id, module
         )
+        return module
 
     def try_delete_device(self, device_id):
         try:
