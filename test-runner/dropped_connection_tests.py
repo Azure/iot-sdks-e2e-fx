@@ -128,24 +128,8 @@ class DroppedConnectionTestsC2d(object):
 
 
 class DroppedConnectionTestsTwin(object):
-    @pytest.mark.it(
-        "Can reliably update reported properties (1st time - possible subscribe)"
-    )
-    async def test_twin_dropped_reported_properties_publish_1st_call(
-        self, client, before_api_call, after_api_call, registry
-    ):
-
-        props = sample_content.make_reported_props()
-
-        await before_api_call()
-        patch_future = asyncio.ensure_future(client.patch_twin(props))
-        await after_api_call()
-
-        await patch_future
-        await wait_for_reported_properties_update(
-            properties_sent=props, client=client, registry=registry
-        )
-
+    # We only test the 2nd time, because the first time, there's an implicit subscribe
+    # which has different behavior
     @pytest.mark.it("Can reliably update reported properties (2nd time)")
     async def test_twin_dropped_reported_properties_publish_2nd_call(
         self, client, before_api_call, after_api_call, registry
@@ -162,17 +146,6 @@ class DroppedConnectionTestsTwin(object):
             properties_sent=props, client=client, registry=registry
         )
 
-    @pytest.mark.it("Can reliably get the twin (1st call - possible subscribe)")
-    async def test_twin_dropped_get_twin_1st_call(
-        self, client, before_api_call, after_api_call
-    ):
-        await before_api_call()
-        get_twin_future = asyncio.ensure_future(client.get_twin())
-        await after_api_call()
-
-        twin = await get_twin_future
-        assert twin["desired"]["$version"]
-
     @pytest.mark.it("Can reliably get the twin (2nd call)")
     async def test_twin_dropped_get_twin_2nd_call(
         self, client, before_api_call, after_api_call
@@ -185,18 +158,6 @@ class DroppedConnectionTestsTwin(object):
 
         twin = await get_twin_future
         assert twin["desired"]["$version"]
-
-    @pytest.mark.it(
-        "Can reliably receive a desired property patch (1st call - possible subscribe)"
-    )
-    @pytest.mark.skip("#BKTODO")
-    async def test_twin_dropped_wait_for_desired_properties_patch_1st_call(self):
-        pass
-
-    @pytest.mark.it("Can reliably receive a desired property patch (2nd call)")
-    @pytest.mark.skip("#BKTODO")
-    async def test_twin_dropped_wait_for_desired_properties_patch_2nd_call(self):
-        pass
 
 
 class DroppedConnectionTestsInputOutput(object):
