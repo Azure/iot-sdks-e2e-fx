@@ -28,7 +28,7 @@ async def run_method_call_test(source, destination):
 
     method_response_body = {"responseData": next_random_string("method_response")}
 
-    if limitations.needs_manual_connect():
+    if limitations.needs_manual_connect(destination):
         await destination.connect2()
     await destination.enable_methods()
 

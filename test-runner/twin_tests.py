@@ -78,13 +78,13 @@ async def wait_for_desired_properties_patch(*, client, expected_twin, mistakes=1
 class TwinTests(object):
     @pytest.mark.it("Can connect, enable twin, and disconnect")
     async def test_client_connect_enable_twin_disconnect(self, client):
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
         await client.enable_twin()
 
     @pytest.mark.it("Can get the most recent twin from the service")
     async def test_twin_desired_props(self, client, registry):
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
 
         twin_sent = sample_content.make_desired_props()
@@ -110,7 +110,7 @@ class TwinTests(object):
     @pytest.mark.it("Can get the most recent twin from the service 5 times")
     @pytest.mark.skip("Failing on pythonv2")
     async def test_twin_desired_props_5_times(self, client, registry):
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
 
         await client.enable_twin()
@@ -133,7 +133,7 @@ class TwinTests(object):
 
     @pytest.mark.it("Can receive desired property patches as events")
     async def test_twin_desired_props_patch(self, client, registry):
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
 
         await client.enable_twin()
@@ -160,7 +160,7 @@ class TwinTests(object):
         "Can set reported properties which can be successfully retrieved by the service"
     )
     async def test_twin_reported_props(self, client, registry):
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
 
         properties_sent = sample_content.make_reported_props()
@@ -176,7 +176,7 @@ class TwinTests(object):
         "Can set reported properties 5 times and retrieve them from the service"
     )
     async def test_twin_reported_props_5_times(self, client, registry):
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
 
         await client.enable_twin()

@@ -497,7 +497,7 @@ class LongHaulTest(object):
         self, client, eventhub, longhaul_control_device, system_control, caplog
     ):
         await eventhub.connect()
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
 
         test_config = LonghaulConfig.from_dict(longhaul_config)

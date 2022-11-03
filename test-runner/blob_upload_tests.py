@@ -52,7 +52,7 @@ class BlobUploadTests(object):
     async def test_blob_invalid_correlation_id(self, client):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
         
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
         with pytest.raises(Exception):
             await client.notify_blob_upload_status(
@@ -63,7 +63,7 @@ class BlobUploadTests(object):
     async def test_failed_blob_upload(self, client, blob_name):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
         info = await client.get_storage_info_for_blob(blob_name)
 
@@ -82,7 +82,7 @@ class BlobUploadTests(object):
     async def test_success_without_upload(self, client, blob_name):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
         info = await client.get_storage_info_for_blob(blob_name)
 
@@ -101,7 +101,7 @@ class BlobUploadTests(object):
     ):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
-        if limitations.needs_manual_connect():
+        if limitations.needs_manual_connect(client):
             await client.connect2()
         await eventhub.connect()
 
