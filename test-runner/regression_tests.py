@@ -108,12 +108,16 @@ class RegressionTests(object):
         )
 
         with pytest.raises(Exception) as e:
+            if limitations.needs_manual_connect(client):
+                await client.connect2()
             await client.send_event(payload)
         assert is_api_failure_exception(e._excinfo[1])
 
     @pytest.mark.it("fails to send messages over 256 kb in size")
     async def test_regression_send_message_fails_with_message_over_256K(self, client):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         big_payload = sample_content.make_message_payload(size=257 * 1024)
 
@@ -127,6 +131,8 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.only_run_test_on_iotedge_module(client)
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         big_payload = sample_content.make_message_payload(size=257 * 1024)
 
@@ -148,6 +154,8 @@ class RegressionTests(object):
         small_payload = sample_content.make_message_payload()
 
         await eventhub.connect()
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         received_message_future = asyncio.ensure_future(
             eventhub.wait_for_next_event(client.device_id, expected=small_payload)
@@ -191,6 +199,8 @@ class RegressionTests(object):
         payload = sample_content.make_message_payload()
 
         with pytest.raises(Exception) as e:
+            if limitations.needs_manual_connect(client):
+                await client.connect2()
             await client.send_event(payload)
 
         assert is_api_failure_exception(e._excinfo[1])
@@ -286,6 +296,8 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, ["pythonv2"])
         limitations.skip_if_no_system_control()
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         payload = sample_content.make_message_payload()
         await client.send_event(payload)
@@ -402,6 +414,8 @@ class RegressionTests(object):
     @pytest.mark.it("Doesn't fail if subscrbing to c2d twice")
     async def test_regression_c2d_enable_twice(self, client, service):
         limitations.only_run_test_on_iothub_device(client)
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         test_payload = sample_content.make_message_payload()
 

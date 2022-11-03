@@ -250,6 +250,8 @@ class StressTest(object):
         payloads = [sample_content.make_message_payload() for x in range(0, count)]
         futures = []
 
+        await client.connect2()
+
         # start listening before we send
         await eventhub.connect()
         received_message_future = asyncio.ensure_future(
@@ -289,6 +291,7 @@ class StressTest(object):
         await eventhub.disconnect()
 
     async def do_test_get_twin(self, *, client, registry, count, time_limit):
+        await client.connect2()
         await client.enable_twin()
 
         for i in range(0, count):
@@ -312,6 +315,7 @@ class StressTest(object):
                     await asyncio.sleep(2)
 
     async def patch_desired(self, *, client, registry, mistakes=1):
+        await client.connect2()
         twin_sent = sample_content.make_desired_props()
         logger("Patching desired properties to {}".format(twin_sent))
 
@@ -329,6 +333,7 @@ class StressTest(object):
     async def do_test_desired_property_patch(
         self, *, client, registry, count, time_limit
     ):
+        await client.connect2()
         await client.enable_twin()
 
         # flush the desired property queue.  This is mostly removing
@@ -347,6 +352,7 @@ class StressTest(object):
             logger("patch {} received".format(i))
 
     async def do_test_reported_properties(self, *, client, registry, count, time_limit):
+        await client.connect2()
         await client.enable_twin()
 
         for i in range(0, count):

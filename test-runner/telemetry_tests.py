@@ -51,6 +51,8 @@ class TelemetryTests(object):
             pytest.skip("message is too big")
 
         await eventhub.connect()
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         logger('sending "{}"'.format(telemetry_payload))
 
@@ -65,6 +67,8 @@ class TelemetryTests(object):
     async def test_send_5_telemetry_events_to_iothub(self, client, eventhub):
         if not limitations.can_always_overlap_telemetry_messages(client):
             pytest.skip("client's can't reliably overlap telemetry messages")
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         payloads = []
         send_futures = []
