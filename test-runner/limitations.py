@@ -100,3 +100,7 @@ def only_run_test_on_iotedge_module(client):
 def only_run_test_on_iothub_device(client):
     if client.settings.object_type != "iothub_device":
         pytest.skip()
+
+
+def needs_manual_connect(client):
+    return client.settings.language == "pythonv2"

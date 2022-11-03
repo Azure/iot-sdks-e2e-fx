@@ -51,7 +51,9 @@ class BlobUploadTests(object):
     @pytest.mark.it("Fails updating status for invalid correlation id")
     async def test_blob_invalid_correlation_id(self, client):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
-
+        
+        if limitations.needs_manual_connect():
+            await client.connect2()
         with pytest.raises(Exception):
             await client.notify_blob_upload_status(
                 invalid_correlation_id, True, success_code, success_message
@@ -61,6 +63,8 @@ class BlobUploadTests(object):
     async def test_failed_blob_upload(self, client, blob_name):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
+        if limitations.needs_manual_connect():
+            await client.connect2()
         info = await client.get_storage_info_for_blob(blob_name)
 
         assert info.additional_properties is not None
@@ -74,10 +78,12 @@ class BlobUploadTests(object):
             info.correlation_id, False, failure_code, failure_message
         )
 
-    @pytest.mark.it("Fails to report success if noting was uploaded")
+    @pytest.mark.it("Fails to report success if nothing was uploaded")
     async def test_success_without_upload(self, client, blob_name):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
+        if limitations.needs_manual_connect():
+            await client.connect2()
         info = await client.get_storage_info_for_blob(blob_name)
 
         with pytest.raises(Exception):
@@ -95,6 +101,8 @@ class BlobUploadTests(object):
     ):
         limitations.only_run_test_for(client, languages_that_support_blob_upload)
 
+        if limitations.needs_manual_connect():
+            await client.connect2()
         await eventhub.connect()
 
         await asyncio.sleep(5)

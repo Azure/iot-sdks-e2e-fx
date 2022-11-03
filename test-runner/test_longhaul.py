@@ -11,6 +11,7 @@ import six
 import abc
 import datetime
 import traceback
+import limitations
 
 from longhaul_config import LonghaulConfig
 from longhaul_telemetry import (
@@ -496,6 +497,8 @@ class LongHaulTest(object):
         self, client, eventhub, longhaul_control_device, system_control, caplog
     ):
         await eventhub.connect()
+        if limitations.needs_manual_connect():
+            await client.connect2()
 
         test_config = LonghaulConfig.from_dict(longhaul_config)
 

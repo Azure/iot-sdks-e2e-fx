@@ -5,15 +5,21 @@
 import pytest
 import asyncio
 import sample_content
+import limitations
 
 
 class C2dTests(object):
     @pytest.mark.it("Can connect, enable C2D, and disconnect")
     async def test_client_connect_enable_c2d_disconnect(self, client):
+        if limitations.needs_manual_connect():
+            await client.connect2()
         await client.enable_c2d()
 
     @pytest.mark.it("Can receive C2D messages from the IoTHub Service")
     async def test_device_receive_c2d(self, client, service):
+        if limitations.needs_manual_connect():
+            await client.connect2()
+
         test_payload = sample_content.make_message_payload()
 
         await client.enable_c2d()
@@ -28,6 +34,9 @@ class C2dTests(object):
     @pytest.mark.skip("fails on pythonv2 inproc and maybe more")  # BKTODO
     @pytest.mark.it("Is graceful if quit while waiting for C2D message")
     async def test_device_quit_without_c2d(self, client, service):
+        if limitations.needs_manual_connect():
+            await client.connect2()
+
         await client.enable_c2d()
         asyncio.ensure_future(client.wait_for_c2d_message())
         await asyncio.sleep(10)  # wait for receive pipeline to finish setting up

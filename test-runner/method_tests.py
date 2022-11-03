@@ -28,6 +28,8 @@ async def run_method_call_test(source, destination):
 
     method_response_body = {"responseData": next_random_string("method_response")}
 
+    if limitations.needs_manual_connect():
+        await destination.connect2()
     await destination.enable_methods()
 
     # start listening for method calls on the destination side

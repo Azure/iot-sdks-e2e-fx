@@ -37,6 +37,9 @@ class InputOutputTests(object):
         self, client, friend, input_name_from_test_client
     ):
         limitations.skip_test_for(client, languages="c", transports=["amqp", "amqpws"])
+        if limitations.needs_manual_connect():
+            await client.connect2()
+    
         payload = sample_content.make_message_payload()
 
         await friend.enable_input_messages()
@@ -62,6 +65,9 @@ class InputOutputTests(object):
         limitations.skip_test_for(
             client, languages="c", transports=["amqp", "amqpws", "mqttws"]
         )
+        if limitations.needs_manual_connect():
+            await client.connect2()
+
         payload = sample_content.make_message_payload()
 
         await client.enable_input_messages()
@@ -88,6 +94,8 @@ class InputOutputTests(object):
         limitations.skip_test_for(
             client, languages="c", transports=["amqp", "amqpws", "mqttws"]
         )
+        if limitations.needs_manual_connect():
+            await client.connect2()
 
         payload = sample_content.make_message_payload()
         payload_2 = sample_content.make_message_payload()
@@ -119,6 +127,8 @@ class InputOutputTests(object):
     @pytest.mark.it("Can send a message that gets routed to eventhub")
     async def test_inputoutput_module_output_routed_upstream(self, client, eventhub):
         limitations.skip_test_for(client, languages="c", transports=["amqp", "amqpws"])
+        if limitations.needs_manual_connect():
+            await client.connect2()
 
         payload = sample_content.make_message_payload()
 
