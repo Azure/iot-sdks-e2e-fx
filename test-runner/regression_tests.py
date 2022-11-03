@@ -106,10 +106,10 @@ class RegressionTests(object):
             connection_string.dictionary_to_connection_string(cs_fields),
             connections.get_ca_cert(client.settings),
         )
-        if limitations.needs_manual_connect(client):
-            await client.connect2()
 
         with pytest.raises(Exception) as e:
+            if limitations.needs_manual_connect(client):
+                await client.connect2()
             await client.send_event(payload)
         assert is_api_failure_exception(e._excinfo[1])
 
@@ -193,14 +193,14 @@ class RegressionTests(object):
     ):
         limitations.only_run_test_for(client, ["node", "pythonv2"])
         limitations.skip_if_no_system_control()
-        if limitations.needs_manual_connect(client):
-            await client.connect2()
 
         await system_control.disconnect_network(drop_mechanism)
 
         payload = sample_content.make_message_payload()
 
         with pytest.raises(Exception) as e:
+            if limitations.needs_manual_connect(client):
+                await client.connect2()
             await client.send_event(payload)
 
         assert is_api_failure_exception(e._excinfo[1])
