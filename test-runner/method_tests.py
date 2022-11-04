@@ -81,6 +81,8 @@ class BaseReceiveMethodCallTests(object):
     @pytest.mark.it("Can receive a method call from the IoTHub service")
     @pytest.mark.it("Can connect, enable methods, and disconnect")
     async def test_module_client_connect_enable_methods_disconnect(self, client):
+        if limitations.needs_manual_connect():
+            await client.connect2()
         await client.enable_methods()
 
 
