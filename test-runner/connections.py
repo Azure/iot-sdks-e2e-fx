@@ -42,7 +42,7 @@ async def _get_device_client_adapter(settings_object):
     """
     get a device client adapter for the given settings object
     """
-    if not settings_object.device_id and not settings_object.id_scope:
+    if not settings_object.device_id:
         return None
 
     adapter = adapters.create_adapter(settings_object.adapter_address, "device_client")

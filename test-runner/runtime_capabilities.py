@@ -17,7 +17,7 @@ class HortonCapabilities(object):
 
 
 def collect_capabilities(horton_object):
-    if horton_object.device_id or getattr(horton_object, "id_scope", None):
+    if horton_object.device_id:
         horton_object.wrapper_api = adapters.create_adapter(
             horton_object.adapter_address, "wrapper"
         )
