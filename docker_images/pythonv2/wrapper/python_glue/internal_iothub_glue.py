@@ -3,7 +3,6 @@
 # full license information.
 import logging
 import convert
-import internal_control_glue
 import queue
 import threading
 from connection_status import ConnectionStatus
@@ -22,8 +21,6 @@ def get_kwargs(transport_type):
     kwargs["keep_alive"] = DEFAULT_KEEPALIVE
     if transport_type == "mqttws":
         kwargs["websockets"] = True
-    if internal_control_glue.sas_renewal_interval:
-        kwargs["sastoken_ttl"] = internal_control_glue.sas_renewal_interval
 
     return kwargs
 
@@ -125,7 +122,6 @@ class HandleMethods(object):
         # Python SDK 3.x needs to make an additional invocation
         if hasattr(self.client, "enable_method_request_receive"):
             self.client.enable_method_request_receive()
-
 
     def wait_for_method_and_return_response_sync(self, methodName, requestAndResponse):
         with self.lock:

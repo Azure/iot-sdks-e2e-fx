@@ -22,7 +22,6 @@ from fixtures import (  # noqa: F401
     test_device,
     test_module,
     system_control,
-    longhaul_control_device,
     telemetry_payload,
     device_provisioning,
 )
@@ -195,14 +194,6 @@ def set_python_inproc():
     set_local_system_control()
 
 
-def set_sas_renewal():
-    return
-    if settings.test_module.device_id:
-        settings.test_module.wrapper_api.set_flags_sync({"sas_renewal_interval": 60})
-    if settings.test_device.device_id:
-        settings.test_device.wrapper_api.set_flags_sync({"sas_renewal_interval": 60})
-
-
 def set_async():
     if settings.test_module.device_id:
         settings.test_module.wrapper_api.set_flags_sync({"test_async": True})
@@ -278,9 +269,6 @@ def pytest_collection_modifyitems(config, items):
     add_service_settings()
     adjust_surfaces_for_missing_implementations()
     only_include_scenario_tests(items, config.getoption("--scenario"))
-
-    if "stress" in config.getoption("--scenario"):
-        set_sas_renewal()
 
     if getattr(config, "_origargs", None):
         adapter_config.logger("HORTON: starting run: {}".format(config._origargs))

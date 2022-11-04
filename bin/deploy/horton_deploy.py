@@ -44,27 +44,6 @@ def _deploy_system_control(network_destination):
             )
 
 
-def add_longhaul_settings():
-    if settings.longhaul_control_device.group_symmetric_key:
-        settings.longhaul_control_device.adapter_address = (
-            utilities.PYTHON_INPROC_ADAPTER_ADDRESS
-        )
-        settings.longhaul_control_device.image = utilities.PYTHON_INPROC_IMAGE
-        settings.longhaul_control_device.language = "python_v2"
-        settings.longhaul_control_device.connection_type = "dps_symmetric_key_group"
-        settings.longhaul_control_device.registration_id = "{}_{}_{}".format(
-            settings.horton.language,
-            settings.horton.machine_name,
-            settings.horton.time_tag,
-        )
-
-        settings.device_provisioning.adapter_address = (
-            utilities.PYTHON_INPROC_ADAPTER_ADDRESS
-        )
-        settings.device_provisioning.image = utilities.PYTHON_INPROC_IMAGE
-        settings.device_provisioning.language = "python_v2"
-
-
 def deploy_for_iotedge(test_image):
 
     _deploy_common(test_image)
@@ -79,14 +58,20 @@ def deploy_for_iotedge(test_image):
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
 
     settings.iotedge.device_id = settings.horton.id_base + "_iotedge"
-    edge_device = iothub_service_helper.create_device(settings.iotedge.device_id, is_edge=True)
+    edge_device = iothub_service_helper.create_device(
+        settings.iotedge.device_id, is_edge=True
+    )
 
     edge_deployment.add_edge_modules(test_image)
     edge_deployment.set_edge_configuration()
 
     # default leaf device to use test_module connection.  Fix this in conftest.py if we need to use friend_module
     settings.leaf_device.device_id = settings.horton.id_base + "_leaf_device"
-    iothub_service_helper.create_device(settings.leaf_device.device_id, is_edge=False, device_scope=edge_device.device_scope)
+    iothub_service_helper.create_device(
+        settings.leaf_device.device_id,
+        is_edge=False,
+        device_scope=edge_device.device_scope,
+    )
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
     settings.leaf_device.adapter_address = settings.test_module.adapter_address
@@ -107,8 +92,6 @@ def deploy_for_iotedge(test_image):
             settings.iotedge.device_id
         )
     )
-
-    add_longhaul_settings()
 
     settings.save()
 
@@ -149,8 +132,6 @@ def deploy_for_iothub(test_image):
 
     if test_image != utilities.PYTHON_INPROC_IMAGE:
         utilities.create_docker_container(settings.test_module)
-
-    add_longhaul_settings()
 
     settings.save()
 

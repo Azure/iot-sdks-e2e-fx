@@ -108,18 +108,6 @@ async def test_device():
 
 
 @async_fixture
-async def longhaul_control_device(device_provisioning):
-    obj = settings.longhaul_control_device
-
-    adapter = await get_adapter(obj)
-    await create_client(obj, device_provisioning)
-    try:
-        yield adapter
-    finally:
-        await cleanup_adapter(obj)
-
-
-@async_fixture
 async def device_provisioning():
     obj = settings.device_provisioning
     adapter = await get_adapter(obj)

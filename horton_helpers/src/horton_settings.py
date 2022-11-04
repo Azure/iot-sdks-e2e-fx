@@ -16,10 +16,6 @@ all_environment_variables = {
     # new variable names
     "HORTON_IOTHUB_CONNECTION_STRING": "iothub.connection_string",
     "HORTON_IOTEDGE_DEBUG_LOG": "iotedge.debug_log",
-    "HORTON_LONGHAUL_CONTROL_DEVICE_ID_SCOPE": "longhaul_control_device.id_scope",
-    "HORTON_LONGHAUL_CONTROL_DEVICE_PROVISIONING_HOST_NAME": "longhaul_control_device.provisioning_host_name",
-    "HORTON_LONGHAUL_CONTROL_DEVICE_GROUP_SYMMETRIC_KEY": "longhaul_control_device.group_symmetric_key",
-    "HORTON_LONGHAUL_CONTROL_DEVICE_CAPABILITY_MODEL_ID": "longhaul_control_device.capability_model_id",
 }
 
 
@@ -137,9 +133,6 @@ class HortonSettings(DictionaryObject):
         self.friend_module = HortonModuleSettings("friend_module", "iotedge_module")
         self.leaf_device = HortonDeviceSettings("leaf_device", "leaf_device")
         self.test_device = HortonDeviceSettings("test_device", "iotthub_device")
-        self.longhaul_control_device = HortonDeviceSettings(
-            "longhaul_control_device", "iothub_device"
-        )
         self.device_provisioning = DeviceProvisioning()
         self.system_control = SystemControl()
 
@@ -152,7 +145,6 @@ class HortonSettings(DictionaryObject):
             self.test_device,
             self.system_control,
             self.horton,
-            self.longhaul_control_device,
             self.device_provisioning,
         ]
 
