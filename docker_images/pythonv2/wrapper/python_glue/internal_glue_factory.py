@@ -4,16 +4,12 @@
 import logging
 import internal_control_glue
 from internal_iothub_glue import InternalDeviceGlueSync, InternalModuleGlueSync
-from internal_device_provisioning_glue import InternalDeviceProvisioningGlueSync
 
 
 try:
     from internal_iothub_glue_async import (
         InternalDeviceGlueAsync,
         InternalModuleGlueAsync,
-    )
-    from internal_device_provisioning_glue_async import (
-        InternalDeviceProvisioningGlueAsync,
     )
     import wrap_async_in_sync
     import wrap_sync_in_async
@@ -33,11 +29,8 @@ async_module = "async_module"
 sync_interface = "sync_interface"
 async_interface = "async_interface"
 
-device_provisioning = "device_provisioning"
-sync_device_provisioning = "sync_device_provisioning"
-async_device_provisioning = "async_device_provisioning"
 
-valid_object_types = [device, module, device_provisioning]
+valid_object_types = [device, module]
 valid_interface_types = [sync_interface, async_interface]
 
 
@@ -74,12 +67,6 @@ def create_glue_object(object_type, interface_type):
     elif object_type == async_module:
         logger.info("Creating ModuleGlueAsync")
         obj = InternalModuleGlueAsync()
-    elif object_type == sync_device_provisioning:
-        logger.info("Creating InternalDeviceProvisioningGlueSync")
-        obj = InternalDeviceProvisioningGlueSync()
-    elif object_type == async_device_provisioning:
-        logger.info("Creating InternalDeviceProvisioningGlueAsync")
-        obj = InternalDeviceProvisioningGlueAsync()
     else:
         assert False
 

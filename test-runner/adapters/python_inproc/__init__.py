@@ -4,10 +4,6 @@
 
 from .inproc_iothub_apis import ModuleApi, DeviceApi, client_object_list  # noqa: F401
 from .inproc_control_api import ControlApi  # noqa: F401
-from .inproc_provisioning_apis import (  # noqa: F401
-    DeviceProvisioningApi,
-    provisioning_object_list,
-)
 
 
 async def cleanup_test_objects():
@@ -16,7 +12,3 @@ async def cleanup_test_objects():
     list_copy = client_object_list.copy()
     for obj in list_copy:
         await obj.disconnect()
-
-    list_copy = provisioning_object_list.copy()
-    for obj in list_copy:
-        await obj.destroy()

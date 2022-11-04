@@ -1,4 +1,4 @@
-# http://localhost:8099, Copyright (c) Microsoft. All rights reserved.
+# Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
@@ -23,7 +23,6 @@ from fixtures import (  # noqa: F401
     test_module,
     system_control,
     telemetry_payload,
-    device_provisioning,
 )
 from hooks import (  # noqa: F401
     pytest_runtest_logstart,

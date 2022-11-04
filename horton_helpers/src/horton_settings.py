@@ -52,12 +52,6 @@ class HortonDeviceSettings(ObjectWithAdapter):
         self.x509_key_path = ""
         # for symmetric key connection
         self.symmetric_key = ""
-        # for DPS registration
-        self.id_scope = ""
-        self.registration_id = ""
-        self.provisioning_host_name = ""
-        self.capability_model_id = ""
-        self.group_symmetric_key = ""
 
 
 class HortonModuleSettings(ObjectWithAdapter):
@@ -115,13 +109,6 @@ class SystemControl(ObjectWithAdapter):
         self.test_destination = ""
 
 
-class DeviceProvisioning(ObjectWithAdapter):
-    def __init__(self):
-        super(DeviceProvisioning, self).__init__(
-            "device_provisioning", "device_provisioning"
-        )
-
-
 class HortonSettings(DictionaryObject):
     def __init__(self):
         super(HortonSettings, self).__init__()
@@ -133,7 +120,6 @@ class HortonSettings(DictionaryObject):
         self.friend_module = HortonModuleSettings("friend_module", "iotedge_module")
         self.leaf_device = HortonDeviceSettings("leaf_device", "leaf_device")
         self.test_device = HortonDeviceSettings("test_device", "iotthub_device")
-        self.device_provisioning = DeviceProvisioning()
         self.system_control = SystemControl()
 
         self._objects = [
@@ -145,7 +131,6 @@ class HortonSettings(DictionaryObject):
             self.test_device,
             self.system_control,
             self.horton,
-            self.device_provisioning,
         ]
 
     def load_environment_variables(self):
