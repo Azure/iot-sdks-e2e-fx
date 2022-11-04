@@ -28,6 +28,8 @@ class InputOutputTests(object):
 
     @pytest.mark.it("Can connect, enable input messages, and disconnect")
     async def test_inputoutput_connect_enable_input_messages_disconnect(self, client):
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
         await client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
         await asyncio.sleep(2)

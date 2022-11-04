@@ -7,6 +7,7 @@ import datetime
 from twin_tests import wait_for_reported_properties_update
 from horton_logging import logger
 import sample_content
+import limitations
 
 
 telemetry_output_name = "telemetry"
@@ -80,6 +81,8 @@ class DroppedConnectionTestsC2d(object):
     async def test_dropped_c2d_1st_call(
         self, client, service, before_api_call, after_api_call
     ):
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
         payload = sample_content.make_message_payload()
 
         await client.enable_c2d()
@@ -102,6 +105,8 @@ class DroppedConnectionTestsC2d(object):
     async def test_dropped_c2d_2nd_call(
         self, client, service, before_api_call, after_api_call
     ):
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
 
         # 1st call
         payload = sample_content.make_message_payload()
@@ -134,6 +139,8 @@ class DroppedConnectionTestsTwin(object):
     async def test_twin_dropped_reported_properties_publish_2nd_call(
         self, client, before_api_call, after_api_call, registry
     ):
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
         await client.patch_twin(sample_content.make_reported_props())
 
         await before_api_call()
@@ -150,6 +157,9 @@ class DroppedConnectionTestsTwin(object):
     async def test_twin_dropped_get_twin_2nd_call(
         self, client, before_api_call, after_api_call
     ):
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
+    
         await client.get_twin()
 
         await before_api_call()
@@ -174,6 +184,9 @@ class DroppedConnectionTestsInputOutput(object):
         before_api_call,
         after_api_call,
     ):
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
+
         test_payload = sample_content.make_message_payload()
 
         friend_input_future = asyncio.ensure_future(
@@ -196,6 +209,9 @@ class DroppedConnectionTestsInputOutput(object):
     async def test_dropped_send_output_5x(
         self, client, eventhub, before_api_call, after_api_call
     ):
+        if limitations.needs_manual_connect(client):
+            await client.connect2()
+
         start_listening_time = datetime.datetime.utcnow() - datetime.timedelta(
             seconds=30
         )  # start listning early because of clock skew
