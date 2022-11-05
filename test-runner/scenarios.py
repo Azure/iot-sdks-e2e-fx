@@ -16,7 +16,4 @@ scenarios = {
     "iothub_module_full_drop": ["testgroup_iothub_module_full_drop"],
     "iothub_device_full_drop": ["testgroup_iothub_device_full_drop"],
     "edgehub_module_full_drop": ["testgroup_edgehub_module_full_drop"],
-    "edgehub_module_stress": ["testgroup_edgehub_module_stress"],
-    "iothub_module_stress": ["testgroup_iothub_module_stress"],
-    "iothub_device_stress": ["testgroup_iothub_device_stress"],
 }

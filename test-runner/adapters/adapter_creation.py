@@ -22,7 +22,6 @@ api_surfaces = [
     "registry",
     "eventhub",
     "system_control",
-    "device_provisioning",
 ]
 
 
@@ -47,8 +46,6 @@ def create_python_inproc_adapter(api_surface):
         return python_inproc.DeviceApi()
     elif api_surface == "wrapper":
         return python_inproc.ControlApi()
-    elif api_surface == "device_provisioning":
-        return python_inproc.DeviceProvisioningApi()
     else:
         raise ValueError("python_inproc adapter for {} invalid".format(api_surface))
 

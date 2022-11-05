@@ -10,15 +10,11 @@ import platform
 logger = logging.getLogger(__name__)
 
 do_async = False
-sas_renewal_interval = None
 
 
 tracker = leak_check.LeakTracker()
 tracker.add_tracked_module("azure.iot.device")
 tracker.set_baseline()
-
-# SAS renewal margin.  currently hardcoded
-DEFAULT_SAS_MARGIN = 120
 
 
 def log_message_sync(msg):
@@ -30,19 +26,11 @@ def log_message_sync(msg):
 
 def set_flags_sync(flags):
     global do_async
-    global sas_renewal_interval
 
     logger.info("setting flags to {}".format(flags))
     # Resist the tempation to use getattr.  We don't want to change flags that aren't populated.
     if "test_async" in flags:
         do_async = flags["test_async"]
-    if "sas_renewal_interval" in flags:
-        sas_renewal_interval = flags["sas_renewal_interval"] + DEFAULT_SAS_MARGIN
-        print(
-            "Setting sas_renewal_interval to {} + a margin of {} ".format(
-                sas_renewal_interval, DEFAULT_SAS_MARGIN
-            )
-        )
 
 
 def get_capabilities_sync():
