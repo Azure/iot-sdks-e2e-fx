@@ -1,5 +1,0 @@
-name: $(BuildID)_csharp_$(Horton.Commit)_$(BuildDefinitionName)
-variables:
-  Horton.FrameworkRoot: $(Build.SourcesDirectory)
-jobs:
-- template: templates/jobs-gate-csharp.yaml
