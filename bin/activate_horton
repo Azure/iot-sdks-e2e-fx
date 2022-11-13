@@ -86,8 +86,7 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
 
     colorecho $_yellow "installing required python libraries"
     pip install -q -r ${root_dir}/requirements.txt && \
-        pip install -q -e ${root_dir}/horton_helpers/ && \
-        pip install -q -e ${root_dir}/docker_images/pythonv2/wrapper/python_glue/ 
+        pip install -q -e ${root_dir}/horton_helpers/
     [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
 
 else

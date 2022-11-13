@@ -18,7 +18,6 @@ steps:
     }
 
     $SkipTest="no"
-    $PythonInproc="no"
     $UsesDocker = "yes"
 
     Write-Host "Configuring test suite=$env:Suite"
@@ -53,10 +52,6 @@ steps:
     } elseif ($env:Suite.StartsWith("py310")) {
         $Language = "pythonv2"
         $Variant = "py310"
-    } elseif ($env:Suite.StartsWith("python_inproc_")) {
-        $Language = "pythonv2"
-        $Variant = "py38"
-        $PythonInproc = "yes"
     } else {
         throw("Unknown/missing language in suite: " + $env:Suite)
     }
@@ -138,15 +133,6 @@ steps:
       $TestArgs=$TestArgs + " --async"
     }
 
-    # parameters for local
-    if ($PythonInproc -eq "yes") {
-      $TestArgs=$TestArgs + " --python_inproc"
-    }
-
-    if (($PythonInproc -eq "yes") -and ($Scenario.Contains("iothub"))) {
-      $UsesDocker = "no"
-    }
-
     if ($env:AGENT_JOBNAME -ne "Job") {
       $LogFolderName=$env:AGENT_JOBNAME.replace(" + ","").replace(" ","_")
     } else {
@@ -163,9 +149,6 @@ steps:
     }
     if ( -not (IsEmpty($env:ForcedImage)) ) {
       $TestImageTag=$env:ForcedImageTag
-    }
-    if ($PythonInproc -eq "yes") {
-      $TestImageTag="lkg"
     }
 
     $ImageTestMod = $env:IOTHUB_E2E_REPO_ADDRESS + "/" + ${Language} + "-e2e-v3:" + ${TestImageTag}
@@ -185,7 +168,6 @@ steps:
     Write-Host "##vso[task.setvariable variable=testImageTag]${TestImageTag}"
     Write-Host "##vso[task.setvariable variable=imageTestMod]${ImageTestMod}"
     Write-Host "##vso[task.setvariable variable=deploymentType]${DeploymentType}"
-    Write-Host "##vso[task.setvariable variable=pythonInproc]${PythonInproc}"
     Write-Host "##vso[task.setvariable variable=usesDocker]${UsesDocker}"
 
     Write-Host "Architecture=${Architecture}"
@@ -202,7 +184,6 @@ steps:
     Write-Host "TestImageTag=${TestImageTag}"
     Write-Host "ImageTestMod=${ImageTestMod}"
     Write-Host "DeploymentType=${DeploymentType}"
-    Write-Host "PythonInproc=${PythonInproc}"
     Write-Host "UsesDocker=${UsesDocker}"
 
 
@@ -225,8 +206,6 @@ steps:
     versionSpec: '3.7'
     architecture: $(architecture)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
-
-- template: steps-ensure-python-repo.yaml
 
 - bash: 
     source ${HORTON_FRAMEWORKROOT}/bin/activate_horton

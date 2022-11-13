@@ -34,14 +34,9 @@ def _deploy_system_control(network_destination):
         settings.system_control.host_port = 8140
         settings.system_control.container_port = 8040
 
-        if settings.horton.image == utilities.PYTHON_INPROC_IMAGE:
-            settings.system_control.adapter_address = "http://localhost:{}".format(
-                settings.system_control.container_port
-            )
-        else:
-            settings.system_control.adapter_address = "http://localhost:{}".format(
-                settings.system_control.host_port
-            )
+        settings.system_control.adapter_address = "http://localhost:{}".format(
+            settings.system_control.host_port
+        )
 
 
 def deploy_for_iotedge(test_image):
@@ -130,8 +125,7 @@ def deploy_for_iothub(test_image):
 
     _deploy_system_control(iothub_host_name)
 
-    if test_image != utilities.PYTHON_INPROC_IMAGE:
-        utilities.create_docker_container(settings.test_module)
+    utilities.create_docker_container(settings.test_module)
 
     settings.save()
 
@@ -183,10 +177,6 @@ def set_command_args(parser):
         "--variant", type=str, help="sdk variant", choices=utilities.all_variants
     )
 
-    target_subparsers.add_parser(
-        "python_inproc", help="set up in_proc python debugging"
-    )
-
 
 def handle_command_args(args):
     image = None
@@ -215,23 +205,15 @@ def handle_command_args(args):
             print("No previous image.  You need to specify an image")
             parser.usage()
             exit(1)
-    elif args.target == "python_inproc":
-        if args.deployment_type != "iothub":
-            print(
-                "python_inproc debugging only valid with iothub.  Use docker container if you want to debug iotedge"
-            )
-            exit(1)
-        image = utilities.PYTHON_INPROC_IMAGE
 
-    if image != utilities.PYTHON_INPROC_IMAGE:
-        utilities.get_language_from_image_name(
-            image
-        )  # validate image name before continuing
+    utilities.get_language_from_image_name(
+        image
+    )  # validate image name before continuing
 
-        if "/" not in image:
-            if "IOTHUB_E2E_REPO_ADDRESS" in os.environ:
-                repo_addr = os.environ["IOTHUB_E2E_REPO_ADDRESS"]
-                image = "{}/{}".format(repo_addr, image)
+    if "/" not in image:
+        if "IOTHUB_E2E_REPO_ADDRESS" in os.environ:
+            repo_addr = os.environ["IOTHUB_E2E_REPO_ADDRESS"]
+            image = "{}/{}".format(repo_addr, image)
 
     if args.deployment_type == "iothub":
         deploy_for_iothub(image)
