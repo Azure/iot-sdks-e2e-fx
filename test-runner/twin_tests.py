@@ -107,30 +107,6 @@ class TwinTests(object):
                 logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
                 await asyncio.sleep(5)
 
-    @pytest.mark.it("Can get the most recent twin from the service 5 times")
-    @pytest.mark.skip("Failing on pythonv2")
-    async def test_twin_desired_props_5_times(self, client, registry):
-        if limitations.needs_manual_connect(client):
-            await client.connect2()
-
-        await client.enable_twin()
-
-        for _ in range(0, 5):
-            twin_sent = sample_content.make_desired_props()
-
-            await patch_desired_props(registry, client, twin_sent)
-
-            while True:
-                twin_received = await client.get_twin()
-
-                logger("twin sent:    " + str(twin_sent))
-                logger("twin received:" + str(twin_received))
-                if twin_sent["desired"]["foo"] == twin_received["desired"]["foo"]:
-                    break
-                else:
-                    logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
-                    await asyncio.sleep(5)
-
     @pytest.mark.it("Can receive desired property patches as events")
     async def test_twin_desired_props_patch(self, client, registry):
         if limitations.needs_manual_connect(client):
