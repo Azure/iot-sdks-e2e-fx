@@ -87,12 +87,6 @@ def pytest_addoption(parser):
         choices=["mqtt", "mqttws", "amqp", "amqpws"],
     )
     parser.addoption(
-        "--python_inproc",
-        action="store_true",
-        default=False,
-        help="run tests for the pythonv2 wrapper in-proc",
-    )
-    parser.addoption(
         "--debug-container",
         action="store_true",
         default=False,
@@ -109,8 +103,6 @@ def pytest_addoption(parser):
 skip_for_c_connection_string = set(
     ["invokesModuleMethodCalls", "invokesDeviceMethodCalls"]
 )
-
-skip_for_python_inproc = set(["invokesModuleMethodCalls", "invokesDeviceMethodCalls"])
 
 
 def _get_marker(item, marker):
@@ -182,17 +174,6 @@ def set_local():
     set_local_system_control()
 
 
-def set_python_inproc():
-    print("Using pythonv2 wrapper in-proc")
-    settings.test_module.adapter_address = "python_inproc"
-    settings.test_device.adapter_address = "python_inproc"
-    settings.leaf_device.adapter_address = "python_inproc"
-    if settings.test_module.connection_type == "environment":
-        settings.test_module.connection_type = "connection_string_with_edge_gateway"
-
-    set_local_system_control()
-
-
 def set_async():
     if settings.test_module.device_id:
         settings.test_module.wrapper_api.set_flags_sync({"test_async": True})
@@ -259,8 +240,6 @@ def pytest_collection_modifyitems(config, items):
     set_transport(config.getoption("--transport"))
     if config.getoption("--local"):
         set_local()
-    if config.getoption("--python_inproc"):
-        set_python_inproc()
     set_logger()
     runtime_capabilities.collect_all_capabilities()
     if config.getoption("--async"):

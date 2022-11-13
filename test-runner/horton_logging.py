@@ -17,8 +17,7 @@ def set_logger():
     )
 
     def print_and_log(message):
-        if settings.test_module.adapter_address != "python_inproc":
-            print("PYTEST: " + message)
+        print("PYTEST: " + message)
         settings.test_module.wrapper_api.log_message_sync(message)
 
     adapters.adapter_config.logger_function = print_and_log

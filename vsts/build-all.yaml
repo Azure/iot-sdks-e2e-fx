@@ -82,10 +82,6 @@ jobs:
       py38_mqttws_async_iothub_module_and_device:   { suite: py38_mqttws_async_iothub_module_and_device }
       py38_mqttws_async_edgehub_module:             { suite: py38_mqttws_async_edgehub_module }
 
-      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
-      python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
-      python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
-      python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
 
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
@@ -93,18 +89,4 @@ jobs:
       forced_image: $(Horton.ForcedImage)
       suite: $(suite)
 
-
-- job: "test_windows_python_inproc"
-  pool:
-      vmImage: 'windows-latest'
-  strategy:
-    matrix:
-      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
-      python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
-
-  steps:
-  - template: templates/steps-deploy-and-run-pytest.yaml
-    parameters:
-      forced_image: $(Horton.ForcedImage)
-      suite: $(suite)
 

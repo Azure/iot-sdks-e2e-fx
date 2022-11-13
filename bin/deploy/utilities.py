@@ -11,9 +11,6 @@ from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 
 
-PYTHON_INPROC_IMAGE = "python-inproc-debugging"
-PYTHON_INPROC_ADAPTER_ADDRESS = "python_inproc"
-
 all_languages = ["pythonv2", "java", "csharp", "node", "c"]
 all_variants = ["py37", "py38", "py39", "py310", "node16", "node18"]
 
@@ -92,9 +89,7 @@ def get_cp_from_language(language):
 
 
 def get_language_from_image_name(image):
-    if image == PYTHON_INPROC_IMAGE:
-        return "pythonv2"
-    elif "default-friend-module" in image:
+    if "default-friend-module" in image:
         return "node"
     else:
         for language in all_languages:
@@ -107,13 +102,8 @@ def get_language_from_image_name(image):
 
 def set_args_from_image(obj, image):
     obj.language = get_language_from_image_name(image)
-    if image == PYTHON_INPROC_IMAGE:
-        obj.container_port = ""
-        obj.host_port = ""
-        obj.adapter_address = PYTHON_INPROC_ADAPTER_ADDRESS
-    else:
-        obj.container_port = get_cp_from_language(obj.language)
-        obj.adapter_address = "http://{}:{}".format("localhost", obj.host_port)
+    obj.container_port = get_cp_from_language(obj.language)
+    obj.adapter_address = "http://{}:{}".format("localhost", obj.host_port)
     obj.image = image
 
 
@@ -163,8 +153,7 @@ def remove_old_instances():
 
 
 def pull_docker_image(image):
-    if image != PYTHON_INPROC_IMAGE:
-        run_elevated_shell_command("docker pull {image}".format(image=image))
+    run_elevated_shell_command("docker pull {image}".format(image=image))
 
 
 def create_docker_container(obj):

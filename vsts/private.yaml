@@ -77,32 +77,3 @@ jobs:
       suite: $(suite)
       # testcase: '-k friend_to_mod'
 
-- job: "test_linux_python_inproc"
-  condition: false
-  pool:
-      vmImage: 'Ubuntu 18.04'
-  strategy:
-    matrix:
-      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
-      #python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
-      #python_inproc_mqtt_edgehub_module:                    { suite: python_inproc_mqtt_edgehub_module }
-      #python_inproc_mqtt_edgehub_module_async:              { suite: python_inproc_mqtt_edgehub_module_async }
-
-  steps:
-  - template: templates/steps-deploy-and-run-pytest.yaml
-    parameters:
-      suite: $(suite)
-
-- job: "test_windows_python_inproc"
-  condition: false
-  pool:
-      vmImage: 'windows-latest'
-  strategy:
-    matrix:
-      python_inproc_mqtt_iothub_module_and_device:          { suite: python_inproc_mqtt_iothub_module_and_device }
-      #python_inproc_mqtt_iothub_module_and_device_async:    { suite: python_inproc_mqtt_iothub_module_and_device_async }
-
-  steps:
-  - template: templates/steps-deploy-and-run-pytest.yaml
-    parameters:
-      suite: $(suite)
