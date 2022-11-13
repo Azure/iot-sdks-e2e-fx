@@ -70,11 +70,6 @@ class DroppedConnectionTestsTelemetry(object):
         received_message = await received_message_future
         assert received_message is not None, "Message not received"
 
-    @pytest.mark.it("Can reliably send 5 events")
-    @pytest.mark.skip("#BKTODO")
-    async def test_client_dropped_send_event_5x(self):
-        pass
-
 
 class DroppedConnectionTestsC2d(object):
     @pytest.mark.it("Can reliably reveive c2d (1st-time possible subscribe)")
@@ -255,16 +250,6 @@ class DroppedConnectionTestsInputOutput(object):
                 receive_future = asyncio.ensure_future(
                     eventhub.wait_for_next_event(client.device_id)
                 )
-
-    @pytest.mark.it("Can reliably receive an input event")
-    @pytest.mark.skip("#BKTODO")
-    async def test_dropped_receive_input(self):
-        pass
-
-    @pytest.mark.it("Can reliably receive 5 input events")
-    @pytest.mark.skip("#BKTODO")
-    async def test_dropped_receive_input_5x(self):
-        pass
 
 
 class DroppedConnectionIoTHubDeviceTests(
