@@ -3,7 +3,6 @@
 # full license information.
 
 import os
-from config_yaml import ConfigFile
 from horton_settings import settings
 from .edge_configuration import EdgeConfiguration
 from iothub_service_helper import IoTHubServiceHelper
@@ -65,33 +64,20 @@ def set_edge_configuration():
     settings.save()
 
 
-def set_config_yaml():
+def update_config_toml():
     iothub_service_helper = IoTHubServiceHelper(settings.iothub.connection_string)
     settings.iotedge.connection_string = iothub_service_helper.get_device_connection_string(
         settings.iotedge.device_id
     )
-
-    print("updating config.yaml to insert connection string")
-    config_file = ConfigFile()
-    config_file.contents["provisioning"][
-        "device_connection_string"
-    ] = settings.iotedge.connection_string
-
-    if (
-        "IOTEDGE_DEBUG_LOG" in os.environ
-        and os.environ["IOTEDGE_DEBUG_LOG"].lower() == "true"
-    ):
-        print("IOTEDGE_DEBUG_LOG is set. setting edgeAgent RuntimeLogLevel to debug")
-        config_file.contents["agent"]["env"]["RuntimeLogLevel"] = "debug"
-    else:
-        print("IOTEDGE_DEBUG_LOG is not set. clearing edgeAgent RuntimeLogLevel")
-        if "RuntimeLogLevel" in config_file.contents["agent"]["env"]:
-            del config_file.contents["agent"]["env"]["RuntimeLogLevel"]
-
-    config_file.save()
     settings.save()
-    print("config.yaml updated")
 
+    print("updating config.toml to insert connection string")
+    utilities.run_elevated_shell_command(
+        "iotedge config mp --force --connection-string "
+        "{}"
+        "".format(settings.iotedge.connection_string)
+    )
+    print("config.toml updated")
 
-def restart_iotedge():
-    utilities.run_elevated_shell_command("systemctl restart iotedge")
+    utilities.run_elevated_shell_command("iotedge config apply")
+    print("config.toml changes applied")

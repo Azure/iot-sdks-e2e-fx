@@ -5,14 +5,14 @@
 from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 import base64
-import glob
 from . import utilities
 import argparse
 
 
 def get_edge_ca_cert_base64():
-    filename = glob.glob("/var/lib/iotedge/hsm/certs/edge_owner_ca*.pem")[0]
-    cert = utilities.run_elevated_shell_command("cat {}".format(filename))
+    cert_path = "/var/lib/aziot/certd/certs/"
+    filename = utilities.run_elevated_shell_command("ls {}".format(cert_path))[0]
+    cert = utilities.run_elevated_shell_command("cat {}{}".format(cert_path, filename))
     return base64.b64encode("\n".join(cert).encode("ascii")).decode("ascii")
 
 
