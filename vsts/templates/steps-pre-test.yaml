@@ -17,6 +17,9 @@ steps:
 
 - bash: |
     docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+    if [ $(which sudo) ]; then 
+      sudo docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+    fi
   displayName: 'docker login'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'], 'yes'))
 
