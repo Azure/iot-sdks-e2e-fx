@@ -79,8 +79,7 @@ def deploy_for_iotedge(test_image):
 
     _deploy_system_control(settings.iotedge.iotedge_host_name)
 
-    edge_deployment.set_config_yaml()
-    edge_deployment.restart_iotedge()
+    edge_deployment.update_config_toml()
 
     print(
         "New IotEdge device created with device_id={}".format(
