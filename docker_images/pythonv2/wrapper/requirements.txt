@@ -1,7 +1,7 @@
 connexion
 Werkzeug>=2.1.1
 python_dateutil
-setuptools
+setuptools>=65.0.0
 PyYAML
 urllib3
 
