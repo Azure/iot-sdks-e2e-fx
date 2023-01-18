@@ -121,7 +121,7 @@ steps:
     versionSpec: '3.7'
     architecture: $(architecture)
 
-- bash: source ${HORTON_FRAMEWORKROOT}/bin/activate_horton
+- bash: source ${HORTON_FRAMEWORKROOT}/bin/activate_horton && pip list
   displayName: 'Create Horton environment'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
