@@ -195,8 +195,14 @@ class EventHubApi:
 
         while True:
             event = await self.received_events.get()
+
             if not device_id:
-                return event.body_as_json()
+                logger("EventHubAPI: body = {}".format(event.body_as_str()))
+                try:
+                    return event.body_as_json()
+                except TypeError:
+                    return event.body_as_str()
+
             elif get_device_id_from_event(event) == device_id:
                 logger("EventHubApi: received event: {}".format(event))
                 received = event.body_as_json()
