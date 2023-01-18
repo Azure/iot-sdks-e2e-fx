@@ -208,7 +208,7 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - bash: 
-    source ${HORTON_FRAMEWORKROOT}/bin/activate_horton
+    source ${HORTON_FRAMEWORKROOT}/bin/activate_horton && pip list
   displayName: 'Create Horton environment'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
