@@ -23,18 +23,6 @@ steps:
   displayName: 'docker login'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'], 'yes'))
 
-- bash: |
-    docker pull ${{ parameters.image_testMod }} || docker pull ${{ parameters.image_testMod }}
-  displayName: 'pre-cache test image'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
-
-- bash: |
-    ( docker pull ${{ parameters.image_edgeAgent }} || docker pull ${{ parameters.image_edgeAgent }} ) &&
-    ( docker pull ${{ parameters.image_edgeHub }} || docker pull ${{ parameters.image_edgeHub }} ) &&
-    ( docker pull ${{ parameters.image_friendmod }} || docker pull ${{ parameters.image_friendmod }} )
-  displayName: 'pre-cache edge images'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
-
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton deploy ${{ parameters.deployment_type }} image ${{ parameters.image_testMod }}
   displayName: 'Create new identites and deploy containers (docker)'

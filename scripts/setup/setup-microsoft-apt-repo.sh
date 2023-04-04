@@ -2,13 +2,12 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
-source "$script_dir/../colorecho.sh"
 source /etc/os-release
 
 
-colorecho $_yellow "Checking for Microsoft APT repo registration"
+echo "Checking for Microsoft APT repo registration"
 if [ -f /etc/apt/sources.list.d/microsoft-prod.list ]; then 
-  colorecho $_green "Microsoft APT repo already registered.  Done."
+  echo "Microsoft APT repo already registered.  Done."
   exit 0
 fi
 
@@ -40,30 +39,30 @@ case $ID in
 esac
 
 if [ "${os_platform}" == "" ]; then
-  colorecho $_red "ERROR: This script only works on Ubunto and Raspbian distros"
+  echo "ERROR: This script only works on Ubunto and Raspbian distros"
   exit 1
 fi
 
 curl https://packages.microsoft.com/config/${os_platform}/prod.list > ./microsoft-prod.list
-[ $? -eq 0 ] || { colorecho $_red "curl failed"; exit 1; }
+[ $? -eq 0 ] || { echo "curl failed"; exit 1; }
 
 # Register the Microsoft repository GPG keys
 sudo cp ./microsoft-prod.list /etc/apt/sources.list.d/
-[ $? -eq 0 ] || { colorecho $_red "sudo cp microsoft-prod.list failed"; exit 1; }
+[ $? -eq 0 ] || { echo "sudo cp microsoft-prod.list failed"; exit 1; }
 
 rm microsoft-prod.list
 
 curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
-[ $? -eq 0 ] || { colorecho $_red "curl microsoft.asc failed"; exit 1; }
+[ $? -eq 0 ] || { echo "curl microsoft.asc failed"; exit 1; }
 
 sudo cp ./microsoft.gpg /etc/apt/trusted.gpg.d/
-[ $? -eq 0 ] || { colorecho $_red "cp microsoft.gpg failed"; exit 1; }
+[ $? -eq 0 ] || { echo "cp microsoft.gpg failed"; exit 1; }
 
 rm microsoft.gpg
 
 # Update the list of products
 sudo apt-get update
-[ $? -eq 0 ] || { colorecho $_red "apt update failed"; exit 1; }
+[ $? -eq 0 ] || { echo "apt update failed"; exit 1; }
 
-colorecho $_green "Microsoft APT repo successfully registered"
+echo "Microsoft APT repo successfully registered"
 

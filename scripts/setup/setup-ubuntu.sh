@@ -3,34 +3,30 @@
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
 
-source "$script_dir/../colorecho.sh"
-
 function header {
-  color="$1"
-  shift
-  colorecho $color "----------------------------------------------------------"
-  colorecho $color $@
-  colorecho $color "----------------------------------------------------------"
+  echo "----------------------------------------------------------"
+  echo $@
+  echo "----------------------------------------------------------"
 }
 
 function failure {
-  header $_red $@
+  header $@
   exit 1
 }
 
-header $_cyan "installing moby"
+header "installing moby"
 $script_dir/setup-moby.sh
 [ $? -eq 0 ] || failure "setup-moby failed"
 
-header $_cyan "installing local container registry"
+header "installing local container registry"
 $script_dir/setup-registry.sh
 [ $? -eq 0 ] || failure "setup-registry failed"
 
-header $_cyan "installing iotedge"
+header "installing iotedge"
 $script_dir/setup-iotedge.sh
 [ $? -eq 0 ] || failure "setup-iotedge failed"
 
-header $_green "\n\
+header "\n\
 setup-ubuntu succeeded\n\
 \n\
 Please open a new bash prompt before continuing\n\
