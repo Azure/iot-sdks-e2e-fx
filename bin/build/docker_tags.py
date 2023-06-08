@@ -80,7 +80,7 @@ def get_docker_tags_from_commit(language, repo, commit, variant):
     tags.language = language
     tags.repo = repo
     tags.commit_name = get_commit_name(commit)
-    tags.commit_sha = "737274c6d760bf53b6f75916f2578166e9261b61" #TODO timtay
+    tags.commit_sha = "732ae007d344e69d0fd293113faa26e445ae111a" #TODO timtay
 
     default_variant = get_default_variant(language)
     tags.variant = variant or default_variant
