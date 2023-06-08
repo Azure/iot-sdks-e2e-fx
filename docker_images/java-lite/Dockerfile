@@ -5,7 +5,7 @@ ENV MAVEN_CONFIG=/usr/share/maven/ref
 RUN yum install -y \
   maven \
   git 
-COPY java/settings-docker.xml /usr/share/maven/ref/settings-docker.xml
+COPY java-lite/settings-docker.xml /usr/share/maven/ref/settings-docker.xml
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
