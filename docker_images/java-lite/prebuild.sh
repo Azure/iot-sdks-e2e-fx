@@ -5,7 +5,11 @@ ls
 cd /sdk
 [ $? -eq 0 ] || { echo "cd sdk failed"; exit 1; }
 ls
-cd ./docker_images/java-lite/wrapper
+cd ./docker_images/
+ls
+cd ./java-lite
+ls
+cd ./wrapper
 mvn -s /usr/share/maven/ref/settings-docker.xml -Dmaven.test.skip=true -Dmaven.javadoc.skip=true --projects :iot-edge-e2e-wrapper --also-make  install
 [ $? -eq 0 ] || { echo "build sdk failed"; exit 1; }
 
