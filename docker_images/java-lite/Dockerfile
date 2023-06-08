@@ -21,6 +21,7 @@ WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
 COPY java-lite/prebuild.sh /
+RUN ls
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
