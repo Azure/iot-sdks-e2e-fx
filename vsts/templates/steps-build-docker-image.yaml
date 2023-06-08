@@ -162,7 +162,7 @@ steps:
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - bash: |
-    ${HORTON_FRAMEWORKROOT}/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit refs/head/timtay/javaLiteSDK --variant $(VariantToPass)
+    ${HORTON_FRAMEWORKROOT}/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit timtay/javaLiteSDK --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
