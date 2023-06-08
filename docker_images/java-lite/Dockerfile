@@ -35,8 +35,8 @@ COPY java/patchfile /
 RUN git reset HEAD && git checkout . && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
-RUN rm -r /sdk/iot-e2e-tests/edge-e2e
-COPY java/wrapper /sdk/iot-e2e-tests/edge-e2e
+RUN rm -r /sdk/edge-e2e
+COPY java/wrapper /sdk/edge-e2e
 
 COPY java/rebuild.sh /
 RUN /rebuild.sh
@@ -45,4 +45,4 @@ ENV HORTON_REPO=$HORTON_REPO
 ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
 ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
-ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
+ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
