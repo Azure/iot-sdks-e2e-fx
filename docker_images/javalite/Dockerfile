@@ -5,7 +5,7 @@ ENV MAVEN_CONFIG=/usr/share/maven/ref
 RUN yum install -y \
   maven \
   git 
-COPY java-lite/settings-docker.xml /usr/share/maven/ref/settings-docker.xml
+COPY javalite/settings-docker.xml /usr/share/maven/ref/settings-docker.xml
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
@@ -20,7 +20,7 @@ ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
-COPY java-lite/prebuild.sh /
+COPY javalite/prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
@@ -30,15 +30,15 @@ WORKDIR /sdk
 RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
 
-COPY java-lite/patchfile /
+COPY javalite/patchfile /
 # our base image might have some files checked out.  revert these.
 RUN git reset HEAD && git checkout . && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 RUN rm -r /sdk/edge-e2e
-COPY java-lite/wrapper /sdk/edge-e2e
+COPY javalite/wrapper /sdk/edge-e2e
 
-COPY java-lite/rebuild.sh /
+COPY javalite/rebuild.sh /
 RUN /rebuild.sh
 
 ENV HORTON_REPO=$HORTON_REPO

@@ -8,7 +8,7 @@ function usage {
     echo "  $0 [lang]"
     echo "  example: $0 node"
     echo ""
-    echo "lang can be one of [node, csharp, c, java, pythonv2, java-lite]"
+    echo "lang can be one of [node, csharp, c, java, pythonv2, javalite]"
     echo ""
 }
 
@@ -22,7 +22,7 @@ case $language in
         swagger_language=java-vertx
         tags="control device module service registry"
         ;;
-    java-lite)
+    javalite)
         swagger_language=java-vertx
         tags="control device module service registry"
         ;;
