@@ -20,7 +20,7 @@ ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
 
-COPY java/prebuild.sh /
+COPY java-lite/prebuild.sh /
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
@@ -30,15 +30,15 @@ WORKDIR /sdk
 RUN git pull
 RUN git checkout $HORTON_COMMIT_SHA
 
-COPY java/patchfile /
+COPY java-lite/patchfile /
 # our base image might have some files checked out.  revert these.
 RUN git reset HEAD && git checkout . && git clean  -df
 RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 RUN rm -r /sdk/edge-e2e
-COPY java/wrapper /sdk/edge-e2e
+COPY java-lite/wrapper /sdk/edge-e2e
 
-COPY java/rebuild.sh /
+COPY java-lite/rebuild.sh /
 RUN /rebuild.sh
 
 ENV HORTON_REPO=$HORTON_REPO
