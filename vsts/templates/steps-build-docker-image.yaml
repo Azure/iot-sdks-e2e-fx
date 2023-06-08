@@ -161,8 +161,8 @@ steps:
   displayName: 'docker login'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
-- bash: |                                                                                     # TODO timtay revert this
-    ${HORTON_FRAMEWORKROOT}/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit timtay/javaLiteSDK --variant $(VariantToPass)
+- bash: |
+    ${HORTON_FRAMEWORKROOT}/bin/horton build --language $(LanguageToPass) --repo $(RepoToPass) --commit $(CommitToPass) --variant $(VariantToPass)
   displayName: "build docker image ${{ parameters.language }} ${{ parameters.variant }}"
   env: 
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
