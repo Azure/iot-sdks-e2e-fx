@@ -19,10 +19,8 @@ RUN echo "switch to main" > /horton_tag.txt
 ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
-RUN ls
 
 COPY java-lite/prebuild.sh /
-RUN chmod 777 /prebuild.sh
 RUN /prebuild.sh
 
 # phase 2: grab the code we want to test and rebuild
@@ -47,4 +45,4 @@ ENV HORTON_REPO=$HORTON_REPO
 ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
 ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
-ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
+ENTRYPOINT ["/usr/bin/java", "-jar", "/sdk/iot-e2e-tests/edge-e2e/target/iot-edge-e2e-wrapper-1.0.0-with-deps.jar"]
