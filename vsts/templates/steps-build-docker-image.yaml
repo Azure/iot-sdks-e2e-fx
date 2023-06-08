@@ -67,6 +67,8 @@ steps:
             $RepoToPass="Azure/azure-iot-sdk-node"
         } elseif ($LanguageToPass -like 'csharp') {
             $RepoToPass="Azure/azure-iot-sdk-csharp"
+        } elseif ($LanguageToPass -like 'java-lite') {
+            $RepoToPass="Azure/azure-iot-sdk-lite-java"
         } elseif ($LanguageToPass -like 'java') {
             $RepoToPass="Azure/azure-iot-sdk-java"
         } elseif ($LanguageToPass -like 'pythonv2') {
