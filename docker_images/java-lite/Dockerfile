@@ -19,6 +19,7 @@ RUN echo "switch to main" > /horton_tag.txt
 ARG HORTON_REPO
 WORKDIR /sdk
 RUN git clone https://github.com/$HORTON_REPO .
+RUN ls
 
 COPY java-lite/prebuild.sh /
 RUN chmod 777 /prebuild.sh
