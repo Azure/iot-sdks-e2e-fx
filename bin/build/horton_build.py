@@ -9,7 +9,7 @@ import datetime
 import colorama
 from colorama import Fore
 import subprocess
-this should obviously break something duddddd@$(@*#$(@*$#)())
+
 colorama.init(autoreset=True)
 
 default_repo = "(Azure/azure-iot-sdk-BLAH)"
