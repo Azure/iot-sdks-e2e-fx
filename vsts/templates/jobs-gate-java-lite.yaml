@@ -5,7 +5,7 @@ jobs:
   steps:
   - template: steps-build-docker-image.yaml
     parameters:
-      language: java-lite
+      language: java
 
 - job: "test_linux_amd64"
   pool:
