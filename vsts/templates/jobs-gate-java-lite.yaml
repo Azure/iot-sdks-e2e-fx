@@ -5,7 +5,7 @@ jobs:
   steps:
   - template: steps-build-docker-image.yaml
     parameters:
-      language: java-lite
+      language: javalite
 
 - job: "test_linux_amd64"
   pool:
@@ -15,10 +15,10 @@ jobs:
   strategy:
     matrix:
       # ModuleClient to IotHub tests are disabled for Java because Java e2e tests outside of Horton already run these scenarios
-      # java_mqtt_iothub_module:      { suite: java_mqtt_iothub_module }
-      # java_mqttws_iothub_module:    { suite: java_mqttws_iothub_module }
-      java_mqtt_edgehub_module:     { suite: java_mqtt_edgehub_module }
-      #java_mqttws_edgehub_module:   { suite: java_mqttws_edgehub_module }
+      # javalite_mqtt_iothub_module:      { suite: javalite_mqtt_iothub_module }
+      # javalite_mqttws_iothub_module:    { suite: javalite_mqttws_iothub_module }
+      javalite_mqtt_edgehub_module:     { suite: javalite_mqtt_edgehub_module }
+      #javalite_mqttws_edgehub_module:   { suite: javalite_mqttws_edgehub_module }
 
   steps:
   - template: steps-deploy-and-run-pytest.yaml
