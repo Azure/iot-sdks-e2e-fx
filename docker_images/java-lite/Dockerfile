@@ -18,7 +18,7 @@ RUN echo "switch to main" > /horton_tag.txt
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
 WORKDIR /sdk
-RUN git clone https://github.com/azure/iot-sdks-e2e-fx .
+RUN git clone https://github.com/azure/azure-iot-sdk-lite-java .
 RUN ls
 
 COPY java-lite/prebuild.sh /
