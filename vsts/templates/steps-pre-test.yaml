@@ -34,7 +34,7 @@ steps:
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
-- bash: 
+- bash: |
     cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
     ./wait-for-container.sh edgeHub &&
     ./wait-for-container.sh edgeAgent &&
@@ -42,7 +42,7 @@ steps:
   displayName: 'wait for iot edge containers"
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
-- bash: 
+- bash: |
     cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
     ./wait-for-container.sh testMod
   displayName: 'wait for testMod container"
