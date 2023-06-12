@@ -84,7 +84,11 @@ steps:
     }
 
     if ( $CommitToPass -like "master" ) {
-      $CommitToPass="main"
+      if ($LanguageToPass -like 'pythonv2') {
+        $CommitToPass="v2"
+      } else {
+        $CommitToPass="main"
+      }
     } 
 
     $Architecture=GetArchitecture
