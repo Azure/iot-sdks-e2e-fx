@@ -3,8 +3,8 @@
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
 
-$script_dir/setup-microsoft-apt-repo.sh
-[ $? -eq 0 ] || { echo "setup-microsoft-apt-repo failed"; exit 1; }
+$script_dir/install-microsoft-apt-repo.sh
+[ $? -eq 0 ] || { echo "install-microsoft-apt-repo failed"; exit 1; }
 
 # install iotedge
 sudo apt-get install -y aziot-edge

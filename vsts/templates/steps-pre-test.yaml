@@ -11,8 +11,8 @@ parameters:
   deployment_type: ''
   
 steps:
-- bash: ${HORTON_FRAMEWORKROOT}/scripts/setup/setup-iotedge.sh
-  displayName: 'Install iotedge packages'
+- bash: ${HORTON_FRAMEWORKROOT}/scripts/new/install-prereqs.sh
+  displayName: 'Install prerequisites'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - bash: |
@@ -22,18 +22,6 @@ steps:
     fi
   displayName: 'docker login'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'], 'yes'))
-
-- bash: |
-    docker pull ${{ parameters.image_testMod }} || docker pull ${{ parameters.image_testMod }}
-  displayName: 'pre-cache test image'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
-
-- bash: |
-    ( docker pull ${{ parameters.image_edgeAgent }} || docker pull ${{ parameters.image_edgeAgent }} ) &&
-    ( docker pull ${{ parameters.image_edgeHub }} || docker pull ${{ parameters.image_edgeHub }} ) &&
-    ( docker pull ${{ parameters.image_friendmod }} || docker pull ${{ parameters.image_friendmod }} )
-  displayName: 'pre-cache edge images'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton deploy ${{ parameters.deployment_type }} image ${{ parameters.image_testMod }}
@@ -46,38 +34,20 @@ steps:
     IOTEDGE_DEBUG_LOG: $(IOTEDGE_DEBUG_LOG)
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 edgeHub ${{ parameters.image_edgeHub }}
-  displayName: 'Verify edgeHub deployment'
+- bash: 
+    cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
+    ./wait-for-container.sh edgeHub &&
+    ./wait-for-container.sh edgeAgent &&
+    ./wait-for-container.sh friendMod 
+  displayName: 'wait for iot edge containers"
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
-
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 edgeAgent ${{ parameters.image_edgeAgent }}
-  displayName: 'Verify edgeAgent deployment'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
-
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 friendMod ${{ parameters.image_friendMod }}
-  displayName: 'Verify friendMod deployment'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
-
-- powershell: $(Horton.FrameworkRoot)/scripts/verify-deployment.ps1 testMod ${{ parameters.image_testMod }}
-  displayName: 'Verify testMod deployment'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
 - bash: 
-    source ${HORTON_FRAMEWORKROOT}/bin/activate_horton &&
-    python pyscripts/ensure_container.py testMod
-  displayName: 'Verify that testMod is responding'
+    cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
+    ./wait-for-container.sh testMod
+  displayName: 'wait for testMod container"
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
-- bash:
-    source ${HORTON_FRAMEWORKROOT}/bin/activate_horton &&
-    python pyscripts/ensure_container.py friendMod
-  displayName: 'Verify that friendMod is responding'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
-
-- bash: sleep 30
-  displayName: 'give edgeHub 30 seconds to start up'
-  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
-  
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton get_credentials
   displayName: 'Get credentials'

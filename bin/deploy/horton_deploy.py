@@ -164,17 +164,6 @@ def set_command_args(parser):
         "--variant", type=str, help="sdk variant", choices=utilities.all_variants
     )
 
-    lkg_parser = target_subparsers.add_parser("lkg", help="deploy based on vsts LKG")
-    lkg_parser.add_argument(
-        "--language",
-        type=str,
-        help="sdk language",
-        required=True,
-        choices=utilities.all_languages,
-    )
-    lkg_parser.add_argument(
-        "--variant", type=str, help="sdk variant", choices=utilities.all_variants
-    )
 
 
 def handle_command_args(args):
@@ -182,12 +171,6 @@ def handle_command_args(args):
     if args.target == "image":
         image = args.image_name
         print("Using new image: {}".format(image))
-    elif args.target == "lkg":
-        if args.variant:
-            image = "{}-e2e-v3:lkg-{}".format(args.language, args.variant)
-        else:
-            image = "{}-e2e-v3:lkg".format(args.language)
-        print("Using LKG image: {}".format(image))
     elif args.target == "vsts":
         if args.variant:
             image = "{}-e2e-v3:vsts-{}-{}".format(
