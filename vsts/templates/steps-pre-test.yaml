@@ -48,6 +48,10 @@ steps:
   displayName: 'wait for testMod container'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'],'yes'))
 
+- bash: sleep 30
+  displayName: 'give edgeHub 30 seconds to start up'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
+
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton get_credentials
   displayName: 'Get credentials'
