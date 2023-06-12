@@ -5,13 +5,11 @@
 script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 root_dir=${script_dir}/..
 
-source "$root_dir/scripts/colorecho.sh"
-
 if [ "${_HORTON_}" == "" ]; then
     source ${script_dir}/activate_horton
-    [ $? -eq 0 ] || { colorecho $_red "activate_horton failed"; exit 1; }
+    [ $? -eq 0 ] || { echo "activate_horton failed"; exit 1; }
 fi
 
 python ${script_dir}/horton.py $*
-[ $? -eq 0 ] || { colorecho $_red "horton.py failed"; exit 1; }
+[ $? -eq 0 ] || { echo "horton.py failed"; exit 1; }
 

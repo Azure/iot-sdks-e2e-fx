@@ -11,14 +11,13 @@ script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 root_dir=${script_dir}/..
 pushd $root_dir
 
-source "$root_dir/scripts/colorecho.sh"
 virtual_env_root="${script_dir}/_virtualenv/horton/"
 
 if [ ! -e ${virtual_env_root}/bin/activate ]; then
-    colorecho $_yellow "Initializing horton environment"
+    echo "Initializing horton environment"
 
     # Make sure we're running python 3.7 or higher
-    colorecho $_yellow "checking for python 3.7+"
+    echo "checking for python 3.7+"
     needpython=1
     which python
     if [ $? -eq 0 ]; then
@@ -27,35 +26,35 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
       ret=$(echo "import sys; print(sys.hexversion>0x3070000)" | python | sed -e 's/[\r\n]//g')
       echo ret="_${ret}_"
       if [ $? -ne 0 ]; then
-        colorecho $_red "Error getting python version"
+        echo "Error getting python version"
 	return 1
       fi
 
       if [[ $ret == "True" ]]; then
-        colorecho $_yellow "Python3.7+ is already installed"
+        echo "Python3.7+ is already installed"
         needpython=0
       fi
     fi
 
     if [ $needpython -eq 1 ]; then
-       colorecho $_red "Python 3.7+ is required.  Please install and re-run"
+       echo "Python 3.7+ is required.  Please install and re-run"
        return 1
     fi
 
-    colorecho $_yellow "Installing virtualenv python libraries"
+    echo "Installing virtualenv python libraries"
     python -m pip -q install --user virtualenv
     if [ $? -ne 0 ]; then 
-        colorecho $_yellow "user path not accepted.  Installing globally"
+        echo "user path not accepted.  Installing globally"
         python -m pip -q install virtualenv
-        [ $? -eq 0 ] || { colorecho $_red "pip install requirements.txt failed"; return 1; }
+        [ $? -eq 0 ] || { echo "pip install requirements.txt failed"; return 1; }
     fi
 
-    colorecho $_yellow "Creating virtual evnronment"
+    echo "Creating virtual evnronment"
 
     # If using WSL, we need to pass the winodws path when creating the virtual env
     which wslpath
     if [ $? -eq 0 ]; then
-        colorecho $_yellow "Runnin under WSL."
+        echo "Runnin under WSL."
         passed_virtual_env_root=$(wslpath -w ${virtual_env_root})
     else
         passed_virtual_env_root=${virtual_env_root}
@@ -64,38 +63,38 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
 
     echo python3 -m virtualenv ${passed_virtual_env_root} --prompt="Horton" --symlinks=False
     python -m virtualenv ${passed_virtual_env_root}
-    [ $? -eq 0 ] || { colorecho $_red "virtualenv create failed"; return 1; }
+    [ $? -eq 0 ] || { echo "virtualenv create failed"; return 1; }
 
-    colorecho $_green "Horton environment created"
+    echo "Horton environment created"
 
     if [ ! -e ${virtual_env_root}/bin/activate ]; then
       # Using Windows python from bash pyts shortcuts in Scripts instead of bin.  Fix this up.
-      colorecho $_yelow "Fixing WSL python shortcut"
+      echo "Fixing WSL python shortcut"
 
       ln -s ${virtual_env_root}/Scripts ${virtual_env_root}/bin
-      [ $? -eq 0 ] || { colorecho $_red "ln Scripts bin failed"; return 1; }
+      [ $? -eq 0 ] || { echo "ln Scripts bin failed"; return 1; }
 
       # need path otherwise WSL under mobaxterm fails
       /usr/bin/dos2unix ${virtual_env_root}/bin/activate 
-      [ $? -eq 0 ] || { colorecho $_red "dos2unix failed or not installed"; return 1; }
+      [ $? -eq 0 ] || { echo "dos2unix failed or not installed"; return 1; }
     fi
 
-    colorecho $_yellow "activating horton environment"
+    echo "activating horton environment"
     source ${virtual_env_root}/bin/activate
-    [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
+    [ $? -eq 0 ] || { echo "horton/bin/activate failed"; return 1; }
 
-    colorecho $_yellow "installing required python libraries"
+    echo "installing required python libraries"
     pip install -q -r ${root_dir}/requirements.txt && \
         pip install -q -e ${root_dir}/horton_helpers/
-    [ $? -eq 0 ] || { colorecho $_red "pip install failed"; return 1; }
+    [ $? -eq 0 ] || { echo "pip install failed"; return 1; }
 
 else
     source ${virtual_env_root}/bin/activate
-    [ $? -eq 0 ] || { colorecho $_red "horton/bin/activate failed"; return 1; }
+    [ $? -eq 0 ] || { echo "horton/bin/activate failed"; return 1; }
 fi
 
 export _HORTON_=1
 export PATH=$PATH:${script_dir}
-colorecho $_green "Horton environment activated"
+echo "Horton environment activated"
 
 
