@@ -2,10 +2,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 script_dir=$(cd "$(dirname "$0")" && pwd)
 root_dir=$(cd "${script_dir}/.." && pwd)
-source "$script_dir/../scripts/colorecho.sh"
 
-colorecho $_red "WARNING: This script overwrites code.  If you have anything checked out, it might be destroyed by this script."
-colorecho $_red "Do you wish to run this anyway?"
+echo "WARNING: This script overwrites code.  If you have anything checked out, it might be destroyed by this script."
+echo "Do you wish to run this anyway?"
 select yn in "Yes" "No"; do
     case $yn in
         Yes ) break;;
@@ -31,7 +30,7 @@ mv swagger.yaml e2e-restapi.yaml
 autorest --python --input-file=e2e-restapi.yaml --use=@microsoft.azure/autorest.python@~4.0.73
 [ $? -eq 0 ] || { echo "autorest failed"; exit 1; }
 
-colorecho $_yellow "copying generated files"
+echo "copying generated files"
 
 cd ${root_dir}/test-runner/adapters/rest/generated/
 [ $? -eq 0 ] || { echo "cd test-runner/rest_wrappers/generated"; exit 1; }
@@ -42,4 +41,4 @@ rm -r e2erestapi/
 cp -r ../../../../swagger/swagger_generated/yaml/generated/e2erestapi/ .
 [ $? -eq 0 ] || { echo "cp"; exit 1; }
 
-colorecho $_green "SUCCESS!"
+echo "SUCCESS!"

@@ -2,10 +2,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 script_dir=$(cd "$(dirname "$0")" && pwd)
 root_dir=$(cd "${script_dir}/.." && pwd)
-source "$script_dir/../scripts/colorecho.sh"
 
-colorecho $_red "WARNING: This script overwrites code.  If you have anything checked out, it might be destroyed by this script."
-colorecho $_red "Do you wish to run this anyway?"
+echo "WARNING: This script overwrites code.  If you have anything checked out, it might be destroyed by this script."
+echo "Do you wish to run this anyway?"
 select yn in "Yes" "No"; do
     case $yn in
         Yes ) break;;
@@ -22,7 +21,7 @@ rm -r swagger_generated/pythonv2
 ./generate.sh pythonv2
 [ $? -eq 0 ] || { echo "generate.sh failed"; exit 1; }
 
-colorecho $_yellow "copying generated files"
+echo "copying generated files"
 
 cd ${root_dir}
 [ $? -eq 0 ] || { echo "cd ${root_dir} failed"; exit 1; }
@@ -36,4 +35,4 @@ cp -r swagger/swagger_generated/pythonv2/swagger_server/ docker_images/pythonv2/
 rm -r docker_images/pythonv2/wrapper/swagger_server/test/
 [ $? -eq 0 ] || { echo "rm test failed"; exit 1; }
 
-colorecho $_green "SUCCESS!"
+echo "SUCCESS!"
