@@ -23,7 +23,9 @@ EXPOSE 8080
 
 WORKDIR /system_control_app
 COPY ./system_control_app .
-RUN pip install -r requirements.txt
+# --break-system-packages is necessary because we're installing the system control app into the global package store instead of using pipx or virtualenv
+# We're not actually breaking anything. The option name just means that we _could_ break system packages if we weren't careful, but we are being careful. 
+RUN pip install -r requirements.txt --break-system-packages
 
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
