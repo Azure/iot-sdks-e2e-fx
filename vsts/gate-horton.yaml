@@ -8,6 +8,7 @@ jobs:
     vmImage: 'ubuntu-20.04'
   strategy:
     matrix:
+        node16:  { variant: node16 }
         node18:  { variant: node18 }
         c:      { language: c }
         java:   { language: java }

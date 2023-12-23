@@ -48,15 +48,10 @@ RUN git clone https://github.com/Corvusoft/restbed . \
     && rm -r dependency/asio/asio/src/tests \
     && rm -r dependency/asio/asio/src/examples
 
-RUN pip install --upgrade pip 
-
 WORKDIR /system_control_app
 COPY ./system_control_app .
 RUN pip install -r requirements.txt
 EXPOSE 8040
-
-# force container rebuild when switching from master to main
-RUN echo "switch to main" > /horton_tag.txt
 
 ARG HORTON_REPO
 WORKDIR /sdk

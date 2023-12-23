@@ -13,8 +13,6 @@ RUN update-alternatives --install /usr/bin/python python $(which python3) 50 \
 
 RUN npm install lerna -g
 
-RUN pip install --upgrade pip 
-
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
 &&  git config --global core.autocrlf true
@@ -25,10 +23,9 @@ EXPOSE 8080
 
 WORKDIR /system_control_app
 COPY ./system_control_app .
-RUN pip install -r requirements.txt
-
-# force container rebuild when switching from master to main
-RUN echo "switch to main" > /horton_tag.txt
+# --break-system-packages is necessary because we're installing the system control app into the global package store instead of using pipx or virtualenv
+# We're not actually breaking anything. The option name just means that we _could_ break system packages if we weren't careful, but we are being careful. 
+RUN pip install -r requirements.txt --break-system-packages
 
 # phase 1: grab the base branch and run prebuild
 ARG HORTON_REPO
