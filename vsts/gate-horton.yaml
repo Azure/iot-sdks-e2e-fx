@@ -11,6 +11,7 @@ jobs:
         node18:  { variant: node18 }
         c:      { language: c }
         java:   { language: java }
+        javalite:   { language: javalite }
         csharp: { language: csharp }
         py38:   { variant: py38 }
   steps:
@@ -39,6 +40,7 @@ jobs:
       py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
       py38_mqtt_edgehub_module:                     { suite: py38_mqtt_edgehub_module }
       py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
+      javalite_mqtt_edgehub_module:              { suite: javalite_mqtt_edgehub_module }
   steps:
   - template: templates/steps-deploy-and-run-pytest.yaml
     parameters:

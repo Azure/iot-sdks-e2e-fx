@@ -13,7 +13,7 @@ import subprocess
 colorama.init(autoreset=True)
 
 default_repo = "(Azure/azure-iot-sdk-BLAH)"
-all_languages = ["c", "csharp", "pythonv2", "node", "java"]
+all_languages = ["c", "csharp", "pythonv2", "node", "java", "javalite"]
 
 print_separator = "".join("/\\" for _ in range(80))
 
