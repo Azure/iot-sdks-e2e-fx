@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/mirror/docker/library/ubuntu:18.04
+FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
 
 RUN apt update \
   && apt install --fix-missing --no-install-recommends   -y \
@@ -13,7 +13,7 @@ RUN apt update \
     gdbserver \
     openssh-server \
     ca-certificates \
-    python \
+    python3 \
     python-pip \
     iptables \
   &&  rm -rf /var/lib/apt/lists/*
