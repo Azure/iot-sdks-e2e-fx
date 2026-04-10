@@ -21,7 +21,7 @@ function New-AzIotHortonTestConfig {
     PS> New-AzIotHortonTestConfig -TestEnvInfo $TestEnvInfo -Target bash -OutFile test_config/set_horton_env_vars.sh
     #>
     param(
-        [TestEnvironmentInfo]$TestEnvInfo = $null,
+        $TestEnvInfo = $null,
         [ValidateSet('powershell', 'bash')]
         [string]$Target = "bash",
         [string]$OutFile
