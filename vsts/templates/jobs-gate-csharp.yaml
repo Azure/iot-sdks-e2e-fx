@@ -3,6 +3,7 @@ jobs:
   pool:
     vmImage: 'ubuntu-22.04'
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-build-docker-image.yaml
     parameters:
       language: csharp
@@ -25,6 +26,7 @@ jobs:
       csharp_amqpws_edgehub_module: { suite: csharp_amqpws_edgehub_module }
 
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
       forced_image: $(Horton.ForcedImage)

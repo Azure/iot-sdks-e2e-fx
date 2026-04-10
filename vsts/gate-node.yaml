@@ -1,5 +1,30 @@
 name: $(BuildID)_node_$(Horton.Commit)_$(BuildDefinitionName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
-jobs:
-- template: templates/jobs-gate-node.yaml
+
+stages:
+- stage: setup
+  jobs:
+  - job: create_azure_resources
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - template: templates/steps-create-azure-resources.yaml
+
+- stage: build_and_test
+  dependsOn: setup
+  jobs:
+  - template: templates/jobs-gate-node.yaml
+
+- stage: cleanup
+  dependsOn:
+  - setup
+  - build_and_test
+  condition: always()
+  jobs:
+  - job: destroy_azure_resource_group
+    condition: always()
+    pool:
+      vmImage: 'ubuntu-24.04'
+    steps:
+    - template: templates/steps-destroy-azure-resources.yaml

@@ -1,0 +1,25 @@
+parameters:
+  azure_location: 'centraluseuap'
+  # TODO: Update this URL to a stable branch/location once pipeline fixes are merged.
+  psm1_url: 'https://raw.githubusercontent.com/Azure/azure-iot-sdk-c/refs/heads/ewertons/pipelinefixes/testtools/scripts/Azure.Iot.Sdk.Test.psm1'
+
+steps:
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'iot hub sdk service connection'
+    scriptType: 'ps'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      Invoke-WebRequest -Uri "${{ parameters.psm1_url }}" -OutFile ./Azure.Iot.Sdk.Test.psm1
+      Import-Module ./Azure.Iot.Sdk.Test.psm1
+      . $(Build.SourcesDirectory)/scripts/New-AzIotHortonTestConfig.ps1
+
+      $ResourceGroupName = New-AzureResourceGroupName -OutFile "test_config/azure-resource-group-name.txt"
+      $TestEnvInfo = New-AzIotTestEnvironment -AzureLocation "${{ parameters.azure_location }}" -ResourceGroup $ResourceGroupName -NoDps -AddContainerRegistry
+      New-AzIotHortonTestConfig -TestEnvInfo $TestEnvInfo -Target bash -OutFile test_config/set_horton_env_vars.sh
+  displayName: Create Azure Resources and Test Config
+
+- publish: test_config
+  artifact: test_config
+  displayName: Publish artifact (test config)
+  condition: always()

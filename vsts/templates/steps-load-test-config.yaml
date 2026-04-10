@@ -1,0 +1,17 @@
+# Downloads the test_config artifact published by steps-create-azure-resources.yaml
+# and sets pipeline variables so that existing templates using $(IOTHUB-E2E-CONNECTION-STRING),
+# $(IOTHUB-E2E-REPO-ADDRESS), etc. continue to work without modification.
+
+steps:
+- download: current
+  artifact: test_config
+  displayName: Download test config
+
+- bash: |
+    set -e
+    source "$(Pipeline.Workspace)/test_config/set_horton_env_vars.sh"
+    echo "##vso[task.setvariable variable=IOTHUB-E2E-CONNECTION-STRING;issecret=true]${IOTHUB_E2E_CONNECTION_STRING}"
+    echo "##vso[task.setvariable variable=IOTHUB-E2E-REPO-ADDRESS]${IOTHUB_E2E_REPO_ADDRESS}"
+    echo "##vso[task.setvariable variable=IOTHUB-E2E-REPO-USER]${IOTHUB_E2E_REPO_USER}"
+    echo "##vso[task.setvariable variable=IOTHUB-E2E-REPO-PASSWORD;issecret=true]${IOTHUB_E2E_REPO_PASSWORD}"
+  displayName: Load test environment variables

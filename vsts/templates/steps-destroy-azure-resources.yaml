@@ -1,0 +1,19 @@
+steps:
+- checkout: none
+
+- download: current
+  artifact: test_config
+  displayName: Download artifact (test config)
+
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'iot hub sdk service connection'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      set -e
+      export AZURE_RESOURCE_GROUP=$(cat "$(Pipeline.Workspace)/test_config/azure-resource-group-name.txt")
+      echo "Deleting Azure resource group: $AZURE_RESOURCE_GROUP"
+      az group delete --name $AZURE_RESOURCE_GROUP --yes --no-wait
+  displayName: Destroy Azure Resource Group
+  condition: always()

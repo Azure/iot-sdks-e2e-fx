@@ -3,6 +3,7 @@ jobs:
   pool:
     vmImage: 'ubuntu-22.04'
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-build-docker-image.yaml
     parameters:
       language: c
@@ -22,6 +23,7 @@ jobs:
       c_amqpws_iothub_module:   { suite: c_amqpws_iothub_module }
 
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
       forced_image: $(Horton.ForcedImage)

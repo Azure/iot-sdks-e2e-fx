@@ -8,6 +8,7 @@ jobs:
       py37: { variant: py37 }
       py39: { variant: py39 }
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-build-docker-image.yaml
     parameters:
       variant: $(variant)
@@ -30,6 +31,7 @@ jobs:
         py39_mqtt_iothub_device_quick_drop:         { suite: py39_mqtt_iothub_device_quick_drop }
 
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
       suite: $(suite)
