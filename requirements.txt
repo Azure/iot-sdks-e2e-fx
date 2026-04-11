@@ -1,4 +1,4 @@
-azure-eventhub==5.0.1
+azure-eventhub>=5.11.0
 azure.storage.blob
 azure.iot.hub
 certifi
@@ -16,8 +16,6 @@ pytest-timeout
 python_dateutil
 requests
 setuptools
-six
-uamqp
 urllib3
 PyYAML
 inflection==0.5.0
