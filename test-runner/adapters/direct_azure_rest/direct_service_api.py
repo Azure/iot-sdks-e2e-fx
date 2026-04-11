@@ -3,7 +3,6 @@
 # full license information.
 from ..abstract_iothub_apis import AbstractServiceApi
 from ..decorators import emulate_async
-from .amqp_service_client import AmqpServiceClient
 from azure.iot.hub import IoTHubRegistryManager, models
 
 
@@ -41,12 +40,14 @@ class ServiceApi(AbstractServiceApi):
 
     async def send_c2d(self, device_id, message):
         if not self.amqp_service_client:
+            from .amqp_service_client import AmqpServiceClient
             self.amqp_service_client = AmqpServiceClient()
             await self.amqp_service_client.connect(self.service_connection_string)
         await self.amqp_service_client.send_to_device(device_id, message)
 
     async def get_blob_upload_status(self):
         if not self.amqp_service_client:
+            from .amqp_service_client import AmqpServiceClient
             self.amqp_service_client = AmqpServiceClient()
             await self.amqp_service_client.connect(self.service_connection_string)
         return await self.amqp_service_client.get_next_blob_status()

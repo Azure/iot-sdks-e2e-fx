@@ -7,7 +7,6 @@ import datetime
 import threading
 from azure.eventhub.aio import EventHubConsumerClient
 from ..adapter_config import logger
-from . import eventhub_connection_string
 
 
 def json_is_same(a, b):
@@ -42,9 +41,6 @@ class EventHubApi:
 
     async def create_from_connection_string(self, connection_string):
         self.iothub_connection_string = connection_string
-        self.eventhub_connection_string = eventhub_connection_string.convert_iothub_to_eventhub_conn_str(
-            connection_string
-        )
 
     async def connect(self, starting_position=None):
         logger(
@@ -59,9 +55,9 @@ class EventHubApi:
         )
         self.received_events = asyncio.Queue()
 
-        # Create a consumer client for the event hub.
+        # Modern azure-eventhub handles IoT Hub connection string redirect natively.
         self.consumer_client = EventHubConsumerClient.from_connection_string(
-            self.eventhub_connection_string, consumer_group="$Default"
+            self.iothub_connection_string, consumer_group="$Default"
         )
 
         await self.start_new_listener()
