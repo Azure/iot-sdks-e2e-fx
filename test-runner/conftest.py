@@ -10,7 +10,7 @@ from adapters import adapter_config
 from dump_object import dump_object
 import runtime_capabilities
 import scenarios
-from distutils.version import LooseVersion
+from packaging.version import Version
 from horton_logging import set_logger
 from horton_settings import settings, ObjectWithAdapter
 from fixtures import (  # noqa: F401
@@ -106,7 +106,7 @@ skip_for_c_connection_string = set(
 
 
 def _get_marker(item, marker):
-    if LooseVersion(pytest.__version__) < LooseVersion("3.6"):
+    if Version(pytest.__version__) < Version("3.6"):
         return item.get_marker(marker)
     else:
         return item.get_closest_marker(marker)

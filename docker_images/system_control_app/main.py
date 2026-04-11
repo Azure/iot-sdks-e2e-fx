@@ -2,7 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 
-from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import posixpath
 import drop
 import logging

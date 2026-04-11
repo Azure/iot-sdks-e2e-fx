@@ -15,9 +15,7 @@ except AttributeError:
 
 
 @async_fixture
-async def eventhub(event_loop):
-    # we need the event_loop fixture so pytest_async creates the event loop before celling this.
-    # Otherwise we get errors realted to mis-matched event loops when cleaning up this object.
+async def eventhub():
     obj = settings.eventhub
     try:
         yield await get_adapter(obj)
@@ -110,6 +108,10 @@ async def test_device():
 @async_fixture
 async def system_control():
     adapter = getattr(settings.system_control, "adapter", None)
+    if adapter:
+        await adapter.set_network_destination(
+            settings.system_control.test_destination, settings.test_module.transport
+        )
     try:
         yield adapter
     finally:

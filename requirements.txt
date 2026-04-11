@@ -7,6 +7,7 @@ docker; sys_platform != 'win32' # we don't use it on Windows.  Exclude it to avo
 junitparser
 msrest
 oauthlib>=3.2.2 # >= 3.2.2 because of CVE-2022-36087. If MSRest gets an update that increments the oauthlib dependency version up to at least 3.2.2, then this line can be deleted
+packaging
 pre-commit
 pytest
 pytest-asyncio
