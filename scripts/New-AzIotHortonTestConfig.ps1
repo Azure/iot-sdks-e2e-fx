@@ -43,6 +43,7 @@ function New-AzIotHortonTestConfig {
     if ($Target -eq "powershell") {
         $Lines = @(
             "`$env:IOTHUB_E2E_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.ConnectionString)`""
+            "`$env:IOTHUB_E2E_EVENTHUB_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.EventHub.ConnectionString)`""
             "`$env:IOTHUB_E2E_REPO_ADDRESS = `"$AcrLoginServer`""
             "`$env:IOTHUB_E2E_REPO_USER = `"$AcrUsername`""
             "`$env:IOTHUB_E2E_REPO_PASSWORD = `"$AcrPassword`""
@@ -52,6 +53,7 @@ function New-AzIotHortonTestConfig {
         $Lines = @(
             "#!/bin/bash"
             "export IOTHUB_E2E_CONNECTION_STRING=`"$($TestEnvInfo.IotHub.ConnectionString)`""
+            "export IOTHUB_E2E_EVENTHUB_CONNECTION_STRING=`"$($TestEnvInfo.IotHub.EventHub.ConnectionString)`""
             "export IOTHUB_E2E_REPO_ADDRESS=`"$AcrLoginServer`""
             "export IOTHUB_E2E_REPO_USER=`"$AcrUsername`""
             "export IOTHUB_E2E_REPO_PASSWORD=`"$AcrPassword`""

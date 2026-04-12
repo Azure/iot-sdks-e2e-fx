@@ -11,6 +11,7 @@ steps:
     set -e
     source "$(Pipeline.Workspace)/test_config/set_horton_env_vars.sh"
     echo "##vso[task.setvariable variable=IOTHUB-E2E-CONNECTION-STRING;issecret=true]${IOTHUB_E2E_CONNECTION_STRING}"
+    echo "##vso[task.setvariable variable=IOTHUB-E2E-EVENTHUB-CONNECTION-STRING;issecret=true]${IOTHUB_E2E_EVENTHUB_CONNECTION_STRING}"
     echo "##vso[task.setvariable variable=IOTHUB-E2E-REPO-ADDRESS]${IOTHUB_E2E_REPO_ADDRESS}"
     echo "##vso[task.setvariable variable=IOTHUB-E2E-REPO-USER]${IOTHUB_E2E_REPO_USER}"
     echo "##vso[task.setvariable variable=IOTHUB-E2E-REPO-PASSWORD;issecret=true]${IOTHUB_E2E_REPO_PASSWORD}"

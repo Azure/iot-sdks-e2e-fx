@@ -9,31 +9,6 @@ from azure.eventhub.aio import EventHubConsumerClient
 from ..adapter_config import logger
 
 
-def _iothub_to_eventhub_conn_str(iothub_conn_str):
-    """Convert an IoT Hub connection string to an Event Hub-compatible connection string.
-
-    Constructs an sb:// endpoint from the IoT Hub hostname.  The azure-eventhub
-    pyamqp transport handles the AMQP link redirect transparently, so no uamqp
-    dependency is needed.
-    """
-    parts = {}
-    for element in iothub_conn_str.split(";"):
-        key, _, value = element.partition("=")
-        parts[key] = value
-    hostname = parts.get("HostName", "").rstrip("/")
-    sak_name = parts.get("SharedAccessKeyName", "")
-    sak = parts.get("SharedAccessKey", "")
-    if not all([hostname, sak_name, sak]):
-        raise ValueError("Invalid IoT Hub connection string")
-    hub_name = hostname.split(".")[0]
-    return (
-        "Endpoint=sb://{}/;"
-        "SharedAccessKeyName={};"
-        "SharedAccessKey={};"
-        "EntityPath={}"
-    ).format(hostname, sak_name, sak, hub_name)
-
-
 def json_is_same(a, b):
     # If either parameter is a string, convert it to an object.
     # use ast.literal_eval because they might be single-quote delimited which fails with json.loads.
@@ -58,15 +33,13 @@ def get_device_id_from_event(event):
 class EventHubApi:
     def __init__(self):
         self.consumer_client = None
-        self.iothub_connection_string = None
         self.eventhub_connection_string = None
         self.received_events = None
         self.listener_future = None
         self.starting_position = None
 
     async def create_from_connection_string(self, connection_string):
-        self.iothub_connection_string = connection_string
-        self.eventhub_connection_string = _iothub_to_eventhub_conn_str(connection_string)
+        self.eventhub_connection_string = connection_string
 
     async def connect(self, starting_position=None):
         logger(
@@ -81,9 +54,7 @@ class EventHubApi:
         )
         self.received_events = asyncio.Queue()
 
-        # Create a consumer client for the event hub.
-        # The connection string uses the IoT Hub hostname with sb:// scheme;
-        # azure-eventhub's pyamqp transport handles the AMQP redirect internally.
+        # Create a consumer client for the IoT Hub's built-in Event Hub endpoint.
         self.consumer_client = EventHubConsumerClient.from_connection_string(
             self.eventhub_connection_string, consumer_group="$Default"
         )

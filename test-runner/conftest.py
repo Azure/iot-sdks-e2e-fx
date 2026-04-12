@@ -3,6 +3,7 @@
 # full license information.
 
 
+import os
 import pytest
 import sys
 import logging
@@ -186,7 +187,9 @@ def add_service_settings():
         pass
 
     settings.eventhub = ObjectWithAdapter("eventhub", "eventhub")
-    settings.eventhub.connection_string = settings.iothub.connection_string
+    settings.eventhub.connection_string = os.environ.get(
+        "IOTHUB_E2E_EVENTHUB_CONNECTION_STRING", settings.iothub.connection_string
+    )
     settings.eventhub.adapter_address = "direct_rest"
 
     settings.registry = ObjectWithAdapter("registry", "iothub_registry")
