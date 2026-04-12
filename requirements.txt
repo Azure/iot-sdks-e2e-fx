@@ -1,6 +1,5 @@
 azure-eventhub>=5.11.0
 azure.storage.blob
-uamqp
 azure.iot.hub
 certifi
 colorama
