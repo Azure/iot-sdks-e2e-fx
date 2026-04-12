@@ -260,9 +260,23 @@ int methodCallback(const char *method_name, const unsigned char *payload, const 
     cb_data->actual_method_name = std::string(reinterpret_cast<const char *>(method_name));
     cb_data->actual_request_payload = std::string(reinterpret_cast<const char *>(payload), size);
 
+    // Normalize the received payload through JSON parse/serialize so that
+    // whitespace differences (e.g. "key": "value" vs "key":"value") don't
+    // cause a false mismatch.
+    std::string normalizedPayload;
+    try
+    {
+        Json payloadJson(cb_data->actual_request_payload);
+        normalizedPayload = payloadJson.serializeToString();
+    }
+    catch (...)
+    {
+        normalizedPayload = cb_data->actual_request_payload;
+    }
+
     if (cb_data->actual_method_name.compare(cb_data->expected_method_name) == 0)
     {
-        if (cb_data->expected_request_payload.compare(cb_data->actual_request_payload) == 0)
+        if (cb_data->expected_request_payload.compare(normalizedPayload) == 0)
         {
             std::cout << "method and payload matched.  returning response" << std::endl;
             *response_size = cb_data->response.length();
