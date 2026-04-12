@@ -69,13 +69,26 @@ def pytest_pyfunc_call(pyfuncitem):
 
 async def configure_system_control():
     if settings.test_module.capabilities.system_control_app:
-        try:
-            await connections.get_adapter(settings.system_control)
-        except Exception:
-            print(
-                "network control server is unavailable.  Either start the server or set system_control.adapter_address to '' in _horton_settings.json"
-            )
-            settings.test_module.capabilities.system_control = False
+        max_retries = 6
+        retry_delay = 10  # seconds
+        for attempt in range(1, max_retries + 1):
+            try:
+                await connections.get_adapter(settings.system_control)
+                break
+            except Exception:
+                if attempt < max_retries:
+                    print(
+                        "network control server is unavailable (attempt {}/{}). "
+                        "Retrying in {} seconds...".format(attempt, max_retries, retry_delay)
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    print(
+                        "network control server is unavailable after {} attempts. "
+                        "Either start the server or set system_control.adapter_address "
+                        "to '' in _horton_settings.json".format(max_retries)
+                    )
+                    settings.test_module.capabilities.system_control = False
 
     if settings.system_control.adapter:
         await settings.system_control.adapter.reconnect_network()
