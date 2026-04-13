@@ -172,3 +172,33 @@ steps:
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
+- bash: |
+    set -e
+    ARCH=$(Architecture)
+    IMAGE_NAME="${IOTHUB_E2E_REPO_ADDRESS}/default-friend-module:${ARCH}-v2"
+    DOCKERFILE="${HORTON_FRAMEWORKROOT}/docker_images/node/Dockerfile.node18"
+    CONTEXT="${HORTON_FRAMEWORKROOT}/docker_images"
+    NODE_REPO="Azure/azure-iot-sdk-node"
+    NODE_BRANCH="main"
+
+    echo "Resolving commit SHA for ${NODE_REPO} @ ${NODE_BRANCH}..."
+    COMMIT_SHA=$(curl -sf "https://api.github.com/repos/${NODE_REPO}/git/refs/heads/${NODE_BRANCH}" | python3 -c "import sys,json; print(json.load(sys.stdin)['object']['sha'])")
+    echo "Commit SHA: ${COMMIT_SHA}"
+
+    echo "Building ${IMAGE_NAME}..."
+    docker build \
+      --tag "${IMAGE_NAME}" \
+      --file "${DOCKERFILE}" \
+      --build-arg HORTON_REPO="${NODE_REPO}" \
+      --build-arg HORTON_COMMIT_NAME="${NODE_BRANCH}" \
+      --build-arg HORTON_COMMIT_SHA="${COMMIT_SHA}" \
+      "${CONTEXT}"
+
+    echo "Pushing ${IMAGE_NAME}..."
+    docker push "${IMAGE_NAME}"
+    echo "Successfully pushed ${IMAGE_NAME}"
+  displayName: "build and push default-friend-module"
+  env:
+    IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+  condition: and(succeeded(), eq(variables['buildImage'],'yes'))
+
