@@ -34,7 +34,7 @@ std::string ModuleGlue::ConnectFromEnvironment(const char *transportType)
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol = protocolFromTransportName(transportType);
     if ((client = IoTHubModuleClient_CreateFromEnvironment(protocol)) == NULL)
     {
-        throw new std::runtime_error("failed to create client");
+        throw std::runtime_error("failed to create client");
     }
     else
     {
@@ -64,7 +64,7 @@ void ModuleGlue::EnableInputMessages(std::string connectionId)
     IOTHUB_MODULE_CLIENT_HANDLE client = (IOTHUB_MODULE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 }
 
@@ -75,7 +75,7 @@ void ModuleGlue::SendOutputEvent(std::string connectionId, std::string outputNam
     IOTHUB_MODULE_CLIENT_HANDLE client = (IOTHUB_MODULE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     send_event_context ctx;
@@ -95,7 +95,7 @@ void ModuleGlue::SendOutputEvent(std::string connectionId, std::string outputNam
     std::cout << "send confirmation received with result " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result) << std::endl;
     if (ctx.result != IOTHUB_CLIENT_CONFIRMATION_OK)
     {
-        throw new std::runtime_error(std::string("SendOutputEvent failed with ") + MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result));
+        throw std::runtime_error(std::string("SendOutputEvent failed with ") + MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result));
     }
 }
 
@@ -107,7 +107,7 @@ std::string ModuleGlue::WaitForInputMessage(std::string connectionId, std::strin
     IOTHUB_MODULE_CLIENT_HANDLE client = (IOTHUB_MODULE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     message_response_struct resp;
@@ -152,7 +152,7 @@ std::string ModuleGlue::InvokeModuleMethod(std::string connectionId, std::string
     IOTHUB_MODULE_CLIENT_HANDLE client = (IOTHUB_MODULE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     method_invoke_response response;
@@ -178,7 +178,7 @@ std::string ModuleGlue::InvokeDeviceMethod(std::string connectionId, std::string
     IOTHUB_MODULE_CLIENT_HANDLE client = (IOTHUB_MODULE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     method_invoke_response response;

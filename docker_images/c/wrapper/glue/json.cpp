@@ -41,11 +41,11 @@ void Json::loadFromString(std::string root_string)
     {
         if ((this->m_root_value = json_parse_string(root_string.c_str())) == NULL)
         {
-            throw new std::runtime_error(PARSON_ERROR);
+            throw std::runtime_error(PARSON_ERROR);
         }
         else if ((this->m_root_object = json_value_get_object(this->m_root_value)) == NULL)
         {
-            throw new std::runtime_error(PARSON_ERROR);
+            throw std::runtime_error(PARSON_ERROR);
         }
     }
     catch (...)
@@ -61,11 +61,11 @@ std::string Json::getSubObject(std::string dotname)
     char *subString;
     if ((subObject = json_object_dotget_value(this->m_root_object, dotname.c_str())) == NULL)
     {
-        throw new std::runtime_error(PARSON_ERROR);
+        throw std::runtime_error(PARSON_ERROR);
     }
     if ((subString = json_serialize_to_string(subObject)) == NULL)
     {
-        throw new std::runtime_error(PARSON_ERROR);
+        throw std::runtime_error(PARSON_ERROR);
     }
     string result = subString;
     json_free_serialized_string(subString);
@@ -89,7 +89,7 @@ void Json::setNumber(std::string dotname, double value)
 {
     if (json_object_dotset_number(this->m_root_object, dotname.c_str(), value) != JSONSuccess)
     {
-        throw new std::runtime_error(PARSON_ERROR);
+        throw std::runtime_error(PARSON_ERROR);
     }
 }
 
@@ -99,7 +99,7 @@ std::string Json::getString(std::string dotname)
     const char *str;
     if ((str = json_object_dotget_string(this->m_root_object, dotname.c_str())) == NULL)
     {
-        throw new std::runtime_error(PARSON_ERROR);
+        throw std::runtime_error(PARSON_ERROR);
     }
     string result = str;
     return result;
@@ -109,7 +109,7 @@ void Json::setString(std::string dotname, std::string value)
 {
     if (json_object_dotset_string(this->m_root_object, dotname.c_str(), value.c_str()) != JSONSuccess)
     {
-        throw new std::runtime_error(PARSON_ERROR);
+        throw std::runtime_error(PARSON_ERROR);
     }
 }
 
@@ -122,7 +122,7 @@ void Json::setBool(std::string dotname, bool value)
 {
     if (json_object_dotset_boolean(this->m_root_object, dotname.c_str(), value ? 1 : 0) != JSONSuccess)
     {
-        throw new std::runtime_error(PARSON_ERROR);
+        throw std::runtime_error(PARSON_ERROR);
     }
 }
 

@@ -28,7 +28,7 @@ void ControlGlue::CleanupResources()
     {
         module_glue.CleanupResources();
     }
-    catch (runtime_error)
+    catch (const std::runtime_error&)
     {
         cout << "Ignoring exception on module cleanup" << endl;
     }

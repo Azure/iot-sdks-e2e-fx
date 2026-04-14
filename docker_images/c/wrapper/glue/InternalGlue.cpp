@@ -42,7 +42,7 @@ void setConnectionStatusCallback(IOTHUB_CLIENT_CORE_HANDLE client)
     IOTHUB_CLIENT_RESULT ret;
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     // Setting connection status callback to get indication of connection to edgehub / iothub
@@ -60,7 +60,7 @@ std::string InternalGlue::Connect(const char *transportType, std::string connect
     IOTHUB_CLIENT_TRANSPORT_PROVIDER protocol = protocolFromTransportName(transportType);
     if ((client = IoTHubClientCore_CreateFromConnectionString(connectionString.c_str(), protocol)) == NULL)
     {
-        throw new std::runtime_error("failed to create client");
+        throw std::runtime_error("failed to create client");
     }
     else
     {
@@ -127,7 +127,7 @@ void InternalGlue::EnableMethods(std::string connectionId)
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     // Register a placeholder callback to trigger the MQTT SUBSCRIBE for methods early.
@@ -144,19 +144,19 @@ std::string add_patch_to_twin(std::string prev_complete_twin, std::string patch)
     JSON_Object *twin_root_object;
     if ((twin_root_value = json_parse_string(prev_complete_twin.c_str())) == NULL)
     {
-        throw new std::runtime_error("parson error");
+        throw std::runtime_error("parson error");
     }
     else if ((patch_root_value = json_parse_string(patch.c_str())) == NULL)
     {
-        throw new std::runtime_error("parson error");
+        throw std::runtime_error("parson error");
     }
     else if ((twin_root_object = json_value_get_object(twin_root_value)) == NULL)
     {
-        throw new std::runtime_error("parson error");
+        throw std::runtime_error("parson error");
     }
     else if ((json_object_set_value(twin_root_object, "desired", patch_root_value)) != JSONSuccess)
     {
-        throw new std::runtime_error("parson error");
+        throw std::runtime_error("parson error");
     }
 
     std::string updated_twin_s = std::string(json_serialize_to_string(twin_root_value));
@@ -203,7 +203,7 @@ void InternalGlue::EnableTwin(std::string connectionId)
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     twin_callback_struct *resp = new twin_callback_struct;
@@ -219,7 +219,7 @@ void InternalGlue::EnableTwin(std::string connectionId)
 
     if (resp->latest_payload.empty())
     {
-        throw new std::runtime_error("twin not enabled");
+        throw std::runtime_error("twin not enabled");
     }
     this->twinMap[connectionId] = (void *)resp;
 }
@@ -231,7 +231,7 @@ void InternalGlue::SendEvent(std::string connectionId, std::string eventBody)
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     send_event_context ctx;
@@ -250,7 +250,7 @@ void InternalGlue::SendEvent(std::string connectionId, std::string eventBody)
     std::cout << "send confirmation received with result " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result) << std::endl;
     if (ctx.result != IOTHUB_CLIENT_CONFIRMATION_OK)
     {
-        throw new std::runtime_error(std::string("SendEvent failed with ") + MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result));
+        throw std::runtime_error(std::string("SendEvent failed with ") + MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result));
     }
 }
 
@@ -315,7 +315,7 @@ int methodCallback(const char *method_name, const unsigned char *payload, const 
             *response = (unsigned char *)malloc(*response_size);
             if (response == NULL)
             {
-                throw new std::runtime_error("failed to allocate memory for response");
+                throw std::runtime_error("failed to allocate memory for response");
             };
             (void)memcpy(*response, cb_data->response.c_str(), *response_size);
             result = cb_data->status_code;
@@ -348,7 +348,7 @@ void InternalGlue::WaitForMethodAndReturnResponse(std::string connectionId, std:
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     std::string expectedRequest, response;
@@ -378,13 +378,13 @@ std::string InternalGlue::WaitForDesiredPropertyPatch(std::string connectionId)
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     twin_callback_struct *resp = (twin_callback_struct *)(this->twinMap[connectionId]);
     if (!resp)
     {
-        throw new std::runtime_error("no twin callback struct");
+        throw std::runtime_error("no twin callback struct");
     }
 
     std::string saved_payload;
@@ -405,13 +405,13 @@ std::string InternalGlue::GetTwin(std::string connectionId)
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     twin_callback_struct *resp = (twin_callback_struct *)(this->twinMap[connectionId]);
     if (!resp)
     {
-        throw new std::runtime_error("no twin callback struct");
+        throw std::runtime_error("no twin callback struct");
     }
 
     std::lock_guard<std::mutex> lk(resp->m);
@@ -432,7 +432,7 @@ void InternalGlue::SendTwinPatch(std::string connectionId, std::string props)
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     std::mutex m;

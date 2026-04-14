@@ -24,6 +24,16 @@ using namespace std;
 using namespace restbed;
 using namespace io::swagger::server::api;
 
+void global_error_handler(const int, const exception& e, const shared_ptr<Session> session)
+{
+    cerr << "Unhandled exception: " << e.what() << endl;
+    if (session && session->is_open())
+    {
+        string body = string("{\"error\": \"") + e.what() + "\"}";
+        session->close(500, body, { {"Content-Type", "application/json"}, {"Connection", "close"} });
+    }
+}
+
 void launch_system_control_app()
 {
 #if unix
@@ -76,6 +86,7 @@ int main(const int, const char**)
     auto api = make_shared< MergedApi >();
     cout << "listening on port " << std::to_string(port) << endl;
     api->set_logger( make_shared< CustomLogger >( ) );
+    api->set_error_handler( global_error_handler );
     api->startService(port);
     return EXIT_SUCCESS;
 }
