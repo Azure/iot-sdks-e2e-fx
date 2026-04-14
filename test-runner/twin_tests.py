@@ -100,12 +100,14 @@ class TwinTests(object):
 
             logger("twin sent:    " + str(twin_sent))
             logger("twin received:" + str(twin_received))
-            if twin_sent["desired"]["foo"] == twin_received["desired"]["foo"]:
-                # test passed
-                return
-            else:
-                logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
-                await asyncio.sleep(5)
+            try:
+                if twin_sent["desired"]["foo"] == twin_received["desired"]["foo"]:
+                    # test passed
+                    return
+            except KeyError:
+                pass
+            logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
+            await asyncio.sleep(5)
 
     @pytest.mark.it("Can receive desired property patches as events")
     async def test_twin_desired_props_patch(self, client, registry):
