@@ -10,8 +10,11 @@ cp sdk/lerna.json .
 node /fixLerna.js
 [ $? -eq 0 ] || { echo "fixLerna.js failed"; exit 1; }
 
-npx lerna@^6 bootstrap --hoist
+# Remove locally-installed lerna (v9) so the global v6 is used
+rm -rf node_modules/.bin/lerna node_modules/lerna
+
+lerna bootstrap --hoist
 [ $? -eq 0 ] || { echo "lerna bootstrap failed"; exit 1; }
 
-npx lerna@^6 run build
+lerna run build
 [ $? -eq 0 ] || { echo "lerna run build failed"; exit 1; }
