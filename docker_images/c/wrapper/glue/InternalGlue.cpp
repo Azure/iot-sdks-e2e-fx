@@ -105,6 +105,22 @@ void InternalGlue::Disconnect(std::string connectionId)
     }
 }
 
+static int placeholderMethodCallback(const char *method_name, const unsigned char *payload, const size_t size, unsigned char **response, size_t *response_size, void *userContextCallback)
+{
+    (void)method_name;
+    (void)payload;
+    (void)size;
+    (void)userContextCallback;
+    const char* resp = "\"not ready\"";
+    *response_size = strlen(resp);
+    *response = (unsigned char *)malloc(*response_size);
+    if (*response != NULL)
+    {
+        memcpy(*response, resp, *response_size);
+    }
+    return 501;
+}
+
 void InternalGlue::EnableMethods(std::string connectionId)
 {
     std::cout << "InternalGlue::EnableMethods for " << connectionId << std::endl;
@@ -113,6 +129,11 @@ void InternalGlue::EnableMethods(std::string connectionId)
     {
         throw new std::runtime_error("client is not opened");
     }
+
+    // Register a placeholder callback to trigger the MQTT SUBSCRIBE for methods early.
+    // The real callback is set later in WaitForMethodAndReturnResponse.
+    IOTHUB_CLIENT_RESULT ret = IoTHubClientCore_SetDeviceMethodCallback(client, placeholderMethodCallback, NULL);
+    ThrowIfFailed(ret, "IoTHubClientCore_SetDeviceMethodCallback");
 }
 
 std::string add_patch_to_twin(std::string prev_complete_twin, std::string patch)
@@ -148,21 +169,28 @@ void twinCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsigned char *pa
 {
     std::cout << "twinCallback called with state " << update_state << std::endl;
     twin_callback_struct *response = (twin_callback_struct *)userContextCallback;
-    response->latest_payload = std::string(reinterpret_cast<const char *>(payLoad), size);
 
-    if (update_state == DEVICE_TWIN_UPDATE_COMPLETE)
     {
-        // the device twin update is a total twin update
-        response->current_complete = std::string(reinterpret_cast<const char *>(payLoad), size);
-        std::cout << "complete twin:" << response->current_complete << std::endl;
-    }
-    else if (update_state == DEVICE_TWIN_UPDATE_PARTIAL)
-    {
-        // the device twin update is a patch, so we should only patch
-        response->current_complete = add_patch_to_twin(response->current_complete, response->latest_payload);
-        std::cout << "latest payload:" << response->latest_payload << std::endl;
-        std::cout << "complete twin: " << response->current_complete << std::endl;
-        response->cvp.notify_one();
+        std::lock_guard<std::mutex> lk(response->m);
+        response->latest_payload = std::string(reinterpret_cast<const char *>(payLoad), size);
+
+        if (update_state == DEVICE_TWIN_UPDATE_COMPLETE)
+        {
+            // the device twin update is a total twin update
+            response->current_complete = std::string(reinterpret_cast<const char *>(payLoad), size);
+            std::cout << "complete twin:" << response->current_complete << std::endl;
+        }
+        else if (update_state == DEVICE_TWIN_UPDATE_PARTIAL)
+        {
+            // the device twin update is a patch, so we should only patch
+            if (!response->current_complete.empty())
+            {
+                response->current_complete = add_patch_to_twin(response->current_complete, response->latest_payload);
+            }
+            std::cout << "latest payload:" << response->latest_payload << std::endl;
+            std::cout << "complete twin: " << response->current_complete << std::endl;
+            response->cvp.notify_one();
+        }
     }
     response->cv.notify_one();
 }
@@ -185,7 +213,7 @@ void InternalGlue::EnableTwin(std::string connectionId)
     std::cout << "waiting for initial Twin response" << std::endl;
     {
         std::unique_lock<std::mutex> lk(resp->m);
-        resp->cv.wait(lk);
+        resp->cv.wait(lk, [resp]{ return !resp->latest_payload.empty(); });
     }
     std::cout << "initial Twin response received" << std::endl;
 
@@ -206,20 +234,24 @@ void InternalGlue::SendEvent(std::string connectionId, std::string eventBody)
         throw new std::runtime_error("client is not opened");
     }
 
-    std::mutex m;
-    std::condition_variable cv;
+    send_event_context ctx;
+    ctx.result = IOTHUB_CLIENT_CONFIRMATION_ERROR;
 
     IOTHUB_MESSAGE_HANDLE message = stringToMessage(eventBody);
     std::cout << "calling IoTHubClient_SendEventAsync" << std::endl;
-    IOTHUB_CLIENT_RESULT ret = IoTHubClientCore_SendEventAsync(client, message, sendEventCallback, &cv);
+    IOTHUB_CLIENT_RESULT ret = IoTHubClientCore_SendEventAsync(client, message, sendEventCallback, &ctx);
     ThrowIfFailed(ret, "IoTHubClientCore_SendEventAsync");
 
     std::cout << "waiting for send confirmation" << std::endl;
     {
-        std::unique_lock<std::mutex> lk(m);
-        cv.wait(lk);
+        std::unique_lock<std::mutex> lk(ctx.m);
+        ctx.cv.wait(lk);
     }
-    std::cout << "send confirmation received" << std::endl;
+    std::cout << "send confirmation received with result " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result) << std::endl;
+    if (ctx.result != IOTHUB_CLIENT_CONFIRMATION_OK)
+    {
+        throw new std::runtime_error(std::string("SendEvent failed with ") + MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result));
+    }
 }
 
 IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback(IOTHUB_MESSAGE_HANDLE message, void *userContextCallback)
@@ -355,14 +387,16 @@ std::string InternalGlue::WaitForDesiredPropertyPatch(std::string connectionId)
         throw new std::runtime_error("no twin callback struct");
     }
 
+    std::string saved_payload;
     std::cout << "waiting for Twin patch response" << std::endl;
     {
         std::unique_lock<std::mutex> lk(resp->m);
-        resp->cv.wait(lk);
+        resp->cvp.wait(lk);
+        saved_payload = resp->latest_payload;
     }
     std::cout << "Twin patch response received" << std::endl;
 
-    return addJsonWrapperObject(resp->latest_payload, "desired");
+    return addJsonWrapperObject(saved_payload, "desired");
 }
 
 std::string InternalGlue::GetTwin(std::string connectionId)
@@ -380,6 +414,7 @@ std::string InternalGlue::GetTwin(std::string connectionId)
         throw new std::runtime_error("no twin callback struct");
     }
 
+    std::lock_guard<std::mutex> lk(resp->m);
     return resp->current_complete;
 }
 

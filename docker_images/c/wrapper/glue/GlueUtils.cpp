@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <stdexcept>
 #include "GlueUtils.h"
+#include "InternalGlue.h"
 #include "json.h"
 
 static const char* const PARSON_ERROR = "parson error";
@@ -151,8 +152,9 @@ IOTHUB_MESSAGE_HANDLE stringToMessage(std::string eventBody)
 void sendEventCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback)
 {
     std::cout << "sendEventCallback called with " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result) << std::endl;
-    std::condition_variable *cv = (std::condition_variable *)userContextCallback;
-    cv->notify_one();
+    send_event_context *ctx = (send_event_context *)userContextCallback;
+    ctx->result = result;
+    ctx->cv.notify_one();
 }
 
 

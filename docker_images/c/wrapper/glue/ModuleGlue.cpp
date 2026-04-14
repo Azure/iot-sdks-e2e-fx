@@ -3,6 +3,10 @@
 #include "ModuleGlue.h"
 #include "GlueUtils.h"
 
+#ifndef MU_ENUM_TO_STRING
+#define MU_ENUM_TO_STRING ENUM_TO_STRING
+#endif
+
 static int clientCount = 0;
 static std::string client_prefix = "moduleClient_";
 
@@ -74,21 +78,25 @@ void ModuleGlue::SendOutputEvent(std::string connectionId, std::string outputNam
         throw new std::runtime_error("client is not opened");
     }
 
-    std::mutex m;
-    std::condition_variable cv;
+    send_event_context ctx;
+    ctx.result = IOTHUB_CLIENT_CONFIRMATION_ERROR;
 
     IOTHUB_MESSAGE_HANDLE message = stringToMessage(eventBody);
 
     std::cout << "calling IoTHubClient_SendEventAsync" << std::endl;
-    IOTHUB_CLIENT_RESULT ret = IoTHubModuleClient_SendEventToOutputAsync(client, message, outputName.c_str(), sendEventCallback, &cv);
+    IOTHUB_CLIENT_RESULT ret = IoTHubModuleClient_SendEventToOutputAsync(client, message, outputName.c_str(), sendEventCallback, &ctx);
     ThrowIfFailed(ret, "IoTHubModuleClient_SendEventToOutputAsync");
 
     std::cout << "waiting for send confirmation" << std::endl;
     {
-        std::unique_lock<std::mutex> lk(m);
-        cv.wait(lk);
+        std::unique_lock<std::mutex> lk(ctx.m);
+        ctx.cv.wait(lk);
     }
-    std::cout << "send confirmation received" << std::endl;
+    std::cout << "send confirmation received with result " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result) << std::endl;
+    if (ctx.result != IOTHUB_CLIENT_CONFIRMATION_OK)
+    {
+        throw new std::runtime_error(std::string("SendOutputEvent failed with ") + MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, ctx.result));
+    }
 }
 
 std::string ModuleGlue::WaitForInputMessage(std::string connectionId, std::string inputName)
