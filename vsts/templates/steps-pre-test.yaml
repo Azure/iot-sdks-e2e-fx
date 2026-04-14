@@ -52,6 +52,18 @@ steps:
   displayName: '30 seconds to start up'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
+- bash: |
+    echo "Restarting EdgeHub to force fresh device scope cache sync..."
+    docker restart edgeHub
+    echo "Waiting for EdgeHub to come back online..."
+    cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
+    ./wait-for-container.sh edgeHub
+    echo "EdgeHub restarted. Waiting 10 seconds for initialization..."
+    sleep 10
+    echo "EdgeHub restart complete."
+  displayName: 'Restart EdgeHub for fresh scope sync'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
+
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton get_credentials
   displayName: 'Get credentials'

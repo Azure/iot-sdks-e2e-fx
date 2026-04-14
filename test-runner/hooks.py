@@ -94,8 +94,63 @@ async def configure_system_control():
         await settings.system_control.adapter.reconnect_network()
 
 
+async def wait_for_edgehub_cloud_connection():
+    """
+    Wait for EdgeHub to establish its upstream cloud connection.
+
+    After deployment, EdgeHub's device scope cache may not be populated yet.
+    This function verifies cloud connectivity by fetching the test module's
+    twin via the IoT Hub service API, which only works when EdgeHub can proxy
+    to the cloud. Retries with backoff until successful or max attempts reached.
+    """
+    if not settings.iotedge.device_id or not settings.test_module.module_id:
+        return
+
+    try:
+        from azure.iot.hub import IoTHubRegistryManager
+    except ImportError:
+        print("azure-iot-hub not installed, skipping EdgeHub cloud readiness check")
+        return
+
+    max_attempts = 12
+    retry_delay = 10  # seconds
+
+    registry_manager = IoTHubRegistryManager.from_connection_string(
+        settings.iothub.connection_string
+    )
+
+    device_id = settings.test_module.device_id
+    module_id = settings.test_module.module_id
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            twin = registry_manager.get_module_twin(device_id, module_id)
+            if twin:
+                print(
+                    "EdgeHub cloud connection verified (module twin retrieved on attempt {}/{})".format(
+                        attempt, max_attempts
+                    )
+                )
+                return
+        except Exception as e:
+            if attempt < max_attempts:
+                print(
+                    "EdgeHub cloud not ready (attempt {}/{}): {}. "
+                    "Retrying in {}s...".format(attempt, max_attempts, e, retry_delay)
+                )
+                await asyncio.sleep(retry_delay)
+            else:
+                print(
+                    "WARNING: EdgeHub cloud readiness check failed after {} attempts. "
+                    "Cloud-dependent tests may fail. Last error: {}".format(
+                        max_attempts, e
+                    )
+                )
+
+
 async def session_init():
     print(separator("SESSION INIT"))
+    await wait_for_edgehub_cloud_connection()
     await configure_system_control()
 
 
