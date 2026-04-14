@@ -16,6 +16,6 @@ cp sdk/lerna.json .
 node /fixLerna.js
 [ $? -eq 0 ] || { echo "fixLerna.js failed"; exit 1; }
 
-lerna bootstrap --hoist
+npx lerna@^6 bootstrap --hoist
 [ $? -eq 0 ] || { echo "lerna bootstrap failed"; exit 1; }
 
