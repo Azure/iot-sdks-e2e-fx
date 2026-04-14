@@ -77,7 +77,11 @@ class EdgeConfiguration:
                                     "image": self.hubImage,
                                     "createOptions": '{\n  "HostConfig": {\n    "PortBindings": {\n      "8883/tcp": [\n        {\n          "HostPort": "8883"\n        }\n      ],\n      "443/tcp": [\n        {\n          "HostPort": "443"\n        }\n      ],\n      "5671/tcp": [\n        {\n          "HostPort": "5671"\n        }\n      ]\n    }\n  }\n}',
                                 },
-                                "env": {},
+                                "env": {
+                                    "UpstreamProtocol": {
+                                        "value": "AmqpWs"
+                                    }
+                                },
                             },
                         },
                         "modules": {},
@@ -141,7 +145,7 @@ class EdgeConfiguration:
                 + modName
                 + '")',
                 modName
-                + "FromFriend": "FROM /messages/modules/FriendMod/outputs/to"
+                + "FromFriend": "FROM /messages/modules/friendMod/outputs/to"
                 + modName
                 + ' INTO BrokeredEndpoint("/modules/'
                 + modName

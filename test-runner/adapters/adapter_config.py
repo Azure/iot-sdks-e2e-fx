@@ -3,7 +3,7 @@
 # full license information.
 
 # default timeout for all rest API calls, not otherwise specified
-default_api_timeout = 120
+default_api_timeout = 150
 
 # timeout for control APIs.  Separated from default_api_timeout because these API
 # calls aren't subject to network disconnection
