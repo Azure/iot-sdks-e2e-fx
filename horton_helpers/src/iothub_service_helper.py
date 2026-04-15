@@ -74,10 +74,12 @@ class IoTHubServiceHelper:
 
         if device_scope:
             device.device_scope = device_scope
+            print("setting parent device_scope: {}".format(device_scope))
 
         device = self.registry_manager.protocol.devices.create_or_update_identity(
             device_id, device
         )
+        print("device created, device_scope={}".format(getattr(device, 'device_scope', None)))
         return device
 
     def create_device_module(self, device_id, module_id):

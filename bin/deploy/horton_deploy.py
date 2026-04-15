@@ -57,7 +57,24 @@ def deploy_for_iotedge(test_image):
         settings.iotedge.device_id, is_edge=True
     )
 
+    # Re-fetch the edge device to ensure device_scope is populated
+    # (protocol-level create_or_update_identity may not return it)
+    edge_device = iothub_service_helper.registry_manager.get_device(
+        settings.iotedge.device_id
+    )
+    print("Edge device scope: {}".format(edge_device.device_scope))
+
+    # Pre-create module identities in IoT Hub BEFORE applying the deployment.
+    # This ensures EdgeHub's DeviceScopeIdentitiesCache finds them on its
+    # initial scope fetch at startup, avoiding the 120-second refresh cooldown.
     edge_deployment.add_edge_modules(test_image)
+    iothub_service_helper.create_device_module(
+        settings.iotedge.device_id, settings.test_module.module_id
+    )
+    iothub_service_helper.create_device_module(
+        settings.iotedge.device_id, settings.friend_module.module_id
+    )
+
     edge_deployment.set_edge_configuration()
 
     # default leaf device to use test_module connection.  Fix this in conftest.py if we need to use friend_module
