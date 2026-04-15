@@ -98,10 +98,11 @@ async def wait_for_edgehub_cloud_connection():
     """
     Wait for EdgeHub to establish its upstream cloud connection.
 
-    After deployment, EdgeHub's device scope cache may not be populated yet.
-    This function verifies cloud connectivity by fetching the test module's
-    twin via the IoT Hub service API, which only works when EdgeHub can proxy
-    to the cloud. Retries with backoff until successful or max attempts reached.
+    After deployment, EdgeHub may take time to connect upstream to IoT Hub.
+    This function checks the $edgeHub module's connectionState in IoT Hub,
+    which reflects whether EdgeHub has an active upstream AMQP/MQTT connection.
+    Without this connection, all cloud-dependent operations (twins, telemetry,
+    service methods, upstream routing) will fail.
     """
     if not settings.iotedge.device_id or not settings.test_module.module_id:
         return
@@ -112,7 +113,7 @@ async def wait_for_edgehub_cloud_connection():
         print("azure-iot-hub not installed, skipping EdgeHub cloud readiness check")
         return
 
-    max_attempts = 12
+    max_attempts = 24
     retry_delay = 10  # seconds
 
     registry_manager = IoTHubRegistryManager.from_connection_string(
@@ -120,22 +121,41 @@ async def wait_for_edgehub_cloud_connection():
     )
 
     device_id = settings.test_module.device_id
-    module_id = settings.test_module.module_id
 
     for attempt in range(1, max_attempts + 1):
         try:
-            twin = registry_manager.get_module_twin(device_id, module_id)
-            if twin:
+            # Check $edgeHub module connection_state — this tells us if EdgeHub
+            # has an active upstream connection to IoT Hub (not just if IoT Hub
+            # knows about the module).
+            edgehub_twin = registry_manager.get_module_twin(device_id, "$edgeHub")
+            connection_state = getattr(edgehub_twin, "connection_state", None)
+            if connection_state and connection_state.lower() == "connected":
                 print(
-                    "EdgeHub cloud connection verified (module twin retrieved on attempt {}/{})".format(
-                        attempt, max_attempts
-                    )
+                    "EdgeHub upstream connection verified (connectionState=Connected "
+                    "on attempt {}/{})".format(attempt, max_attempts)
                 )
                 return
+            else:
+                state_str = connection_state or "unknown"
+                if attempt < max_attempts:
+                    print(
+                        "EdgeHub not yet connected upstream (state={}, attempt {}/{}). "
+                        "Retrying in {}s...".format(
+                            state_str, attempt, max_attempts, retry_delay
+                        )
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    print(
+                        "WARNING: EdgeHub still not connected upstream after {} attempts "
+                        "(state={}). Cloud-dependent tests may fail.".format(
+                            max_attempts, state_str
+                        )
+                    )
         except Exception as e:
             if attempt < max_attempts:
                 print(
-                    "EdgeHub cloud not ready (attempt {}/{}): {}. "
+                    "EdgeHub cloud check error (attempt {}/{}): {}. "
                     "Retrying in {}s...".format(attempt, max_attempts, e, retry_delay)
                 )
                 await asyncio.sleep(retry_delay)

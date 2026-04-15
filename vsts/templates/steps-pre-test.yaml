@@ -58,8 +58,8 @@ steps:
     echo "Waiting for EdgeHub to come back online..."
     cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
     ./wait-for-container.sh edgeHub
-    echo "EdgeHub restarted. Waiting 10 seconds for initialization..."
-    sleep 10
+    echo "EdgeHub restarted. Waiting 30 seconds for upstream connection..."
+    sleep 30
     echo "EdgeHub restart complete."
   displayName: 'Restart EdgeHub for fresh scope sync'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))

@@ -24,7 +24,8 @@ async def wait_for_reported_properties_update(*, properties_sent, client, regist
     Helper function which uses the registry to wait for reported properties
     to update to the expected value
     """
-    while True:
+    max_retries = 30
+    for retry_count in range(max_retries):
         if getattr(client, "module_id", None):
             twin_received = await registry.get_module_twin(
                 client.device_id, client.module_id
@@ -44,8 +45,11 @@ async def wait_for_reported_properties_update(*, properties_sent, client, regist
             # test passed
             return
         else:
-            logger("Twin does not match.  Sleeping for 2 seconds and retrying.")
+            logger("Twin does not match.  Sleeping for 2 seconds and retrying ({}/{}).".format(
+                retry_count + 1, max_retries))
             await asyncio.sleep(2)
+
+    assert False, "Reported properties did not match after {} retries".format(max_retries)
 
 
 async def wait_for_desired_properties_patch(*, client, expected_twin, mistakes=1):
@@ -95,7 +99,8 @@ class TwinTests(object):
         await asyncio.sleep(5)
         await client.enable_twin()
 
-        while True:
+        max_retries = 12
+        for retry_count in range(max_retries):
             twin_received = await client.get_twin()
 
             logger("twin sent:    " + str(twin_sent))
@@ -105,9 +110,12 @@ class TwinTests(object):
                     # test passed
                     return
             except KeyError:
-                pass
-            logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
+                logger("Twin 'desired.foo' key not present yet.")
+            logger("Twin does not match.  Sleeping for 5 seconds and retrying ({}/{}).".format(
+                retry_count + 1, max_retries))
             await asyncio.sleep(5)
+
+        assert False, "Twin desired properties did not match after {} retries".format(max_retries)
 
     @pytest.mark.it("Can receive desired property patches as events")
     async def test_twin_desired_props_patch(self, client, registry):
