@@ -59,6 +59,10 @@ steps:
             $LanguageToPass="pythonv2"
         } elseif ($VariantToPass -like "py311") {
             $LanguageToPass="pythonv2"
+        } elseif ($VariantToPass -like "py312") {
+            $LanguageToPass="pythonv2"
+        } elseif ($VariantToPass -like "py313") {
+            $LanguageToPass="pythonv2"
         }
     }
 
