@@ -7,69 +7,108 @@ flowchart TB
     subgraph PIPELINE["Azure DevOps Pipeline (e.g. gate-c.yaml)"]
         direction TB
         TRIGGER(["Pipeline Triggered\n(PR merge / scheduled / manual)"])
-        
-        subgraph VARS["Secret Variables\n(KeyVault 'sdkbld' → Variable Group 'edge-e2e-secrets')"]
-            V1["IOTHUB-E2E-CONNECTION-STRING\nHostName=iotsdk-horton-hub-3..."]
-            V2["IOTHUB-E2E-REPO-ADDRESS\niotsdke2e.azurecr.io"]
-            V3["IOTHUB-E2E-REPO-USER / PASSWORD"]
-        end
 
-        subgraph BUILD["Job 1: build_linux_amd64  (ubuntu-22.04)\nMatrix per language/variant"]
+        subgraph SETUP["Stage 1: setup  (windows-latest)"]
             direction TB
-            B1["📦 steps-ensure-e2e-fx-repo.yaml\ngit clone iot-sdks-e2e-fx\n(if triggered from SDK repo)"]
-            B2["⚙️ PowerShell: Resolve params\nlanguage, repo, commit, variant\nMap master→main/v2, detect PR"]
-            B3["🐍 UsePython 3.10 + activate_horton"]
-            B4["📝 Create git patchfile\n(PR diff for Dockerfile injection)"]
-            B5["🔑 docker login to ACR"]
-            B6["🔨 horton build\n--language --repo --commit --variant"]
-            B1 --> B2 --> B3 --> B4 --> B5 --> B6
+            S1["🔧 steps-create-azure-resources.yaml\nNew-AzIotTestEnvironment\n→ IoT Hub + ACR + Resource Group"]
+            S2["📝 New-AzIotHortonTestConfig.ps1\n→ set_horton_env_vars.sh"]
+            S3["📦 Publish test_config artifact"]
+            S1 --> S2 --> S3
         end
 
-        subgraph TEST["Job 2: test_linux_amd64  (ubuntu-22.04, depends on build)\nMatrix: {lang}_{transport}_{scenario}  e.g. c_mqtt_iothub_module"]
+        subgraph BUILDTEST["Stage 2: build_and_test  (ubuntu-22.04)"]
             direction TB
-            T1["⚙️ PowerShell: Parse suite name\n→ language, transport, scenario\n→ deploymentType: iothub | iotedge\n→ imageTestMod: ACR/lang-e2e-v3:vsts-{id}-{variant}"]
-            T2["📦 steps-ensure-e2e-fx-repo.yaml"]
-            T3["🐍 UsePython 3.10 + activate_horton"]
-            T4["🚀 steps-pre-test.yaml\n(deploy containers + create identities)"]
-            T5["🧪 steps-run-pytest.yaml\n(execute E2E tests)"]
-            T6["📋 steps-post-test.yaml\n(collect logs + undeploy)"]
-            T1 --> T2 --> T3 --> T4 --> T5 --> T6
+
+            subgraph BUILD["Job: build_linux_amd64\nMatrix per language/variant"]
+                direction TB
+                BL["📥 steps-load-test-config.yaml\n(download artifact → set pipeline vars)"]
+                B1["📦 steps-ensure-e2e-fx-repo.yaml\ngit clone iot-sdks-e2e-fx\n(if triggered from SDK repo)"]
+                B2["⚙️ PowerShell: Resolve params\nlanguage, repo, commit, variant\nMap master→main/v2, detect PR"]
+                B3["🐍 UsePython 3.12 + activate_horton"]
+                B4["📝 Create git patchfile\n(PR diff for Dockerfile injection)"]
+                B5["🔑 docker login to ACR"]
+                B6["🔨 horton build\n--language --repo --commit --variant"]
+                BL --> B1 --> B2 --> B3 --> B4 --> B5 --> B6
+            end
+
+            subgraph TEST["Job: test_linux_amd64  (depends on build)\nMatrix: {lang}_{transport}_{scenario}"]
+                direction TB
+                TL["📥 steps-load-test-config.yaml"]
+                T1["⚙️ PowerShell: Parse suite name\n→ language, transport, scenario\n→ deploymentType: iothub | iotedge\n→ imageTestMod: ACR/lang-e2e-v3:vsts-{id}-{variant}"]
+                T2["📦 steps-ensure-e2e-fx-repo.yaml"]
+                T3["🐍 UsePython 3.12 + activate_horton"]
+                T4["🚀 steps-pre-test.yaml\n(deploy containers + create identities)"]
+                T5["🧪 steps-run-pytest.yaml\n(execute E2E tests)"]
+                T6["📋 steps-post-test.yaml\n(collect logs + undeploy)"]
+                TL --> T1 --> T2 --> T3 --> T4 --> T5 --> T6
+            end
+
+            BUILD --> TEST
         end
 
-        TRIGGER --> VARS
-        VARS --> BUILD
-        BUILD --> TEST
+        subgraph CLEANUP["Stage 3: cleanup  (ubuntu-24.04, condition: always)"]
+            direction TB
+            C1["📥 Download test_config artifact"]
+            C2["🗑️ steps-destroy-azure-resources.yaml\naz group delete --no-wait"]
+            C1 --> C2
+        end
+
+        TRIGGER --> SETUP
+        SETUP --> BUILDTEST
+        BUILDTEST --> CLEANUP
     end
 
     subgraph AZURE["Azure Cloud"]
-        ACR["🐳 ACR: iotsdke2e.azurecr.io\n(stores built SDK images)"]
-        HUB["☁️ IoT Hub\niotsdk-horton-hub-3"]
-        KV["🔐 KeyVault: sdkbld\n(secrets source)"]
+        RG["📦 Resource Group\n(created per pipeline run)"]
+        ACR["🐳 ACR\n(stores built SDK images)"]
+        HUB["☁️ IoT Hub"]
+        RG -.-> ACR
+        RG -.-> HUB
     end
-
-    KV -.->|linked variable group| VARS
+    S1 -->|"create resources"| RG
     B6 -->|docker push| ACR
     T4 -->|docker pull image from| ACR
     T4 -->|create device/module identities| HUB
     T5 -->|tests use connection strings from| HUB
     T6 -->|delete identities| HUB
+    C2 -->|"delete resource group"| RG
 ```
 
 ### Overview
 
-Each SDK gate pipeline (e.g. `gate-c.yaml`, `gate-node.yaml`) follows a **2-job architecture**:
+Each SDK gate pipeline (e.g. `gate-c.yaml`, `gate-node.yaml`) follows a **3-stage architecture**:
 
-| Job | Pool | Purpose |
-|-----|------|---------|
-| `build_linux_amd64` | ubuntu-22.04 | Build SDK wrapper Docker image, push to ACR |
-| `test_linux_amd64` | ubuntu-22.04 | Pull image, deploy containers, run E2E tests |
+| Stage | Pool | Purpose |
+|-------|------|---------|
+| `setup` | windows-latest | Create Azure resources (IoT Hub, ACR, Resource Group) dynamically |
+| `build_and_test` | ubuntu-22.04 | Build SDK wrapper Docker image, push to ACR; then pull image, deploy containers, run E2E tests |
+| `cleanup` | ubuntu-24.04 | Destroy the Azure resource group (runs `always()`, even on failure) |
 
-**Secret variables** are sourced from Azure KeyVault `sdkbld` via the ADO variable group `edge-e2e-secrets` (group ID 12):
+Per-language gates (e.g. `gate-c.yaml`) delegate the build & test jobs to template files (`vsts/templates/jobs-gate-{lang}.yaml`).
+
+### Dynamic Resource Provisioning
+
+The `setup` stage runs `steps-create-azure-resources.yaml`, which:
+
+1. Downloads `Azure.Iot.Sdk.Test.psm1` (shared test infrastructure module)
+2. Downloads `New-AzIotHortonTestConfig.ps1` (Horton-specific config generator)
+3. Calls `New-AzIotTestEnvironment` via Azure CLI to create an IoT Hub and ACR in a new resource group
+4. Calls `New-AzIotHortonTestConfig` to generate `set_horton_env_vars.sh` with all connection strings
+5. Publishes the `test_config` artifact
+
+The `build_and_test` stage uses `steps-load-test-config.yaml` at the start of each job to:
+
+1. Download the `test_config` artifact
+2. Source `set_horton_env_vars.sh`
+3. Set pipeline variables as secrets via `##vso[task.setvariable]`
+
+**Secret variables** provisioned dynamically per pipeline run:
 
 | Variable | Purpose |
 |----------|---------|
 | `IOTHUB-E2E-CONNECTION-STRING` | IoT Hub service connection string for creating device/module identities |
-| `IOTHUB-E2E-REPO-ADDRESS` | ACR hostname (`iotsdke2e.azurecr.io`) |
+| `IOTHUB-E2E-EVENTHUB-CONNECTION-STRING` | Event Hub-compatible connection string for telemetry verification |
+| `IOTHUB-E2E-REPO-ADDRESS` | ACR login server hostname |
 | `IOTHUB-E2E-REPO-USER` | ACR username |
 | `IOTHUB-E2E-REPO-PASSWORD` | ACR password |
 
@@ -251,14 +290,16 @@ Used for scenarios: `iothub_device`, `iothub_module`
 Used for scenarios: `edgehub_module`, `edgehub_leaf_device`
 
 1. Create an IoT Edge device identity (`hortonEdgeDevice_{runId}`)
-2. Build a deployment manifest with 4 modules:
+2. **Pre-create module identities** (`testMod`, `friendMod`) in IoT Hub _before_ applying the deployment — this ensures EdgeHub's `DeviceScopeIdentitiesCache` finds them on its initial scope fetch at startup, avoiding the 120-second refresh cooldown
+3. Build a deployment manifest with 4 modules:
    - `testMod` — the SDK wrapper image being tested
    - `friendMod` — a companion module (`default-friend-module`) for module-to-module tests
    - `edgeHub` — the IoT Edge Hub runtime module
    - `edgeAgent` — the IoT Edge Agent runtime module
-3. Apply the deployment to the edge device
-4. Create a leaf device (non-edge device, child of the edge device)
-5. Wait for all modules to reach running state
+4. Apply the deployment to the edge device
+5. Create a leaf device (non-edge device, child of the edge device)
+6. Wait for all modules to reach running state
+7. **Restart EdgeHub** for a fresh scope sync — ensures newly-created identities are visible to EdgeHub before tests begin
 
 ### Credential Retrieval (`horton get_credentials`)
 
@@ -395,9 +436,18 @@ Key REST endpoints exposed by each wrapper:
 | `bin/deploy/utilities.py` | Docker + shell helper functions |
 | `horton_helpers/src/horton_settings.py` | Settings management (JSON + env vars) |
 | `docker_images/{lang}/Dockerfile` | 2-phase Dockerfile per SDK language |
+| `scripts/New-AzIotHortonTestConfig.ps1` | Generates `set_horton_env_vars.sh` from Azure resources |
 | `test-runner/conftest.py` | pytest configuration + settings loading |
-| `test-runner/fixtures.py` | pytest fixtures for REST client adapters |
+| `test-runner/fixtures.py` | pytest fixtures for REST client adapters (with retry logic) |
 | `test-runner/connections.py` | Client connection management |
 | `test-runner/adapters/` | REST adapter implementations |
-| `vsts/gate-{lang}.yaml` | Per-language gate pipeline definitions |
-| `vsts/templates/steps-*.yaml` | Reusable pipeline step templates |
+| `vsts/gate-{lang}.yaml` | Per-language gate pipeline definitions (3-stage) |
+| `vsts/templates/jobs-gate-{lang}.yaml` | Per-language build + test job templates |
+| `vsts/templates/steps-create-azure-resources.yaml` | Provisions IoT Hub, ACR, resource group |
+| `vsts/templates/steps-destroy-azure-resources.yaml` | Deletes resource group on cleanup |
+| `vsts/templates/steps-load-test-config.yaml` | Loads secrets from `test_config` artifact into pipeline vars |
+| `vsts/templates/steps-build-docker-image.yaml` | Docker build/tag/push orchestration |
+| `vsts/templates/steps-deploy-and-run-pytest.yaml` | Parses suite name, deploys, runs tests, collects results |
+| `vsts/templates/steps-pre-test.yaml` | Pre-test deployment + EdgeHub restart |
+| `vsts/templates/steps-run-pytest.yaml` | pytest execution with env var injection |
+| `vsts/templates/steps-post-test.yaml` | Log collection, result publishing, undeploy |
