@@ -22,7 +22,7 @@ namespace IO.Swagger.Controllers
     /// </summary>
     internal class ServiceGlue
     {
-        private static Dictionary<string, ServiceClient> objectMap = new Dictionary<string, ServiceClient>();
+        private static Dictionary<string, IotHubServiceClient> objectMap = new Dictionary<string, IotHubServiceClient>();
         private static int objectCount = 0;
         private const string serviceClientPrefix = "serviceClient_";
 
@@ -32,8 +32,7 @@ namespace IO.Swagger.Controllers
 
         public async Task<ConnectResponse> ConnectAsync(string connectionString)
         {
-            var client = ServiceClient.CreateFromConnectionString(connectionString);
-            await client.OpenAsync().ConfigureAwait(false);
+            var client = new IotHubServiceClient(connectionString);
             var connectionId = serviceClientPrefix + Convert.ToString(++objectCount);
             objectMap[connectionId] = client;
             return new ConnectResponse
@@ -46,9 +45,9 @@ namespace IO.Swagger.Controllers
         {
             if (objectMap.ContainsKey(connectionId))
             {
-                var client = objectMap[connectionId] as ServiceClient;
+                var client = objectMap[connectionId];
                 objectMap.Remove(connectionId);
-                await client.CloseAsync().ConfigureAwait(false);
+                client.Dispose();
             }
         }
 
@@ -57,14 +56,14 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine("InvokeModuleMethodAsync received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
             Debug.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
-            var request = GlueUtils.CreateCloudToDeviceMethod(methodInvokeParameters);
+            var request = GlueUtils.CreateDirectMethodServiceRequest(methodInvokeParameters);
             Debug.WriteLine("Invoking");
-            var response = await client.InvokeDeviceMethodAsync(deviceId, moduleId, request, CancellationToken.None).ConfigureAwait(false);
+            var response = await client.DirectMethods.InvokeAsync(deviceId, moduleId, request, CancellationToken.None).ConfigureAwait(false);
             Debug.WriteLine("Response received:");
             Debug.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", response.GetPayloadAsJson())
+                new JProperty("payload", response.JsonPayload.GetRawText())
             );
         }
 
@@ -73,14 +72,14 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine("InvokeDeviceMethodAsync received for {0} with deviceId {1} ", connectionId, deviceId);
             Debug.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
-            var request = GlueUtils.CreateCloudToDeviceMethod(methodInvokeParameters);
+            var request = GlueUtils.CreateDirectMethodServiceRequest(methodInvokeParameters);
             Debug.WriteLine("Invoking");
-            var response = await client.InvokeDeviceMethodAsync(deviceId, request, CancellationToken.None).ConfigureAwait(false);
+            var response = await client.DirectMethods.InvokeAsync(deviceId, request, CancellationToken.None).ConfigureAwait(false);
             Debug.WriteLine("Response received:");
             Debug.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", response.GetPayloadAsJson())
+                new JProperty("payload", response.JsonPayload.GetRawText())
             );
         }
 

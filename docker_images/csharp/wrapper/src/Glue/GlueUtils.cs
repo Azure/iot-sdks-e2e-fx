@@ -20,29 +20,29 @@ namespace IO.Swagger.Controllers
         {
         }
 
-        internal static Microsoft.Azure.Devices.Client.TransportType TransportNameToType(string transport)
+        internal static IotHubClientOptions TransportNameToOptions(string transport)
         {
             switch (transport.ToLower())
             {
                 case "mqtt":
-                    return Microsoft.Azure.Devices.Client.TransportType.Mqtt_Tcp_Only;
+                    return new IotHubClientOptions(new IotHubClientMqttSettings());
                 case "mqttws":
-                    return Microsoft.Azure.Devices.Client.TransportType.Mqtt_WebSocket_Only;
+                    return new IotHubClientOptions(new IotHubClientMqttSettings(IotHubClientTransportProtocol.WebSocket));
                 case "amqp":
-                    return Microsoft.Azure.Devices.Client.TransportType.Amqp_Tcp_Only;
+                    return new IotHubClientOptions(new IotHubClientAmqpSettings());
                 case "amqpws":
-                    return Microsoft.Azure.Devices.Client.TransportType.Amqp_WebSocket_Only;
-                case "http":
-                    return Microsoft.Azure.Devices.Client.TransportType.Http1;
+                    return new IotHubClientOptions(new IotHubClientAmqpSettings(IotHubClientTransportProtocol.WebSocket));
                 default:
                     throw new ArgumentException("unknown transport " + transport);
             }
         }
 
-        internal static CloudToDeviceMethod CreateCloudToDeviceMethod(MethodInvoke methodInvokeParameters)
+        internal static DirectMethodServiceRequest CreateDirectMethodServiceRequest(MethodInvoke methodInvokeParameters)
         {
-            var method = new CloudToDeviceMethod(methodInvokeParameters.MethodName, TimeSpan.FromSeconds((double)methodInvokeParameters.ResponseTimeoutInSeconds), TimeSpan.FromSeconds((double)methodInvokeParameters.ConnectTimeoutInSeconds));
+            var method = new DirectMethodServiceRequest(methodInvokeParameters.MethodName);
             method.SetPayloadJson(methodInvokeParameters.Payload.ToString());
+            method.ResponseTimeoutInSeconds = methodInvokeParameters.ResponseTimeoutInSeconds;
+            method.ConnectTimeoutInSeconds = methodInvokeParameters.ConnectTimeoutInSeconds;
             return method;
         }
 
@@ -51,11 +51,12 @@ namespace IO.Swagger.Controllers
             return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(obj));
         }
 
-        internal static MethodRequest CreateMethodRequest(MethodInvoke methodInvokeParameters)
+        internal static EdgeModuleDirectMethodRequest CreateEdgeModuleDirectMethodRequest(MethodInvoke methodInvokeParameters)
         {
-            return new MethodRequest(methodInvokeParameters.MethodName, GlueUtils.ObjectToBytes(methodInvokeParameters.Payload), TimeSpan.FromSeconds((double)methodInvokeParameters.ResponseTimeoutInSeconds), TimeSpan.FromSeconds((double)methodInvokeParameters.ConnectTimeoutInSeconds));
+            var request = new EdgeModuleDirectMethodRequest(methodInvokeParameters.MethodName, GlueUtils.ObjectToBytes(methodInvokeParameters.Payload));
+            request.ResponseTimeoutInSeconds = methodInvokeParameters.ResponseTimeoutInSeconds;
+            request.ConnectTimeoutInSeconds = methodInvokeParameters.ConnectTimeoutInSeconds;
+            return request;
         }
-
-
     }
 }

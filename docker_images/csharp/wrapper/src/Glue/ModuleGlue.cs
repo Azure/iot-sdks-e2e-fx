@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using IO.Swagger.Models;
 using Microsoft.Azure.Devices.Client;
-using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -23,7 +22,7 @@ namespace IO.Swagger.Controllers
     /// </summary>
     internal class ModuleGlue
     {
-        private static Dictionary<string, ModuleClient> objectMap = new Dictionary<string, ModuleClient>();
+        private static Dictionary<string, IotHubModuleClient> objectMap = new Dictionary<string, IotHubModuleClient>();
         private static int objectCount = 0;
         private const string modulePrefix = "module_";
 
@@ -34,7 +33,7 @@ namespace IO.Swagger.Controllers
         public async Task<ConnectResponse> ConnectAsync(string transport, string connectionString, Certificate caCertificate)
         {
             Console.WriteLine("ConnectAsync for " + transport);
-            var client = ModuleClient.CreateFromConnectionString(connectionString, GlueUtils.TransportNameToType(transport));
+            var client = new IotHubModuleClient(connectionString, GlueUtils.TransportNameToOptions(transport));
             await client.OpenAsync().ConfigureAwait(false);
             var connectionId = modulePrefix + Convert.ToString(++objectCount);
             Console.WriteLine("Connected successfully.  Connection Id = " + connectionId);
@@ -47,7 +46,7 @@ namespace IO.Swagger.Controllers
 
         public async Task<ConnectResponse> ConnectFromEnvironmentAsync(string transport)
         {
-            var client = await ModuleClient.CreateFromEnvironmentAsync(GlueUtils.TransportNameToType(transport)).ConfigureAwait(false);
+            var client = await IotHubModuleClient.CreateFromEnvironmentAsync(GlueUtils.TransportNameToOptions(transport)).ConfigureAwait(false);
             await client.OpenAsync().ConfigureAwait(false);
             var connectionId = modulePrefix + Convert.ToString(++objectCount);
             objectMap[connectionId] = client;
@@ -83,7 +82,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableMethodsAsync received for " + connectionId);
         }
 
-        private TwinCollection lastDesiredProps = null;
+        private PropertyCollection lastDesiredProps = null;
         private SemaphoreSlim desiredPropMutex = null;
 
         public async Task EnableTwinAsync(string connectionId)
@@ -91,7 +90,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableTwinAsync received for " + connectionId);
             var client = objectMap[connectionId];
 
-            DesiredPropertyUpdateCallback handler = async (props, context) =>
+            Func<PropertyCollection, Task> handler = async (props) =>
             {
                 Console.WriteLine("patch received");
                 lastDesiredProps = props;
@@ -108,7 +107,7 @@ namespace IO.Swagger.Controllers
             };
 
             Console.WriteLine("setting patch handler");
-            await client.SetDesiredPropertyUpdateCallbackAsync(handler, null).ConfigureAwait(false);
+            await client.SetDesiredPropertyUpdateCallbackAsync(handler).ConfigureAwait(false);
             Console.WriteLine("Done enabling twin");
 
         }
@@ -117,7 +116,7 @@ namespace IO.Swagger.Controllers
         {
             Console.WriteLine("sendEventAsync received for {0} with body {1}", connectionId, eventBody.Body.ToString());
             var client = objectMap[connectionId];
-            await client.SendEventAsync(new Microsoft.Azure.Devices.Client.Message(GlueUtils.ObjectToBytes(eventBody.Body))).ConfigureAwait(false);
+            await client.SendTelemetryAsync(new TelemetryMessage(GlueUtils.ObjectToBytes(eventBody.Body))).ConfigureAwait(false);
             Console.WriteLine("sendEventAsync complete");
         }
 
@@ -125,8 +124,7 @@ namespace IO.Swagger.Controllers
         {
             Console.WriteLine("sendEventAsync received for {0} with output {1} and body {2}", connectionId, outputName, eventBody.Body.ToString());
             var client = objectMap[connectionId];
-            string toSend = JsonConvert.SerializeObject(eventBody);
-            await client.SendEventAsync(outputName, new Microsoft.Azure.Devices.Client.Message(GlueUtils.ObjectToBytes(eventBody.Body))).ConfigureAwait(false);
+            await client.SendMessageToRouteAsync(outputName, new TelemetryMessage(GlueUtils.ObjectToBytes(eventBody.Body))).ConfigureAwait(false);
             Console.WriteLine("sendOutputEventAsync complete");
         }
 
@@ -137,21 +135,27 @@ namespace IO.Swagger.Controllers
             await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
             byte[] bytes = null;
             var client = objectMap[connectionId];
-            MessageHandler handler = async (msg, context) =>
+            Func<IncomingMessage, Task<MessageAcknowledgement>> handler = async (msg) =>
             {
-                Console.WriteLine("message received");
-                bytes = msg.GetBytes();
-                await client.SetInputMessageHandlerAsync(inputName, null, null).ConfigureAwait(false);
-                Console.WriteLine("releasing inputMessage mutex");
-                mutex.Release();
-                return MessageResponse.Completed;
+                Console.WriteLine("message received for input: " + msg.InputName);
+                if (msg.InputName == inputName)
+                {
+                    bytes = msg.Payload;
+                    Console.WriteLine("releasing inputMessage mutex");
+                    mutex.Release();
+                    return MessageAcknowledgement.Complete;
+                }
+                return MessageAcknowledgement.Abandon;
             };
             Console.WriteLine("Setting input handler");
-            await client.SetInputMessageHandlerAsync(inputName, handler, null).ConfigureAwait(false);
+            await client.SetIncomingMessageCallbackAsync(handler).ConfigureAwait(false);
 
             Console.WriteLine("Waiting for inputMessage mutex to release");
             await mutex.WaitAsync().ConfigureAwait(false);
             Console.WriteLine("mutex triggered.");
+
+            // Unregister message callback
+            await client.SetIncomingMessageCallbackAsync(null).ConfigureAwait(false);
 
             string s = Encoding.UTF8.GetString(bytes);
             Console.WriteLine("message = {0}", s as object);
@@ -175,14 +179,14 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("InvokeModuleMethodAsync received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
             Console.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
-            var request = GlueUtils.CreateMethodRequest(methodInvokeParameters);
+            var request = GlueUtils.CreateEdgeModuleDirectMethodRequest(methodInvokeParameters);
             Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, moduleId, request, CancellationToken.None).ConfigureAwait(false);
             Console.WriteLine("Response received:");
             Console.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", response.ResultAsJson)
+                new JProperty("payload", response.Payload != null ? Encoding.UTF8.GetString(response.Payload) : null)
             );
         }
 
@@ -191,14 +195,14 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("InvokeDeviceMethodAsync received for {0} with deviceId {1} ", connectionId, deviceId);
             Console.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
-            var request = GlueUtils.CreateMethodRequest(methodInvokeParameters);
+            var request = GlueUtils.CreateEdgeModuleDirectMethodRequest(methodInvokeParameters);
             Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, request, CancellationToken.None).ConfigureAwait(false);
             Console.WriteLine("Response received:");
             Console.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", response.ResultAsJson)
+                new JProperty("payload", response.Payload != null ? Encoding.UTF8.GetString(response.Payload) : null)
             );
         }
 
@@ -220,7 +224,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("Returning patch:");
             Console.WriteLine(JsonConvert.SerializeObject(lastDesiredProps));
             return new Models.Twin {
-                Desired = lastDesiredProps
+                Desired = JObject.Parse(lastDesiredProps.GetSerializedString())
             };
         }
 
@@ -228,12 +232,12 @@ namespace IO.Swagger.Controllers
         {
             Console.WriteLine("GetTwinAsync received for " + connectionId);
             var client = objectMap[connectionId];
-            Microsoft.Azure.Devices.Shared.Twin t = await client.GetTwinAsync().ConfigureAwait(false);
+            TwinProperties t = await client.GetTwinPropertiesAsync().ConfigureAwait(false);
             Console.WriteLine("Twin Received");
             Console.WriteLine(JsonConvert.SerializeObject(t));
             return new Models.Twin {
-                Desired = t.Properties.Desired,
-                Reported = t.Properties.Reported
+                Desired = JObject.Parse(t.Desired.GetSerializedString()),
+                Reported = JObject.Parse(t.Reported.GetSerializedString())
             };
         }
 
@@ -242,7 +246,8 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("SendTwinPatchAsync received for " + connectionId);
             Console.WriteLine(JsonConvert.SerializeObject(props));
             var client = objectMap[connectionId];
-            TwinCollection reportedProps = new TwinCollection(props.Reported as JObject, null);
+            var reportedJson = (props.Reported as JObject).ToString();
+            var reportedProps = System.Text.Json.JsonSerializer.Deserialize<PropertyCollection>(reportedJson);
             await client.UpdateReportedPropertiesAsync(reportedProps).ConfigureAwait(false);
         }
 
@@ -254,11 +259,16 @@ namespace IO.Swagger.Controllers
             var mutex = new System.Threading.SemaphoreSlim(1);
             await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
 
-            MethodCallback callback = async (methodRequest, userContext) =>
+            Func<DirectMethodRequest, Task<DirectMethodResponse>> callback = async (methodRequest) =>
             {
+                if (methodRequest.MethodName != methodName)
+                {
+                    return new DirectMethodResponse(404);
+                }
+
                 Console.WriteLine("Method invocation received");
 
-                object request = JsonConvert.DeserializeObject(methodRequest.DataAsJson);
+                object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(methodRequest.Payload));
                 string received = JsonConvert.SerializeObject(new JRaw(request));
                 string expected = ((Newtonsoft.Json.Linq.JToken)requestAndResponse.RequestPayload)["payload"].ToString();
                 Console.WriteLine("request expected: " + expected);
@@ -268,7 +278,7 @@ namespace IO.Swagger.Controllers
                     Console.WriteLine("request did not match expectations");
                     Console.WriteLine("Releasing the method mutex");
                     mutex.Release();
-                    return new MethodResponse(500);
+                    return new DirectMethodResponse(500);
                 }
                 else
                 {
@@ -284,12 +294,12 @@ namespace IO.Swagger.Controllers
                     mutex.Release();
 
                     Console.WriteLine("Returning the result");
-                    return new MethodResponse(responseBytes, status);
+                    return new DirectMethodResponse(status) { Payload = responseBytes };
                 }
             };
 
             Console.WriteLine("Setting the handler");
-            await client.SetMethodHandlerAsync(methodName, callback, null).ConfigureAwait(false);
+            await client.SetDirectMethodCallbackAsync(callback).ConfigureAwait(false);
 
             Console.WriteLine("Waiting on the method mutex");
             await mutex.WaitAsync().ConfigureAwait(false);
@@ -298,7 +308,7 @@ namespace IO.Swagger.Controllers
             await Task.Delay(100).ConfigureAwait(false);
 
             Console.WriteLine("Nulling the handler");
-            await client.SetMethodHandlerAsync(methodName, null, null).ConfigureAwait(false);
+            await client.SetDirectMethodCallbackAsync(null).ConfigureAwait(false);
 
             Console.WriteLine("RoundtripMethodCallAsync is complete");
             return new object();
