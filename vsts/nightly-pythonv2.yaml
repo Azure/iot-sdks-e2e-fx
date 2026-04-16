@@ -19,7 +19,7 @@ stages:
       vmImage: 'ubuntu-22.04'
     strategy:
       matrix:
-        py312: { variant: py312 }
+        py311: { variant: py311 }
         py37: { variant: py37 }
         py39: { variant: py39 }
     steps:
@@ -84,29 +84,29 @@ stages:
         py37_async_mqttws_iothub_device_full_drop:    { suite: py37_async_mqttws_iothub_device_full_drop }
         py37_async_mqttws_edgehub_module_full_drop:   { suite: py37_async_mqttws_edgehub_module_full_drop }
 
-        py312_mqtt_iothub_module_and_device:          { suite: py312_mqtt_iothub_module_and_device }
-        py312_mqtt_edgehub_module:                     { suite: py312_mqtt_edgehub_module }
-        py312_mqtt_iothub_module_full_drop:            { suite: py312_mqtt_iothub_module_full_drop }
-        py312_mqtt_iothub_device_full_drop:            { suite: py312_mqtt_iothub_device_full_drop }
-        py312_mqtt_edgehub_module_full_drop:           { suite: py312_mqtt_edgehub_module_full_drop }
+        py311_mqtt_iothub_module_and_device:          { suite: py311_mqtt_iothub_module_and_device }
+        py311_mqtt_edgehub_module:                     { suite: py311_mqtt_edgehub_module }
+        py311_mqtt_iothub_module_full_drop:            { suite: py311_mqtt_iothub_module_full_drop }
+        py311_mqtt_iothub_device_full_drop:            { suite: py311_mqtt_iothub_device_full_drop }
+        py311_mqtt_edgehub_module_full_drop:           { suite: py311_mqtt_edgehub_module_full_drop }
 
-        py312_mqttws_iothub_module_and_device:         { suite: py312_mqttws_iothub_module_and_device }
-        py312_mqttws_edgehub_module:                   { suite: py312_mqttws_edgehub_module }
-        py312_mqttws_iothub_module_full_drop:          { suite: py312_mqttws_iothub_module_full_drop }
-        py312_mqttws_iothub_device_full_drop:          { suite: py312_mqttws_iothub_device_full_drop }
-        py312_mqttws_edgehub_module_full_drop:         { suite: py312_mqttws_edgehub_module_full_drop }
+        py311_mqttws_iothub_module_and_device:         { suite: py311_mqttws_iothub_module_and_device }
+        py311_mqttws_edgehub_module:                   { suite: py311_mqttws_edgehub_module }
+        py311_mqttws_iothub_module_full_drop:          { suite: py311_mqttws_iothub_module_full_drop }
+        py311_mqttws_iothub_device_full_drop:          { suite: py311_mqttws_iothub_device_full_drop }
+        py311_mqttws_edgehub_module_full_drop:         { suite: py311_mqttws_edgehub_module_full_drop }
 
-        py312_async_mqtt_iothub_module_and_device:     { suite: py312_async_mqtt_iothub_module_and_device }
-        py312_async_mqtt_edgehub_module:               { suite: py312_async_mqtt_edgehub_module }
-        py312_async_mqtt_iothub_module_full_drop:      { suite: py312_async_mqtt_iothub_module_full_drop }
-        py312_async_mqtt_iothub_device_full_drop:      { suite: py312_async_mqtt_iothub_device_full_drop }
-        py312_async_mqtt_edgehub_module_full_drop:     { suite: py312_async_mqtt_edgehub_module_full_drop }
+        py311_async_mqtt_iothub_module_and_device:     { suite: py311_async_mqtt_iothub_module_and_device }
+        py311_async_mqtt_edgehub_module:               { suite: py311_async_mqtt_edgehub_module }
+        py311_async_mqtt_iothub_module_full_drop:      { suite: py311_async_mqtt_iothub_module_full_drop }
+        py311_async_mqtt_iothub_device_full_drop:      { suite: py311_async_mqtt_iothub_device_full_drop }
+        py311_async_mqtt_edgehub_module_full_drop:     { suite: py311_async_mqtt_edgehub_module_full_drop }
 
-        py312_async_mqttws_iothub_module_and_device:   { suite: py312_async_mqttws_iothub_module_and_device }
-        py312_async_mqttws_edgehub_module:             { suite: py312_async_mqttws_edgehub_module }
-        py312_async_mqttws_iothub_module_full_drop:    { suite: py312_async_mqttws_iothub_module_full_drop }
-        py312_async_mqttws_iothub_device_full_drop:    { suite: py312_async_mqttws_iothub_device_full_drop }
-        py312_async_mqttws_edgehub_module_full_drop:   { suite: py312_async_mqttws_edgehub_module_full_drop }
+        py311_async_mqttws_iothub_module_and_device:   { suite: py311_async_mqttws_iothub_module_and_device }
+        py311_async_mqttws_edgehub_module:             { suite: py311_async_mqttws_edgehub_module }
+        py311_async_mqttws_iothub_module_full_drop:    { suite: py311_async_mqttws_iothub_module_full_drop }
+        py311_async_mqttws_iothub_device_full_drop:    { suite: py311_async_mqttws_iothub_device_full_drop }
+        py311_async_mqttws_edgehub_module_full_drop:   { suite: py311_async_mqttws_edgehub_module_full_drop }
 
     steps:
     - template: templates/steps-load-test-config.yaml

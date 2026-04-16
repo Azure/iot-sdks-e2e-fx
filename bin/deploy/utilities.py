@@ -12,7 +12,7 @@ from horton_settings import settings
 
 
 all_languages = ["pythonv2", "java", "csharp", "node", "c"]
-all_variants = ["py37", "py38", "py39", "py310", "py312", "node16", "node18"]
+all_variants = ["py37", "py38", "py39", "py310", "py311", "node16", "node18"]
 
 
 def is_windows():

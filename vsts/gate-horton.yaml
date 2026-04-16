@@ -23,7 +23,7 @@ stages:
           c:      { language: c }
           java:   { language: java }
           csharp: { language: csharp }
-          py312:  { variant: py312 }
+          py311:  { variant: py311 }
     steps:
     - template: templates/steps-load-test-config.yaml
     - template: templates/steps-build-docker-image.yaml
@@ -46,11 +46,11 @@ stages:
         java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
         csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
         csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
-        py312_mqtt_iothub_module_and_device_async:    { suite: py312_mqtt_iothub_module_and_device_async }
-        py312_mqtt_iothub_module_and_device:          { suite: py312_mqtt_iothub_module_and_device }
-        py312_mqtt_edgehub_module_async:              { suite: py312_mqtt_edgehub_module_async }
-        py312_mqtt_edgehub_module:                    { suite: py312_mqtt_edgehub_module }
-        py312_mqtt_iothub_module_quick_drop:          { suite: py312_mqtt_iothub_device_quick_drop }
+        py311_mqtt_iothub_module_and_device_async:    { suite: py311_mqtt_iothub_module_and_device_async }
+        py311_mqtt_iothub_module_and_device:          { suite: py311_mqtt_iothub_module_and_device }
+        py311_mqtt_edgehub_module_async:              { suite: py311_mqtt_edgehub_module_async }
+        py311_mqtt_edgehub_module:                    { suite: py311_mqtt_edgehub_module }
+        py311_mqtt_iothub_module_quick_drop:          { suite: py311_mqtt_iothub_device_quick_drop }
     steps:
     - template: templates/steps-load-test-config.yaml
     - template: templates/steps-deploy-and-run-pytest.yaml

@@ -52,9 +52,9 @@ steps:
     } elseif ($env:Suite.StartsWith("py310")) {
         $Language = "pythonv2"
         $Variant = "py310"
-    } elseif ($env:Suite.StartsWith("py312")) {
+    } elseif ($env:Suite.StartsWith("py311")) {
         $Language = "pythonv2"
-        $Variant = "py312"
+        $Variant = "py311"
     } else {
         throw("Unknown/missing language in suite: " + $env:Suite)
     }
