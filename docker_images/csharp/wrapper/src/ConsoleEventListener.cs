@@ -40,18 +40,37 @@ namespace System.Diagnostics.Tracing
         {
             foreach (EventSource source in EventSource.GetSources())
             {
-                EnableEvents(source, EventLevel.LogAlways);
+                // Only subscribe to sources matching our filters
+                foreach (string filter in _eventFilters)
+                {
+                    if (source.Name.StartsWith(filter))
+                    {
+                        EnableEvents(source, EventLevel.LogAlways);
+                        break;
+                    }
+                }
             }
         }
 
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
             base.OnEventSourceCreated(eventSource);
+
+            // Only enable events for sources that match our filters to avoid
+            // recursive event storms from subscribing to ALL EventSources.
+            if (_eventFilters == null) return;
+            foreach (string filter in _eventFilters)
+            {
+                if (eventSource.Name.StartsWith(filter))
+                {
 #if NET451
-            EnableEvents(eventSource, EventLevel.LogAlways);
+                    EnableEvents(eventSource, EventLevel.LogAlways);
 #else
-            EnableEvents(eventSource, EventLevel.LogAlways, EventKeywords.All);
+                    EnableEvents(eventSource, EventLevel.LogAlways, EventKeywords.All);
 #endif
+                    return;
+                }
+            }
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
