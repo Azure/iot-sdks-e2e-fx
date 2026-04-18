@@ -1,5 +1,5 @@
-connexion
-Werkzeug>=2.1.1
+connexion<3.0
+Werkzeug>=2.1.1,<3.0
 python_dateutil
 setuptools>=65.0.0
 PyYAML
