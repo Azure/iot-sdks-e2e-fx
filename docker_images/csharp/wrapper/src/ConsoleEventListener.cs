@@ -8,6 +8,7 @@ namespace System.Diagnostics.Tracing
     {
         private readonly string[] _eventFilters;
         private object _lock = new object();
+        private bool _isHandlingEvent = false;
 
         public ConsoleEventListener() : this(string.Empty) { }
 
@@ -59,7 +60,13 @@ namespace System.Diagnostics.Tracing
 
             lock (_lock)
             {
-                bool shouldDisplay = false;
+                // Prevent infinite recursion: Console.WriteLine can trigger
+                // additional EventSource events, which re-enter OnEventWritten.
+                if (_isHandlingEvent) return;
+                _isHandlingEvent = true;
+                try
+                {
+                    bool shouldDisplay = false;
             
                 if (_eventFilters.Length == 1 && eventData.EventSource.Name.StartsWith(_eventFilters[0]))
                 {
@@ -89,6 +96,11 @@ namespace System.Diagnostics.Tracing
                     Console.WriteLine(text);
                     Debug.WriteLine(text);
                     Console.ForegroundColor = origForeground;
+                }
+                }
+                finally
+                {
+                    _isHandlingEvent = false;
                 }
             }
         }
