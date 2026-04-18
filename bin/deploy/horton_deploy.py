@@ -75,15 +75,16 @@ def deploy_for_iotedge(test_image):
         settings.iotedge.device_id, settings.friend_module.module_id
     )
 
-    edge_deployment.set_edge_configuration()
-
-    # default leaf device to use test_module connection.  Fix this in conftest.py if we need to use friend_module
+    # Pre-create the leaf device BEFORE applying edge configuration so that
+    # EdgeHub's scope cache finds it on its initial fetch at startup.
     settings.leaf_device.device_id = settings.horton.id_base + "_leaf_device"
     iothub_service_helper.create_device(
         settings.leaf_device.device_id,
         is_edge=False,
         device_scope=edge_device.device_scope,
     )
+
+    edge_deployment.set_edge_configuration()
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
     settings.leaf_device.adapter_address = settings.test_module.adapter_address
