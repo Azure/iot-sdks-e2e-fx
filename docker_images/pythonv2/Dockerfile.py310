@@ -49,7 +49,7 @@ RUN /rebuild.sh
 WORKDIR /wrapper
 COPY pythonv2/wrapper .
 RUN pip install -r requirements.txt
-RUN python setup.py install
+RUN pip install .
 RUN pip install -e ./python_glue
 
 ENV HORTON_REPO=$HORTON_REPO
