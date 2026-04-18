@@ -1,6 +1,8 @@
 package io.swagger.server.api;
 
 import java.nio.charset.Charset;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.phiz71.vertx.swagger.router.OperationIdServiceIdResolver;
@@ -11,7 +13,6 @@ import io.swagger.parser.SwaggerParser;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
-import io.vertx.core.file.FileSystem;
 import io.vertx.core.json.Json;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -46,32 +47,50 @@ public class MainApiVerticle extends AbstractVerticle {
     @Override
     public void start(Future<Void> startFuture) throws Exception {
         Json.mapper.registerModule(new JavaTimeModule());
-        FileSystem vertxFileSystem = vertx.fileSystem();
-        vertxFileSystem.readFile("swagger.json", readFile -> {
-            if (readFile.succeeded()) {
-                Swagger swagger = new SwaggerParser().parse(readFile.result().toString(Charset.forName("utf-8")));
-                // Changed constructor in merge to add setSendTimeout()
-                Router swaggerRouter = SwaggerRouter.swaggerRouter(router, swagger, vertx.eventBus(), new OperationIdServiceIdResolver(), new Function<RoutingContext, DeliveryOptions>() {
-                    @Override
-                    public DeliveryOptions apply(RoutingContext t) {
-                        return new DeliveryOptions().setSendTimeout(90000);
-                    }
-                });
-                deployVerticles(startFuture);
 
-                vertx.createHttpServer()
-                    .requestHandler(swaggerRouter::accept)
-                    .listen(serverPort, h -> {
-                        if (h.succeeded()) {
-                            startFuture.complete();
-                        } else {
-                            startFuture.fail(h.cause());
-                        }
-                    });
-            } else {
-            	startFuture.fail(readFile.cause());
+        // Read swagger.json from classpath resources directly (more reliable
+        // than Vert.x FileSystem which depends on FileResolver cache behaviour).
+        String swaggerContent;
+        try {
+            InputStream is = MainApiVerticle.class.getClassLoader().getResourceAsStream("swagger.json");
+            if (is == null) {
+                startFuture.fail("swagger.json not found on classpath");
+                return;
+            }
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            swaggerContent = result.toString("UTF-8");
+            is.close();
+        } catch (Exception e) {
+            LOGGER.error("Failed to read swagger.json from classpath", e);
+            startFuture.fail(e);
+            return;
+        }
+
+        Swagger swagger = new SwaggerParser().parse(swaggerContent);
+        // Changed constructor in merge to add setSendTimeout()
+        Router swaggerRouter = SwaggerRouter.swaggerRouter(router, swagger, vertx.eventBus(), new OperationIdServiceIdResolver(), new Function<RoutingContext, DeliveryOptions>() {
+            @Override
+            public DeliveryOptions apply(RoutingContext t) {
+                return new DeliveryOptions().setSendTimeout(90000);
             }
         });
+        deployVerticles(startFuture);
+
+        vertx.createHttpServer()
+            .requestHandler(swaggerRouter::accept)
+            .listen(serverPort, h -> {
+                if (h.succeeded()) {
+                    startFuture.complete();
+                } else {
+                    LOGGER.error("HTTP server failed to start", h.cause());
+                    startFuture.fail(h.cause());
+                }
+            });
     }
 
     public void deployVerticles(Future<Void> startFuture) {
@@ -81,7 +100,7 @@ public class MainApiVerticle extends AbstractVerticle {
                 LOGGER.info("ControlApiVerticle : Deployed");
             } else {
                 startFuture.fail(res.cause());
-                LOGGER.error("ControlApiVerticle : Deployment failed");
+                LOGGER.error("ControlApiVerticle : Deployment failed", res.cause());
             }
         });
 
@@ -90,7 +109,7 @@ public class MainApiVerticle extends AbstractVerticle {
                 LOGGER.info("DeviceApiVerticle : Deployed");
             } else {
                 startFuture.fail(res.cause());
-                LOGGER.error("DeviceApiVerticle : Deployment failed");
+                LOGGER.error("DeviceApiVerticle : Deployment failed", res.cause());
             }
         });
 
@@ -99,7 +118,7 @@ public class MainApiVerticle extends AbstractVerticle {
                 LOGGER.info("ModuleApiVerticle : Deployed");
             } else {
                 startFuture.fail(res.cause());
-                LOGGER.error("ModuleApiVerticle : Deployment failed");
+                LOGGER.error("ModuleApiVerticle : Deployment failed", res.cause());
             }
         });
 
@@ -108,7 +127,7 @@ public class MainApiVerticle extends AbstractVerticle {
                 LOGGER.info("NetApiVerticle : Deployed");
             } else {
                 startFuture.fail(res.cause());
-                LOGGER.error("NetApiVerticle : Deployment failed");
+                LOGGER.error("NetApiVerticle : Deployment failed", res.cause());
             }
         });
 
@@ -117,7 +136,7 @@ public class MainApiVerticle extends AbstractVerticle {
                 LOGGER.info("RegistryApiVerticle : Deployed");
             } else {
                 startFuture.fail(res.cause());
-                LOGGER.error("RegistryApiVerticle : Deployment failed");
+                LOGGER.error("RegistryApiVerticle : Deployment failed", res.cause());
             }
         });
 
@@ -126,7 +145,7 @@ public class MainApiVerticle extends AbstractVerticle {
                 LOGGER.info("ServiceApiVerticle : Deployed");
             } else {
                 startFuture.fail(res.cause());
-                LOGGER.error("ServiceApiVerticle : Deployment failed");
+                LOGGER.error("ServiceApiVerticle : Deployment failed", res.cause());
             }
         });
 
