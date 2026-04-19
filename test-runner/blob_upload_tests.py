@@ -36,7 +36,7 @@ async def move_blob_status_into_eventhub(service, client):
     while True:
         status = await service.get_blob_upload_status()
         logger("got upload status = {}".format(status))
-        await client.send_event(json.loads(str(status)))
+        await client.send_event(json.loads(status))
 
 
 class BlobUploadTests(object):
