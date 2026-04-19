@@ -91,8 +91,8 @@ def deploy_for_iotedge(test_image):
     # module and device identities.  Without this pause EdgeHub's scope
     # cache may fetch identities with empty auth chains, triggering
     # "Device is out of scope" errors and a 120-second refresh cooldown.
-    print("Waiting 30 s for IoT Hub identity propagation...")
-    time.sleep(30)
+    print("Waiting 60 s for IoT Hub identity propagation...")
+    time.sleep(60)
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
     settings.leaf_device.adapter_address = settings.test_module.adapter_address
