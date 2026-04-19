@@ -55,12 +55,12 @@ namespace IO.Swagger
         public void ConfigureServices(IServiceCollection services)
         {
             // The Azure IoT C# SDK v2 serializes EdgeModuleDirectMethodRequest
-            // (and DirectMethodResponse) via System.Text.Json. The Payload
-            // property is byte[], which System.Text.Json base64-encodes by
-            // default. EdgeHub expects a raw JSON value for the payload field.
-            // Install a custom converter so byte[] is written as raw JSON.
-            Microsoft.Azure.Devices.Client.JsonSerializerSettings.Options
-                .Converters.Insert(0, new PayloadBytesJsonConverter());
+            // via System.Text.Json, which base64-encodes byte[] properties.
+            // EdgeHub expects the 'payload' field to be raw JSON.  Install a
+            // targeted modifier that only affects the payload property on
+            // EdgeModuleDirectMethodRequest and DirectMethodResponse.
+            PayloadJsonFixup.Install(
+                Microsoft.Azure.Devices.Client.JsonSerializerSettings.Options);
 
             // Add framework services.
             services
