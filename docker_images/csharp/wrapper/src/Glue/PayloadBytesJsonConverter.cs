@@ -18,6 +18,12 @@ namespace IO.Swagger.Controllers
     {
         internal static void Install(JsonSerializerOptions options)
         {
+            // The SDK v2 recently switched from Newtonsoft.Json (case-insensitive)
+            // to System.Text.Json (case-sensitive by default).  DirectMethodResponse
+            // lacks [JsonPropertyName] attributes, so EdgeHub's camelCase JSON
+            // (e.g. "status", "payload") wouldn't match PascalCase C# properties.
+            options.PropertyNameCaseInsensitive = true;
+
             // Wrap any existing resolver (the SDK uses DefaultJsonTypeInfoResolver
             // with its own modifiers).
             var existingResolver = options.TypeInfoResolver;
@@ -36,7 +42,10 @@ namespace IO.Swagger.Controllers
 
             foreach (var prop in typeInfo.Properties)
             {
-                if (prop.Name == "payload" && prop.PropertyType == typeof(byte[]))
+                // EdgeModuleDirectMethodRequest has [JsonPropertyName("payload")] → prop.Name == "payload"
+                // DirectMethodResponse has NO attribute → prop.Name == "Payload" (PascalCase)
+                if (string.Equals(prop.Name, "payload", StringComparison.OrdinalIgnoreCase)
+                    && prop.PropertyType == typeof(byte[]))
                 {
                     // Replace the default byte[] serialization with raw JSON
                     prop.CustomConverter = new RawJsonBytesConverter();
