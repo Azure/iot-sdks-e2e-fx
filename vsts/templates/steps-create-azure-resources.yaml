@@ -18,7 +18,7 @@ steps:
       . ./New-AzIotHortonTestConfig.ps1
 
       $ResourceGroupName = New-AzureResourceGroupName -OutFile "test_config/azure-resource-group-name.txt"
-      $TestEnvInfo = New-AzIotTestEnvironment -AzureLocation "${{ parameters.azure_location }}" -ResourceGroup $ResourceGroupName -NoDps -AddContainerRegistry
+      $TestEnvInfo = New-AzIotTestEnvironment -AzureLocation "${{ parameters.azure_location }}" -ResourceGroup $ResourceGroupName -NoDps -AddContainerRegistry -EnableFileUpload
       New-AzIotHortonTestConfig -TestEnvInfo $TestEnvInfo -Target bash -OutFile test_config/set_horton_env_vars.sh
   displayName: Create Azure Resources and Test Config
 
