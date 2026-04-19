@@ -373,7 +373,9 @@ class BlobUpload(object):
     @log_entry_and_exit
     async def get_storage_info_for_blob(self, blob_name):
         return await self.rest_endpoint.get_storage_info_for_blob(
-            self.connection_id, blob_name
+            self.connection_id,
+            blob_name,
+            timeout=adapter_config.default_api_timeout,
         )
 
     @log_entry_and_exit
@@ -386,6 +388,7 @@ class BlobUpload(object):
             is_success,
             status_code,
             status_description,
+            timeout=adapter_config.default_api_timeout,
         )
 
 
