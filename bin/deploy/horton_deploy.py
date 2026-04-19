@@ -9,6 +9,7 @@ from . import edge_deployment
 from . import utilities
 import argparse
 import os
+import time
 
 testMod_host_port = 8099
 
@@ -85,6 +86,13 @@ def deploy_for_iotedge(test_image):
     )
 
     edge_deployment.set_edge_configuration()
+
+    # Wait for IoT Hub to propagate auth chains for the newly created
+    # module and device identities.  Without this pause EdgeHub's scope
+    # cache may fetch identities with empty auth chains, triggering
+    # "Device is out of scope" errors and a 120-second refresh cooldown.
+    print("Waiting 30 s for IoT Hub identity propagation...")
+    time.sleep(30)
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
     settings.leaf_device.adapter_address = settings.test_module.adapter_address
