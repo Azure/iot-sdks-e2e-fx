@@ -1,9 +1,28 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
+import time
 from ..abstract_iothub_apis import AbstractServiceApi
 from ..decorators import emulate_async
 from azure.iot.hub import IoTHubRegistryManager, models
+from msrest.exceptions import HttpOperationError
+
+
+def _retry_on_not_found(fn, retries=12, delay=5):
+    """Retry a service method invocation on 404 Not Found.
+
+    In EdgeHub scenarios, IoT Hub may return 404 if EdgeHub hasn't
+    established a cloud proxy for the target device/module yet (scope
+    cache propagation delay). Retrying gives EdgeHub time to refresh.
+    """
+    for attempt in range(retries):
+        try:
+            return fn()
+        except HttpOperationError as e:
+            if "Not Found" in str(e) and attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise
 
 
 class ServiceApi(AbstractServiceApi):
@@ -26,17 +45,21 @@ class ServiceApi(AbstractServiceApi):
 
     @emulate_async
     def call_module_method(self, device_id, module_id, method_invoke_parameters):
-        return self.registry_manager.invoke_device_module_method(
-            device_id,
-            module_id,
-            models.CloudToDeviceMethod.from_dict(method_invoke_parameters),
-        ).as_dict()
+        return _retry_on_not_found(
+            lambda: self.registry_manager.invoke_device_module_method(
+                device_id,
+                module_id,
+                models.CloudToDeviceMethod.from_dict(method_invoke_parameters),
+            ).as_dict()
+        )
 
     @emulate_async
     def call_device_method(self, device_id, method_invoke_parameters):
-        return self.registry_manager.invoke_device_method(
-            device_id, models.CloudToDeviceMethod.from_dict(method_invoke_parameters)
-        ).as_dict()
+        return _retry_on_not_found(
+            lambda: self.registry_manager.invoke_device_method(
+                device_id, models.CloudToDeviceMethod.from_dict(method_invoke_parameters)
+            ).as_dict()
+        )
 
     async def send_c2d(self, device_id, message):
         if not self.amqp_service_client:
