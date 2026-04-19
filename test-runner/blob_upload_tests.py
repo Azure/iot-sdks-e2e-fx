@@ -33,10 +33,15 @@ async def move_blob_status_into_eventhub(service, client):
     a different instance of this test that's running in parallel.  we copy the update
     status into eventhub where it's available to any instance of this test.
     """
-    while True:
-        status = await service.get_blob_upload_status()
-        logger("got upload status = {}".format(status))
-        await client.send_event(json.loads(status))
+    try:
+        while True:
+            status = await service.get_blob_upload_status()
+            logger("got upload status = {}".format(status))
+            await client.send_event(json.loads(status))
+    except asyncio.CancelledError:
+        raise
+    except Exception as e:
+        logger("move_blob_status_into_eventhub failed: {}".format(e))
 
 
 class BlobUploadTests(object):
@@ -151,5 +156,5 @@ class BlobUploadTests(object):
 
             try:
                 await move_future
-            except asyncio.CancelledError:
+            except (asyncio.CancelledError, Exception):
                 pass
