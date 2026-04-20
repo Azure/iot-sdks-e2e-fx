@@ -65,19 +65,15 @@ def deploy_for_iotedge(test_image):
     )
     print("Edge device scope: {}".format(edge_device.device_scope))
 
-    # Pre-create module identities in IoT Hub BEFORE applying the deployment.
-    # This ensures EdgeHub's DeviceScopeIdentitiesCache finds them on its
-    # initial scope fetch at startup, avoiding the 120-second refresh cooldown.
+    # Do NOT pre-create module identities here.  Modules created via
+    # create_or_update_identity lack the auth-chain that IoT Hub only
+    # populates when EdgeAgent reports the deployment.  Pre-created
+    # modules end up permanently "out of scope" in EdgeHub's cache.
+    # Instead, let the deployment + EdgeAgent create them properly.
     edge_deployment.add_edge_modules(test_image)
-    iothub_service_helper.create_device_module(
-        settings.iotedge.device_id, settings.test_module.module_id
-    )
-    iothub_service_helper.create_device_module(
-        settings.iotedge.device_id, settings.friend_module.module_id
-    )
 
-    # Pre-create the leaf device BEFORE applying edge configuration so that
-    # EdgeHub's scope cache finds it on its initial fetch at startup.
+    # Pre-create the leaf device with the edge device's scope so that
+    # EdgeHub can authenticate it as a child device.
     settings.leaf_device.device_id = settings.horton.id_base + "_leaf_device"
     iothub_service_helper.create_device(
         settings.leaf_device.device_id,
@@ -86,13 +82,6 @@ def deploy_for_iotedge(test_image):
     )
 
     edge_deployment.set_edge_configuration()
-
-    # Wait for IoT Hub to propagate auth chains for the newly created
-    # module and device identities.  Without this pause EdgeHub's scope
-    # cache may fetch identities with empty auth chains, triggering
-    # "Device is out of scope" errors and a 120-second refresh cooldown.
-    print("Waiting 60 s for IoT Hub identity propagation...")
-    time.sleep(60)
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
     settings.leaf_device.adapter_address = settings.test_module.adapter_address

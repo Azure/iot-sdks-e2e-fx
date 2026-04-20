@@ -8,12 +8,13 @@ from azure.iot.hub import IoTHubRegistryManager, models
 from msrest.exceptions import HttpOperationError
 
 
-def _retry_on_not_found(fn, retries=12, delay=5):
+def _retry_on_not_found(fn, retries=3, delay=2):
     """Retry a service method invocation on 404 Not Found.
 
     In EdgeHub scenarios, IoT Hub may return 404 if EdgeHub hasn't
     established a cloud proxy for the target device/module yet (scope
     cache propagation delay). Retrying gives EdgeHub time to refresh.
+    Keep retries short to avoid exceeding the receiver-side timeout.
     """
     for attempt in range(retries):
         try:
