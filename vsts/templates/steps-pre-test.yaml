@@ -53,23 +53,48 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - bash: |
-    echo "Removing EdgeHub container to force fresh device scope cache..."
-    echo "EdgeHub persists its scope cache to RocksDB on disk. A simple"
-    echo "docker restart preserves the container filesystem, so stale"
-    echo "scope entries survive. Removing the container forces EdgeAgent"
-    echo "to recreate it with a clean filesystem."
-    docker stop edgeHub
-    docker rm edgeHub
-    echo "Waiting for EdgeAgent to recreate EdgeHub..."
-    sleep 10
-    cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
-    ./wait-for-container.sh edgeHub
-    echo "EdgeHub recreated. Waiting 60 seconds for upstream connection..."
-    echo "(EdgeHub cloud proxy setup can take 50+ seconds due to"
-    echo "SetupDesiredPropertyUpdatesAsync and scope cache sync)"
-    sleep 60
-    echo "EdgeHub recreation complete."
-  displayName: 'Recreate EdgeHub for fresh scope cache'
+    # EdgeHub's device scope cache is populated once on startup from IoT Hub.
+    # If the auth chains haven't propagated yet, the cache will be empty and
+    # all cloud operations will fail with "Device is out of scope".
+    # The cache is only fully refreshed on startup (then every 60 minutes).
+    #
+    # Strategy: recreate EdgeHub, check if it got valid scope data by looking
+    # for "was updated" in its logs. If not, wait and recreate again.
+    # This handles non-deterministic IoT Hub auth chain propagation delays.
+
+    MAX_ATTEMPTS=5
+    WAIT_BETWEEN=30
+
+    for attempt in $(seq 1 $MAX_ATTEMPTS); do
+      echo "=== EdgeHub scope cache attempt $attempt of $MAX_ATTEMPTS ==="
+
+      echo "Removing EdgeHub container..."
+      docker stop edgeHub 2>/dev/null
+      docker rm edgeHub 2>/dev/null
+
+      echo "Waiting for EdgeAgent to recreate EdgeHub..."
+      sleep 10
+      cd ${HORTON_FRAMEWORKROOT}/scripts/new/
+      ./wait-for-container.sh edgeHub
+
+      echo "Waiting ${WAIT_BETWEEN}s for EdgeHub to start and refresh scope cache..."
+      sleep $WAIT_BETWEEN
+
+      # Check if EdgeHub found valid scope identities
+      if docker logs edgeHub 2>&1 | grep -q "was updated"; then
+        echo "SUCCESS: EdgeHub scope cache has valid identities."
+        break
+      else
+        echo "EdgeHub scope cache refresh did not find valid identities."
+        if [ $attempt -lt $MAX_ATTEMPTS ]; then
+          echo "IoT Hub auth chains may not have propagated yet. Waiting 30s before retry..."
+          sleep 30
+        else
+          echo "WARNING: Exhausted $MAX_ATTEMPTS attempts. Proceeding anyway (tests may fail)."
+        fi
+      fi
+    done
+  displayName: 'Recreate EdgeHub until scope cache is valid'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - bash: 
