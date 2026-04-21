@@ -27,7 +27,7 @@ jobs:
         py312_mqtt_async_edgehub_module:             { suite: py312_mqtt_async_edgehub_module }
         py312_mqtt_async_iothub_module_and_device:   { suite: py312_mqtt_async_iothub_module_and_device }
         py313_mqtt_iothub_module_quick_drop:        { suite: py313_mqtt_iothub_module_quick_drop }
-        py311_mqtt_edgehub_module_quick_drop:        { suite: py311_mqtt_edgehub_module_quick_drop }
+        py311_mqtt_iothub_module_quick_drop:         { suite: py311_mqtt_iothub_module_quick_drop }
         py312_mqtt_iothub_device_quick_drop:         { suite: py312_mqtt_iothub_device_quick_drop }
 
   steps:
