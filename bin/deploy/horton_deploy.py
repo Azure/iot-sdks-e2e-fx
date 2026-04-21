@@ -72,16 +72,18 @@ def deploy_for_iotedge(test_image):
     # Instead, let the deployment + EdgeAgent create them properly.
     edge_deployment.add_edge_modules(test_image)
 
-    # Pre-create the leaf device with the edge device's scope so that
-    # EdgeHub can authenticate it as a child device.
+    edge_deployment.set_edge_configuration()
+
+    # Create the leaf device AFTER applying the edge configuration so
+    # IoT Hub has fully established the edge device's scope tree.
+    # Creating it before the deployment results in an empty auth chain
+    # that never gets updated ("Not changed node" on refresh).
     settings.leaf_device.device_id = settings.horton.id_base + "_leaf_device"
     iothub_service_helper.create_device(
         settings.leaf_device.device_id,
         is_edge=False,
         device_scope=edge_device.device_scope,
     )
-
-    edge_deployment.set_edge_configuration()
 
     settings.leaf_device.connection_type = "connection_string_with_edge_gateway"
     settings.leaf_device.adapter_address = settings.test_module.adapter_address
