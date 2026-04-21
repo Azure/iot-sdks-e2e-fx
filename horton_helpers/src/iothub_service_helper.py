@@ -73,13 +73,16 @@ class IoTHubServiceHelper:
             device.capabilities = DeviceCapabilities(iot_edge=True)
 
         if device_scope:
-            # Only set parent_scopes to establish the parent-child
-            # relationship.  Do NOT set device_scope to the parent's
-            # scope — device_scope is the device's OWN scope (auto-
-            # assigned by IoT Hub).  Overwriting it with the parent's
-            # scope confuses IoT Hub's auth chain computation.
+            # Both device_scope and parent_scopes must be set for leaf
+            # devices.  device_scope tells IoT Hub this device belongs to
+            # the edge device's scope, and parent_scopes provides the auth
+            # chain that EdgeHub uses for local authentication.  Without
+            # device_scope, EdgeHub's on-demand identity refresh fails with
+            # "Error while refreshing the service identity" and the leaf
+            # device gets "not authenticated locally".
+            device.device_scope = device_scope
             device.parent_scopes = [device_scope]
-            print("setting parent_scopes: {}".format(device.parent_scopes))
+            print("setting device_scope and parent_scopes: {}".format(device_scope))
 
         device = self.registry_manager.protocol.devices.create_or_update_identity(
             device_id, device
