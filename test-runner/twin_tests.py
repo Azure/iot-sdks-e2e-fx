@@ -127,20 +127,39 @@ class TwinTests(object):
         for i in range(1, 4):
             twin_sent = sample_content.make_desired_props()
 
-            logger("start waiting for patch {}".format(i))
-            patch_future = asyncio.ensure_future(
-                wait_for_desired_properties_patch(
-                    client=client, expected_twin=twin_sent
+            # EdgeHub's cloud proxy may take time to establish the desired
+            # property update subscription (SetupDesiredPropertyUpdatesAsync).
+            # If the patch is sent before the subscription is active, the
+            # notification is lost. Retry with a shorter timeout to handle this.
+            max_attempts = 3
+            patch_timeout = 60
+            for attempt in range(max_attempts):
+                logger("start waiting for patch {} (attempt {})".format(i, attempt + 1))
+                patch_future = asyncio.ensure_future(
+                    wait_for_desired_properties_patch(
+                        client=client, expected_twin=twin_sent
+                    )
                 )
-            )
-            await asyncio.sleep(3)  # wait for async call to take effect
+                await asyncio.sleep(3)  # wait for async call to take effect
 
-            logger("sending patch {}".format(i))
-            await patch_desired_props(registry, client, twin_sent)
-            logger("patch {} sent".format(i))
+                logger("sending patch {}".format(i))
+                await patch_desired_props(registry, client, twin_sent)
+                logger("patch {} sent".format(i))
 
-            await patch_future  # raises if patch not received
-            logger("patch {} received".format(i))
+                try:
+                    await asyncio.wait_for(patch_future, timeout=patch_timeout)
+                    logger("patch {} received".format(i))
+                    break
+                except asyncio.TimeoutError:
+                    patch_future.cancel()
+                    try:
+                        await patch_future
+                    except (asyncio.CancelledError, Exception):
+                        pass
+                    if attempt < max_attempts - 1:
+                        logger("patch {} timed out after {}s, retrying".format(i, patch_timeout))
+                    else:
+                        assert False, "Timed out waiting for desired property patch {} after {} attempts".format(i, max_attempts)
 
     @pytest.mark.it(
         "Can set reported properties which can be successfully retrieved by the service"
