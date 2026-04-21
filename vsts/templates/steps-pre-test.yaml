@@ -53,48 +53,29 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - bash: |
-    # EdgeHub's device scope cache is populated once on startup from IoT Hub.
-    # If the auth chains haven't propagated yet, the cache will be empty and
-    # all cloud operations will fail with "Device is out of scope".
-    # The cache is only fully refreshed on startup (then every 60 minutes).
+    # EdgeHub's device scope cache is populated on startup from IoT Hub.
+    # If the auth chains haven't propagated yet, the initial cache will be
+    # empty and cloud operations fail with "Device is out of scope".
     #
-    # Strategy: recreate EdgeHub, check if it got valid scope data by looking
-    # for "was updated" in its logs. If not, wait and recreate again.
-    # This handles non-deterministic IoT Hub auth chain propagation delays.
-
-    MAX_ATTEMPTS=5
-    WAIT_BETWEEN=30
-
-    for attempt in $(seq 1 $MAX_ATTEMPTS); do
-      echo "=== EdgeHub scope cache attempt $attempt of $MAX_ATTEMPTS ==="
-
-      echo "Removing EdgeHub container..."
-      docker stop edgeHub 2>/dev/null
-      docker rm edgeHub 2>/dev/null
-
-      echo "Waiting for EdgeAgent to recreate EdgeHub..."
-      sleep 10
-      cd ${HORTON_FRAMEWORKROOT}/scripts/new/
-      ./wait-for-container.sh edgeHub
-
-      echo "Waiting ${WAIT_BETWEEN}s for EdgeHub to start and refresh scope cache..."
-      sleep $WAIT_BETWEEN
-
-      # Check if EdgeHub found valid scope identities
-      if docker logs edgeHub 2>&1 | grep -q "was updated"; then
-        echo "SUCCESS: EdgeHub scope cache has valid identities."
-        break
-      else
-        echo "EdgeHub scope cache refresh did not find valid identities."
-        if [ $attempt -lt $MAX_ATTEMPTS ]; then
-          echo "IoT Hub auth chains may not have propagated yet. Waiting 30s before retry..."
-          sleep 30
-        else
-          echo "WARNING: Exhausted $MAX_ATTEMPTS attempts. Proceeding anyway (tests may fail)."
-        fi
-      fi
-    done
-  displayName: 'Recreate EdgeHub until scope cache is valid'
+    # We set DeviceScopeCacheRefreshRateSecs=10 in the EdgeHub config so
+    # the full scope cache refreshes every 10 seconds (default is 3600).
+    # This means even if the first refresh misses auth chains, EdgeHub
+    # will self-heal within 10 seconds.
+    #
+    # We still recreate EdgeHub once to clear any stale RocksDB state
+    # from the initial deployment startup, then wait for the scope cache
+    # to populate.
+    echo "Removing EdgeHub container to clear stale scope cache..."
+    docker stop edgeHub 2>/dev/null
+    docker rm edgeHub 2>/dev/null
+    echo "Waiting for EdgeAgent to recreate EdgeHub..."
+    sleep 10
+    cd ${HORTON_FRAMEWORKROOT}/scripts/new/
+    ./wait-for-container.sh edgeHub
+    echo "Waiting 30s for EdgeHub scope cache refresh cycle..."
+    sleep 30
+    echo "EdgeHub ready."
+  displayName: 'Recreate EdgeHub for fresh scope cache'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - bash: 
