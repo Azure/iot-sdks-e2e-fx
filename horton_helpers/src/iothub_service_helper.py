@@ -73,9 +73,13 @@ class IoTHubServiceHelper:
             device.capabilities = DeviceCapabilities(iot_edge=True)
 
         if device_scope:
-            device.device_scope = device_scope
+            # Only set parent_scopes to establish the parent-child
+            # relationship.  Do NOT set device_scope to the parent's
+            # scope — device_scope is the device's OWN scope (auto-
+            # assigned by IoT Hub).  Overwriting it with the parent's
+            # scope confuses IoT Hub's auth chain computation.
             device.parent_scopes = [device_scope]
-            print("setting parent device_scope: {}".format(device_scope))
+            print("setting parent_scopes: {}".format(device.parent_scopes))
 
         device = self.registry_manager.protocol.devices.create_or_update_identity(
             device_id, device
