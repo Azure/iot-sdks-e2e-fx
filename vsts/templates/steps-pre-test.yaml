@@ -53,15 +53,21 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
 - bash: |
-    echo "Restarting EdgeHub to force fresh device scope cache sync..."
-    docker restart edgeHub
-    echo "Waiting for EdgeHub to come back online..."
+    echo "Removing EdgeHub container to force fresh device scope cache..."
+    echo "EdgeHub persists its scope cache to RocksDB on disk. A simple"
+    echo "docker restart preserves the container filesystem, so stale"
+    echo "scope entries survive. Removing the container forces EdgeAgent"
+    echo "to recreate it with a clean filesystem."
+    docker stop edgeHub
+    docker rm edgeHub
+    echo "Waiting for EdgeAgent to recreate EdgeHub..."
+    sleep 10
     cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
     ./wait-for-container.sh edgeHub
-    echo "EdgeHub restarted. Waiting 30 seconds for upstream connection..."
+    echo "EdgeHub recreated. Waiting 30 seconds for upstream connection..."
     sleep 30
-    echo "EdgeHub restart complete."
-  displayName: 'Restart EdgeHub for fresh scope sync'
+    echo "EdgeHub recreation complete."
+  displayName: 'Recreate EdgeHub for fresh scope cache'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - bash: 
