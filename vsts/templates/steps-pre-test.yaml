@@ -64,8 +64,10 @@ steps:
     sleep 10
     cd ${HORTON_FRAMEWORKROOT}/scripts/new/ &&
     ./wait-for-container.sh edgeHub
-    echo "EdgeHub recreated. Waiting 30 seconds for upstream connection..."
-    sleep 30
+    echo "EdgeHub recreated. Waiting 60 seconds for upstream connection..."
+    echo "(EdgeHub cloud proxy setup can take 50+ seconds due to"
+    echo "SetupDesiredPropertyUpdatesAsync and scope cache sync)"
+    sleep 60
     echo "EdgeHub recreation complete."
   displayName: 'Recreate EdgeHub for fresh scope cache'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
