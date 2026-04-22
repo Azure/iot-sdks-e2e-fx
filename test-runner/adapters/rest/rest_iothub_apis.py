@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
+import asyncio
 import json
 import time
 from .generated.e2erestapi.aio import (
@@ -15,6 +16,7 @@ from ..abstract_iothub_apis import (
     AbstractServiceApi,
     AbstractRegistryApi,
 )
+from horton_logging import logger
 
 
 class ServiceConnectDisconnect(object):
@@ -79,9 +81,20 @@ class Connect(object):
     @log_entry_and_exit
     async def connect2(self):
         if self.connection_id:
-            await self.rest_endpoint.connect2(
-                self.connection_id, timeout=adapter_config.default_api_timeout
-            )
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    await self.rest_endpoint.connect2(
+                        self.connection_id, timeout=adapter_config.default_api_timeout
+                    )
+                    return
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger("connect2 attempt {} failed ({}), retrying in 5s".format(
+                            attempt + 1, e))
+                        await asyncio.sleep(5)
+                    else:
+                        raise
 
     @log_entry_and_exit
     async def reconnect(self, force_password_renewal=False):
