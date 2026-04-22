@@ -124,17 +124,27 @@ class TwinTests(object):
 
         await client.enable_twin()
 
+        # Actively verify that the twin subscription path through EdgeHub's
+        # cloud proxy is fully established before starting to test desired
+        # property patches.  During test setup, EdgeHub's cloud proxy can
+        # be rapidly recycled, leaving SetupDesiredPropertyUpdatesAsync in
+        # a retry loop that takes 45+ seconds to complete.  A successful
+        # get_twin() round-trip confirms the twin channel is live, so that
+        # subsequent desired property patches will be delivered.
+        logger("warm-up: verifying twin channel with get_twin")
+        await client.get_twin()
+        logger("warm-up: twin channel is ready")
+
         for i in range(1, 4):
             twin_sent = sample_content.make_desired_props()
 
-            # EdgeHub's cloud proxy may take time to establish the desired
-            # property update subscription (SetupDesiredPropertyUpdatesAsync).
-            # If the patch is sent before the subscription is active, the
-            # notification is lost.  We keep a single wait active and re-send
-            # the patch instead of cancelling and retrying the wait, because
-            # cancelling the REST call leaves an orphaned handler thread on
-            # the wrapper that consumes subsequent patches from the queue.
-            max_send_attempts = 4
+            # Keep a single wait future alive and re-send the patch on
+            # timeout.  Cancelling the REST call would leave an orphaned
+            # handler thread on the wrapper that consumes subsequent
+            # patches from the queue.  Total retry budget (max_send_attempts
+            # * send_interval) must stay below default_api_timeout (150s)
+            # or the underlying HTTP read_timeout will kill the future.
+            max_send_attempts = 3
             send_interval = 45
 
             logger("start waiting for patch {}".format(i))
