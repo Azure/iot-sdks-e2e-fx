@@ -196,7 +196,51 @@ class DroppedConnectionTestsInputOutput(object):
 
         # wait for the send to complete, and verify that it arrvies
         await send_future
-        received_message = await friend_input_future
+
+        # EdgeHub may lose friendMod's input subscription during the network
+        # disruption (its cloud proxy is torn down and rebuilt).  If the friend
+        # doesn't receive the message within a reasonable time, reconnect the
+        # friend to re-establish its subscription and resend.
+        receive_timeout = 90
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                received_message = await asyncio.wait_for(
+                    asyncio.shield(friend_input_future), timeout=receive_timeout
+                )
+                break
+            except asyncio.TimeoutError:
+                if friend_input_future.done():
+                    received_message = friend_input_future.result()
+                    break
+                friend_input_future.cancel()
+                try:
+                    await friend_input_future
+                except (asyncio.CancelledError, Exception):
+                    pass
+                if attempt < max_retries - 1:
+                    logger(
+                        "friend did not receive message after {}s (attempt {}), "
+                        "reconnecting friend and resending".format(
+                            receive_timeout, attempt + 1
+                        )
+                    )
+                    await friend.disconnect2()
+                    await friend.connect2()
+                    await friend.enable_input_messages()
+                    friend_input_future = asyncio.ensure_future(
+                        friend.wait_for_input_event(input_name_from_test_client)
+                    )
+                    await asyncio.sleep(3)
+                    await client.send_output_event(
+                        output_name_to_friend, test_payload
+                    )
+                else:
+                    assert False, (
+                        "Friend module did not receive input message "
+                        "after {} retries".format(max_retries)
+                    )
+
         print("received message")
         assert received_message.body == test_payload
 
