@@ -2,7 +2,6 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
-set -o pipefail
 
 echo "Checking for azure CLI"
 which az
