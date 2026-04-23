@@ -60,9 +60,7 @@ def deploy_for_iotedge(test_image):
 
     # Re-fetch the edge device to ensure device_scope is populated
     # (protocol-level create_or_update_identity may not return it)
-    edge_device = iothub_service_helper.registry_manager.get_device(
-        settings.iotedge.device_id
-    )
+    edge_device = iothub_service_helper.get_device(settings.iotedge.device_id)
     print("Edge device scope: {}".format(edge_device.device_scope))
 
     # Do NOT pre-create module identities here.  Modules created via
