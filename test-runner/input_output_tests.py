@@ -12,7 +12,13 @@ import limitations
 input_name_from_friend = "fromFriend"
 output_name_to_friend = "toFriend"
 
-sleep_time_for_listener_start = 3
+# Time to wait after enable_input_messages() before sending a message.
+# AMQP subscriptions (especially C# on EdgeHub) need additional time to
+# fully propagate through the EdgeHub routing layer before messages arrive
+# reliably.  Node MQTT subscriptions also require this gap to avoid
+# overlapping AMQP register operations.  10 seconds is chosen to be safely
+# above the observed subscription-propagation delay.
+sleep_time_for_listener_start = 10
 
 telemetry_output_name = "telemetry"
 
