@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # wait for a docker container to be running
 CONTAINER_NAME=$1
 while true; do
