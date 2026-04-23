@@ -2,6 +2,7 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import json
+import asyncio
 import time
 from .generated.e2erestapi.aio import (
     AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
@@ -247,9 +248,28 @@ class InputsAndOutputs(object):
 
     @log_entry_and_exit
     async def wait_for_input_event(self, input_name):
-        return await self.rest_endpoint.wait_for_input_message(
-            self.connection_id, input_name, timeout=adapter_config.default_api_timeout
-        )
+        # EdgeHub module routes can briefly return transient 500s while routes/listeners settle.
+        # Retry this specific wait operation a few times before surfacing the error.
+        max_attempts = 3
+        retry_delay_seconds = 2
+        for attempt in range(max_attempts):
+            try:
+                return await self.rest_endpoint.wait_for_input_message(
+                    self.connection_id,
+                    input_name,
+                    timeout=adapter_config.default_api_timeout,
+                )
+            except Exception as e:
+                error_str = str(e)
+                transient_500 = (
+                    "too many 500 error responses" in error_str
+                    or " 500 " in error_str
+                    or "(500)" in error_str
+                )
+                if transient_500 and attempt < (max_attempts - 1):
+                    await asyncio.sleep(retry_delay_seconds)
+                    continue
+                raise
 
 
 class InvokeMethods(object):
