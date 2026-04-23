@@ -249,9 +249,10 @@ class InputsAndOutputs(object):
     @log_entry_and_exit
     async def wait_for_input_event(self, input_name):
         # EdgeHub module routes can briefly return transient 500s while routes/listeners settle.
+        # Also handle read timeouts that can occur during initialization race conditions.
         # Retry this specific wait operation a few times before surfacing the error.
-        max_attempts = 3
-        retry_delay_seconds = 2
+        max_attempts = 4
+        retry_delay_seconds = 3
         for attempt in range(max_attempts):
             try:
                 return await self.rest_endpoint.wait_for_input_message(
@@ -261,12 +262,15 @@ class InputsAndOutputs(object):
                 )
             except Exception as e:
                 error_str = str(e)
-                transient_500 = (
+                transient_error = (
                     "too many 500 error responses" in error_str
                     or " 500 " in error_str
                     or "(500)" in error_str
+                    or "Read timed out" in error_str
+                    or "ReadTimeoutError" in error_str
+                    or "ConnectionError" in error_str
                 )
-                if transient_500 and attempt < (max_attempts - 1):
+                if transient_error and attempt < (max_attempts - 1):
                     await asyncio.sleep(retry_delay_seconds)
                     continue
                 raise
