@@ -250,15 +250,16 @@ class InputsAndOutputs(object):
     async def wait_for_input_event(self, input_name):
         # EdgeHub module routes can briefly return transient 500s while routes/listeners settle.
         # Also handle read timeouts that can occur during initialization race conditions.
-        # Retry this specific wait operation a few times before surfacing the error.
+        # Keep each attempt short enough that total retries stay below pytest-timeout.
         max_attempts = 4
         retry_delay_seconds = 3
+        attempt_timeout_seconds = 60
         for attempt in range(max_attempts):
             try:
                 return await self.rest_endpoint.wait_for_input_message(
                     self.connection_id,
                     input_name,
-                    timeout=adapter_config.default_api_timeout,
+                    timeout=min(adapter_config.default_api_timeout, attempt_timeout_seconds),
                 )
             except Exception as e:
                 error_str = str(e)
