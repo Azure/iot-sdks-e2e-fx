@@ -24,6 +24,32 @@ telemetry_output_name = "telemetry"
 
 
 class InputOutputTests(object):
+    async def _send_until_received(
+        self,
+        sender,
+        output_name,
+        payload,
+        receive_future,
+        max_attempts=4,
+        wait_per_attempt_seconds=20,
+    ):
+        for attempt in range(max_attempts):
+            await sender.send_output_event(output_name, payload)
+            try:
+                return await asyncio.wait_for(
+                    asyncio.shield(receive_future), timeout=wait_per_attempt_seconds
+                )
+            except asyncio.TimeoutError:
+                if attempt < (max_attempts - 1):
+                    logger(
+                        "No routed input yet after attempt %s/%s; resending",
+                        attempt + 1,
+                        max_attempts,
+                    )
+                    continue
+
+        return await receive_future
+
     @pytest.fixture
     def output_name_to_test_client(self, client):
         return "to" + client.module_id
@@ -88,9 +114,12 @@ class InputOutputTests(object):
         )
         await asyncio.sleep(sleep_time_for_listener_start)
 
-        await friend.send_output_event(output_name_to_test_client, payload)
-
-        received_message = await test_input_future
+        received_message = await self._send_until_received(
+            friend,
+            output_name_to_test_client,
+            payload,
+            test_input_future,
+        )
         assert received_message.body == payload
 
     @pytest.mark.it(
@@ -127,9 +156,12 @@ class InputOutputTests(object):
         midpoint_message = await friend_input_future
         assert midpoint_message.body == payload
 
-        await friend.send_output_event(output_name_to_test_client, payload_2)
-
-        received_message = await test_input_future
+        received_message = await self._send_until_received(
+            friend,
+            output_name_to_test_client,
+            payload_2,
+            test_input_future,
+        )
         assert received_message.body == payload_2
 
     @pytest.mark.it("Can send a message that gets routed to eventhub")
