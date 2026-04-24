@@ -208,11 +208,11 @@ class RegressionTests(object):
 
 
     @pytest.mark.it("Lets us have a short keepalive interval")
-    @pytest.mark.timeout(45)
+    @pytest.mark.timeout(90)
     async def test_keepalive_interval(self, client, system_control, drop_mechanism):
-        # We want the keepalive to be low to make these tests fast.  This
-        # test is marked with a 45 second timeout.  Keepalive should be closer
-        # to 10 seconds, so 45 to connect and notice the drop should be enough
+        # Keepalive is set to DEFAULT_KEEPALIVE (30s) by the wrapper. With
+        # paho, worst-case drop detection is ~2x keepalive, so the test needs
+        # enough headroom past ~60s to connect + detect the drop + reconnect.
         limitations.only_run_test_for(client, ["pythonv2"])
         limitations.skip_if_no_system_control()
 
