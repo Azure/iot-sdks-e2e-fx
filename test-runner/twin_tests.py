@@ -7,6 +7,7 @@ import asyncio
 import sample_content
 import limitations
 from horton_logging import logger
+from utilities import connect2_with_retry
 
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
@@ -83,13 +84,13 @@ class TwinTests(object):
     @pytest.mark.it("Can connect, enable twin, and disconnect")
     async def test_client_connect_enable_twin_disconnect(self, client):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         await client.enable_twin()
 
     @pytest.mark.it("Can get the most recent twin from the service")
     async def test_twin_desired_props(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         twin_sent = sample_content.make_desired_props()
 
@@ -120,7 +121,7 @@ class TwinTests(object):
     @pytest.mark.it("Can receive desired property patches as events")
     async def test_twin_desired_props_patch(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         await client.enable_twin()
 
@@ -186,7 +187,7 @@ class TwinTests(object):
     )
     async def test_twin_reported_props(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         properties_sent = sample_content.make_reported_props()
 
@@ -202,7 +203,7 @@ class TwinTests(object):
     )
     async def test_twin_reported_props_5_times(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         await client.enable_twin()
 

@@ -7,6 +7,7 @@ import asyncio
 import sample_content
 from horton_logging import logger
 import limitations
+from utilities import connect2_with_retry
 
 
 input_name_from_friend = "fromFriend"
@@ -29,7 +30,7 @@ class InputOutputTests(object):
     @pytest.mark.it("Can connect, enable input messages, and disconnect")
     async def test_inputoutput_connect_enable_input_messages_disconnect(self, client):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         await client.enable_input_messages()
         # BKTODO: Node breaks with edge amqpws without this.
         await asyncio.sleep(2)
@@ -40,7 +41,7 @@ class InputOutputTests(object):
     ):
         limitations.skip_test_for(client, languages="c", transports=["amqp", "amqpws"])
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
     
         payload = sample_content.make_message_payload()
 
@@ -68,7 +69,7 @@ class InputOutputTests(object):
             client, languages="c", transports=["amqp", "amqpws", "mqttws"]
         )
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         payload = sample_content.make_message_payload()
 
@@ -97,7 +98,7 @@ class InputOutputTests(object):
             client, languages="c", transports=["amqp", "amqpws", "mqttws"]
         )
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         payload = sample_content.make_message_payload()
         payload_2 = sample_content.make_message_payload()
@@ -130,7 +131,7 @@ class InputOutputTests(object):
     async def test_inputoutput_module_output_routed_upstream(self, client, eventhub):
         limitations.skip_test_for(client, languages="c", transports=["amqp", "amqpws"])
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         payload = sample_content.make_message_payload()
 

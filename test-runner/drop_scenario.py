@@ -8,6 +8,7 @@ import pytest_asyncio
 from adapters import adapter_config
 from horton_settings import settings
 from horton_logging import logger
+from utilities import connect2_with_retry
 
 try:
     async_fixture = pytest_asyncio.fixture
@@ -101,7 +102,7 @@ class NetworkGlitchClientConnected(DropScenarioBaseClass):
         self, client, drop_mechanism, system_control, test_module_transport
     ):
         async def func():
-            await client.connect2()
+            await connect2_with_retry(client)
             assert await client.get_connection_status() == "connected"
 
             await self.start_dropping(
@@ -153,7 +154,7 @@ class NetworkGlitchClientDisconnected(DropScenarioBaseClass):
         self, client, drop_mechanism, system_control, test_module_transport
     ):
         async def func():
-            await client.connect2()
+            await connect2_with_retry(client)
             assert await client.get_connection_status() == "connected"
 
             await self.start_dropping(

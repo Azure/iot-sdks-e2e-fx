@@ -35,7 +35,7 @@ echo "fetching docker logs"
 fetch-docker-logs
 [ $? -eq 0 ] || { echo "error fetching logs"; exit 1; }
 
-if [ "${deployment_type}" -eq "iotedge" ]; then
+if [ "${deployment_type}" = "iotedge" ]; then
     echo getting iotedged log
     sudo journalctl -u iotedge -n 500 -e  &> iotedged.log
     [ $? -eq 0 ] || { echo "error fetching iotedged journal"; exit 1; }

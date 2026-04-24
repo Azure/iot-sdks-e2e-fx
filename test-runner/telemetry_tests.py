@@ -9,6 +9,7 @@ import limitations
 import sample_content
 from horton_settings import settings
 from horton_logging import logger
+from utilities import connect2_with_retry
 
 
 async def wait_for_all_telemetry_messages_to_arrive(
@@ -52,7 +53,7 @@ class TelemetryTests(object):
 
         await eventhub.connect()
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         logger('sending "{}"'.format(telemetry_payload))
 
@@ -68,7 +69,7 @@ class TelemetryTests(object):
         if not limitations.can_always_overlap_telemetry_messages(client):
             pytest.skip("client's can't reliably overlap telemetry messages")
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         payloads = []
         send_futures = []
