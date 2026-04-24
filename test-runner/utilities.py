@@ -2,8 +2,32 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import ast
+import asyncio
 import random
 import string
+
+from horton_logging import logger
+
+
+async def connect2_with_retry(client, retries=3, delay=5):
+    """Retry connect2() on transient failures (e.g. MQTT CONNACK not received
+    within paho's keepalive window).  Only use in positive tests that expect
+    connect to succeed; negative/regression tests should call connect2() directly
+    so they see the real exception immediately."""
+    last_exc = None
+    for attempt in range(retries):
+        try:
+            await client.connect2()
+            return
+        except Exception as e:
+            last_exc = e
+            logger(
+                "connect2 attempt {} failed ({}); retrying in {}s".format(
+                    attempt + 1, e, delay
+                )
+            )
+            await asyncio.sleep(delay)
+    raise last_exc
 
 default_length = 64
 

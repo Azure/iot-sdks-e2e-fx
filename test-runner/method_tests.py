@@ -6,7 +6,7 @@ import pytest
 import json
 import asyncio
 import limitations
-from utilities import next_integer, next_random_string
+from utilities import next_integer, next_random_string, connect2_with_retry
 from horton_logging import logger
 
 
@@ -29,7 +29,7 @@ async def run_method_call_test(source, destination):
     method_response_body = {"responseData": next_random_string("method_response")}
 
     if limitations.needs_manual_connect(destination):
-        await destination.connect2()
+        await connect2_with_retry(destination)
     await destination.enable_methods()
 
     # start listening for method calls on the destination side
@@ -111,7 +111,7 @@ class BaseReceiveMethodCallTests(object):
     @pytest.mark.it("Can connect, enable methods, and disconnect")
     async def test_module_client_connect_enable_methods_disconnect(self, client):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         await client.enable_methods()
 
 
