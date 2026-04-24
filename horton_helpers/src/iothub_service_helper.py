@@ -75,7 +75,9 @@ class IoTHubServiceHelper:
         )
 
     def get_device_connection_string(self, device_id):
-        device = self.registry_manager.get_device(device_id)
+        device = _retry_transient(
+            lambda: self.registry_manager.get_device(device_id)
+        )
 
         primary_key = device.authentication.symmetric_key.primary_key
         return (
@@ -88,7 +90,9 @@ class IoTHubServiceHelper:
         )
 
     def get_module_connection_string(self, device_id, module_id):
-        module = self.registry_manager.get_module(device_id, module_id)
+        module = _retry_transient(
+            lambda: self.registry_manager.get_module(device_id, module_id)
+        )
 
         primary_key = module.authentication.symmetric_key.primary_key
         return (
@@ -171,14 +175,16 @@ class IoTHubServiceHelper:
 
     def try_delete_device(self, device_id):
         try:
-            self.registry_manager.delete_device(device_id)
+            _retry_transient(lambda: self.registry_manager.delete_device(device_id))
             return True
-        except HttpOperationError:
+        except (HttpOperationError, ClientRequestError):
             return False
 
     def try_delete_module(self, device_id, module_id):
         try:
-            self.registry_manager.delete_module(device_id, module_id)
+            _retry_transient(
+                lambda: self.registry_manager.delete_module(device_id, module_id)
+            )
             return True
-        except HttpOperationError:
+        except (HttpOperationError, ClientRequestError):
             return False
