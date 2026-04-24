@@ -42,9 +42,9 @@ class InputOutputTests(object):
             except asyncio.TimeoutError:
                 if attempt < (max_attempts - 1):
                     logger(
-                        "No routed input yet after attempt %s/%s; resending",
-                        attempt + 1,
-                        max_attempts,
+                        "No routed input yet after attempt {}/{}; resending".format(
+                            attempt + 1, max_attempts
+                        )
                     )
                     continue
 
