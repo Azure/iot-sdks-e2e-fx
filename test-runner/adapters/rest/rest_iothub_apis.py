@@ -2,7 +2,6 @@
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
 import json
-import asyncio
 import time
 from .generated.e2erestapi.aio import (
     AzureIOTEndToEndTestWrapperRestApi as GeneratedAsyncApi,
@@ -248,33 +247,9 @@ class InputsAndOutputs(object):
 
     @log_entry_and_exit
     async def wait_for_input_event(self, input_name):
-        # EdgeHub module routes can briefly return transient 500s while routes/listeners settle.
-        # Also handle read timeouts that can occur during initialization race conditions.
-        # Keep each attempt short enough that total retries stay below pytest-timeout.
-        max_attempts = 4
-        retry_delay_seconds = 3
-        attempt_timeout_seconds = 60
-        for attempt in range(max_attempts):
-            try:
-                return await self.rest_endpoint.wait_for_input_message(
-                    self.connection_id,
-                    input_name,
-                    timeout=min(adapter_config.default_api_timeout, attempt_timeout_seconds),
-                )
-            except Exception as e:
-                error_str = str(e)
-                transient_error = (
-                    "too many 500 error responses" in error_str
-                    or " 500 " in error_str
-                    or "(500)" in error_str
-                    or "Read timed out" in error_str
-                    or "ReadTimeoutError" in error_str
-                    or "ConnectionError" in error_str
-                )
-                if transient_error and attempt < (max_attempts - 1):
-                    await asyncio.sleep(retry_delay_seconds)
-                    continue
-                raise
+        return await self.rest_endpoint.wait_for_input_message(
+            self.connection_id, input_name, timeout=adapter_config.default_api_timeout
+        )
 
 
 class InvokeMethods(object):

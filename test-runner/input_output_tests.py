@@ -12,44 +12,12 @@ import limitations
 input_name_from_friend = "fromFriend"
 output_name_to_friend = "toFriend"
 
-# Time to wait after enable_input_messages() before sending a message.
-# AMQP subscriptions (especially C# on EdgeHub) need additional time to
-# fully propagate through the EdgeHub routing layer before messages arrive
-# reliably.  Node MQTT subscriptions also require this gap to avoid
-# overlapping AMQP register operations.  10 seconds is chosen to be safely
-# above the observed subscription-propagation delay.
-sleep_time_for_listener_start = 10
+sleep_time_for_listener_start = 3
 
 telemetry_output_name = "telemetry"
 
 
 class InputOutputTests(object):
-    async def _send_until_received(
-        self,
-        sender,
-        output_name,
-        payload,
-        receive_future,
-        max_attempts=4,
-        wait_per_attempt_seconds=20,
-    ):
-        for attempt in range(max_attempts):
-            await sender.send_output_event(output_name, payload)
-            try:
-                return await asyncio.wait_for(
-                    asyncio.shield(receive_future), timeout=wait_per_attempt_seconds
-                )
-            except asyncio.TimeoutError:
-                if attempt < (max_attempts - 1):
-                    logger(
-                        "No routed input yet after attempt {}/{}; resending".format(
-                            attempt + 1, max_attempts
-                        )
-                    )
-                    continue
-
-        return await receive_future
-
     @pytest.fixture
     def output_name_to_test_client(self, client):
         return "to" + client.module_id
@@ -114,12 +82,9 @@ class InputOutputTests(object):
         )
         await asyncio.sleep(sleep_time_for_listener_start)
 
-        received_message = await self._send_until_received(
-            friend,
-            output_name_to_test_client,
-            payload,
-            test_input_future,
-        )
+        await friend.send_output_event(output_name_to_test_client, payload)
+
+        received_message = await test_input_future
         assert received_message.body == payload
 
     @pytest.mark.it(
@@ -156,12 +121,9 @@ class InputOutputTests(object):
         midpoint_message = await friend_input_future
         assert midpoint_message.body == payload
 
-        received_message = await self._send_until_received(
-            friend,
-            output_name_to_test_client,
-            payload_2,
-            test_input_future,
-        )
+        await friend.send_output_event(output_name_to_test_client, payload_2)
+
+        received_message = await test_input_future
         assert received_message.body == payload_2
 
     @pytest.mark.it("Can send a message that gets routed to eventhub")
