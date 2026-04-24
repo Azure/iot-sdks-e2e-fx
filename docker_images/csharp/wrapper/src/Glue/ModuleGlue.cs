@@ -5,9 +5,11 @@ using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 #pragma warning disable CA1304, CA1305, CA1307 // string function could vary with locale
@@ -23,8 +25,24 @@ namespace IO.Swagger.Controllers
     internal class ModuleGlue
     {
         private static Dictionary<string, IotHubModuleClient> objectMap = new Dictionary<string, IotHubModuleClient>();
+        private static Dictionary<string, ConcurrentDictionary<string, Channel<byte[]>>> inputQueues =
+            new Dictionary<string, ConcurrentDictionary<string, Channel<byte[]>>>();
         private static int objectCount = 0;
         private const string modulePrefix = "module_";
+
+        private static Channel<byte[]> GetOrCreateInputChannel(string connectionId, string inputName)
+        {
+            ConcurrentDictionary<string, Channel<byte[]>> perConnection;
+            lock (inputQueues)
+            {
+                if (!inputQueues.TryGetValue(connectionId, out perConnection))
+                {
+                    perConnection = new ConcurrentDictionary<string, Channel<byte[]>>();
+                    inputQueues[connectionId] = perConnection;
+                }
+            }
+            return perConnection.GetOrAdd(inputName, _ => Channel.CreateUnbounded<byte[]>());
+        }
 
         public ModuleGlue()
         {
@@ -63,6 +81,10 @@ namespace IO.Swagger.Controllers
             {
                 var client = objectMap[connectionId];
                 objectMap.Remove(connectionId);
+                lock (inputQueues)
+                {
+                    inputQueues.Remove(connectionId);
+                }
                 await client.CloseAsync().ConfigureAwait(false);
                 Console.WriteLine("Disconnected successfully");
             }
@@ -75,6 +97,27 @@ namespace IO.Swagger.Controllers
         public async Task EnableInputMessagesAsync(string connectionId)
         {
             Console.WriteLine("EnableInputMessageAsync received for " + connectionId);
+            var client = objectMap[connectionId];
+
+            // Register a single, persistent handler that queues incoming messages per input name.
+            // The previous implementation registered/unregistered the handler inside each
+            // WaitForInputMessageAsync call, which caused messages that arrived before the wait
+            // started (or for a different input name than the one currently being awaited) to be
+            // silently dropped.
+            Func<IncomingMessage, Task<MessageAcknowledgement>> handler = async (msg) =>
+            {
+                Console.WriteLine("message received for input: " + msg.InputName);
+                if (string.IsNullOrEmpty(msg.InputName))
+                {
+                    return MessageAcknowledgement.Abandon;
+                }
+                var channel = GetOrCreateInputChannel(connectionId, msg.InputName);
+                await channel.Writer.WriteAsync(msg.Payload).ConfigureAwait(false);
+                return MessageAcknowledgement.Complete;
+            };
+
+            Console.WriteLine("Setting persistent input handler");
+            await client.SetIncomingMessageCallbackAsync(handler).ConfigureAwait(false);
         }
 
         public async Task EnableMethodsAsync(string connectionId)
@@ -131,31 +174,14 @@ namespace IO.Swagger.Controllers
         public async Task<EventBody> WaitForInputMessageAsync(string connectionId, string inputName)
         {
             Console.WriteLine("WaitForInputMessageAsync received for {0} with inputName {1}", connectionId, inputName);
-            var mutex = new System.Threading.SemaphoreSlim(1);
-            await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
-            byte[] bytes = null;
-            var client = objectMap[connectionId];
-            Func<IncomingMessage, Task<MessageAcknowledgement>> handler = async (msg) =>
-            {
-                Console.WriteLine("message received for input: " + msg.InputName);
-                if (msg.InputName == inputName)
-                {
-                    bytes = msg.Payload;
-                    Console.WriteLine("releasing inputMessage mutex");
-                    mutex.Release();
-                    return MessageAcknowledgement.Complete;
-                }
-                return MessageAcknowledgement.Abandon;
-            };
-            Console.WriteLine("Setting input handler");
-            await client.SetIncomingMessageCallbackAsync(handler).ConfigureAwait(false);
 
-            Console.WriteLine("Waiting for inputMessage mutex to release");
-            await mutex.WaitAsync().ConfigureAwait(false);
-            Console.WriteLine("mutex triggered.");
+            // The persistent handler installed in EnableInputMessagesAsync queues incoming
+            // messages per input name. Just read the next queued message for this input.
+            var channel = GetOrCreateInputChannel(connectionId, inputName);
 
-            // Unregister message callback
-            await client.SetIncomingMessageCallbackAsync(null).ConfigureAwait(false);
+            Console.WriteLine("Waiting for next queued message on input {0}", inputName as object);
+            byte[] bytes = await channel.Reader.ReadAsync().ConfigureAwait(false);
+            Console.WriteLine("Dequeued message for input {0}", inputName as object);
 
             string s = Encoding.UTF8.GetString(bytes);
             Console.WriteLine("message = {0}", s as object);
