@@ -2,13 +2,15 @@ parameters:
   azure_location: 'centraluseuap'
 
 steps:
+- template: steps-ensure-e2e-fx-repo.yaml
+
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'iot hub sdk service connection'
     scriptType: 'ps'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      Import-Module "$(Build.SourcesDirectory)/scripts/Azure.Iot.Sdk.Test.psm1"
+      Import-Module "$(Horton.FrameworkRoot)/scripts/Azure.Iot.Sdk.Test.psm1"
 
       $ResourceGroupName = New-AzureResourceGroupName -OutFile "test_config/azure-resource-group-name.txt"
       $TestEnvInfo = New-AzIotTestEnvironment -AzureLocation "${{ parameters.azure_location }}" -ResourceGroup $ResourceGroupName -NoDps -AddContainerRegistry -EnableFileUpload
