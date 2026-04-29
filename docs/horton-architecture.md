@@ -11,7 +11,7 @@ flowchart TB
         subgraph SETUP["Stage 1: setup  (windows-latest)"]
             direction TB
             S1["🔧 steps-create-azure-resources.yaml\nNew-AzIotTestEnvironment\n→ IoT Hub + ACR + Resource Group"]
-            S2["📝 New-AzIotHortonTestConfig.ps1\n→ set_horton_env_vars.sh"]
+            S2["📝 New-AzIotHortonTestConfig\n→ set_horton_env_vars.sh"]
             S3["📦 Publish test_config artifact"]
             S1 --> S2 --> S3
         end
@@ -90,11 +90,10 @@ Per-language gates (e.g. `gate-c.yaml`) delegate the build & test jobs to templa
 
 The `setup` stage runs `steps-create-azure-resources.yaml`, which:
 
-1. Downloads `Azure.Iot.Sdk.Test.psm1` (shared test infrastructure module)
-2. Downloads `New-AzIotHortonTestConfig.ps1` (Horton-specific config generator)
-3. Calls `New-AzIotTestEnvironment` via Azure CLI to create an IoT Hub and ACR in a new resource group
-4. Calls `New-AzIotHortonTestConfig` to generate `set_horton_env_vars.sh` with all connection strings
-5. Publishes the `test_config` artifact
+1. Imports `Azure.Iot.Sdk.Test.psm1` from `scripts/` in this repo (shared test infrastructure module, includes `New-AzIotHortonTestConfig`)
+2. Calls `New-AzIotTestEnvironment` via Azure CLI to create an IoT Hub and ACR in a new resource group
+3. Calls `New-AzIotHortonTestConfig` to generate `set_horton_env_vars.sh` with all connection strings
+4. Publishes the `test_config` artifact
 
 The `build_and_test` stage uses `steps-load-test-config.yaml` at the start of each job to:
 
@@ -436,7 +435,7 @@ Key REST endpoints exposed by each wrapper:
 | `bin/deploy/utilities.py` | Docker + shell helper functions |
 | `horton_helpers/src/horton_settings.py` | Settings management (JSON + env vars) |
 | `docker_images/{lang}/Dockerfile` | 2-phase Dockerfile per SDK language |
-| `scripts/New-AzIotHortonTestConfig.ps1` | Generates `set_horton_env_vars.sh` from Azure resources |
+| `scripts/Azure.Iot.Sdk.Test.psm1` | Shared test infra module; provides `New-AzIotHortonTestConfig` to generate `set_horton_env_vars.sh` from Azure resources |
 | `test-runner/conftest.py` | pytest configuration + settings loading |
 | `test-runner/fixtures.py` | pytest fixtures for REST client adapters (with retry logic) |
 | `test-runner/connections.py` | Client connection management |

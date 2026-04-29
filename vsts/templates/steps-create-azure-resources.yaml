@@ -1,8 +1,5 @@
 parameters:
   azure_location: 'centraluseuap'
-  # TODO: Update this URL to a stable branch/location once pipeline fixes are merged.
-  psm1_url: 'https://raw.githubusercontent.com/Azure/azure-iot-sdk-c/refs/heads/ewertons/pipelinefixes/testtools/scripts/Azure.Iot.Sdk.Test.psm1'
-  horton_config_url: 'https://raw.githubusercontent.com/Azure/iot-sdks-e2e-fx/refs/heads/ewertons/horton-fixes/scripts/New-AzIotHortonTestConfig.ps1'
 
 steps:
 - task: AzureCLI@2
@@ -11,11 +8,7 @@ steps:
     scriptType: 'ps'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      Invoke-WebRequest -Uri "${{ parameters.psm1_url }}" -OutFile ./Azure.Iot.Sdk.Test.psm1
-      Import-Module ./Azure.Iot.Sdk.Test.psm1
-
-      Invoke-WebRequest -Uri "${{ parameters.horton_config_url }}" -OutFile ./New-AzIotHortonTestConfig.ps1
-      . ./New-AzIotHortonTestConfig.ps1
+      Import-Module "$(Build.SourcesDirectory)/scripts/Azure.Iot.Sdk.Test.psm1"
 
       $ResourceGroupName = New-AzureResourceGroupName -OutFile "test_config/azure-resource-group-name.txt"
       $TestEnvInfo = New-AzIotTestEnvironment -AzureLocation "${{ parameters.azure_location }}" -ResourceGroup $ResourceGroupName -NoDps -AddContainerRegistry -EnableFileUpload
