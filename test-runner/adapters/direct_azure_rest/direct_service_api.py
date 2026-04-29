@@ -8,19 +8,27 @@ from azure.iot.hub import IoTHubRegistryManager, models
 from msrest.exceptions import HttpOperationError
 
 
-def _retry_on_not_found(fn, retries=3, delay=2):
-    """Retry a service method invocation on 404 Not Found.
+_TRANSIENT_ERROR_MARKERS = ("Not Found", "Service Unavailable")
 
-    In EdgeHub scenarios, IoT Hub may return 404 if EdgeHub hasn't
-    established a cloud proxy for the target device/module yet (scope
-    cache propagation delay). Retrying gives EdgeHub time to refresh.
+
+def _retry_on_transient(fn, retries=3, delay=2):
+    """Retry a service method invocation on transient IoT Hub errors.
+
+    Retries on:
+    - 404 Not Found: in EdgeHub scenarios IoT Hub may return 404 if
+      EdgeHub hasn't established a cloud proxy yet (scope cache
+      propagation delay).
+    - 503 Service Unavailable: transient throttling / regional service
+      blip; retry typically succeeds on next attempt.
+
     Keep retries short to avoid exceeding the receiver-side timeout.
     """
     for attempt in range(retries):
         try:
             return fn()
         except HttpOperationError as e:
-            if "Not Found" in str(e) and attempt < retries - 1:
+            msg = str(e)
+            if any(m in msg for m in _TRANSIENT_ERROR_MARKERS) and attempt < retries - 1:
                 time.sleep(delay)
             else:
                 raise
@@ -46,7 +54,7 @@ class ServiceApi(AbstractServiceApi):
 
     @emulate_async
     def call_module_method(self, device_id, module_id, method_invoke_parameters):
-        return _retry_on_not_found(
+        return _retry_on_transient(
             lambda: self.registry_manager.invoke_device_module_method(
                 device_id,
                 module_id,
@@ -56,7 +64,7 @@ class ServiceApi(AbstractServiceApi):
 
     @emulate_async
     def call_device_method(self, device_id, method_invoke_parameters):
-        return _retry_on_not_found(
+        return _retry_on_transient(
             lambda: self.registry_manager.invoke_device_method(
                 device_id, models.CloudToDeviceMethod.from_dict(method_invoke_parameters)
             ).as_dict()
