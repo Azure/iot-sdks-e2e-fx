@@ -69,6 +69,28 @@ namespace IO.Swagger
                 Converters = { new RawJsonByteArrayConverter() }
             };
 
+            // Self-test: serialize an EdgeModuleDirectMethodRequest with a known
+            // payload and log the result so we can see whether our converter is
+            // actually being picked up by JsonConvert.SerializeObject(obj).
+            try
+            {
+                var probeBytes = System.Text.Encoding.UTF8.GetBytes("{\"hello\":\"world\"}");
+                var probeReq = new EdgeModuleDirectMethodRequest("probe", probeBytes);
+                string probeJson = JsonConvert.SerializeObject(probeReq);
+                Console.WriteLine("STARTUP SELFTEST (JsonConvert.SerializeObject of EdgeModuleDirectMethodRequest):");
+                Console.WriteLine("  " + probeJson);
+                string probeJson2 = Microsoft.Azure.Devices.Client.DefaultPayloadConvention.Instance
+                    .GetType()
+                    .GetMethod("Serialize", BindingFlags.NonPublic | BindingFlags.Static)
+                    ?.Invoke(null, new object[] { probeReq }) as string;
+                Console.WriteLine("STARTUP SELFTEST (DefaultPayloadConvention.Serialize via reflection):");
+                Console.WriteLine("  " + probeJson2);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("STARTUP SELFTEST failed: " + ex);
+            }
+
             CreateWebHostBuilder(args).Build().Run();
         }
 

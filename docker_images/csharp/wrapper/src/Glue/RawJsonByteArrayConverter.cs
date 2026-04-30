@@ -43,6 +43,7 @@ namespace IO.Swagger.Controllers
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var bytes = (byte[])value;
+            Console.WriteLine($"RawJsonByteArrayConverter.WriteJson invoked: bytes.Length={bytes?.Length}");
             if (bytes == null)
             {
                 writer.WriteNull();

@@ -222,6 +222,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
             var request = GlueUtils.CreateEdgeModuleDirectMethodRequest(methodInvokeParameters);
+            Console.WriteLine("Serialized request preview: " + JsonConvert.SerializeObject(request));
             Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, request, CancellationToken.None).ConfigureAwait(false);
             Console.WriteLine("Response received:");
