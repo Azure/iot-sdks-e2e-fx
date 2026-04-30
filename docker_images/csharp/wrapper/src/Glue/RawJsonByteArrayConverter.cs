@@ -32,15 +32,26 @@ namespace IO.Swagger.Controllers
             {
                 return false;
             }
-            int dot = path.LastIndexOf('.');
-            string leaf = dot >= 0 ? path.Substring(dot + 1) : path;
-            // strip array indexer [n] if any
-            int bracket = leaf.IndexOf('[');
-            if (bracket >= 0)
+            // Match "payload" or "Payload" as ANY segment in the path, not just
+            // the leaf. When the SDK deserializes an HTTP response such as
+            //   {"status":200,"payload":{"responseData":"..."}}
+            // the Newtonsoft reader walks into `payload` and may encounter nested
+            // byte[] properties at paths like "payload.responseData". These must
+            // also be treated as raw JSON, not base64.
+            foreach (string segment in path.Split('.'))
             {
-                leaf = leaf.Substring(0, bracket);
+                string s = segment;
+                int bracket = s.IndexOf('[');
+                if (bracket >= 0)
+                {
+                    s = s.Substring(0, bracket);
+                }
+                if (s == "payload" || s == "Payload")
+                {
+                    return true;
+                }
             }
-            return leaf == "payload" || leaf == "Payload";
+            return false;
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
