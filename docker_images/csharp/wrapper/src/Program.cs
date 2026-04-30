@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore;
 // Added 1 line in merge
 using System.Diagnostics.Tracing;
+using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using IO.Swagger.Controllers;
 
@@ -26,8 +27,16 @@ namespace IO.Swagger
             // as a base64 string by default. Register a global converter that
             // treats byte[] content as raw UTF-8 JSON, so module-to-module and
             // module-to-device direct method invocations round-trip correctly.
+            //
+            // IMPORTANT: DefaultPayloadConvention's private constructor sets
+            // JsonConvert.DefaultSettings to its own (converter-less) settings.
+            // Touch DefaultPayloadConvention.Instance FIRST to trigger that
+            // constructor, then overwrite DefaultSettings so our converter wins.
+            // Preserve DateParseHandling.None for compatibility with the SDK.
+            _ = DefaultPayloadConvention.Instance;
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
             {
+                DateParseHandling = DateParseHandling.None,
                 Converters = { new RawJsonByteArrayConverter() }
             };
 
