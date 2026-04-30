@@ -63,6 +63,44 @@ namespace IO.Swagger
             {
                 Console.WriteLine("WARNING: failed to patch DefaultPayloadConvention.s_settings: " + ex);
             }
+
+            // The service SDK's IotHubServiceClient.InitializeSubclients()
+            // unconditionally overwrites JsonConvert.DefaultSettings with a
+            // delegate returning Microsoft.Azure.Devices.JsonSerializerSettingsInitializer
+            // .s_settings (which has no Converters). Inject our converter into
+            // that static settings instance too, by reflection across loaded
+            // service-SDK assemblies.
+            try
+            {
+                // Force the service SDK assembly to load so its types are
+                // available for reflection.
+                _ = typeof(Microsoft.Azure.Devices.IotHubServiceClient);
+                bool injected = false;
+                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    Type t = asm.GetType("Microsoft.Azure.Devices.JsonSerializerSettingsInitializer", throwOnError: false);
+                    if (t == null)
+                    {
+                        continue;
+                    }
+                    FieldInfo f = t.GetField("s_settings", BindingFlags.NonPublic | BindingFlags.Static);
+                    if (f?.GetValue(null) is JsonSerializerSettings svcSettings)
+                    {
+                        svcSettings.Converters.Add(new RawJsonByteArrayConverter());
+                        Console.WriteLine($"Injected RawJsonByteArrayConverter into {asm.GetName().Name}.JsonSerializerSettingsInitializer.s_settings");
+                        injected = true;
+                    }
+                }
+                if (!injected)
+                {
+                    Console.WriteLine("NOTE: Microsoft.Azure.Devices.JsonSerializerSettingsInitializer not yet loaded; will rely on DefaultPayloadConvention.s_settings injection.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("WARNING: failed to patch service JsonSerializerSettingsInitializer: " + ex);
+            }
+
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
             {
                 DateParseHandling = DateParseHandling.None,
