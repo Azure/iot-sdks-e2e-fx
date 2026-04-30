@@ -37,25 +37,6 @@ namespace IO.Swagger.Controllers
             }
         }
 
-        internal static DirectMethodServiceRequest CreateDirectMethodServiceRequest(MethodInvoke methodInvokeParameters)
-        {
-            var method = new DirectMethodServiceRequest(methodInvokeParameters.MethodName)
-            {
-                // PayloadAsObject serializes the value to JSON bytes via
-                // Newtonsoft and stores them in the wire-level Payload byte[].
-                PayloadAsObject = methodInvokeParameters.Payload,
-            };
-            if (methodInvokeParameters.ResponseTimeoutInSeconds.HasValue)
-            {
-                method.ResponseTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ResponseTimeoutInSeconds.Value);
-            }
-            if (methodInvokeParameters.ConnectTimeoutInSeconds.HasValue)
-            {
-                method.ConnectionTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ConnectTimeoutInSeconds.Value);
-            }
-            return method;
-        }
-
         internal static byte[] ObjectToBytes(object obj)
         {
             return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(obj));
