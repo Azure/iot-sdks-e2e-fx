@@ -51,7 +51,7 @@ namespace IO.Swagger.Controllers
             }
             if (!IsPayloadPath(reader.Path))
             {
-                // Fall back to default base64 byte[] behavior.
+                // Default base64 byte[] behavior for non-payload fields.
                 if (reader.TokenType == JsonToken.String)
                 {
                     return Convert.FromBase64String((string)reader.Value);
@@ -66,7 +66,12 @@ namespace IO.Swagger.Controllers
                     }
                     return bytes;
                 }
-                return null;
+                // For object/number/bool tokens at non-payload paths, mimic
+                // Newtonsoft's default failure mode (throwing JsonReaderException
+                // for byte[]) so the SDK's catch-and-fallback in
+                // DefaultPayloadConvention.GetObject<byte[]>(string) still works.
+                throw new JsonReaderException(
+                    $"Cannot convert {reader.TokenType} to byte[] at path '{reader.Path}'.");
             }
 
             if (reader.TokenType == JsonToken.String)
