@@ -4,6 +4,7 @@ using IO.Swagger.Models;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Text;
 
@@ -40,6 +41,26 @@ namespace IO.Swagger.Controllers
         internal static byte[] ObjectToBytes(object obj)
         {
             return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(obj));
+        }
+
+        // Convert a payload byte[] (UTF-8 of a JSON value) returned by the SDK
+        // into a JToken to embed in a wrapper response. Falls back to a JSON
+        // string if the bytes are not valid JSON.
+        internal static JToken PayloadBytesToJson(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+            {
+                return null;
+            }
+            string text = Encoding.UTF8.GetString(bytes);
+            try
+            {
+                return JToken.Parse(text);
+            }
+            catch (JsonException)
+            {
+                return new JValue(text);
+            }
         }
 
         internal static EdgeModuleDirectMethodRequest CreateEdgeModuleDirectMethodRequest(MethodInvoke methodInvokeParameters)
