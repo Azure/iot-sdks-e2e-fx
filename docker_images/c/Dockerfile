@@ -1,4 +1,6 @@
-FROM mcr.microsoft.com/mirror/docker/library/ubuntu:18.04
+FROM mcr.microsoft.com/mirror/docker/library/ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt update \
   && apt install --fix-missing --no-install-recommends   -y \
@@ -13,8 +15,8 @@ RUN apt update \
     gdbserver \
     openssh-server \
     ca-certificates \
-    python \
-    python-pip \
+    python3 \
+    python3-pip \
     iptables \
   &&  rm -rf /var/lib/apt/lists/*
 
@@ -48,11 +50,11 @@ RUN git clone https://github.com/Corvusoft/restbed . \
     && rm -r dependency/asio/asio/src/tests \
     && rm -r dependency/asio/asio/src/examples
 
-RUN pip install --upgrade pip 
+RUN pip3 install --upgrade pip 
 
 WORKDIR /system_control_app
 COPY ./system_control_app .
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 EXPOSE 8040
 
 # force container rebuild when switching from master to main
