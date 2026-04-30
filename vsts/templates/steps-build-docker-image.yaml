@@ -92,6 +92,12 @@ steps:
     if ( $CommitToPass -like "master" ) {
       if ($LanguageToPass -like 'pythonv2') {
         $CommitToPass="v2"
+      } elseif ($LanguageToPass -like 'csharp') {
+        # The csharp wrapper (docker_images/csharp/wrapper) was migrated to
+        # the v2 SDK API surface (IotHubServiceClient, IotHubModuleClient,
+        # IotHubClientOptions, DirectMethodServiceRequest, ...). Those types
+        # only exist on the previews/v2 branch; main is still SDK v1.x.
+        $CommitToPass="previews/v2"
       } else {
         $CommitToPass="main"
       }
