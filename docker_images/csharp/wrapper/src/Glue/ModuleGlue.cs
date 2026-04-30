@@ -298,10 +298,13 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
-                // Access the raw payload bytes directly to avoid
-                // DefaultPayloadConvention.GetObject<byte[]> which fails with
-                // our RawJsonByteArrayConverter (the converter produces bytes
-                // for a partial read, leaving trailing JSON text).
+                // Read the raw payload bytes via reflection.
+                // DirectMethodRequest.Payload is public on net10.0+ but does
+                // NOT exist on netstandard2.0, which is the target used by the
+                // Docker/SDK build.  GetPayload<byte[]>() exists but routes
+                // through DefaultPayloadConvention, which conflicts with our
+                // RawJsonByteArrayConverter.  Reflection on _payload is the
+                // only remaining option for netstandard2.0.
                 byte[] rawPayload = (byte[])typeof(DirectMethodRequest)
                     .GetField("_payload", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                     .GetValue(methodRequest);
