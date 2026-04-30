@@ -80,10 +80,18 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine(JsonConvert.SerializeObject(twin));
             var client = objectMap[connectionId];
             Debug.WriteLine("Patching twin");
-            var desiredJson = (twin.Desired as JObject).ToString();
+            // ClientTwinProperties uses Newtonsoft.Json attributes
+            // ([JsonExtensionData] backs the internal `Properties` dict).
+            // System.Text.Json ignores Newtonsoft attributes, so deserializing
+            // via STJ produces an empty desired collection and the PATCH
+            // becomes a no-op.  Use the public indexer to populate the
+            // properties from the incoming JObject.
             var clientTwin = new ClientTwin();
             clientTwin.Properties = new ClientTwinDocument();
-            clientTwin.Properties.Desired = System.Text.Json.JsonSerializer.Deserialize<ClientTwinProperties>(desiredJson);
+            foreach (var p in (twin.Desired as JObject).Properties())
+            {
+                clientTwin.Properties.Desired[p.Name] = p.Value;
+            }
             await client.Twins.UpdateAsync(deviceId, moduleId, clientTwin).ConfigureAwait(false);
             Debug.WriteLine("patch complete");
         }
