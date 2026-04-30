@@ -212,7 +212,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", GlueUtils.PayloadBytesToJson(response.GetPayloadAsBytes()))
+                new JProperty("payload", GlueUtils.PayloadBytesToJson(response.Payload))
             );
         }
 
@@ -228,7 +228,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", GlueUtils.PayloadBytesToJson(response.GetPayloadAsBytes()))
+                new JProperty("payload", GlueUtils.PayloadBytesToJson(response.Payload))
             );
         }
 
