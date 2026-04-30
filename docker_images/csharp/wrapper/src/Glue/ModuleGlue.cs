@@ -298,7 +298,14 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
-                object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(methodRequest.GetPayload()));
+                // Access the raw payload bytes directly to avoid
+                // DefaultPayloadConvention.GetObject<byte[]> which fails with
+                // our RawJsonByteArrayConverter (the converter produces bytes
+                // for a partial read, leaving trailing JSON text).
+                byte[] rawPayload = (byte[])typeof(DirectMethodRequest)
+                    .GetField("_payload", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                    .GetValue(methodRequest);
+                object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(rawPayload));
                 string received = JsonConvert.SerializeObject(new JRaw(request));
                 string expected = ((Newtonsoft.Json.Linq.JToken)requestAndResponse.RequestPayload)["payload"].ToString();
                 Console.WriteLine("request expected: " + expected);
