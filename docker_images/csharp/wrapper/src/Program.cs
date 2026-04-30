@@ -73,27 +73,41 @@ namespace IO.Swagger
             try
             {
                 // Force the service SDK assembly to load so its types are
-                // available for reflection.
-                _ = typeof(Microsoft.Azure.Devices.IotHubServiceClient);
+                // available for reflection. Using FullName forces actual use
+                // so the JIT cannot elide the typeof.
+                Type serviceClientType = typeof(Microsoft.Azure.Devices.IotHubServiceClient);
+                Console.WriteLine("Loaded service SDK assembly: " + serviceClientType.Assembly.FullName);
+
                 bool injected = false;
                 foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    Type t = asm.GetType("Microsoft.Azure.Devices.JsonSerializerSettingsInitializer", throwOnError: false);
-                    if (t == null)
+                    string asmName = asm.GetName().Name ?? "";
+                    if (!asmName.StartsWith("Microsoft.Azure.Devices", StringComparison.Ordinal))
                     {
                         continue;
                     }
-                    FieldInfo f = t.GetField("s_settings", BindingFlags.NonPublic | BindingFlags.Static);
-                    if (f?.GetValue(null) is JsonSerializerSettings svcSettings)
+                    foreach (Type t in asm.GetTypes())
                     {
-                        svcSettings.Converters.Add(new RawJsonByteArrayConverter());
-                        Console.WriteLine($"Injected RawJsonByteArrayConverter into {asm.GetName().Name}.JsonSerializerSettingsInitializer.s_settings");
-                        injected = true;
+                        if (t.Name != "JsonSerializerSettingsInitializer")
+                        {
+                            continue;
+                        }
+                        FieldInfo f = t.GetField("s_settings", BindingFlags.NonPublic | BindingFlags.Static);
+                        if (f?.GetValue(null) is JsonSerializerSettings svcSettings)
+                        {
+                            svcSettings.Converters.Add(new RawJsonByteArrayConverter());
+                            Console.WriteLine($"Injected RawJsonByteArrayConverter into {t.FullName} (assembly {asmName}).s_settings");
+                            injected = true;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Found {t.FullName} but s_settings field not accessible");
+                        }
                     }
                 }
                 if (!injected)
                 {
-                    Console.WriteLine("NOTE: Microsoft.Azure.Devices.JsonSerializerSettingsInitializer not yet loaded; will rely on DefaultPayloadConvention.s_settings injection.");
+                    Console.WriteLine("WARNING: no JsonSerializerSettingsInitializer.s_settings was patched.");
                 }
             }
             catch (Exception ex)
