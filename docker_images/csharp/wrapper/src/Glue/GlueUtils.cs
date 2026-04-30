@@ -39,10 +39,20 @@ namespace IO.Swagger.Controllers
 
         internal static DirectMethodServiceRequest CreateDirectMethodServiceRequest(MethodInvoke methodInvokeParameters)
         {
-            var method = new DirectMethodServiceRequest(methodInvokeParameters.MethodName);
-            method.SetPayloadJson(methodInvokeParameters.Payload.ToString());
-            method.ResponseTimeoutInSeconds = methodInvokeParameters.ResponseTimeoutInSeconds;
-            method.ConnectTimeoutInSeconds = methodInvokeParameters.ConnectTimeoutInSeconds;
+            var method = new DirectMethodServiceRequest(methodInvokeParameters.MethodName)
+            {
+                // PayloadAsObject serializes the value to JSON bytes via
+                // Newtonsoft and stores them in the wire-level Payload byte[].
+                PayloadAsObject = methodInvokeParameters.Payload,
+            };
+            if (methodInvokeParameters.ResponseTimeoutInSeconds.HasValue)
+            {
+                method.ResponseTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ResponseTimeoutInSeconds.Value);
+            }
+            if (methodInvokeParameters.ConnectTimeoutInSeconds.HasValue)
+            {
+                method.ConnectionTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ConnectTimeoutInSeconds.Value);
+            }
             return method;
         }
 
@@ -54,8 +64,14 @@ namespace IO.Swagger.Controllers
         internal static EdgeModuleDirectMethodRequest CreateEdgeModuleDirectMethodRequest(MethodInvoke methodInvokeParameters)
         {
             var request = new EdgeModuleDirectMethodRequest(methodInvokeParameters.MethodName, GlueUtils.ObjectToBytes(methodInvokeParameters.Payload));
-            request.ResponseTimeoutInSeconds = methodInvokeParameters.ResponseTimeoutInSeconds;
-            request.ConnectTimeoutInSeconds = methodInvokeParameters.ConnectTimeoutInSeconds;
+            if (methodInvokeParameters.ResponseTimeoutInSeconds.HasValue)
+            {
+                request.ResponseTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ResponseTimeoutInSeconds.Value);
+            }
+            if (methodInvokeParameters.ConnectTimeoutInSeconds.HasValue)
+            {
+                request.ConnectionTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ConnectTimeoutInSeconds.Value);
+            }
             return request;
         }
     }

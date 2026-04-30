@@ -63,7 +63,7 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", response.JsonPayload.GetRawText())
+                new JProperty("payload", ExtractPayloadJson(response))
             );
         }
 
@@ -79,8 +79,15 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine(JsonConvert.SerializeObject(response));
             return new JObject(
                 new JProperty("status", response.Status),
-                new JProperty("payload", response.JsonPayload.GetRawText())
+                new JProperty("payload", ExtractPayloadJson(response))
             );
+        }
+
+        // DirectMethodClientResponse.JsonPayload is internal in the v2 SDK,
+        // so reach the payload through the public TryGetPayload<T>() helper.
+        private static JToken ExtractPayloadJson(DirectMethodClientResponse response)
+        {
+            return response.TryGetPayload<JToken>(out var token) ? token : null;
         }
 
 

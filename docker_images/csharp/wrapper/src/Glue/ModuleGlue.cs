@@ -112,7 +112,7 @@ namespace IO.Swagger.Controllers
                     return MessageAcknowledgement.Abandon;
                 }
                 var channel = GetOrCreateInputChannel(connectionId, msg.InputName);
-                await channel.Writer.WriteAsync(msg.Payload).ConfigureAwait(false);
+                await channel.Writer.WriteAsync(msg.GetPayloadAsBytes()).ConfigureAwait(false);
                 return MessageAcknowledgement.Complete;
             };
 
@@ -125,7 +125,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableMethodsAsync received for " + connectionId);
         }
 
-        private PropertyCollection lastDesiredProps = null;
+        private DesiredProperties lastDesiredProps = null;
         private SemaphoreSlim desiredPropMutex = null;
 
         public async Task EnableTwinAsync(string connectionId)
@@ -133,7 +133,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableTwinAsync received for " + connectionId);
             var client = objectMap[connectionId];
 
-            Func<PropertyCollection, Task> handler = async (props) =>
+            Func<DesiredProperties, Task> handler = async (props) =>
             {
                 Console.WriteLine("patch received");
                 lastDesiredProps = props;
@@ -272,8 +272,11 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("SendTwinPatchAsync received for " + connectionId);
             Console.WriteLine(JsonConvert.SerializeObject(props));
             var client = objectMap[connectionId];
-            var reportedJson = (props.Reported as JObject).ToString();
-            var reportedProps = System.Text.Json.JsonSerializer.Deserialize<PropertyCollection>(reportedJson);
+            var reportedProps = new ReportedProperties();
+            foreach (var p in (props.Reported as JObject).Properties())
+            {
+                reportedProps[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
+            }
             await client.UpdateReportedPropertiesAsync(reportedProps).ConfigureAwait(false);
         }
 
@@ -294,7 +297,7 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
-                object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(methodRequest.Payload));
+                object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(methodRequest.GetPayload()));
                 string received = JsonConvert.SerializeObject(new JRaw(request));
                 string expected = ((Newtonsoft.Json.Linq.JToken)requestAndResponse.RequestPayload)["payload"].ToString();
                 Console.WriteLine("request expected: " + expected);
