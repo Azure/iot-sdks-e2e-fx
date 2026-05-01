@@ -15,6 +15,32 @@ get_tfm() {
     grep -oP '<TargetFrameworks?>\K[^<]+' "$1" | tr ';' '\n' | head -1
 }
 
+# ── Analyzer suppressions ──────────────────────────────────────────────
+# The .NET 10 SDK ships newer Roslyn analysers that promote certain warnings
+# to errors in SDK source we don't own.  Inject NoWarn=CA1859 into
+# Directory.Build.targets so it applies automatically to every project
+# compiled inside this container, regardless of how dotnet is invoked.
+inject_nowarn() {
+    local targets="$1/Directory.Build.targets"
+    local snippet='<PropertyGroup><NoWarn>$(NoWarn);CA1859</NoWarn></PropertyGroup>'
+    if [ -f "$targets" ]; then
+        if ! grep -q 'CA1859' "$targets"; then
+            sed -i "s|</Project>|  ${snippet}\n</Project>|" "$targets"
+            echo "Appended NoWarn=CA1859 to existing $targets"
+        fi
+    else
+        cat > "$targets" << DBEOF
+<Project>
+  ${snippet}
+</Project>
+DBEOF
+        echo "Created $targets (NoWarn CA1859)"
+    fi
+}
+inject_nowarn /sdk
+inject_nowarn /
+# ────────────────────────────────────────────────────────────────────────
+
 cd /sdk/iothub/device/src
 [ $? -eq 0 ] || { echo "cd device failed"; exit 1; }
 
