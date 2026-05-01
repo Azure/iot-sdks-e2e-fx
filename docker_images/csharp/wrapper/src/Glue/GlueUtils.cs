@@ -94,24 +94,28 @@ namespace IO.Swagger.Controllers
         ///
         /// PropertyCollection extends JsonDictionary (Dictionary&lt;string,object&gt;)
         /// but stores actual data in an internal IDictionary&lt;string,JsonElement&gt;
-        /// via STJ's [JsonExtensionData].  The base Dictionary&lt;string,object&gt;
-        /// is empty, so Newtonsoft serializes it as {}.
+        /// via STJ's [JsonExtensionData].  The base Dictionary is empty.
         ///
         /// The 'new GetEnumerator()' on JsonDictionary reads the internal
-        /// Properties and converts via FromJsonElement, yielding native types.
-        /// We copy into a plain Dictionary and serialize that via Newtonsoft.
+        /// Properties and converts via FromJsonElement, but the resulting objects
+        /// are not always serializable by Newtonsoft (e.g. produces []).
+        /// We use STJ to serialize each value since it handles JsonElement and
+        /// related types correctly, then parse into Newtonsoft JTokens.
         /// </summary>
         internal static JObject PropertyCollectionToJObject(PropertyCollection pc)
         {
-            var dict = new Dictionary<string, object>();
+            var jobj = new JObject();
             foreach (var kv in pc)
             {
-                dict[kv.Key] = kv.Value;
+                Console.WriteLine($"  PC[{kv.Key}] type={kv.Value?.GetType().FullName}");
+                // Use STJ to serialize since the values originate as JsonElement
+                // and may be wrapped in types Newtonsoft cannot handle.
+                string valueJson = System.Text.Json.JsonSerializer.Serialize(kv.Value);
+                jobj[kv.Key] = JToken.Parse(valueJson);
             }
-            dict["$version"] = pc.Version;
-            string json = JsonConvert.SerializeObject(dict);
-            Console.WriteLine("PropertyCollectionToJObject JSON: " + json);
-            return JObject.Parse(json);
+            jobj["$version"] = pc.Version;
+            Console.WriteLine("PropertyCollectionToJObject JSON: " + jobj.ToString(Formatting.None));
+            return jobj;
         }
 
         /// <summary>
