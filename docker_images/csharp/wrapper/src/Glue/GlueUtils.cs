@@ -96,23 +96,32 @@ namespace IO.Swagger.Controllers
         /// but stores actual data in an internal IDictionary&lt;string,JsonElement&gt;
         /// via STJ's [JsonExtensionData].  The base Dictionary is empty.
         ///
-        /// The 'new GetEnumerator()' on JsonDictionary reads the internal
-        /// Properties and converts via FromJsonElement, but the resulting objects
-        /// are not always serializable by Newtonsoft (e.g. produces []).
-        /// We use STJ to serialize each value since it handles JsonElement and
-        /// related types correctly, then parse into Newtonsoft JTokens.
+        /// The 'new GetEnumerator()' on JsonDictionary calls FromJsonElement which
+        /// incorrectly converts string values to empty List&lt;object&gt;.
+        /// We bypass that by reading the internal Properties dictionary directly
+        /// via reflection and using JsonElement.GetRawText() to get the original JSON.
         /// </summary>
         internal static JObject PropertyCollectionToJObject(PropertyCollection pc)
         {
             var jobj = new JObject();
-            foreach (var kv in pc)
+
+            // Access the internal Properties dictionary (IDictionary<string, JsonElement>)
+            // on the base JsonDictionary class, bypassing the buggy FromJsonElement conversion.
+            var propsProperty = pc.GetType().BaseType?.GetProperty("Properties",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            if (propsProperty != null)
             {
-                Console.WriteLine($"  PC[{kv.Key}] type={kv.Value?.GetType().FullName}");
-                // Use STJ to serialize since the values originate as JsonElement
-                // and may be wrapped in types Newtonsoft cannot handle.
-                string valueJson = System.Text.Json.JsonSerializer.Serialize(kv.Value);
-                jobj[kv.Key] = JToken.Parse(valueJson);
+                var propsDict = propsProperty.GetValue(pc) as System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement>;
+                if (propsDict != null)
+                {
+                    foreach (var kv in propsDict)
+                    {
+                        jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
+                    }
+                }
             }
+
             jobj["$version"] = pc.Version;
             Console.WriteLine("PropertyCollectionToJObject JSON: " + jobj.ToString(Formatting.None));
             return jobj;
