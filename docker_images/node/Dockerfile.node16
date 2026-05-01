@@ -11,7 +11,7 @@ RUN apt update \
 RUN update-alternatives --install /usr/bin/python python $(which python3) 50 \
 &&  update-alternatives --install /usr/bin/pip pip $(which pip3) 50 
 
-RUN npm install lerna -g
+RUN npm install lerna@^6 -g
 
 RUN pip install --upgrade pip 
 

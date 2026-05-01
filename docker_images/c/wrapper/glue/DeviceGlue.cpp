@@ -26,7 +26,7 @@ void DeviceGlue::EnableC2dMessages(std::string connectionId)
     IOTHUB_DEVICE_CLIENT_HANDLE client = (IOTHUB_DEVICE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 }
 
@@ -38,7 +38,7 @@ std::string DeviceGlue::WaitForC2dMessage(std::string connectionId)
     IOTHUB_DEVICE_CLIENT_HANDLE client = (IOTHUB_DEVICE_CLIENT_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
-        throw new std::runtime_error("client is not opened");
+        throw std::runtime_error("client is not opened");
     }
 
     message_response_struct resp;

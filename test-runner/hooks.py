@@ -69,20 +69,137 @@ def pytest_pyfunc_call(pyfuncitem):
 
 async def configure_system_control():
     if settings.test_module.capabilities.system_control_app:
-        try:
-            await connections.get_adapter(settings.system_control)
-        except Exception:
-            print(
-                "network control server is unavailable.  Either start the server or set system_control.adapter_address to '' in _horton_settings.json"
-            )
-            settings.test_module.capabilities.system_control = False
+        max_retries = 6
+        retry_delay = 10  # seconds
+        for attempt in range(1, max_retries + 1):
+            try:
+                await connections.get_adapter(settings.system_control)
+                break
+            except Exception:
+                if attempt < max_retries:
+                    print(
+                        "network control server is unavailable (attempt {}/{}). "
+                        "Retrying in {} seconds...".format(attempt, max_retries, retry_delay)
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    print(
+                        "network control server is unavailable after {} attempts. "
+                        "Either start the server or set system_control.adapter_address "
+                        "to '' in _horton_settings.json".format(max_retries)
+                    )
+                    settings.test_module.capabilities.system_control = False
 
     if settings.system_control.adapter:
         await settings.system_control.adapter.reconnect_network()
 
 
+async def wait_for_edgehub_cloud_connection():
+    """
+    Wait for EdgeHub to establish its upstream cloud connection and have a
+    populated device scope cache.
+
+    Performs two checks:
+    1. Verifies $edgeHub module connectionState is "Connected" (upstream link)
+    2. Verifies the test module twin is retrievable with a non-empty desired
+       section, confirming EdgeHub's scope cache includes the module identity.
+
+    Without both, all cloud-dependent operations (twins, telemetry, service
+    methods, upstream routing) will fail with 'Device is out of scope'.
+    """
+    if not settings.iotedge.device_id or not settings.test_module.module_id:
+        return
+
+    try:
+        from azure.iot.hub import IoTHubRegistryManager
+    except ImportError:
+        print("azure-iot-hub not installed, skipping EdgeHub cloud readiness check")
+        return
+
+    max_attempts = 24
+    retry_delay = 10  # seconds
+
+    registry_manager = IoTHubRegistryManager.from_connection_string(
+        settings.iothub.connection_string
+    )
+
+    device_id = settings.test_module.device_id
+    module_id = settings.test_module.module_id
+
+    # Phase 1: Wait for EdgeHub upstream connection
+    for attempt in range(1, max_attempts + 1):
+        try:
+            edgehub_twin = registry_manager.get_module_twin(device_id, "$edgeHub")
+            connection_state = getattr(edgehub_twin, "connection_state", None)
+            if connection_state and connection_state.lower() == "connected":
+                print(
+                    "EdgeHub upstream connection verified (connectionState=Connected "
+                    "on attempt {}/{})".format(attempt, max_attempts)
+                )
+                break
+            else:
+                state_str = connection_state or "unknown"
+                if attempt < max_attempts:
+                    print(
+                        "EdgeHub not yet connected upstream (state={}, attempt {}/{}). "
+                        "Retrying in {}s...".format(
+                            state_str, attempt, max_attempts, retry_delay
+                        )
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    print(
+                        "WARNING: EdgeHub still not connected upstream after {} attempts "
+                        "(state={}). Cloud-dependent tests may fail.".format(
+                            max_attempts, state_str
+                        )
+                    )
+        except Exception as e:
+            if attempt < max_attempts:
+                print(
+                    "EdgeHub cloud check error (attempt {}/{}): {}. "
+                    "Retrying in {}s...".format(attempt, max_attempts, e, retry_delay)
+                )
+                await asyncio.sleep(retry_delay)
+            else:
+                print(
+                    "WARNING: EdgeHub cloud readiness check failed after {} attempts. "
+                    "Cloud-dependent tests may fail. Last error: {}".format(
+                        max_attempts, e
+                    )
+                )
+
+    # Phase 2: Verify test module twin is accessible (scope cache populated)
+    print("Verifying test module {} twin is accessible...".format(module_id))
+    for attempt in range(1, max_attempts + 1):
+        try:
+            twin = registry_manager.get_module_twin(device_id, module_id)
+            if twin:
+                print(
+                    "Test module twin accessible (attempt {}/{}). "
+                    "connectionState={}".format(
+                        attempt, max_attempts,
+                        getattr(twin, "connection_state", "unknown")
+                    )
+                )
+                return
+        except Exception as e:
+            if attempt < max_attempts:
+                print(
+                    "Test module twin not accessible (attempt {}/{}): {}. "
+                    "Retrying in {}s...".format(attempt, max_attempts, e, retry_delay)
+                )
+                await asyncio.sleep(retry_delay)
+            else:
+                print(
+                    "WARNING: Test module twin check failed after {} attempts. "
+                    "Last error: {}".format(max_attempts, e)
+                )
+
+
 async def session_init():
     print(separator("SESSION INIT"))
+    await wait_for_edgehub_cloud_connection()
     await configure_system_control()
 
 

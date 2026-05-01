@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <stdexcept>
 #include "GlueUtils.h"
+#include "InternalGlue.h"
 #include "json.h"
 
 static const char* const PARSON_ERROR = "parson error";
@@ -17,7 +18,7 @@ void ThrowIfFailed(IOTHUB_CLIENT_RESULT ret, std::string functionName)
 {
     if (ret != IOTHUB_CLIENT_OK)
     {
-        throw new std::runtime_error(std::string(functionName) + " returned " + MU_ENUM_TO_STRING(IOTHUB_CLIENT_RESULT, ret));
+        throw std::runtime_error(std::string(functionName) + " returned " + MU_ENUM_TO_STRING(IOTHUB_CLIENT_RESULT, ret));
     }
 }
 
@@ -25,7 +26,7 @@ void ThrowIfFailed(IOTHUB_MESSAGING_RESULT ret, std::string functionName)
 {
     if (ret != IOTHUB_MESSAGING_OK)
     {
-        throw new std::runtime_error(std::string(functionName) + " returned " + MU_ENUM_TO_STRING(IOTHUB_MESSAGING_RESULT, ret));
+        throw std::runtime_error(std::string(functionName) + " returned " + MU_ENUM_TO_STRING(IOTHUB_MESSAGING_RESULT, ret));
     }
 }
 
@@ -51,7 +52,7 @@ IOTHUB_CLIENT_TRANSPORT_PROVIDER protocolFromTransportName(std::string transport
     else
     {
         std::string transport_string = "Unknown transport: ";
-        throw new std::runtime_error(transport_string + transportType);
+        throw std::runtime_error(transport_string + transportType);
     }
 }
 
@@ -94,19 +95,19 @@ std::string addJsonWrapperObject(std::string old_root_string, std::string wrappe
         JSON_Object* new_root_object;
         if ((old_root_value = json_parse_string(old_root_string.c_str())) == NULL)
         {
-            throw new std::runtime_error(PARSON_ERROR);
+            throw std::runtime_error(PARSON_ERROR);
         }
         else if ((new_root_value = json_value_init_object()) == NULL)
         {
-            throw new std::runtime_error(PARSON_ERROR);
+            throw std::runtime_error(PARSON_ERROR);
         }
         else if ((new_root_object = json_value_get_object(new_root_value)) == NULL)
         {
-            throw new std::runtime_error(PARSON_ERROR);
+            throw std::runtime_error(PARSON_ERROR);
         }
         else if (json_object_dotset_value(new_root_object, wrapperDotname.c_str(), old_root_value) != JSONSuccess)
         {
-            throw new std::runtime_error(PARSON_ERROR);
+            throw std::runtime_error(PARSON_ERROR);
         }
 
         new_string = json_serialize_to_string(new_root_value);
@@ -151,8 +152,9 @@ IOTHUB_MESSAGE_HANDLE stringToMessage(std::string eventBody)
 void sendEventCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback)
 {
     std::cout << "sendEventCallback called with " << MU_ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result) << std::endl;
-    std::condition_variable *cv = (std::condition_variable *)userContextCallback;
-    cv->notify_one();
+    send_event_context *ctx = (send_event_context *)userContextCallback;
+    ctx->result = result;
+    ctx->cv.notify_one();
 }
 
 

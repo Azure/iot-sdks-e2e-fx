@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
+import asyncio
 import pytest
 import pytest_asyncio
 from connections import get_adapter, create_client, cleanup_adapter
@@ -14,10 +15,32 @@ except AttributeError:
     async_fixture = pytest.fixture
 
 
+# Maximum retries when wrapper container is unreachable (e.g. after a crash/restart)
+_CREATE_CLIENT_MAX_RETRIES = 6
+_CREATE_CLIENT_RETRY_INTERVAL = 5
+
+
+async def _create_client_with_retry(obj):
+    """Call create_client with retry logic for container restarts."""
+    last_error = None
+    for attempt in range(_CREATE_CLIENT_MAX_RETRIES):
+        try:
+            await create_client(obj)
+            return
+        except (ConnectionError, OSError) as e:
+            last_error = e
+            if attempt < _CREATE_CLIENT_MAX_RETRIES - 1:
+                logger(
+                    "Container not ready (attempt {}/{}): {}. Retrying in {}s...".format(
+                        attempt + 1, _CREATE_CLIENT_MAX_RETRIES, e, _CREATE_CLIENT_RETRY_INTERVAL
+                    )
+                )
+                await asyncio.sleep(_CREATE_CLIENT_RETRY_INTERVAL)
+    raise last_error
+
+
 @async_fixture
-async def eventhub(event_loop):
-    # we need the event_loop fixture so pytest_async creates the event loop before celling this.
-    # Otherwise we get errors realted to mis-matched event loops when cleaning up this object.
+async def eventhub():
     obj = settings.eventhub
     try:
         yield await get_adapter(obj)
@@ -49,7 +72,7 @@ async def friend():
 
     if obj.device_id and obj.module_id:
         adapter = await get_adapter(obj)
-        await create_client(obj)
+        await _create_client_with_retry(obj)
     else:
         adapter = None
 
@@ -65,7 +88,7 @@ async def test_module():
 
     if obj.device_id and obj.module_id:
         adapter = await get_adapter(obj)
-        await create_client(obj)
+        await _create_client_with_retry(obj)
     else:
         adapter = None
 
@@ -81,7 +104,7 @@ async def leaf_device():
 
     if obj.device_id:
         adapter = await get_adapter(obj)
-        await create_client(obj)
+        await _create_client_with_retry(obj)
     else:
         adapter = None
 
@@ -97,7 +120,7 @@ async def test_device():
 
     if obj.device_id:
         adapter = await get_adapter(obj)
-        await create_client(obj)
+        await _create_client_with_retry(obj)
     else:
         adapter = None
 
@@ -110,6 +133,10 @@ async def test_device():
 @async_fixture
 async def system_control():
     adapter = getattr(settings.system_control, "adapter", None)
+    if adapter:
+        await adapter.set_network_destination(
+            settings.system_control.test_destination, settings.test_module.transport
+        )
     try:
         yield adapter
     finally:

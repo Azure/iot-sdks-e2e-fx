@@ -9,6 +9,7 @@ from . import edge_deployment
 from . import utilities
 import argparse
 import os
+import time
 
 testMod_host_port = 8099
 
@@ -57,10 +58,24 @@ def deploy_for_iotedge(test_image):
         settings.iotedge.device_id, is_edge=True
     )
 
+    # Re-fetch the edge device to ensure device_scope is populated
+    # (protocol-level create_or_update_identity may not return it)
+    edge_device = iothub_service_helper.get_device(settings.iotedge.device_id)
+    print("Edge device scope: {}".format(edge_device.device_scope))
+
+    # Do NOT pre-create module identities here.  Modules created via
+    # create_or_update_identity lack the auth-chain that IoT Hub only
+    # populates when EdgeAgent reports the deployment.  Pre-created
+    # modules end up permanently "out of scope" in EdgeHub's cache.
+    # Instead, let the deployment + EdgeAgent create them properly.
     edge_deployment.add_edge_modules(test_image)
+
     edge_deployment.set_edge_configuration()
 
-    # default leaf device to use test_module connection.  Fix this in conftest.py if we need to use friend_module
+    # Create the leaf device AFTER applying the edge configuration so
+    # IoT Hub has fully established the edge device's scope tree.
+    # Creating it before the deployment results in an empty auth chain
+    # that never gets updated ("Not changed node" on refresh).
     settings.leaf_device.device_id = settings.horton.id_base + "_leaf_device"
     iothub_service_helper.create_device(
         settings.leaf_device.device_id,

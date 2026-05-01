@@ -16,14 +16,14 @@ virtual_env_root="${script_dir}/_virtualenv/horton/"
 if [ ! -e ${virtual_env_root}/bin/activate ]; then
     echo "Initializing horton environment"
 
-    # Make sure we're running python 3.7 or higher
-    echo "checking for python 3.7+"
+    # Make sure we're running python 3.10 or higher
+    echo "checking for python 3.10+"
     needpython=1
     which python
     if [ $? -eq 0 ]; then
       python --version
 
-      ret=$(echo "import sys; print(sys.hexversion>0x3070000)" | python | sed -e 's/[\r\n]//g')
+      ret=$(echo "import sys; print(sys.hexversion>0x30a0000)" | python | sed -e 's/[\r\n]//g')
       echo ret="_${ret}_"
       if [ $? -ne 0 ]; then
         echo "Error getting python version"
@@ -31,13 +31,13 @@ if [ ! -e ${virtual_env_root}/bin/activate ]; then
       fi
 
       if [[ $ret == "True" ]]; then
-        echo "Python3.7+ is already installed"
+        echo "Python3.10+ is already installed"
         needpython=0
       fi
     fi
 
     if [ $needpython -eq 1 ]; then
-       echo "Python 3.7+ is required.  Please install and re-run"
+       echo "Python 3.10+ is required.  Please install and re-run"
        return 1
     fi
 

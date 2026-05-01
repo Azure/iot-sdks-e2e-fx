@@ -6,12 +6,12 @@ When running the scripts in this folder, you need to set the following environme
 
 * `IOTHUB_E2E_CONNECTION_STRING`: Connection string of the iothub that contains your edgehub instance.  This is something you have to create and set manually
 
-Additionally, you temporarily need these variables to get to the container repository.  These are available in our developer keyvault
+Additionally, you need these variables to get to the container repository.
 * `IOTHUB_E2E_REPO_ADDRESS`: Address of the docker container repository that hosts container images.
 * `IOTHUB_E2E_REPO_USER`: User name for the docker container repository that hosts container images
 * `IOTHUB_E2E_REPO_PASSWORD`: Password for the docker container repository that hosts container images
 
-The following variables can be used to customize your edge containers.  Suggested values are also in our keyvault
+The following variables can be used to customize your edge containers.
 * `IOTHUB_E2E_EDGE_PRIVATE_REGISTRY`: JSON for extra container registry credentials
 * `IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE`: image name to use for overriding default edgeAgent image
 * `IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE`: image name to use for overriding default edgeHub image

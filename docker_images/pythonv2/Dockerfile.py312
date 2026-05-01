@@ -1,4 +1,4 @@
-from mcr.microsoft.com/mirror/docker/library/python:3.10-slim-bookworm
+FROM mcr.microsoft.com/devcontainers/python:3.12-bookworm
 
 RUN apt update \
  && apt install -y \
@@ -48,6 +48,7 @@ RUN /rebuild.sh
 
 WORKDIR /wrapper
 COPY pythonv2/wrapper .
+
 RUN pip install -r requirements.txt
 RUN pip install .
 RUN pip install -e ./python_glue
@@ -57,4 +58,3 @@ ENV HORTON_COMMIT_NAME=$HORTON_COMMIT_NAME
 ENV HORTON_COMMIT_SHA=$HORTON_COMMIT_SHA
 
 ENTRYPOINT ["python", "-u", "-m", "swagger_server"]
-

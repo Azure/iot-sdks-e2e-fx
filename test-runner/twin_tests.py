@@ -7,6 +7,7 @@ import asyncio
 import sample_content
 import limitations
 from horton_logging import logger
+from utilities import connect2_with_retry
 
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
@@ -24,7 +25,8 @@ async def wait_for_reported_properties_update(*, properties_sent, client, regist
     Helper function which uses the registry to wait for reported properties
     to update to the expected value
     """
-    while True:
+    max_retries = 30
+    for retry_count in range(max_retries):
         if getattr(client, "module_id", None):
             twin_received = await registry.get_module_twin(
                 client.device_id, client.module_id
@@ -44,8 +46,11 @@ async def wait_for_reported_properties_update(*, properties_sent, client, regist
             # test passed
             return
         else:
-            logger("Twin does not match.  Sleeping for 2 seconds and retrying.")
+            logger("Twin does not match.  Sleeping for 2 seconds and retrying ({}/{}).".format(
+                retry_count + 1, max_retries))
             await asyncio.sleep(2)
+
+    assert False, "Reported properties did not match after {} retries".format(max_retries)
 
 
 async def wait_for_desired_properties_patch(*, client, expected_twin, mistakes=1):
@@ -79,13 +84,13 @@ class TwinTests(object):
     @pytest.mark.it("Can connect, enable twin, and disconnect")
     async def test_client_connect_enable_twin_disconnect(self, client):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         await client.enable_twin()
 
     @pytest.mark.it("Can get the most recent twin from the service")
     async def test_twin_desired_props(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         twin_sent = sample_content.make_desired_props()
 
@@ -95,27 +100,53 @@ class TwinTests(object):
         await asyncio.sleep(5)
         await client.enable_twin()
 
-        while True:
+        max_retries = 12
+        for retry_count in range(max_retries):
             twin_received = await client.get_twin()
 
             logger("twin sent:    " + str(twin_sent))
             logger("twin received:" + str(twin_received))
-            if twin_sent["desired"]["foo"] == twin_received["desired"]["foo"]:
-                # test passed
-                return
-            else:
-                logger("Twin does not match.  Sleeping for 5 seconds and retrying.")
-                await asyncio.sleep(5)
+            try:
+                if twin_sent["desired"]["foo"] == twin_received["desired"]["foo"]:
+                    # test passed
+                    return
+            except KeyError:
+                logger("Twin 'desired.foo' key not present yet.")
+            logger("Twin does not match.  Sleeping for 5 seconds and retrying ({}/{}).".format(
+                retry_count + 1, max_retries))
+            await asyncio.sleep(5)
+
+        assert False, "Twin desired properties did not match after {} retries".format(max_retries)
 
     @pytest.mark.it("Can receive desired property patches as events")
     async def test_twin_desired_props_patch(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         await client.enable_twin()
 
+        # Actively verify that the twin subscription path through EdgeHub's
+        # cloud proxy is fully established before starting to test desired
+        # property patches.  During test setup, EdgeHub's cloud proxy can
+        # be rapidly recycled, leaving SetupDesiredPropertyUpdatesAsync in
+        # a retry loop that takes 45+ seconds to complete.  A successful
+        # get_twin() round-trip confirms the twin channel is live, so that
+        # subsequent desired property patches will be delivered.
+        logger("warm-up: verifying twin channel with get_twin")
+        await client.get_twin()
+        logger("warm-up: twin channel is ready")
+
         for i in range(1, 4):
             twin_sent = sample_content.make_desired_props()
+
+            # Keep a single wait future alive and re-send the patch on
+            # timeout.  Cancelling the REST call would leave an orphaned
+            # handler thread on the wrapper that consumes subsequent
+            # patches from the queue.  Total retry budget (max_send_attempts
+            # * send_interval) must stay below default_api_timeout (150s)
+            # or the underlying HTTP read_timeout will kill the future.
+            max_send_attempts = 3
+            send_interval = 45
 
             logger("start waiting for patch {}".format(i))
             patch_future = asyncio.ensure_future(
@@ -125,19 +156,38 @@ class TwinTests(object):
             )
             await asyncio.sleep(3)  # wait for async call to take effect
 
-            logger("sending patch {}".format(i))
-            await patch_desired_props(registry, client, twin_sent)
-            logger("patch {} sent".format(i))
+            for attempt in range(max_send_attempts):
+                logger("sending patch {} (attempt {})".format(i, attempt + 1))
+                await patch_desired_props(registry, client, twin_sent)
+                logger("patch {} sent".format(i))
 
-            await patch_future  # raises if patch not received
-            logger("patch {} received".format(i))
+                try:
+                    await asyncio.wait_for(
+                        asyncio.shield(patch_future), timeout=send_interval
+                    )
+                    logger("patch {} received".format(i))
+                    break
+                except asyncio.TimeoutError:
+                    if patch_future.done():
+                        patch_future.result()  # propagate if it failed
+                        logger("patch {} received (late)".format(i))
+                        break
+                    if attempt < max_send_attempts - 1:
+                        logger("patch {} not received after {}s, resending".format(i, send_interval))
+                    else:
+                        patch_future.cancel()
+                        try:
+                            await patch_future
+                        except (asyncio.CancelledError, Exception):
+                            pass
+                        assert False, "Timed out waiting for desired property patch {} after {} send attempts".format(i, max_send_attempts)
 
     @pytest.mark.it(
         "Can set reported properties which can be successfully retrieved by the service"
     )
     async def test_twin_reported_props(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         properties_sent = sample_content.make_reported_props()
 
@@ -153,7 +203,7 @@ class TwinTests(object):
     )
     async def test_twin_reported_props_5_times(self, client, registry):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         await client.enable_twin()
 

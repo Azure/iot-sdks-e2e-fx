@@ -12,7 +12,7 @@ from azure.iot.device import IoTHubDeviceClient, IoTHubModuleClient, MethodRespo
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_KEEPALIVE = 8
+DEFAULT_KEEPALIVE = 30
 
 
 def get_kwargs(transport_type):

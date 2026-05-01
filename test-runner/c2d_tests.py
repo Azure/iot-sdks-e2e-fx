@@ -6,19 +6,20 @@ import pytest
 import asyncio
 import sample_content
 import limitations
+from utilities import connect2_with_retry
 
 
 class C2dTests(object):
     @pytest.mark.it("Can connect, enable C2D, and disconnect")
     async def test_client_connect_enable_c2d_disconnect(self, client):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         await client.enable_c2d()
 
     @pytest.mark.it("Can receive C2D messages from the IoTHub Service")
     async def test_device_receive_c2d(self, client, service):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         test_payload = sample_content.make_message_payload()
 

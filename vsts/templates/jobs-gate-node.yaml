@@ -1,15 +1,16 @@
 jobs:
 - job: "build_linux_amd64"
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: 'ubuntu-22.04'
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-build-docker-image.yaml
     parameters:
       variant: node18
 
 - job: "test_linux_amd64"
   pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-22.04'
   dependsOn:
     - "build_linux_amd64"
   strategy:
@@ -24,6 +25,7 @@ jobs:
       node18_amqpws_edgehub_module:   { suite: node18_amqpws_edgehub_module }
 
   steps:
+  - template: steps-load-test-config.yaml
   - template: steps-deploy-and-run-pytest.yaml
     parameters:
       forced_image: $(Horton.ForcedImage)

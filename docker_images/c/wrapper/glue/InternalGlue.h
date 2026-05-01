@@ -20,6 +20,13 @@ struct twin_callback_struct
     std::string current_complete;
 };
 
+struct send_event_context
+{
+    std::mutex m;
+    std::condition_variable cv;
+    IOTHUB_CLIENT_CONFIRMATION_RESULT result;
+};
+
 struct message_response_struct
 {
     std::mutex m;

@@ -16,8 +16,6 @@ namespace IO.Swagger
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
-            // Added 1 line in merge
-            ConsoleEventListener _listener = new ConsoleEventListener("Microsoft-Azure-");
             CreateWebHostBuilder(args).Build().Run();
         }
 

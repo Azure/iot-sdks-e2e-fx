@@ -1,10 +1,37 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
+import time
 from ..abstract_iothub_apis import AbstractServiceApi
 from ..decorators import emulate_async
-from .amqp_service_client import AmqpServiceClient
 from azure.iot.hub import IoTHubRegistryManager, models
+from msrest.exceptions import HttpOperationError
+
+
+_TRANSIENT_ERROR_MARKERS = ("Not Found", "Service Unavailable")
+
+
+def _retry_on_transient(fn, retries=3, delay=2):
+    """Retry a service method invocation on transient IoT Hub errors.
+
+    Retries on:
+    - 404 Not Found: in EdgeHub scenarios IoT Hub may return 404 if
+      EdgeHub hasn't established a cloud proxy yet (scope cache
+      propagation delay).
+    - 503 Service Unavailable: transient throttling / regional service
+      blip; retry typically succeeds on next attempt.
+
+    Keep retries short to avoid exceeding the receiver-side timeout.
+    """
+    for attempt in range(retries):
+        try:
+            return fn()
+        except HttpOperationError as e:
+            msg = str(e)
+            if any(m in msg for m in _TRANSIENT_ERROR_MARKERS) and attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise
 
 
 class ServiceApi(AbstractServiceApi):
@@ -27,26 +54,32 @@ class ServiceApi(AbstractServiceApi):
 
     @emulate_async
     def call_module_method(self, device_id, module_id, method_invoke_parameters):
-        return self.registry_manager.invoke_device_module_method(
-            device_id,
-            module_id,
-            models.CloudToDeviceMethod.from_dict(method_invoke_parameters),
-        ).as_dict()
+        return _retry_on_transient(
+            lambda: self.registry_manager.invoke_device_module_method(
+                device_id,
+                module_id,
+                models.CloudToDeviceMethod.from_dict(method_invoke_parameters),
+            ).as_dict()
+        )
 
     @emulate_async
     def call_device_method(self, device_id, method_invoke_parameters):
-        return self.registry_manager.invoke_device_method(
-            device_id, models.CloudToDeviceMethod.from_dict(method_invoke_parameters)
-        ).as_dict()
+        return _retry_on_transient(
+            lambda: self.registry_manager.invoke_device_method(
+                device_id, models.CloudToDeviceMethod.from_dict(method_invoke_parameters)
+            ).as_dict()
+        )
 
     async def send_c2d(self, device_id, message):
         if not self.amqp_service_client:
+            from .amqp_service_client import AmqpServiceClient
             self.amqp_service_client = AmqpServiceClient()
             await self.amqp_service_client.connect(self.service_connection_string)
         await self.amqp_service_client.send_to_device(device_id, message)
 
     async def get_blob_upload_status(self):
         if not self.amqp_service_client:
+            from .amqp_service_client import AmqpServiceClient
             self.amqp_service_client = AmqpServiceClient()
             await self.amqp_service_client.connect(self.service_connection_string)
         return await self.amqp_service_client.get_next_blob_status()

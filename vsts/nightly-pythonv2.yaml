@@ -2,105 +2,111 @@ name: $(BuildID)_pythonv2_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
-jobs:
-- job: "build_linux_amd64"
-  pool:
-    vmImage: 'ubuntu-20.04'
-  strategy:
-    matrix:
-      py38: { variant: py38 }
-      py37: { variant: py37 }
-      py39: { variant: py39 }
-  steps:
-  - template: templates/steps-build-docker-image.yaml
-    parameters:
-      variant: $(variant)
+stages:
+- stage: setup
+  jobs:
+  - job: create_azure_resources
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - template: templates/steps-create-azure-resources.yaml
 
-- job: "test_linux_amd64"
-  pool:
-      vmImage: 'ubuntu-20.04'
+- stage: build_and_test
+  dependsOn: setup
+  jobs:
+  - job: "build_linux_amd64"
+    pool:
+      vmImage: 'ubuntu-22.04'
+    strategy:
+      matrix:
+        py311: { variant: py311 }
+        py312: { variant: py312 }
+        py313: { variant: py313 }
+    steps:
+    - template: templates/steps-load-test-config.yaml
+    - template: templates/steps-build-docker-image.yaml
+      parameters:
+        variant: $(variant)
+
+  - job: "test_linux_amd64"
+    pool:
+        vmImage: 'ubuntu-22.04'
+    dependsOn:
+      - "build_linux_amd64"
+    strategy:
+      maxParallel: 10
+      matrix:
+        py312_mqtt_iothub_module_and_device:          { suite: py312_mqtt_iothub_module_and_device }
+        py312_mqtt_edgehub_module:                    { suite: py312_mqtt_edgehub_module }
+        py312_mqtt_iothub_module_full_drop:           { suite: py312_mqtt_iothub_module_full_drop }
+        py312_mqtt_iothub_device_full_drop:           { suite: py312_mqtt_iothub_device_full_drop }
+        py312_mqtt_edgehub_module_full_drop:          { suite: py312_mqtt_edgehub_module_full_drop }
+
+        py312_mqttws_iothub_module_and_device:        { suite: py312_mqttws_iothub_module_and_device }
+        py312_mqttws_edgehub_module:                  { suite: py312_mqttws_edgehub_module }
+        py312_mqttws_iothub_module_full_drop:         { suite: py312_mqttws_iothub_module_full_drop }
+        py312_mqttws_iothub_device_full_drop:         { suite: py312_mqttws_iothub_device_full_drop }
+        py312_mqttws_edgehub_module_full_drop:        { suite: py312_mqttws_edgehub_module_full_drop }
+
+        py312_async_mqtt_iothub_module_and_device:    { suite: py312_async_mqtt_iothub_module_and_device }
+        py312_async_mqtt_edgehub_module:              { suite: py312_async_mqtt_edgehub_module }
+        py312_async_mqtt_iothub_module_full_drop:     { suite: py312_async_mqtt_iothub_module_full_drop }
+        py312_async_mqtt_iothub_device_full_drop:     { suite: py312_async_mqtt_iothub_device_full_drop }
+        py312_async_mqtt_edgehub_module_full_drop:    { suite: py312_async_mqtt_edgehub_module_full_drop }
+
+        py312_async_mqttws_iothub_module_and_device:  { suite: py312_async_mqttws_iothub_module_and_device }
+        py312_async_mqttws_edgehub_module:            { suite: py312_async_mqttws_edgehub_module }
+        py312_async_mqttws_iothub_module_full_drop:   { suite: py312_async_mqttws_iothub_module_full_drop }
+        py312_async_mqttws_iothub_device_full_drop:   { suite: py312_async_mqttws_iothub_device_full_drop }
+        py312_async_mqttws_edgehub_module_full_drop:  { suite: py312_async_mqttws_edgehub_module_full_drop }
+
+        py313_mqtt_iothub_module_and_device:          { suite: py313_mqtt_iothub_module_and_device }
+        py313_mqtt_edgehub_module:                    { suite: py313_mqtt_edgehub_module }
+        py313_mqtt_iothub_module_full_drop:           { suite: py313_mqtt_iothub_module_full_drop }
+        py313_mqtt_iothub_device_full_drop:           { suite: py313_mqtt_iothub_device_full_drop }
+        py313_mqtt_edgehub_module_full_drop:          { suite: py313_mqtt_edgehub_module_full_drop }
+
+        py313_mqttws_iothub_module_and_device:        { suite: py313_mqttws_iothub_module_and_device }
+        py313_mqttws_edgehub_module:                  { suite: py313_mqttws_edgehub_module }
+        py313_mqttws_iothub_module_full_drop:         { suite: py313_mqttws_iothub_module_full_drop }
+        py313_mqttws_iothub_device_full_drop:         { suite: py313_mqttws_iothub_device_full_drop }
+        py313_mqttws_edgehub_module_full_drop:        { suite: py313_mqttws_edgehub_module_full_drop }
+
+        py313_async_mqtt_iothub_module_and_device:    { suite: py313_async_mqtt_iothub_module_and_device }
+        py313_async_mqtt_edgehub_module:              { suite: py313_async_mqtt_edgehub_module }
+        py313_async_mqtt_iothub_module_full_drop:     { suite: py313_async_mqtt_iothub_module_full_drop }
+        py313_async_mqtt_iothub_device_full_drop:     { suite: py313_async_mqtt_iothub_device_full_drop }
+        py313_async_mqtt_edgehub_module_full_drop:    { suite: py313_async_mqtt_edgehub_module_full_drop }
+
+        py313_async_mqttws_iothub_module_and_device:  { suite: py313_async_mqttws_iothub_module_and_device }
+        py313_async_mqttws_edgehub_module:            { suite: py313_async_mqttws_edgehub_module }
+        py313_async_mqttws_iothub_module_full_drop:   { suite: py313_async_mqttws_iothub_module_full_drop }
+        py313_async_mqttws_iothub_device_full_drop:   { suite: py313_async_mqttws_iothub_device_full_drop }
+        py313_async_mqttws_edgehub_module_full_drop:  { suite: py313_async_mqttws_edgehub_module_full_drop }
+
+        # py311: smoke-test tier — oldest supported Python, 2 jobs covering
+        # opposite corners of the matrix (sync/mqtt/iothub + async/mqttws/edgehub).
+        # Full coverage remains on py312 and py313.
+        py311_mqtt_iothub_module_and_device:           { suite: py311_mqtt_iothub_module_and_device }
+        py311_async_mqttws_edgehub_module:             { suite: py311_async_mqttws_edgehub_module }
+
+    steps:
+    - template: templates/steps-load-test-config.yaml
+    - template: templates/steps-deploy-and-run-pytest.yaml
+      parameters:
+        forced_image: $(Horton.ForcedImage)
+        suite: $(suite)
+
+- stage: cleanup
   dependsOn:
-    - "build_linux_amd64"
-  strategy:
-    maxParallel: 10
-    matrix:
-
-      py39_mqtt_iothub_module_and_device:           { suite: py39_mqtt_iothub_module_and_device }
-      py39_mqtt_edgehub_module:                     { suite: py39_mqtt_edgehub_module }
-      py39_mqtt_iothub_module_full_drop:            { suite: py39_mqtt_iothub_module_full_drop }
-      py39_mqtt_iothub_device_full_drop:            { suite: py39_mqtt_iothub_device_full_drop }
-      py39_mqtt_edgehub_module_full_drop:           { suite: py39_mqtt_edgehub_module_full_drop }
-
-      py39_mqttws_iothub_module_and_device:         { suite: py39_mqttws_iothub_module_and_device }
-      py39_mqttws_edgehub_module:                   { suite: py39_mqttws_edgehub_module }
-      py39_mqttws_iothub_module_full_drop:          { suite: py39_mqttws_iothub_module_full_drop }
-      py39_mqttws_iothub_device_full_drop:          { suite: py39_mqttws_iothub_device_full_drop }
-      py39_mqttws_edgehub_module_full_drop:         { suite: py39_mqttws_edgehub_module_full_drop }
-
-      py39_async_mqtt_iothub_module_and_device:     { suite: py39_async_mqtt_iothub_module_and_device }
-      py39_async_mqtt_edgehub_module:               { suite: py39_async_mqtt_edgehub_module }
-      py39_async_mqtt_iothub_module_full_drop:      { suite: py39_async_mqtt_iothub_module_full_drop }
-      py39_async_mqtt_iothub_device_full_drop:      { suite: py39_async_mqtt_iothub_device_full_drop }
-      py39_async_mqtt_edgehub_module_full_drop:     { suite: py39_async_mqtt_edgehub_module_full_drop }
-
-      py39_async_mqttws_iothub_module_and_device:   { suite: py39_async_mqttws_iothub_module_and_device }
-      py39_async_mqttws_edgehub_module:             { suite: py39_async_mqttws_edgehub_module }
-      py39_async_mqttws_iothub_module_full_drop:    { suite: py39_async_mqttws_iothub_module_full_drop }
-      py39_async_mqttws_iothub_device_full_drop:    { suite: py39_async_mqttws_iothub_device_full_drop }
-      py39_async_mqttws_edgehub_module_full_drop:   { suite: py39_async_mqttws_edgehub_module_full_drop }
-
-      py37_mqtt_iothub_module_and_device:           { suite: py37_mqtt_iothub_module_and_device }
-      py37_mqtt_edgehub_module:                     { suite: py37_mqtt_edgehub_module }
-      py37_mqtt_iothub_module_full_drop:            { suite: py37_mqtt_iothub_module_full_drop }
-      py37_mqtt_iothub_device_full_drop:            { suite: py37_mqtt_iothub_device_full_drop }
-      py37_mqtt_edgehub_module_full_drop:           { suite: py37_mqtt_edgehub_module_full_drop }
-
-      py37_mqttws_iothub_module_and_device:         { suite: py37_mqttws_iothub_module_and_device }
-      py37_mqttws_edgehub_module:                   { suite: py37_mqttws_edgehub_module }
-      py37_mqttws_iothub_module_full_drop:          { suite: py37_mqttws_iothub_module_full_drop }
-      py37_mqttws_iothub_device_full_drop:          { suite: py37_mqttws_iothub_device_full_drop }
-      py37_mqttws_edgehub_module_full_drop:         { suite: py37_mqttws_edgehub_module_full_drop }
-
-      py37_async_mqtt_iothub_module_and_device:     { suite: py37_async_mqtt_iothub_module_and_device }
-      py37_async_mqtt_edgehub_module:               { suite: py37_async_mqtt_edgehub_module }
-      py37_async_mqtt_iothub_module_full_drop:      { suite: py37_async_mqtt_iothub_module_full_drop }
-      py37_async_mqtt_iothub_device_full_drop:      { suite: py37_async_mqtt_iothub_device_full_drop }
-      py37_async_mqtt_edgehub_module_full_drop:     { suite: py37_async_mqtt_edgehub_module_full_drop }
-
-      py37_async_mqttws_iothub_module_and_device:   { suite: py37_async_mqttws_iothub_module_and_device }
-      py37_async_mqttws_edgehub_module:             { suite: py37_async_mqttws_edgehub_module }
-      py37_async_mqttws_iothub_module_full_drop:    { suite: py37_async_mqttws_iothub_module_full_drop }
-      py37_async_mqttws_iothub_device_full_drop:    { suite: py37_async_mqttws_iothub_device_full_drop }
-      py37_async_mqttws_edgehub_module_full_drop:   { suite: py37_async_mqttws_edgehub_module_full_drop }
-
-      py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
-      py38_mqtt_edgehub_module:                     { suite: py38_mqtt_edgehub_module }
-      py38_mqtt_iothub_module_full_drop:            { suite: py38_mqtt_iothub_module_full_drop }
-      py38_mqtt_iothub_device_full_drop:            { suite: py38_mqtt_iothub_device_full_drop }
-      py38_mqtt_edgehub_module_full_drop:           { suite: py38_mqtt_edgehub_module_full_drop }
-
-      py38_mqttws_iothub_module_and_device:         { suite: py38_mqttws_iothub_module_and_device }
-      py38_mqttws_edgehub_module:                   { suite: py38_mqttws_edgehub_module }
-      py38_mqttws_iothub_module_full_drop:          { suite: py38_mqttws_iothub_module_full_drop }
-      py38_mqttws_iothub_device_full_drop:          { suite: py38_mqttws_iothub_device_full_drop }
-      py38_mqttws_edgehub_module_full_drop:         { suite: py38_mqttws_edgehub_module_full_drop }
-
-      py38_async_mqtt_iothub_module_and_device:     { suite: py38_async_mqtt_iothub_module_and_device }
-      py38_async_mqtt_edgehub_module:               { suite: py38_async_mqtt_edgehub_module }
-      py38_async_mqtt_iothub_module_full_drop:      { suite: py38_async_mqtt_iothub_module_full_drop }
-      py38_async_mqtt_iothub_device_full_drop:      { suite: py38_async_mqtt_iothub_device_full_drop }
-      py38_async_mqtt_edgehub_module_full_drop:     { suite: py38_async_mqtt_edgehub_module_full_drop }
-
-      py38_async_mqttws_iothub_module_and_device:   { suite: py38_async_mqttws_iothub_module_and_device }
-      py38_async_mqttws_edgehub_module:             { suite: py38_async_mqttws_edgehub_module }
-      py38_async_mqttws_iothub_module_full_drop:    { suite: py38_async_mqttws_iothub_module_full_drop }
-      py38_async_mqttws_iothub_device_full_drop:    { suite: py38_async_mqttws_iothub_device_full_drop }
-      py38_async_mqttws_edgehub_module_full_drop:   { suite: py38_async_mqttws_edgehub_module_full_drop }
-
-
-  steps:
-  - template: templates/steps-deploy-and-run-pytest.yaml
-    parameters:
-      forced_image: $(Horton.ForcedImage)
-      suite: $(suite)
+  - setup
+  - build_and_test
+  condition: always()
+  jobs:
+  - job: destroy_azure_resource_group
+    condition: always()
+    pool:
+      vmImage: 'ubuntu-24.04'
+    steps:
+    - template: templates/steps-destroy-azure-resources.yaml
 

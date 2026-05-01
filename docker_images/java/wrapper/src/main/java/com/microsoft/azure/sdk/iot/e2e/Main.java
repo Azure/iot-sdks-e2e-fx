@@ -16,6 +16,7 @@ public class Main {
                 System.out.println("Listening on port " + myVerticle.getServerPort());
             } else {
                 System.out.println("Deployment failed!");
+                res.cause().printStackTrace();
             }
         });
     }

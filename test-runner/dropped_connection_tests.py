@@ -8,6 +8,7 @@ from twin_tests import wait_for_reported_properties_update
 from horton_logging import logger
 import sample_content
 import limitations
+from utilities import connect2_with_retry
 
 
 telemetry_output_name = "telemetry"
@@ -18,20 +19,20 @@ class DroppedConnectionTestsBase(object):
     @pytest.mark.it("Shows if the client is connected or disconnected")
     async def test_connection_status(self, client):
 
-        await client.connect2()
+        await connect2_with_retry(client)
         assert await client.get_connection_status() == "connected"
 
         await client.disconnect2()
         assert await client.get_connection_status() == "disconnected"
 
-        await client.connect2()
+        await connect2_with_retry(client)
         assert await client.get_connection_status() == "connected"
 
     @pytest.mark.it("Can reconnect after dropped connection")
     async def test_client_dropped_connection(
         self, client, system_control, drop_mechanism, test_module_transport
     ):
-        await client.connect2()
+        await connect2_with_retry(client)
         assert await client.get_connection_status() == "connected"
 
         await self.start_dropping(
@@ -77,7 +78,7 @@ class DroppedConnectionTestsC2d(object):
         self, client, service, before_api_call, after_api_call
     ):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         payload = sample_content.make_message_payload()
 
         await client.enable_c2d()
@@ -101,7 +102,7 @@ class DroppedConnectionTestsC2d(object):
         self, client, service, before_api_call, after_api_call
     ):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         # 1st call
         payload = sample_content.make_message_payload()
@@ -135,7 +136,7 @@ class DroppedConnectionTestsTwin(object):
         self, client, before_api_call, after_api_call, registry
     ):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         await client.patch_twin(sample_content.make_reported_props())
 
         await before_api_call()
@@ -153,7 +154,7 @@ class DroppedConnectionTestsTwin(object):
         self, client, before_api_call, after_api_call
     ):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
     
         await client.get_twin()
 
@@ -180,7 +181,7 @@ class DroppedConnectionTestsInputOutput(object):
         after_api_call,
     ):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         test_payload = sample_content.make_message_payload()
 
@@ -196,7 +197,51 @@ class DroppedConnectionTestsInputOutput(object):
 
         # wait for the send to complete, and verify that it arrvies
         await send_future
-        received_message = await friend_input_future
+
+        # EdgeHub may lose friendMod's input subscription during the network
+        # disruption (its cloud proxy is torn down and rebuilt).  If the friend
+        # doesn't receive the message within a reasonable time, reconnect the
+        # friend to re-establish its subscription and resend.
+        receive_timeout = 90
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                received_message = await asyncio.wait_for(
+                    asyncio.shield(friend_input_future), timeout=receive_timeout
+                )
+                break
+            except asyncio.TimeoutError:
+                if friend_input_future.done():
+                    received_message = friend_input_future.result()
+                    break
+                friend_input_future.cancel()
+                try:
+                    await friend_input_future
+                except (asyncio.CancelledError, Exception):
+                    pass
+                if attempt < max_retries - 1:
+                    logger(
+                        "friend did not receive message after {}s (attempt {}), "
+                        "reconnecting friend and resending".format(
+                            receive_timeout, attempt + 1
+                        )
+                    )
+                    await friend.disconnect2()
+                    await connect2_with_retry(friend)
+                    await friend.enable_input_messages()
+                    friend_input_future = asyncio.ensure_future(
+                        friend.wait_for_input_event(input_name_from_test_client)
+                    )
+                    await asyncio.sleep(3)
+                    await client.send_output_event(
+                        output_name_to_friend, test_payload
+                    )
+                else:
+                    assert False, (
+                        "Friend module did not receive input message "
+                        "after {} retries".format(max_retries)
+                    )
+
         print("received message")
         assert received_message.body == test_payload
 
@@ -205,7 +250,7 @@ class DroppedConnectionTestsInputOutput(object):
         self, client, eventhub, before_api_call, after_api_call
     ):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
 
         start_listening_time = datetime.datetime.utcnow() - datetime.timedelta(
             seconds=30

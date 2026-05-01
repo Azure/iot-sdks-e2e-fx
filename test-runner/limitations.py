@@ -103,4 +103,4 @@ def only_run_test_on_iothub_device(client):
 
 
 def needs_manual_connect(client):
-    return client.settings.language == "pythonv2"
+    return getattr(getattr(client, 'capabilities', None), 'v2_connect_group', False)

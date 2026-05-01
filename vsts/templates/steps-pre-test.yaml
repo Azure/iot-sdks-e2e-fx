@@ -52,6 +52,40 @@ steps:
   displayName: '30 seconds to start up'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'))
 
+- bash: |
+    # IoT Hub takes 2-164+ seconds (unpredictable) to propagate auth
+    # chains for a newly created edge device scope tree.  EdgeHub cannot
+    # create cloud proxies for leaf devices until this propagation
+    # completes.  With DeviceScopeCacheRefreshRateSecs=10 EdgeHub polls
+    # IoT Hub every 10 seconds, so it will pick up the auth chains as
+    # soon as they're available.
+    #
+    # Instead of destroying EdgeHub (cold start = restart the clock on
+    # scope cache population), we keep the original instance running and
+    # poll its logs until we see testMod in the scope cache — this means
+    # the full scope tree has propagated and all identities (including
+    # the leaf device) have valid auth chains.
+    #
+    # This adaptive wait exits instantly when propagation is fast (2s)
+    # and waits up to 5 minutes in the worst case, avoiding both wasted
+    # time and premature test starts.
+    echo "Waiting for EdgeHub scope cache to be fully populated..."
+    MAX_WAIT=30  # 30 x 10s = 5 minutes max
+    for i in $(seq 1 $MAX_WAIT); do
+      if docker logs edgeHub 2>&1 | grep -qE '(Add|Not changed) node: .*/testMod'; then
+        echo "EdgeHub scope cache ready (testMod found after $((i * 10 - 10))s)"
+        break
+      fi
+      if [ "$i" -eq "$MAX_WAIT" ]; then
+        echo "WARNING: EdgeHub scope cache not fully populated after $((MAX_WAIT * 10))s. Proceeding anyway."
+      else
+        echo "Scope cache not yet populated (attempt $i/$MAX_WAIT). Waiting 10s..."
+        sleep 10
+      fi
+    done
+  displayName: 'Wait for EdgeHub scope cache propagation'
+  condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
+
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton get_credentials
   displayName: 'Get credentials'

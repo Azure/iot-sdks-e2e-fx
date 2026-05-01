@@ -2,45 +2,71 @@ name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)
 variables:
   Horton.FrameworkRoot: $(Build.SourcesDirectory)
 
-jobs:
-- job: "build_linux_amd64"
-  pool:
-    vmImage: 'ubuntu-20.04'
-  strategy:
-    matrix:
-        node18:  { variant: node18 }
-        c:      { language: c }
-        java:   { language: java }
-        csharp: { language: csharp }
-        py38:   { variant: py38 }
-  steps:
-  - template: templates/steps-build-docker-image.yaml
-    parameters:
-      language: $(language)
-      variant: $(variant)
+stages:
+- stage: setup
+  jobs:
+  - job: create_azure_resources
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - template: templates/steps-create-azure-resources.yaml
 
-- job: "test_linux_amd64"
-  pool:
-      vmImage: 'ubuntu-20.04'
+- stage: build_and_test
+  dependsOn: setup
+  jobs:
+  - job: "build_linux_amd64"
+    pool:
+      vmImage: 'ubuntu-22.04'
+    strategy:
+      matrix:
+          node18:  { variant: node18 }
+          c:      { language: c }
+          java:   { language: java }
+          csharp: { language: csharp }
+          py311:  { variant: py311 }
+    steps:
+    - template: templates/steps-load-test-config.yaml
+    - template: templates/steps-build-docker-image.yaml
+      parameters:
+        language: $(language)
+        variant: $(variant)
+
+  - job: "test_linux_amd64"
+    pool:
+        vmImage: 'ubuntu-22.04'
+    dependsOn:
+      - "build_linux_amd64"
+    strategy:
+      matrix:
+        node18_amqp_iothub_module_and_device:              { suite: node18_amqp_iothub_module_and_device }
+        node18_amqpws_edgehub_module:           { suite: node18_amqpws_edgehub_module }
+        node18_mqttws_edgehub_module:           { suite: node18_mqttws_edgehub_module }
+        c_mqtt_iothub_module_and_device:       { suite: c_mqtt_iothub_module_and_device }
+        c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
+        java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
+        csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
+        csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
+        py311_mqtt_iothub_module_and_device_async:    { suite: py311_mqtt_iothub_module_and_device_async }
+        py311_mqtt_iothub_module_and_device:          { suite: py311_mqtt_iothub_module_and_device }
+        py311_mqtt_edgehub_module_async:              { suite: py311_mqtt_edgehub_module_async }
+        py311_mqtt_edgehub_module:                    { suite: py311_mqtt_edgehub_module }
+        py311_mqtt_iothub_module_quick_drop:          { suite: py311_mqtt_iothub_device_quick_drop }
+    steps:
+    - template: templates/steps-load-test-config.yaml
+    - template: templates/steps-deploy-and-run-pytest.yaml
+      parameters:
+        suite: $(suite)
+
+- stage: cleanup
   dependsOn:
-    - "build_linux_amd64"
-  strategy:
-    matrix:
-      node18_amqp_iothub_module_and_device:              { suite: node18_amqp_iothub_module_and_device }
-      node18_amqpws_edgehub_module:           { suite: node18_amqpws_edgehub_module }
-      node18_mqttws_edgehub_module:           { suite: node18_mqttws_edgehub_module }
-      c_mqtt_iothub_module_and_device:       { suite: c_mqtt_iothub_module_and_device }
-      c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
-      java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
-      csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
-      csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
-      py38_mqtt_iothub_module_and_device_async:     { suite: py38_mqtt_iothub_module_and_device_async }
-      py38_mqtt_iothub_module_and_device:           { suite: py38_mqtt_iothub_module_and_device }
-      py38_mqtt_edgehub_module_async:               { suite: py38_mqtt_edgehub_module_async }
-      py38_mqtt_edgehub_module:                     { suite: py38_mqtt_edgehub_module }
-      py38_mqtt_iothub_module_quick_drop:           { suite: py38_mqtt_iothub_device_quick_drop }
-  steps:
-  - template: templates/steps-deploy-and-run-pytest.yaml
-    parameters:
-      suite: $(suite)
+  - setup
+  - build_and_test
+  condition: always()
+  jobs:
+  - job: destroy_azure_resource_group
+    condition: always()
+    pool:
+      vmImage: 'ubuntu-24.04'
+    steps:
+    - template: templates/steps-destroy-azure-resources.yaml
 

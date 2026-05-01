@@ -1,4 +1,4 @@
-azure-eventhub==5.0.1
+azure-eventhub>=5.11.0
 azure.storage.blob
 azure.iot.hub
 certifi
@@ -7,6 +7,7 @@ docker; sys_platform != 'win32' # we don't use it on Windows.  Exclude it to avo
 junitparser
 msrest
 oauthlib>=3.2.2 # >= 3.2.2 because of CVE-2022-36087. If MSRest gets an update that increments the oauthlib dependency version up to at least 3.2.2, then this line can be deleted
+packaging
 pre-commit
 pytest
 pytest-asyncio
@@ -15,9 +16,6 @@ pytest-timeout
 python_dateutil
 requests
 setuptools
-six
-uamqp
 urllib3
 PyYAML
 inflection==0.5.0
-future>=0.18.3 # >= 0.18.3 because CVE-2022-40899 affects versions 0.18.2 and below

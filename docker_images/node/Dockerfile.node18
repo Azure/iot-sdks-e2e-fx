@@ -11,9 +11,12 @@ RUN apt update \
 RUN update-alternatives --install /usr/bin/python python $(which python3) 50 \
 &&  update-alternatives --install /usr/bin/pip pip $(which pip3) 50 
 
-RUN npm install lerna -g
+RUN npm install lerna@^6 -g
 
-RUN pip install --upgrade pip 
+RUN pip install --break-system-packages --upgrade pip 
+
+# Allow ffi-napi to compile on Node 18.20.x (napi_finalize const-correctness change)
+ENV CXXFLAGS="-fpermissive"
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name" \
@@ -25,7 +28,7 @@ EXPOSE 8080
 
 WORKDIR /system_control_app
 COPY ./system_control_app .
-RUN pip install -r requirements.txt
+RUN pip install --break-system-packages -r requirements.txt
 
 # force container rebuild when switching from master to main
 RUN echo "switch to main" > /horton_tag.txt

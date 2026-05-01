@@ -78,11 +78,13 @@ class AmqpServiceClient:
             )
 
             self.blob_status_receive_client = uamqp.async_ops.client_async.ReceiveClientAsync(
-                blob_status_receive_source
+                blob_status_receive_source, timeout=120000  # 120 second receive timeout
             )
             self.blob_status_receive_iter = (
                 self.blob_status_receive_client.receive_messages_iter_async()
             )
 
         async for message in self.blob_status_receive_iter:
-            return message
+            # Extract the message body as a decoded string
+            body = b"".join(message.get_data())
+            return body.decode("utf-8")

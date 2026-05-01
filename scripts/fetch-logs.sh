@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 script_dir=$(cd "$(dirname "$0")" && pwd)
@@ -35,7 +36,7 @@ echo "fetching docker logs"
 fetch-docker-logs
 [ $? -eq 0 ] || { echo "error fetching logs"; exit 1; }
 
-if [ "${deployment_type}" -eq "iotedge" ]; then
+if [ "${deployment_type}" = "iotedge" ]; then
     echo getting iotedged log
     sudo journalctl -u iotedge -n 500 -e  &> iotedged.log
     [ $? -eq 0 ] || { echo "error fetching iotedged journal"; exit 1; }

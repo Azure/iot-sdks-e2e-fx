@@ -6,7 +6,7 @@ import pytest
 import json
 import asyncio
 import limitations
-from utilities import next_integer, next_random_string
+from utilities import next_integer, next_random_string, connect2_with_retry
 from horton_logging import logger
 
 
@@ -29,7 +29,7 @@ async def run_method_call_test(source, destination):
     method_response_body = {"responseData": next_random_string("method_response")}
 
     if limitations.needs_manual_connect(destination):
-        await destination.connect2()
+        await connect2_with_retry(destination)
     await destination.enable_methods()
 
     # start listening for method calls on the destination side
@@ -52,17 +52,46 @@ async def run_method_call_test(source, destination):
     )
     await asyncio.sleep(registration_sleep)
 
-    # invoking the call from caller side
-    if getattr(destination, "module_id", None):
-        sender_future = source.call_module_method(
-            destination.device_id, destination.module_id, method_invoke_parameters
-        )
-    else:
-        sender_future = source.call_device_method(
-            destination.device_id, method_invoke_parameters
-        )
+    # invoking the call from caller side.
+    # In EdgeHub scenarios the leaf device cloud proxy may take a long time to
+    # establish (scope cache propagation).  Retry the invocation a few times so
+    # transient 500 / 404 errors from the wrapper don't fail the test.
+    last_error = None
+    for attempt in range(3):
+        if getattr(destination, "module_id", None):
+            sender_future = source.call_module_method(
+                destination.device_id, destination.module_id, method_invoke_parameters
+            )
+        else:
+            sender_future = source.call_device_method(
+                destination.device_id, method_invoke_parameters
+            )
 
-    (response, _) = await asyncio.gather(sender_future, receiver_future)
+        try:
+            (response, _) = await asyncio.gather(sender_future, receiver_future)
+            last_error = None
+            break
+        except Exception as e:
+            last_error = e
+            error_str = str(e)
+            if ("500" in error_str or "Not Found" in error_str) and attempt < 2:
+                logger(
+                    "method invocation attempt {} failed ({}), retrying...".format(
+                        attempt + 1, error_str[:120]
+                    )
+                )
+                # re-register method handler for next attempt
+                receiver_future = asyncio.ensure_future(
+                    destination.wait_for_method_and_return_response(
+                        method_name, status_code, method_invoke_parameters, method_response_body
+                    )
+                )
+                await asyncio.sleep(10)
+            else:
+                raise
+
+    if last_error:
+        raise last_error
 
     logger("method call complete.  Response is:")
     logger(str(response))
@@ -82,7 +111,7 @@ class BaseReceiveMethodCallTests(object):
     @pytest.mark.it("Can connect, enable methods, and disconnect")
     async def test_module_client_connect_enable_methods_disconnect(self, client):
         if limitations.needs_manual_connect(client):
-            await client.connect2()
+            await connect2_with_retry(client)
         await client.enable_methods()
 
 

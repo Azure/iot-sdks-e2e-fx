@@ -6,13 +6,14 @@ import os
 import socket
 import random
 import string
+import time
 import datetime
 from iothub_service_helper import IoTHubServiceHelper
 from horton_settings import settings
 
 
 all_languages = ["pythonv2", "java", "csharp", "node", "c"]
-all_variants = ["py37", "py38", "py39", "py310", "node16", "node18"]
+all_variants = ["py37", "py38", "py39", "py310", "py311", "node16", "node18"]
 
 
 def is_windows():
@@ -153,7 +154,19 @@ def remove_old_instances():
 
 
 def pull_docker_image(image):
-    run_elevated_shell_command("docker pull {image}".format(image=image))
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            run_elevated_shell_command("docker pull {image}".format(image=image))
+            return
+        except subprocess.CalledProcessError:
+            if attempt < max_retries - 1:
+                wait = 10 * (attempt + 1)
+                print("docker pull failed (attempt {}), retrying in {}s".format(
+                    attempt + 1, wait))
+                time.sleep(wait)
+            else:
+                raise
 
 
 def create_docker_container(obj):

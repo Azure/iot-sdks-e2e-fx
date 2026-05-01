@@ -2,7 +2,7 @@ from mcr.microsoft.com/openjdk/jdk:11-mariner
 
 ENV MAVEN_CONFIG=/usr/share/maven/ref
 
-RUN yum install -y \
+RUN tdnf install -y \
   maven \
   git 
 COPY java/settings-docker.xml /usr/share/maven/ref/settings-docker.xml

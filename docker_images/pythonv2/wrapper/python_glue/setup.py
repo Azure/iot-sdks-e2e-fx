@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name="python-glue",
@@ -24,5 +24,18 @@ setup(
     ],
     install_requires=[],
     python_requires=">=2.7, <4",
-    packages=find_packages(),
+    py_modules=[
+        "connection_status",
+        "control_glue",
+        "convert",
+        "device_glue",
+        "internal_control_glue",
+        "internal_glue_factory",
+        "internal_iothub_glue",
+        "internal_iothub_glue_async",
+        "leak_check",
+        "module_glue",
+        "wrap_async_in_sync",
+        "wrap_sync_in_async",
+    ],
 )

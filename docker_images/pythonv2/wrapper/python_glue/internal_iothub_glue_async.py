@@ -15,7 +15,7 @@ import queue
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_KEEPALIVE = 8
+DEFAULT_KEEPALIVE = 30
 
 
 class Connect(ConnectionStatus):

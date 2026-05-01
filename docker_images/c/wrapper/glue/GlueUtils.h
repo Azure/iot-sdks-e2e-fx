@@ -17,4 +17,5 @@ void parseMethodRequestAndResponse(std::string requestAndResponse, std::string *
 std::string makeInvokeResponse(int statusCode, std::string payload);
 std::string addJsonWrapperObject(std::string root_string, std::string wrapperName);
 
+struct send_event_context;
 void sendEventCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback);

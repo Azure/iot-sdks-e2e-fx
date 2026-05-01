@@ -3,6 +3,7 @@
 # full license information.
 
 
+import os
 import pytest
 import sys
 import logging
@@ -10,7 +11,7 @@ from adapters import adapter_config
 from dump_object import dump_object
 import runtime_capabilities
 import scenarios
-from distutils.version import LooseVersion
+from packaging.version import Version
 from horton_logging import set_logger
 from horton_settings import settings, ObjectWithAdapter
 from fixtures import (  # noqa: F401
@@ -106,7 +107,7 @@ skip_for_c_connection_string = set(
 
 
 def _get_marker(item, marker):
-    if LooseVersion(pytest.__version__) < LooseVersion("3.6"):
+    if Version(pytest.__version__) < Version("3.6"):
         return item.get_marker(marker)
     else:
         return item.get_closest_marker(marker)
@@ -186,7 +187,9 @@ def add_service_settings():
         pass
 
     settings.eventhub = ObjectWithAdapter("eventhub", "eventhub")
-    settings.eventhub.connection_string = settings.iothub.connection_string
+    settings.eventhub.connection_string = os.environ.get(
+        "IOTHUB_E2E_EVENTHUB_CONNECTION_STRING", settings.iothub.connection_string
+    )
     settings.eventhub.adapter_address = "direct_rest"
 
     settings.registry = ObjectWithAdapter("registry", "iothub_registry")

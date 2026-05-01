@@ -7,8 +7,14 @@ cd /src
 cp sdk/package.json .
 [ $? -eq 0 ] || { echo "cp package.json failed"; exit 1; }
 
+# Remove overrides that conflict with direct dependencies (causes EOVERRIDE on npm 10)
+node -e "let p=JSON.parse(require('fs').readFileSync('package.json','utf8')); delete p.overrides; require('fs').writeFileSync('package.json',JSON.stringify(p,null,2))"
+
 npm install
 [ $? -eq 0 ] || { echo "npm install failed"; exit 1; }
+
+# Remove locally-installed lerna (v9) so the global v6 is used
+rm -rf node_modules/.bin/lerna node_modules/lerna
 
 cp sdk/lerna.json .
 [ $? -eq 0 ] || { echo "cp lerna.json failed"; exit 1; }
