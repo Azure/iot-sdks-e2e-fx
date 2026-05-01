@@ -41,8 +41,17 @@ if [ -d "/wrapper/src" ]; then
     cd /wrapper/src
     [ $? -eq 0 ] || { echo "cd wrapper failed"; exit 1; }
 
+    # When the SDK targets net10.0 the DesiredProperties/ReportedProperties
+    # subclasses have been removed and DirectMethodRequest.Payload is public.
+    # Pass SDK_NET10 so the wrapper can conditionally compile.
+    WRAPPER_DEFINES=""
+    if [ "$DEVICE_TFM" = "net10.0" ]; then
+        WRAPPER_DEFINES="-p:DefineConstants=SDK_NET10"
+        echo "SDK targets net10.0 — adding SDK_NET10 define"
+    fi
+
     dotnet restore
-    dotnet publish --no-dependencies --output /app/ --framework=net10.0 edge-e2e.csproj
+    dotnet publish --no-dependencies --output /app/ --framework=net10.0 $WRAPPER_DEFINES edge-e2e.csproj
     [ $? -eq 0 ] || { echo "publish wrapper failed"; exit 1; }
 fi
 

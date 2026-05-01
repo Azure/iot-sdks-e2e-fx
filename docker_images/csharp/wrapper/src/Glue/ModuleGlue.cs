@@ -125,7 +125,11 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableMethodsAsync received for " + connectionId);
         }
 
+#if SDK_NET10
+        private PropertyCollection lastDesiredProps = null;
+#else
         private DesiredProperties lastDesiredProps = null;
+#endif
         private SemaphoreSlim desiredPropMutex = null;
 
         public async Task EnableTwinAsync(string connectionId)
@@ -133,7 +137,11 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableTwinAsync received for " + connectionId);
             var client = objectMap[connectionId];
 
+#if SDK_NET10
+            Func<PropertyCollection, Task> handler = async (props) =>
+#else
             Func<DesiredProperties, Task> handler = async (props) =>
+#endif
             {
                 Console.WriteLine("patch received");
                 lastDesiredProps = props;
@@ -273,7 +281,11 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("SendTwinPatchAsync received for " + connectionId);
             Console.WriteLine(JsonConvert.SerializeObject(props));
             var client = objectMap[connectionId];
+#if SDK_NET10
+            var reportedProps = new PropertyCollection();
+#else
             var reportedProps = new ReportedProperties();
+#endif
             foreach (var p in (props.Reported as JObject).Properties())
             {
                 reportedProps[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
@@ -298,16 +310,18 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
-                // Read the raw payload bytes via reflection.
-                // DirectMethodRequest.Payload is public on net10.0+ but does
-                // NOT exist on netstandard2.0, which is the target used by the
-                // Docker/SDK build.  GetPayload<byte[]>() exists but routes
-                // through DefaultPayloadConvention, which conflicts with our
-                // RawJsonByteArrayConverter.  Reflection on _payload is the
-                // only remaining option for netstandard2.0.
+#if SDK_NET10
+                // DirectMethodRequest.Payload is public on net10.0 SDK.
+                byte[] rawPayload = methodRequest.Payload;
+#else
+                // DirectMethodRequest.Payload is NOT public on netstandard2.0.
+                // GetPayload<byte[]>() routes through DefaultPayloadConvention
+                // which conflicts with RawJsonByteArrayConverter.
+                // Reflection on _payload is the only option.
                 byte[] rawPayload = (byte[])typeof(DirectMethodRequest)
                     .GetField("_payload", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                     .GetValue(methodRequest);
+#endif
                 object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(rawPayload));
                 string received = JsonConvert.SerializeObject(new JRaw(request));
                 string expected = ((Newtonsoft.Json.Linq.JToken)requestAndResponse.RequestPayload)["payload"].ToString();
