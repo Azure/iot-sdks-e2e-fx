@@ -377,9 +377,18 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
-                // DirectMethodRequest.Payload is public on both netstandard2.0
-                // (previews/v2) and net10.0 builds of the SDK.
+#if SDK_NET10
+                // DirectMethodRequest.Payload is public on the net10.0 SDK.
                 byte[] rawPayload = methodRequest.Payload;
+#else
+                // On netstandard2.0 (previews/v2), Payload is not public.
+                // _payload is a private readonly field.  GetPayload() goes through
+                // PayloadConvention which conflicts with RawJsonByteArrayConverter,
+                // so reflection is the only safe option.
+                byte[] rawPayload = (byte[])typeof(DirectMethodRequest)
+                    .GetField("_payload", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                    .GetValue(methodRequest);
+#endif
                 object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(rawPayload));
                 string received = JsonConvert.SerializeObject(new JRaw(request));
 #if SDK_NET10
