@@ -111,7 +111,11 @@ namespace IO.Swagger.Controllers
                     return MessageAcknowledgement.Abandon;
                 }
                 var channel = GetOrCreateInputChannel(connectionId, msg.InputName);
+#if SDK_NET10
                 await channel.Writer.WriteAsync(msg.Payload).ConfigureAwait(false);
+#else
+                await channel.Writer.WriteAsync(msg.GetPayloadAsBytes()).ConfigureAwait(false);
+#endif
                 return MessageAcknowledgement.Complete;
             };
 
@@ -272,7 +276,11 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("SendTwinPatchAsync received for " + connectionId);
             Console.WriteLine(JsonSerializer.Serialize(props));
             var client = objectMap[connectionId];
+#if SDK_NET10
             var reportedProps = new PropertyCollection();
+#else
+            var reportedProps = new ReportedProperties();
+#endif
             if (props.Reported is JsonElement jsonEl)
             {
                 foreach (var p in jsonEl.EnumerateObject())
@@ -302,7 +310,14 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
+#if SDK_NET10
                 byte[] rawPayload = methodRequest.Payload;
+#else
+                // DirectMethodRequest.Payload is NOT public on netstandard2.0.
+                byte[] rawPayload = (byte[])typeof(DirectMethodRequest)
+                    .GetField("_payload", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                    .GetValue(methodRequest);
+#endif
                 object request = JsonSerializer.Deserialize<object>(rawPayload);
                 string received = JsonSerializer.Serialize(request);
                 string expected;
