@@ -105,37 +105,56 @@ namespace IO.Swagger.Controllers
         {
             var jobj = new JObject();
 
-            // Walk the type hierarchy to find the Properties dictionary.
-            // PropertyCollection or JsonDictionary may define it at different levels.
-            System.Reflection.PropertyInfo propsProperty = null;
-            Type searchType = pc.GetType();
-            while (searchType != null && propsProperty == null)
+            // Dump type hierarchy members to find the internal data storage
+            Type t = pc.GetType();
+            for (int i = 0; i < 3 && t != null; i++, t = t.BaseType)
             {
-                propsProperty = searchType.GetProperty("Properties",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
-                if (propsProperty == null)
-                    searchType = searchType.BaseType;
+                Console.WriteLine($"  Type[{i}]: {t.FullName}");
+                foreach (var f in t.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
+                {
+                    Console.WriteLine($"    Field: {f.Name} ({f.FieldType.Name})");
+                }
+                foreach (var p in t.GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
+                {
+                    Console.WriteLine($"    Prop: {p.Name} ({p.PropertyType.Name})");
+                }
             }
 
-            Console.WriteLine($"PropertyCollectionToJObject: found Properties on {searchType?.Name}, type={propsProperty?.PropertyType.Name}");
-
-            if (propsProperty != null)
+            // Try to find any field/property containing IDictionary<string, JsonElement>
+            t = pc.GetType();
+            while (t != null && t != typeof(object))
             {
-                var propsDict = propsProperty.GetValue(pc) as System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement>;
-                if (propsDict != null)
+                foreach (var f in t.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
                 {
-                    Console.WriteLine($"  Properties has {propsDict.Count} entries: [{string.Join(", ", propsDict.Keys)}]");
-                    foreach (var kv in propsDict)
+                    if (f.FieldType.FullName?.Contains("JsonElement") == true)
                     {
-                        jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
+                        var val = f.GetValue(pc);
+                        if (val is System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement> d)
+                        {
+                            Console.WriteLine($"  FOUND: Field {f.Name} on {t.Name} with {d.Count} entries: [{string.Join(", ", d.Keys)}]");
+                            foreach (var kv in d)
+                            {
+                                jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
+                            }
+                        }
                     }
                 }
-                else
+                foreach (var p in t.GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
                 {
-                    Console.WriteLine($"  Properties value is null or not IDictionary<string,JsonElement>");
-                    var rawValue = propsProperty.GetValue(pc);
-                    Console.WriteLine($"  Raw value type: {rawValue?.GetType().FullName}");
+                    if (p.PropertyType.FullName?.Contains("JsonElement") == true)
+                    {
+                        var val = p.GetValue(pc);
+                        if (val is System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement> d)
+                        {
+                            Console.WriteLine($"  FOUND: Prop {p.Name} on {t.Name} with {d.Count} entries: [{string.Join(", ", d.Keys)}]");
+                            foreach (var kv in d)
+                            {
+                                jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
+                            }
+                        }
+                    }
                 }
+                t = t.BaseType;
             }
 
             jobj["$version"] = pc.Version;
