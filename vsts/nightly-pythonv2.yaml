@@ -84,29 +84,11 @@ stages:
         py313_async_mqttws_iothub_device_full_drop:   { suite: py313_async_mqttws_iothub_device_full_drop }
         py313_async_mqttws_edgehub_module_full_drop:  { suite: py313_async_mqttws_edgehub_module_full_drop }
 
-        py311_mqtt_iothub_module_and_device:          { suite: py311_mqtt_iothub_module_and_device }
-        py311_mqtt_edgehub_module:                     { suite: py311_mqtt_edgehub_module }
-        py311_mqtt_iothub_module_full_drop:            { suite: py311_mqtt_iothub_module_full_drop }
-        py311_mqtt_iothub_device_full_drop:            { suite: py311_mqtt_iothub_device_full_drop }
-        py311_mqtt_edgehub_module_full_drop:           { suite: py311_mqtt_edgehub_module_full_drop }
-
-        py311_mqttws_iothub_module_and_device:         { suite: py311_mqttws_iothub_module_and_device }
-        py311_mqttws_edgehub_module:                   { suite: py311_mqttws_edgehub_module }
-        py311_mqttws_iothub_module_full_drop:          { suite: py311_mqttws_iothub_module_full_drop }
-        py311_mqttws_iothub_device_full_drop:          { suite: py311_mqttws_iothub_device_full_drop }
-        py311_mqttws_edgehub_module_full_drop:         { suite: py311_mqttws_edgehub_module_full_drop }
-
-        py311_async_mqtt_iothub_module_and_device:     { suite: py311_async_mqtt_iothub_module_and_device }
-        py311_async_mqtt_edgehub_module:               { suite: py311_async_mqtt_edgehub_module }
-        py311_async_mqtt_iothub_module_full_drop:      { suite: py311_async_mqtt_iothub_module_full_drop }
-        py311_async_mqtt_iothub_device_full_drop:      { suite: py311_async_mqtt_iothub_device_full_drop }
-        py311_async_mqtt_edgehub_module_full_drop:     { suite: py311_async_mqtt_edgehub_module_full_drop }
-
-        py311_async_mqttws_iothub_module_and_device:   { suite: py311_async_mqttws_iothub_module_and_device }
+        # py311: smoke-test tier — oldest supported Python, 2 jobs covering
+        # opposite corners of the matrix (sync/mqtt/iothub + async/mqttws/edgehub).
+        # Full coverage remains on py312 and py313.
+        py311_mqtt_iothub_module_and_device:           { suite: py311_mqtt_iothub_module_and_device }
         py311_async_mqttws_edgehub_module:             { suite: py311_async_mqttws_edgehub_module }
-        py311_async_mqttws_iothub_module_full_drop:    { suite: py311_async_mqttws_iothub_module_full_drop }
-        py311_async_mqttws_iothub_device_full_drop:    { suite: py311_async_mqttws_iothub_device_full_drop }
-        py311_async_mqttws_edgehub_module_full_drop:   { suite: py311_async_mqttws_edgehub_module_full_drop }
 
     steps:
     - template: templates/steps-load-test-config.yaml
