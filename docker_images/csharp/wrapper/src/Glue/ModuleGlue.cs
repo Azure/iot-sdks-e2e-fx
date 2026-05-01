@@ -308,11 +308,13 @@ namespace IO.Swagger.Controllers
                 string expected;
                 if (requestAndResponse.RequestPayload is JsonElement je && je.TryGetProperty("payload", out var payloadProp))
                 {
-                    expected = payloadProp.ToString();
+                    expected = JsonSerializer.Serialize(payloadProp);
                 }
                 else
                 {
-                    expected = requestAndResponse.RequestPayload?.ToString();
+                    expected = requestAndResponse.RequestPayload is JsonElement je2
+                        ? JsonSerializer.Serialize(je2)
+                        : requestAndResponse.RequestPayload?.ToString();
                 }
                 Console.WriteLine("request expected: " + expected);
                 Console.WriteLine("request received: " + received);
