@@ -93,19 +93,26 @@ namespace IO.Swagger.Controllers
         /// Convert a PropertyCollection to a Dictionary that STJ can serialize
         /// natively.
         ///
-        /// PropertyCollection has a public GetEnumerator() that iterates
-        /// the stored properties (filtering out $version) and converts
-        /// JsonElement values to native .NET objects via FromJsonElement().
+        /// GetSerializedString() serializes the internal Properties dictionary
+        /// (IDictionary&lt;string, JsonElement&gt;) directly via STJ, producing
+        /// correct JSON.  We parse that back so the values are clean JsonElement
+        /// instances that ASP.NET Core's STJ serializer can roundtrip faithfully.
+        ///
+        /// We intentionally avoid GetEnumerator() because it calls
+        /// FromJsonElement() which wraps values in JsonDictionary / List&lt;object&gt;
+        /// — types whose [JsonExtensionData] annotation causes STJ to emit
+        /// artifacts like {"ValueKind":[]} instead of the real value.
         /// </summary>
         internal static Dictionary<string, object> PropertyCollectionToDict(PropertyCollection pc)
         {
+            string json = pc.GetSerializedString();
+            using var doc = JsonDocument.Parse(json);
             var dict = new Dictionary<string, object>();
-
-            foreach (var kv in pc)
+            foreach (var prop in doc.RootElement.EnumerateObject())
             {
-                dict[kv.Key] = kv.Value;
+                if (prop.Name != "$version")
+                    dict[prop.Name] = prop.Value.Clone();
             }
-
             dict["$version"] = pc.Version;
             return dict;
         }
