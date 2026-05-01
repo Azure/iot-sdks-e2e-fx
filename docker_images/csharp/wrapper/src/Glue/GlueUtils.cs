@@ -68,11 +68,19 @@ namespace IO.Swagger.Controllers
             var request = new EdgeModuleDirectMethodRequest(methodInvokeParameters.MethodName, GlueUtils.ObjectToBytes(methodInvokeParameters.Payload));
             if (methodInvokeParameters.ResponseTimeoutInSeconds.HasValue)
             {
+#if SDK_NET10
+                request.ResponseTimeoutInSeconds = (int)methodInvokeParameters.ResponseTimeoutInSeconds.Value;
+#else
                 request.ResponseTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ResponseTimeoutInSeconds.Value);
+#endif
             }
             if (methodInvokeParameters.ConnectTimeoutInSeconds.HasValue)
             {
+#if SDK_NET10
+                request.ConnectTimeoutInSeconds = (int)methodInvokeParameters.ConnectTimeoutInSeconds.Value;
+#else
                 request.ConnectionTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ConnectTimeoutInSeconds.Value);
+#endif
             }
             return request;
         }
