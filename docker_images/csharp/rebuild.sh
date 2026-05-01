@@ -22,8 +22,12 @@ DEVICE_TFM=$(get_tfm Microsoft.Azure.Devices.Client.csproj)
 DEVICE_TFM=${DEVICE_TFM:-netstandard2.0}
 echo "Device TFM: $DEVICE_TFM"
 
+# Suppress CA1859 — the .NET 10 SDK ships newer Roslyn analysers that
+# flag this as an error in SDK source we don't own.
+SDK_NOWARN="-p:NoWarn=CA1859"
+
 dotnet restore
-dotnet publish --no-dependencies --output /app/ --framework=$DEVICE_TFM
+dotnet publish --no-dependencies --output /app/ --framework=$DEVICE_TFM $SDK_NOWARN
 [ $? -eq 0 ] || { echo "publish device failed"; exit 1; }
 
 cd /sdk/iothub/service/src
@@ -34,7 +38,7 @@ SERVICE_TFM=${SERVICE_TFM:-netstandard2.0}
 echo "Service TFM: $SERVICE_TFM"
 
 dotnet restore
-dotnet publish --no-dependencies --output /app/ --framework=$SERVICE_TFM
+dotnet publish --no-dependencies --output /app/ --framework=$SERVICE_TFM $SDK_NOWARN
 [ $? -eq 0 ] || { echo "publish service failed"; exit 1; }
 
 if [ -d "/wrapper/src" ]; then
