@@ -112,7 +112,11 @@ namespace IO.Swagger.Controllers
                     return MessageAcknowledgement.Abandon;
                 }
                 var channel = GetOrCreateInputChannel(connectionId, msg.InputName);
+#if SDK_NET10
+                await channel.Writer.WriteAsync(msg.Payload).ConfigureAwait(false);
+#else
                 await channel.Writer.WriteAsync(msg.GetPayloadAsBytes()).ConfigureAwait(false);
+#endif
                 return MessageAcknowledgement.Complete;
             };
 
