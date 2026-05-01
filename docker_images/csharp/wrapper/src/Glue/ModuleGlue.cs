@@ -24,11 +24,12 @@ namespace IO.Swagger.Controllers
     /// </summary>
     internal class ModuleGlue
     {
-        private static Dictionary<string, IotHubModuleClient> objectMap = new Dictionary<string, IotHubModuleClient>();
+        private static Dictionary<string, IotHubBaseClient> objectMap = new Dictionary<string, IotHubBaseClient>();
         private static Dictionary<string, ConcurrentDictionary<string, Channel<byte[]>>> inputQueues =
             new Dictionary<string, ConcurrentDictionary<string, Channel<byte[]>>>();
         private static int objectCount = 0;
         private const string modulePrefix = "module_";
+        private const string devicePrefix = "device_";
 
         private static Channel<byte[]> GetOrCreateInputChannel(string connectionId, string inputName)
         {
@@ -55,6 +56,20 @@ namespace IO.Swagger.Controllers
             await client.OpenAsync().ConfigureAwait(false);
             var connectionId = modulePrefix + Convert.ToString(++objectCount);
             Console.WriteLine("Connected successfully.  Connection Id = " + connectionId);
+            objectMap[connectionId] = client;
+            return new ConnectResponse
+            {
+                ConnectionId = connectionId
+            };
+        }
+
+        public async Task<ConnectResponse> ConnectDeviceAsync(string transport, string connectionString, Certificate caCertificate)
+        {
+            Console.WriteLine("ConnectDeviceAsync for " + transport);
+            var client = new IotHubDeviceClient(connectionString, GlueUtils.TransportNameToOptions(transport));
+            await client.OpenAsync().ConfigureAwait(false);
+            var connectionId = devicePrefix + Convert.ToString(++objectCount);
+            Console.WriteLine("Device connected successfully.  Connection Id = " + connectionId);
             objectMap[connectionId] = client;
             return new ConnectResponse
             {
@@ -97,7 +112,7 @@ namespace IO.Swagger.Controllers
         public async Task EnableInputMessagesAsync(string connectionId)
         {
             Console.WriteLine("EnableInputMessageAsync received for " + connectionId);
-            var client = objectMap[connectionId];
+            var client = (IotHubModuleClient)objectMap[connectionId];
 
             // Register a single, persistent handler that queues incoming messages per input name.
             // The previous implementation registered/unregistered the handler inside each
@@ -178,7 +193,7 @@ namespace IO.Swagger.Controllers
         public async Task SendOutputEventAsync(string connectionId, string outputName, EventBody eventBody)
         {
             Console.WriteLine("sendEventAsync received for {0} with output {1} and body {2}", connectionId, outputName, eventBody.Body.ToString());
-            var client = objectMap[connectionId];
+            var client = (IotHubModuleClient)objectMap[connectionId];
             await client.SendMessageToRouteAsync(outputName, new TelemetryMessage(GlueUtils.ObjectToBytes(eventBody.Body))).ConfigureAwait(false);
             Console.WriteLine("sendOutputEventAsync complete");
         }
@@ -216,7 +231,7 @@ namespace IO.Swagger.Controllers
         {
             Console.WriteLine("InvokeModuleMethodAsync received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
             Console.WriteLine(methodInvokeParameters.ToString());
-            var client = objectMap[connectionId];
+            var client = (IotHubModuleClient)objectMap[connectionId];
             var request = GlueUtils.CreateEdgeModuleDirectMethodRequest(methodInvokeParameters);
             Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, moduleId, request, CancellationToken.None).ConfigureAwait(false);
@@ -239,7 +254,7 @@ namespace IO.Swagger.Controllers
         {
             Console.WriteLine("InvokeDeviceMethodAsync received for {0} with deviceId {1} ", connectionId, deviceId);
             Console.WriteLine(methodInvokeParameters.ToString());
-            var client = objectMap[connectionId];
+            var client = (IotHubModuleClient)objectMap[connectionId];
             var request = GlueUtils.CreateEdgeModuleDirectMethodRequest(methodInvokeParameters);
             Console.WriteLine("Serialized request preview: " + JsonConvert.SerializeObject(request));
             Console.WriteLine("Invoking");
@@ -362,18 +377,9 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
-#if SDK_NET10
-                // DirectMethodRequest.Payload is public on net10.0 SDK.
+                // DirectMethodRequest.Payload is public on both netstandard2.0
+                // (previews/v2) and net10.0 builds of the SDK.
                 byte[] rawPayload = methodRequest.Payload;
-#else
-                // DirectMethodRequest.Payload is NOT public on netstandard2.0.
-                // GetPayload<byte[]>() routes through DefaultPayloadConvention
-                // which conflicts with RawJsonByteArrayConverter.
-                // Reflection on _payload is the only option.
-                byte[] rawPayload = (byte[])typeof(DirectMethodRequest)
-                    .GetField("_payload", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    .GetValue(methodRequest);
-#endif
                 object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(rawPayload));
                 string received = JsonConvert.SerializeObject(new JRaw(request));
 #if SDK_NET10
