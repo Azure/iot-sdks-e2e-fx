@@ -105,56 +105,21 @@ namespace IO.Swagger.Controllers
         {
             var jobj = new JObject();
 
-            // Dump type hierarchy members to find the internal data storage
-            Type t = pc.GetType();
-            for (int i = 0; i < 3 && t != null; i++, t = t.BaseType)
-            {
-                Console.WriteLine($"  Type[{i}]: {t.FullName}");
-                foreach (var f in t.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
-                {
-                    Console.WriteLine($"    Field: {f.Name} ({f.FieldType.Name})");
-                }
-                foreach (var p in t.GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
-                {
-                    Console.WriteLine($"    Prop: {p.Name} ({p.PropertyType.Name})");
-                }
-            }
+            // Access the internal Properties backing field on JsonDictionary.
+            // This contains IDictionary<string, JsonElement> with the actual twin data.
+            var backingField = typeof(PropertyCollection).BaseType?.GetField("<Properties>k__BackingField",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-            // Try to find any field/property containing IDictionary<string, JsonElement>
-            t = pc.GetType();
-            while (t != null && t != typeof(object))
+            if (backingField != null)
             {
-                foreach (var f in t.GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
+                var propsDict = backingField.GetValue(pc) as System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement>;
+                if (propsDict != null)
                 {
-                    if (f.FieldType.FullName?.Contains("JsonElement") == true)
+                    foreach (var kv in propsDict)
                     {
-                        var val = f.GetValue(pc);
-                        if (val is System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement> d)
-                        {
-                            Console.WriteLine($"  FOUND: Field {f.Name} on {t.Name} with {d.Count} entries: [{string.Join(", ", d.Keys)}]");
-                            foreach (var kv in d)
-                            {
-                                jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
-                            }
-                        }
+                        jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
                     }
                 }
-                foreach (var p in t.GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
-                {
-                    if (p.PropertyType.FullName?.Contains("JsonElement") == true)
-                    {
-                        var val = p.GetValue(pc);
-                        if (val is System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement> d)
-                        {
-                            Console.WriteLine($"  FOUND: Prop {p.Name} on {t.Name} with {d.Count} entries: [{string.Join(", ", d.Keys)}]");
-                            foreach (var kv in d)
-                            {
-                                jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
-                            }
-                        }
-                    }
-                }
-                t = t.BaseType;
             }
 
             jobj["$version"] = pc.Version;

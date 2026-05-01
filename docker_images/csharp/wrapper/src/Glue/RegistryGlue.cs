@@ -90,7 +90,11 @@ namespace IO.Swagger.Controllers
             clientTwin.Properties = new ClientTwinDocument();
             foreach (var p in (twin.Desired as JObject).Properties())
             {
-                clientTwin.Properties.Desired[p.Name] = p.Value;
+                // Convert JToken to native types so that STJ can serialize
+                // them correctly.  Storing JToken directly causes STJ to
+                // serialize JValue as [] (empty array) because JValue
+                // implements IEnumerable<JToken> with zero children.
+                clientTwin.Properties.Desired[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
             }
             await client.Twins.UpdateAsync(deviceId, moduleId, clientTwin).ConfigureAwait(false);
             Debug.WriteLine("patch complete");
