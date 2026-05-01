@@ -273,11 +273,17 @@ namespace IO.Swagger.Controllers
             var client = objectMap[connectionId];
             TwinProperties t = await client.GetTwinPropertiesAsync().ConfigureAwait(false);
             Console.WriteLine("Twin Received");
-            Console.WriteLine(JsonConvert.SerializeObject(t));
-            return new Models.Twin {
-                Desired = JObject.Parse(t.Desired.GetSerializedString()),
-                Reported = JObject.Parse(t.Reported.GetSerializedString())
+            string desiredJson = t.Desired.GetSerializedString();
+            string reportedJson = t.Reported.GetSerializedString();
+            Console.WriteLine("DEBUG desired GetSerializedString: " + desiredJson);
+            Console.WriteLine("DEBUG reported GetSerializedString: " + reportedJson);
+            Console.WriteLine("DEBUG Newtonsoft of TwinProperties: " + JsonConvert.SerializeObject(t));
+            var result = new Models.Twin {
+                Desired = JObject.Parse(desiredJson),
+                Reported = JObject.Parse(reportedJson)
             };
+            Console.WriteLine("DEBUG final Models.Twin Newtonsoft: " + JsonConvert.SerializeObject(result));
+            return result;
         }
 
         public async Task SendTwinPatchAsync(string connectionId, Models.Twin props)
