@@ -23,7 +23,6 @@ using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using IO.Swagger.Filters;
-using IO.Swagger.Controllers;
 
 
 namespace IO.Swagger
@@ -54,11 +53,6 @@ namespace IO.Swagger
         /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
-            // The Azure IoT C# SDK v2 (previews/v2) serializes
-            // EdgeModuleDirectMethodRequest and DirectMethodResponse via
-            // Newtonsoft.Json (not System.Text.Json), so no global serializer
-            // fixup is required for the SDK itself.
-
             // Add framework services.
             services
                 .AddMvc(options =>

@@ -1,11 +1,11 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0
+FROM mcr.microsoft.com/dotnet/sdk:8.0
 
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     unzip \
     openssh-server \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 RUN git config --global user.email "you@example.com" \
 &&  git config --global user.name "Your Name"
@@ -49,11 +49,7 @@ RUN git checkout $HORTON_COMMIT_SHA
 COPY csharp/patchfile /
 # our base image might have some files checked out.  revert these.
 RUN git reset HEAD && git checkout . && git clean  -df
-# Apply the patchfile if non-empty.  The patch targets specific SDK revisions
-# and may not apply to every branch (e.g. commits that migrated from
-# Newtonsoft.Json to System.Text.Json no longer contain the patched code).
-# Allow the build to continue when the patch does not apply.
-RUN if [ -s /patchfile ]; then git apply --index /patchfile || echo "WARNING: patchfile did not apply (may not be needed for this SDK revision)"; fi
+RUN if [ -s /patchfile ]; then git apply --index /patchfile; fi
 
 COPY csharp/rebuild.sh /
 run /rebuild.sh

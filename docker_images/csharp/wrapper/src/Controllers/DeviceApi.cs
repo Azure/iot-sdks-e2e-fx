@@ -46,9 +46,17 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
         public virtual IActionResult DeviceConnect([FromRoute][Required]string transportType, [FromQuery][Required()]string connectionString, [FromBody]Certificate caCertificate)
         {
-            Task<ConnectResponse> t = ModuleApiController.module_glue.ConnectDeviceAsync(transportType, connectionString, caCertificate);
-            t.Wait();
-            return new ObjectResult(t.Result);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\"empty\": false}";
+
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -63,8 +71,11 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("DeviceConnect2")]
         public virtual IActionResult DeviceConnect2([FromRoute][Required]string connectionId)
         {
-            // Device clients connect eagerly in ConnectDeviceAsync, so connect2 is a no-op.
-            return StatusCode(200);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -82,9 +93,17 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
         public virtual IActionResult DeviceCreateFromConnectionString([FromRoute][Required]string transportType, [FromQuery][Required()]string connectionString, [FromBody]Certificate caCertificate)
         {
-            Task<ConnectResponse> t = ModuleApiController.module_glue.ConnectDeviceAsync(transportType, connectionString, caCertificate);
-            t.Wait();
-            return new ObjectResult(t.Result);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\"empty\": false}";
+
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -103,11 +122,17 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(ConnectResponse), description: "OK")]
         public virtual IActionResult DeviceCreateFromSymmetricKey([FromRoute][Required]string transportType, [FromRoute][Required]string deviceId, [FromQuery][Required()]string hostname, [FromQuery][Required()]string symmetricKey)
         {
-            // Build a connection string from the symmetric key parts and delegate to ConnectDeviceAsync.
-            string cs = $"HostName={hostname};DeviceId={deviceId};SharedAccessKey={symmetricKey}";
-            Task<ConnectResponse> t = ModuleApiController.module_glue.ConnectDeviceAsync(transportType, cs, null);
-            t.Wait();
-            return new ObjectResult(t.Result);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default(ConnectResponse));
+
+            string exampleJson = null;
+            exampleJson = "{\"empty\": false}";
+
+            var example = exampleJson != null
+            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            : default(ConnectResponse);
+            //TODO: Change the data returned
+            return new ObjectResult(example);
         }
 
         /// <summary>
@@ -149,8 +174,11 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("DeviceDestroy")]
         public virtual IActionResult DeviceDestroy([FromRoute][Required]string connectionId)
         {
-            ModuleApiController.module_glue.DisconnectAsync(connectionId).Wait();
-            return StatusCode(200);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -165,8 +193,11 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("DeviceDisconnect")]
         public virtual IActionResult DeviceDisconnect([FromRoute][Required]string connectionId)
         {
-            ModuleApiController.module_glue.DisconnectAsync(connectionId).Wait();
-            return StatusCode(200);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -181,8 +212,11 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("DeviceDisconnect2")]
         public virtual IActionResult DeviceDisconnect2([FromRoute][Required]string connectionId)
         {
-            ModuleApiController.module_glue.DisconnectAsync(connectionId).Wait();
-            return StatusCode(200);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -216,8 +250,11 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("DeviceEnableMethods")]
         public virtual IActionResult DeviceEnableMethods([FromRoute][Required]string connectionId)
         {
-            ModuleApiController.module_glue.EnableMethodsAsync(connectionId).Wait();
-            return StatusCode(200);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -494,9 +531,11 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("DeviceWaitForMethodAndReturnResponse")]
         public virtual IActionResult DeviceWaitForMethodAndReturnResponse([FromRoute][Required]string connectionId, [FromRoute][Required]string methodName, [FromBody]MethodRequestAndResponse requestAndResponse)
         {
-            Task<object> t = ModuleApiController.module_glue.RoundtripMethodCallAsync(connectionId, methodName, requestAndResponse);
-            t.Wait();
-            return new ObjectResult(t.Result);
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200);
+
+
+            throw new NotImplementedException();
         }
     }
 }

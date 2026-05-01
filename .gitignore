@@ -23,4 +23,5 @@ bin/_python/*
 
 # Java files to ignore
 *.class
-*.iml
+*.iml.tmp/
+.tmp/

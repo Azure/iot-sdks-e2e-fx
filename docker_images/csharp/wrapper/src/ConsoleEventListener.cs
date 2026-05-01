@@ -8,7 +8,6 @@ namespace System.Diagnostics.Tracing
     {
         private readonly string[] _eventFilters;
         private object _lock = new object();
-        private bool _isHandlingEvent = false;
 
         public ConsoleEventListener() : this(string.Empty) { }
 
@@ -40,37 +39,18 @@ namespace System.Diagnostics.Tracing
         {
             foreach (EventSource source in EventSource.GetSources())
             {
-                // Only subscribe to sources matching our filters
-                foreach (string filter in _eventFilters)
-                {
-                    if (source.Name.StartsWith(filter))
-                    {
-                        EnableEvents(source, EventLevel.LogAlways);
-                        break;
-                    }
-                }
+                EnableEvents(source, EventLevel.LogAlways);
             }
         }
 
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
             base.OnEventSourceCreated(eventSource);
-
-            // Only enable events for sources that match our filters to avoid
-            // recursive event storms from subscribing to ALL EventSources.
-            if (_eventFilters == null) return;
-            foreach (string filter in _eventFilters)
-            {
-                if (eventSource.Name.StartsWith(filter))
-                {
 #if NET451
-                    EnableEvents(eventSource, EventLevel.LogAlways);
+            EnableEvents(eventSource, EventLevel.LogAlways);
 #else
-                    EnableEvents(eventSource, EventLevel.LogAlways, EventKeywords.All);
+            EnableEvents(eventSource, EventLevel.LogAlways, EventKeywords.All);
 #endif
-                    return;
-                }
-            }
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
@@ -79,13 +59,7 @@ namespace System.Diagnostics.Tracing
 
             lock (_lock)
             {
-                // Prevent infinite recursion: Console.WriteLine can trigger
-                // additional EventSource events, which re-enter OnEventWritten.
-                if (_isHandlingEvent) return;
-                _isHandlingEvent = true;
-                try
-                {
-                    bool shouldDisplay = false;
+                bool shouldDisplay = false;
             
                 if (_eventFilters.Length == 1 && eventData.EventSource.Name.StartsWith(_eventFilters[0]))
                 {
@@ -115,11 +89,6 @@ namespace System.Diagnostics.Tracing
                     Console.WriteLine(text);
                     Debug.WriteLine(text);
                     Console.ForegroundColor = origForeground;
-                }
-                }
-                finally
-                {
-                    _isHandlingEvent = false;
                 }
             }
         }

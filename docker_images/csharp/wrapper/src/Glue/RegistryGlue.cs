@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using IO.Swagger.Models;
 using Microsoft.Azure.Devices;
+using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -21,7 +22,7 @@ namespace IO.Swagger.Controllers
     /// </summary>
     internal class RegistryGlue
     {
-        private static Dictionary<string, IotHubServiceClient> objectMap = new Dictionary<string, IotHubServiceClient>();
+        private static Dictionary<string, object> objectMap = new Dictionary<string, object>();
         private static int objectCount = 0;
         private const string registryPrefix = "registry_";
 
@@ -32,9 +33,11 @@ namespace IO.Swagger.Controllers
         public async Task<ConnectResponse> ConnectAsync(string connectionString)
         {
             Debug.WriteLine("RegistryConnectAsync called");
-            var client = new IotHubServiceClient(connectionString);
+            var client = RegistryManager.CreateFromConnectionString(connectionString);
+            Debug.WriteLine("Connecting registry manager object");
+            await client.OpenAsync().ConfigureAwait(false);
             var connectionId = registryPrefix + Convert.ToString(++objectCount);
-            Debug.WriteLine("Registry client connection complete.  ConnectionId = " + connectionId);
+            Debug.WriteLine("Registry manager connection complete.  ConnectionId = " + connectionId);
             objectMap[connectionId] = client;
             return new ConnectResponse
             {
@@ -47,11 +50,11 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine("RegistryDisconnectAsync called for " + connectionId);
             if (objectMap.ContainsKey(connectionId))
             {
-                var client = objectMap[connectionId];
+                var client = objectMap[connectionId] as RegistryManager;
                 objectMap.Remove(connectionId);
-                Debug.WriteLine("Disposing the IotHubServiceClient object");
-                client.Dispose();
-                Debug.WriteLine("IotHubServiceClient disposed");
+                Debug.WriteLine("Calling CloseAsync on the RegistryManager object");
+                await client.CloseAsync().ConfigureAwait(false);
+                Debug.WriteLine("RegistryManager.CloseAsync complete");
             }
             else
             {
@@ -62,15 +65,15 @@ namespace IO.Swagger.Controllers
         public async Task<Models.Twin> GetModuleTwin(string connectionId, string deviceId, string moduleId)
         {
             Debug.WriteLine("RegistryModuleTwinGet received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
-            var client = objectMap[connectionId];
+            var client = objectMap[connectionId] as RegistryManager;
             Debug.WriteLine("Getting twin");
-            var twin = await client.Twins.GetAsync(deviceId, moduleId).ConfigureAwait(false);
+            var twin = await client.GetTwinAsync(deviceId, moduleId).ConfigureAwait(false);
             Debug.WriteLine("Twin received.");
             Debug.WriteLine(JsonConvert.SerializeObject(twin));
             return new Models.Twin
             {
-                Desired = JObject.Parse(twin.Properties.Desired.GetPropertiesAsJson()),
-                Reported = JObject.Parse(twin.Properties.Reported.GetPropertiesAsJson())
+                Desired = twin.Properties.Desired,
+                Reported = twin.Properties.Reported
             };
         }
 
@@ -78,25 +81,14 @@ namespace IO.Swagger.Controllers
         {
             Debug.WriteLine("RegistryTwinPatchPutAsync received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
             Debug.WriteLine(JsonConvert.SerializeObject(twin));
-            var client = objectMap[connectionId];
+            var client = objectMap[connectionId] as RegistryManager;
             Debug.WriteLine("Patching twin");
-            // ClientTwinProperties uses Newtonsoft.Json attributes
-            // ([JsonExtensionData] backs the internal `Properties` dict).
-            // System.Text.Json ignores Newtonsoft attributes, so deserializing
-            // via STJ produces an empty desired collection and the PATCH
-            // becomes a no-op.  Use the public indexer to populate the
-            // properties from the incoming JObject.
-            var clientTwin = new ClientTwin();
-            clientTwin.Properties = new ClientTwinDocument();
-            foreach (var p in (twin.Desired as JObject).Properties())
-            {
-                // Convert JToken to native types so that STJ can serialize
-                // them correctly.  Storing JToken directly causes STJ to
-                // serialize JValue as [] (empty array) because JValue
-                // implements IEnumerable<JToken> with zero children.
-                clientTwin.Properties.Desired[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
-            }
-            await client.Twins.UpdateAsync(deviceId, moduleId, clientTwin).ConfigureAwait(false);
+            var registryTwin = new Microsoft.Azure.Devices.Shared.Twin {
+                Properties = new TwinProperties {
+                    Desired = new TwinCollection(twin.Desired as JObject, null)
+                }
+            };
+            await client.UpdateTwinAsync(deviceId, moduleId, registryTwin, "*").ConfigureAwait(false);
             Debug.WriteLine("patch complete");
         }
 
