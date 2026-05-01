@@ -90,31 +90,28 @@ namespace IO.Swagger.Controllers
 #if SDK_NET10
         /// <summary>
         /// Convert a PropertyCollection to a JObject that Newtonsoft.Json can
-        /// serialize natively.  PropertyCollection may contain types that
-        /// Newtonsoft does not serialize correctly when boxed inside a
-        /// Dictionary&lt;string,object&gt;.  Roundtripping through Newtonsoft's
-        /// own serializer and JObject.Parse produces a clean JObject tree.
+        /// serialize natively.
+        ///
+        /// PropertyCollection extends JsonDictionary (Dictionary&lt;string,object&gt;)
+        /// but stores actual data in an internal IDictionary&lt;string,JsonElement&gt;
+        /// via STJ's [JsonExtensionData].  The base Dictionary&lt;string,object&gt;
+        /// is empty, so Newtonsoft serializes it as {}.
+        ///
+        /// The 'new GetEnumerator()' on JsonDictionary reads the internal
+        /// Properties and converts via FromJsonElement, yielding native types.
+        /// We copy into a plain Dictionary and serialize that via Newtonsoft.
         /// </summary>
         internal static JObject PropertyCollectionToJObject(PropertyCollection pc)
         {
-            // Log types for diagnostics
+            var dict = new Dictionary<string, object>();
             foreach (var kv in pc)
             {
-                Console.WriteLine("PropertyCollection[{0}] type={1} value={2}",
-                    kv.Key, kv.Value?.GetType().FullName ?? "null", kv.Value);
+                dict[kv.Key] = kv.Value;
             }
-
-            // Serialize via Newtonsoft (which knows all its own types) then
-            // re-parse into a JObject.
-            string json = JsonConvert.SerializeObject(pc);
-            Console.WriteLine("PropertyCollection JSON via Newtonsoft: " + json);
-            var jobj = JObject.Parse(json);
-            // Ensure $version is included
-            if (!jobj.ContainsKey("$version"))
-            {
-                jobj["$version"] = pc.Version;
-            }
-            return jobj;
+            dict["$version"] = pc.Version;
+            string json = JsonConvert.SerializeObject(dict);
+            Console.WriteLine("PropertyCollectionToJObject JSON: " + json);
+            return JObject.Parse(json);
         }
 
         /// <summary>
