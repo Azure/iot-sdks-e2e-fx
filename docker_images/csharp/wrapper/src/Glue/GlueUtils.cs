@@ -128,6 +128,11 @@ namespace IO.Swagger.Controllers
         private static object ToNativeValue(object value)
         {
             if (value == null) return null;
+            // Handle Newtonsoft JToken types BEFORE the IEnumerable check.
+            // JToken implements IEnumerable<JToken>, so a JValue("some string")
+            // would match IEnumerable<object> and produce [] (empty array)
+            // because JValue yields zero children when enumerated.
+            if (value is JToken jt) return JTokenToNative(jt);
             if (value is string || value is int || value is long || value is double || value is bool) return value;
             if (value is DateTimeOffset dto) return dto.ToString("o");
             if (value is IDictionary<string, object> dict)
@@ -139,6 +144,33 @@ namespace IO.Swagger.Controllers
                 return list.Select(ToNativeValue).ToList();
             }
             return value;
+        }
+
+        private static object JTokenToNative(JToken token)
+        {
+            switch (token.Type)
+            {
+                case JTokenType.Object:
+                    return ((JObject)token).Properties()
+                        .ToDictionary(p => p.Name, p => JTokenToNative(p.Value));
+                case JTokenType.Array:
+                    return ((JArray)token).Select(JTokenToNative).ToList();
+                case JTokenType.Integer:
+                    return token.Value<long>();
+                case JTokenType.Float:
+                    return token.Value<double>();
+                case JTokenType.String:
+                    return token.Value<string>();
+                case JTokenType.Boolean:
+                    return token.Value<bool>();
+                case JTokenType.Null:
+                case JTokenType.Undefined:
+                    return null;
+                case JTokenType.Date:
+                    return token.Value<DateTimeOffset>().ToString("o");
+                default:
+                    return token.ToString();
+            }
         }
 #endif
     }
