@@ -5,7 +5,6 @@ using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Client;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -86,35 +85,17 @@ namespace IO.Swagger.Controllers
         /// Convert a PropertyCollection to a Dictionary that STJ can serialize
         /// natively.
         ///
-        /// PropertyCollection stores data in an internal
-        /// IDictionary&lt;string,JsonElement&gt; via STJ's [JsonExtensionData].
-        /// We read that dictionary directly via reflection and use
-        /// JsonElement.Clone() to produce standalone values.
+        /// PropertyCollection has a public GetEnumerator() that iterates
+        /// the stored properties (filtering out $version) and converts
+        /// JsonElement values to native .NET objects via FromJsonElement().
         /// </summary>
         internal static Dictionary<string, object> PropertyCollectionToDict(PropertyCollection pc)
         {
             var dict = new Dictionary<string, object>();
 
-            PropertyInfo propsProperty = null;
-            Type searchType = pc.GetType();
-            while (searchType != null && propsProperty == null)
+            foreach (var kv in pc)
             {
-                propsProperty = searchType.GetProperty("Properties",
-                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                if (propsProperty == null)
-                    searchType = searchType.BaseType;
-            }
-
-            if (propsProperty != null)
-            {
-                var propsDict = propsProperty.GetValue(pc) as IDictionary<string, JsonElement>;
-                if (propsDict != null)
-                {
-                    foreach (var kv in propsDict)
-                    {
-                        dict[kv.Key] = kv.Value.Clone();
-                    }
-                }
+                dict[kv.Key] = kv.Value;
             }
 
             dict["$version"] = pc.Version;
