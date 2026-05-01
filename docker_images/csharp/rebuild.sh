@@ -1,23 +1,16 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cd /sdk/shared/src
-[ $? -eq 0 ] || { echo "cd shared failed"; exit 1; }
-
-dotnet publish --no-dependencies --output /app/ --framework=netstandard2.0
-[ $? -eq 0 ] || { echo "publish shared failed"; exit 1; }
-
-cd /sdk/iothub/device/src
-[ $? -eq 0 ] || { echo "cd device failed"; exit 1; }
-
-dotnet publish --no-dependencies --output /app/ --framework=netstandard2.0
-[ $? -eq 0 ] || { echo "publish device failed"; exit 1; }
-
-cd /sdk/iothub/service/src
-[ $? -eq 0 ] || { echo "cd service failed"; exit 1; }
-
-dotnet publish --no-dependencies --output /app/ --framework=netstandard2.0
-[ $? -eq 0 ] || { echo "publish service failed"; exit 1; }
+# Publish SDK sub-projects (paths may not exist if the SDK was restructured)
+for proj in shared/src iothub/device/src iothub/service/src; do
+    if [ -d "/sdk/$proj" ]; then
+        cd /sdk/$proj
+        dotnet publish --no-dependencies --output /app/ --framework=netstandard2.0
+        [ $? -eq 0 ] || { echo "publish $proj failed"; exit 1; }
+    else
+        echo "Skipping publish for $proj (directory not found)"
+    fi
+done
 
 if [ -d "/wrapper/src" ]; then
     cd /wrapper/src
