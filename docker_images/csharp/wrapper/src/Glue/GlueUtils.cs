@@ -89,20 +89,32 @@ namespace IO.Swagger.Controllers
 
 #if SDK_NET10
         /// <summary>
-        /// Convert a PropertyCollection to a plain Dictionary with native .NET types.
-        /// This avoids using Newtonsoft JObject in the REST response, which
-        /// System.Text.Json (the default ASP.NET serializer on .NET 10) cannot
-        /// serialize correctly.
+        /// Convert a PropertyCollection to a JObject that Newtonsoft.Json can
+        /// serialize natively.  PropertyCollection may contain types that
+        /// Newtonsoft does not serialize correctly when boxed inside a
+        /// Dictionary&lt;string,object&gt;.  Roundtripping through Newtonsoft's
+        /// own serializer and JObject.Parse produces a clean JObject tree.
         /// </summary>
-        internal static Dictionary<string, object> PropertyCollectionToDict(PropertyCollection pc)
+        internal static JObject PropertyCollectionToJObject(PropertyCollection pc)
         {
-            var dict = new Dictionary<string, object>();
-            dict["$version"] = pc.Version;
+            // Log types for diagnostics
             foreach (var kv in pc)
             {
-                dict[kv.Key] = ToNativeValue(kv.Value);
+                Console.WriteLine("PropertyCollection[{0}] type={1} value={2}",
+                    kv.Key, kv.Value?.GetType().FullName ?? "null", kv.Value);
             }
-            return dict;
+
+            // Serialize via Newtonsoft (which knows all its own types) then
+            // re-parse into a JObject.
+            string json = JsonConvert.SerializeObject(pc);
+            Console.WriteLine("PropertyCollection JSON via Newtonsoft: " + json);
+            var jobj = JObject.Parse(json);
+            // Ensure $version is included
+            if (!jobj.ContainsKey("$version"))
+            {
+                jobj["$version"] = pc.Version;
+            }
+            return jobj;
         }
 
         /// <summary>

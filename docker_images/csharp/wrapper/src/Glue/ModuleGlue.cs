@@ -278,7 +278,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine(JsonConvert.SerializeObject(lastDesiredProps));
 #if SDK_NET10
             return new Models.Twin {
-                Desired = GlueUtils.PropertyCollectionToDict(lastDesiredProps)
+                Desired = GlueUtils.PropertyCollectionToJObject(lastDesiredProps)
             };
 #else
             return new Models.Twin {
@@ -298,8 +298,8 @@ namespace IO.Swagger.Controllers
             // which System.Text.Json (default ASP.NET serializer on .NET 10)
             // cannot serialize correctly.
             return new Models.Twin {
-                Desired = GlueUtils.PropertyCollectionToDict(t.Desired),
-                Reported = GlueUtils.PropertyCollectionToDict(t.Reported)
+                Desired = GlueUtils.PropertyCollectionToJObject(t.Desired),
+                Reported = GlueUtils.PropertyCollectionToJObject(t.Reported)
             };
 #else
             Console.WriteLine(JsonConvert.SerializeObject(t));
