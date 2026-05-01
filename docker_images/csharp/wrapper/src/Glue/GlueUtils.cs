@@ -105,20 +105,36 @@ namespace IO.Swagger.Controllers
         {
             var jobj = new JObject();
 
-            // Access the internal Properties dictionary (IDictionary<string, JsonElement>)
-            // on the base JsonDictionary class, bypassing the buggy FromJsonElement conversion.
-            var propsProperty = pc.GetType().BaseType?.GetProperty("Properties",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // Walk the type hierarchy to find the Properties dictionary.
+            // PropertyCollection or JsonDictionary may define it at different levels.
+            System.Reflection.PropertyInfo propsProperty = null;
+            Type searchType = pc.GetType();
+            while (searchType != null && propsProperty == null)
+            {
+                propsProperty = searchType.GetProperty("Properties",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
+                if (propsProperty == null)
+                    searchType = searchType.BaseType;
+            }
+
+            Console.WriteLine($"PropertyCollectionToJObject: found Properties on {searchType?.Name}, type={propsProperty?.PropertyType.Name}");
 
             if (propsProperty != null)
             {
                 var propsDict = propsProperty.GetValue(pc) as System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement>;
                 if (propsDict != null)
                 {
+                    Console.WriteLine($"  Properties has {propsDict.Count} entries: [{string.Join(", ", propsDict.Keys)}]");
                     foreach (var kv in propsDict)
                     {
                         jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
                     }
+                }
+                else
+                {
+                    Console.WriteLine($"  Properties value is null or not IDictionary<string,JsonElement>");
+                    var rawValue = propsProperty.GetValue(pc);
+                    Console.WriteLine($"  Raw value type: {rawValue?.GetType().FullName}");
                 }
             }
 
