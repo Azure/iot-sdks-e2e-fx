@@ -222,10 +222,17 @@ namespace IO.Swagger.Controllers
             var response = await client.InvokeMethodAsync(deviceId, moduleId, request, CancellationToken.None).ConfigureAwait(false);
             Console.WriteLine("Response received:");
             Console.WriteLine(JsonConvert.SerializeObject(response));
+#if SDK_NET10
+            return new Dictionary<string, object> {
+                { "status", response.Status },
+                { "payload", GlueUtils.PayloadBytesToNative(response.Payload) }
+            };
+#else
             return new JObject(
                 new JProperty("status", response.Status),
                 new JProperty("payload", GlueUtils.PayloadBytesToJson(response.Payload))
             );
+#endif
         }
 
         public async Task<object> InvokeDeviceMethodAsync(string connectionId, string deviceId, MethodInvoke methodInvokeParameters)
@@ -239,10 +246,17 @@ namespace IO.Swagger.Controllers
             var response = await client.InvokeMethodAsync(deviceId, request, CancellationToken.None).ConfigureAwait(false);
             Console.WriteLine("Response received:");
             Console.WriteLine(JsonConvert.SerializeObject(response));
+#if SDK_NET10
+            return new Dictionary<string, object> {
+                { "status", response.Status },
+                { "payload", GlueUtils.PayloadBytesToNative(response.Payload) }
+            };
+#else
             return new JObject(
                 new JProperty("status", response.Status),
                 new JProperty("payload", GlueUtils.PayloadBytesToJson(response.Payload))
             );
+#endif
         }
 
         public async Task<Models.Twin> WaitForDesiredPropertyPatchAsync(string connectionId)
@@ -262,9 +276,15 @@ namespace IO.Swagger.Controllers
 
             Console.WriteLine("Returning patch:");
             Console.WriteLine(JsonConvert.SerializeObject(lastDesiredProps));
+#if SDK_NET10
+            return new Models.Twin {
+                Desired = GlueUtils.PropertyCollectionToDict(lastDesiredProps)
+            };
+#else
             return new Models.Twin {
                 Desired = JObject.Parse(lastDesiredProps.GetSerializedString())
             };
+#endif
         }
 
         public async Task<Models.Twin> GetTwinAsync(string connectionId)
@@ -273,17 +293,21 @@ namespace IO.Swagger.Controllers
             var client = objectMap[connectionId];
             TwinProperties t = await client.GetTwinPropertiesAsync().ConfigureAwait(false);
             Console.WriteLine("Twin Received");
-            string desiredJson = t.Desired.GetSerializedString();
-            string reportedJson = t.Reported.GetSerializedString();
-            Console.WriteLine("DEBUG desired GetSerializedString: " + desiredJson);
-            Console.WriteLine("DEBUG reported GetSerializedString: " + reportedJson);
-            Console.WriteLine("DEBUG Newtonsoft of TwinProperties: " + JsonConvert.SerializeObject(t));
-            var result = new Models.Twin {
-                Desired = JObject.Parse(desiredJson),
-                Reported = JObject.Parse(reportedJson)
+#if SDK_NET10
+            // Use plain dictionaries to avoid Newtonsoft JObject/JToken types
+            // which System.Text.Json (default ASP.NET serializer on .NET 10)
+            // cannot serialize correctly.
+            return new Models.Twin {
+                Desired = GlueUtils.PropertyCollectionToDict(t.Desired),
+                Reported = GlueUtils.PropertyCollectionToDict(t.Reported)
             };
-            Console.WriteLine("DEBUG final Models.Twin Newtonsoft: " + JsonConvert.SerializeObject(result));
-            return result;
+#else
+            Console.WriteLine(JsonConvert.SerializeObject(t));
+            return new Models.Twin {
+                Desired = JObject.Parse(t.Desired.GetSerializedString()),
+                Reported = JObject.Parse(t.Reported.GetSerializedString())
+            };
+#endif
         }
 
         public async Task SendTwinPatchAsync(string connectionId, Models.Twin props)
@@ -293,13 +317,31 @@ namespace IO.Swagger.Controllers
             var client = objectMap[connectionId];
 #if SDK_NET10
             var reportedProps = new PropertyCollection();
+            // ASP.NET on .NET 10 may deserialize the input as JsonElement (System.Text.Json)
+            // instead of JObject (Newtonsoft).
+            if (props.Reported is JObject jobj)
+            {
+                foreach (var p in jobj.Properties())
+                {
+                    reportedProps[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
+                }
+            }
+            else if (props.Reported is System.Text.Json.JsonElement jsonEl)
+            {
+                foreach (var p in jsonEl.EnumerateObject())
+                {
+                    reportedProps[p.Name] = p.Value.ValueKind == System.Text.Json.JsonValueKind.Null
+                        ? null
+                        : System.Text.Json.JsonSerializer.Deserialize<object>(p.Value);
+                }
+            }
 #else
             var reportedProps = new ReportedProperties();
-#endif
             foreach (var p in (props.Reported as JObject).Properties())
             {
                 reportedProps[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
             }
+#endif
             await client.UpdateReportedPropertiesAsync(reportedProps).ConfigureAwait(false);
         }
 
@@ -334,7 +376,24 @@ namespace IO.Swagger.Controllers
 #endif
                 object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(rawPayload));
                 string received = JsonConvert.SerializeObject(new JRaw(request));
+#if SDK_NET10
+                // requestAndResponse.RequestPayload may be a JsonElement from System.Text.Json deserialization
+                string expected;
+                if (requestAndResponse.RequestPayload is Newtonsoft.Json.Linq.JToken jtoken)
+                {
+                    expected = jtoken["payload"].ToString();
+                }
+                else if (requestAndResponse.RequestPayload is System.Text.Json.JsonElement je && je.TryGetProperty("payload", out var payloadProp))
+                {
+                    expected = payloadProp.ToString();
+                }
+                else
+                {
+                    expected = requestAndResponse.RequestPayload?.ToString();
+                }
+#else
                 string expected = ((Newtonsoft.Json.Linq.JToken)requestAndResponse.RequestPayload)["payload"].ToString();
+#endif
                 Console.WriteLine("request expected: " + expected);
                 Console.WriteLine("request received: " + received);
                 if (expected != received)

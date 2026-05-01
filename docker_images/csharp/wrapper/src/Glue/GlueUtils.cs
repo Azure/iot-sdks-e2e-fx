@@ -6,6 +6,8 @@ using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 #pragma warning disable CA1304, CA1305, CA1307 // string function could vary with locale
@@ -84,5 +86,60 @@ namespace IO.Swagger.Controllers
             }
             return request;
         }
+
+#if SDK_NET10
+        /// <summary>
+        /// Convert a PropertyCollection to a plain Dictionary with native .NET types.
+        /// This avoids using Newtonsoft JObject in the REST response, which
+        /// System.Text.Json (the default ASP.NET serializer on .NET 10) cannot
+        /// serialize correctly.
+        /// </summary>
+        internal static Dictionary<string, object> PropertyCollectionToDict(PropertyCollection pc)
+        {
+            var dict = new Dictionary<string, object>();
+            dict["$version"] = pc.Version;
+            foreach (var kv in pc)
+            {
+                dict[kv.Key] = ToNativeValue(kv.Value);
+            }
+            return dict;
+        }
+
+        /// <summary>
+        /// Convert a payload byte[] (UTF-8 JSON) into a native .NET object
+        /// that System.Text.Json can serialize correctly.
+        /// </summary>
+        internal static object PayloadBytesToNative(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+            {
+                return null;
+            }
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<object>(bytes);
+            }
+            catch
+            {
+                return Encoding.UTF8.GetString(bytes);
+            }
+        }
+
+        private static object ToNativeValue(object value)
+        {
+            if (value == null) return null;
+            if (value is string || value is int || value is long || value is double || value is bool) return value;
+            if (value is DateTimeOffset dto) return dto.ToString("o");
+            if (value is IDictionary<string, object> dict)
+            {
+                return dict.ToDictionary(kv => kv.Key, kv => ToNativeValue(kv.Value));
+            }
+            if (value is IEnumerable<object> list)
+            {
+                return list.Select(ToNativeValue).ToList();
+            }
+            return value;
+        }
+#endif
     }
 }
