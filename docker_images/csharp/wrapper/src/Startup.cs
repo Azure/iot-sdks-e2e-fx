@@ -10,6 +10,8 @@
 
 using System;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -18,8 +20,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using IO.Swagger.Filters;
@@ -54,22 +54,20 @@ namespace IO.Swagger
         /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
-            // The Azure IoT C# SDK v2 (previews/v2) serializes
-            // EdgeModuleDirectMethodRequest and DirectMethodResponse via
-            // Newtonsoft.Json (not System.Text.Json), so no global serializer
-            // fixup is required for the SDK itself.
+            // The Azure IoT C# SDK (net10.0) uses System.Text.Json internally.
+            // The wrapper now also uses System.Text.Json throughout, so the
+            // serializer is consistent across all layers.
 
             // Add framework services.
             services
                 .AddMvc(options =>
                 {
-                    options.InputFormatters.RemoveType<Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonInputFormatter>();
-                    options.OutputFormatters.RemoveType<Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonOutputFormatter>();
                 })
-                .AddNewtonsoftJson(opts =>
+                .AddJsonOptions(opts =>
                 {
-                    opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    opts.SerializerSettings.Converters.Add(new StringEnumConverter(new CamelCaseNamingStrategy()));
+                    opts.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                    opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                    opts.JsonSerializerOptions.Converters.Add(new RawJsonByteArrayConverter());
                 })
                 .AddXmlSerializerFormatters();
 

@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Attributes;
 

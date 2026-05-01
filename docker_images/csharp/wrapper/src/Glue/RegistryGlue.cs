@@ -2,11 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using IO.Swagger.Models;
 using Microsoft.Azure.Devices;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 #pragma warning disable CA1304, CA1305, CA1307 // string function could vary with locale
@@ -66,31 +65,30 @@ namespace IO.Swagger.Controllers
             Debug.WriteLine("Getting twin");
             var twin = await client.Twins.GetAsync(deviceId, moduleId).ConfigureAwait(false);
             Debug.WriteLine("Twin received.");
-            Debug.WriteLine(JsonConvert.SerializeObject(twin));
+            Debug.WriteLine(JsonSerializer.Serialize(twin));
+            var desiredJson = twin.Properties.Desired.GetPropertiesAsJson();
+            var reportedJson = twin.Properties.Reported.GetPropertiesAsJson();
             return new Models.Twin
             {
-                Desired = JObject.Parse(twin.Properties.Desired.GetPropertiesAsJson()),
-                Reported = JObject.Parse(twin.Properties.Reported.GetPropertiesAsJson())
+                Desired = JsonDocument.Parse(desiredJson).RootElement.Clone(),
+                Reported = JsonDocument.Parse(reportedJson).RootElement.Clone()
             };
         }
 
         public async Task PatchModuleTwin(string connectionId, string deviceId, string moduleId, Models.Twin twin)
         {
             Debug.WriteLine("RegistryTwinPatchPutAsync received for {0} with deviceId {1} and moduleId {2}", connectionId, deviceId, moduleId);
-            Debug.WriteLine(JsonConvert.SerializeObject(twin));
+            Debug.WriteLine(JsonSerializer.Serialize(twin));
             var client = objectMap[connectionId];
             Debug.WriteLine("Patching twin");
-            // ClientTwinProperties uses Newtonsoft.Json attributes
-            // ([JsonExtensionData] backs the internal `Properties` dict).
-            // System.Text.Json ignores Newtonsoft attributes, so deserializing
-            // via STJ produces an empty desired collection and the PATCH
-            // becomes a no-op.  Use the public indexer to populate the
-            // properties from the incoming JObject.
             var clientTwin = new ClientTwin();
             clientTwin.Properties = new ClientTwinDocument();
-            foreach (var p in (twin.Desired as JObject).Properties())
+            if (twin.Desired is JsonElement je)
             {
-                clientTwin.Properties.Desired[p.Name] = p.Value;
+                foreach (var p in je.EnumerateObject())
+                {
+                    clientTwin.Properties.Desired[p.Name] = p.Value.Clone();
+                }
             }
             await client.Twins.UpdateAsync(deviceId, moduleId, clientTwin).ConfigureAwait(false);
             Debug.WriteLine("patch complete");

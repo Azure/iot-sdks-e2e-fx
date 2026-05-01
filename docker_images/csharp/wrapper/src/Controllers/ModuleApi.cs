@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Attributes;
 
@@ -115,7 +115,7 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\"empty\": false}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            ? JsonSerializer.Deserialize<ConnectResponse>(exampleJson)
             : default(ConnectResponse);
             //TODO: Change the data returned
             return new ObjectResult(example);
@@ -141,7 +141,7 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\"empty\": false}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            ? JsonSerializer.Deserialize<ConnectResponse>(exampleJson)
             : default(ConnectResponse);
             //TODO: Change the data returned
             return new ObjectResult(example);
@@ -171,7 +171,7 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\"empty\": false}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            ? JsonSerializer.Deserialize<ConnectResponse>(exampleJson)
             : default(ConnectResponse);
             //TODO: Change the data returned
             return new ObjectResult(example);
@@ -198,7 +198,7 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\"empty\": false}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<ConnectResponse>(exampleJson)
+            ? JsonSerializer.Deserialize<ConnectResponse>(exampleJson)
             : default(ConnectResponse);
             //TODO: Change the data returned
             return new ObjectResult(example);
@@ -331,7 +331,7 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\n  \"bytes\": [],\n  \"empty\": true\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<string>(exampleJson)
+            ? JsonSerializer.Deserialize<string>(exampleJson)
             : default(string);
             //TODO: Change the data returned
             return new ObjectResult(example);
@@ -495,7 +495,7 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\n  \"bytes\": [],\n  \"empty\": true\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<string>(exampleJson)
+            ? JsonSerializer.Deserialize<string>(exampleJson)
             : default(string);
             //TODO: Change the data returned
             return new ObjectResult(example);

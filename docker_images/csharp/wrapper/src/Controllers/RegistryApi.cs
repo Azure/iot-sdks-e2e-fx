@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Attributes;
 
@@ -91,7 +91,7 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\"empty\": false}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Twin>(exampleJson)
+            ? JsonSerializer.Deserialize<Twin>(exampleJson)
             : default(Twin);
             //TODO: Change the data returned
             return new ObjectResult(example);

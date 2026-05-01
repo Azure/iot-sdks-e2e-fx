@@ -2,140 +2,63 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace IO.Swagger.Controllers
 {
     /// <summary>
-    /// Workaround for the v2 preview SDK serialization bug where
-    /// EdgeModuleDirectMethodRequest.Payload and DirectMethodResponse.Payload
-    /// are declared as <c>byte[]</c> with <c>[JsonProperty("payload")]</c>. With
-    /// Newtonsoft's default behavior <c>byte[]</c> is serialized as a base64 string,
-    /// so the wire payload becomes <c>{"payload":"&lt;base64&gt;"}</c> instead of
-    /// the expected JSON object.
-    /// <para>
-    /// Scoped to property paths whose final segment is <c>payload</c> so that
-    /// other byte[] fields elsewhere in the SDK (e.g. HSM signatures, auth
-    /// digests) are NOT touched - applying this converter universally caused
-    /// MQTT authentication failures because base64 byte[] auth fields were
-    /// being re-interpreted as raw UTF-8 JSON.
-    /// </para>
+    /// System.Text.Json converter for <c>byte[]</c> that emits raw UTF-8 JSON
+    /// instead of base64 for payload fields.
+    ///
+    /// Because STJ converters don't receive the current property path, this
+    /// converter always treats byte[] as raw JSON on write and tries
+    /// raw-JSON-first on read.  This is safe because the wrapper never
+    /// serializes non-payload byte[] fields through the MVC pipeline (auth
+    /// digests etc. stay inside the SDK layer) and incoming REST requests
+    /// from the Python test runner never send base64 byte[] fields.
     /// </summary>
-    internal class RawJsonByteArrayConverter : JsonConverter
+    internal class RawJsonByteArrayConverter : JsonConverter<byte[]>
     {
-        public override bool CanConvert(Type objectType) => objectType == typeof(byte[]);
-
-        private static bool IsPayloadPath(string path)
+        public override byte[] Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (string.IsNullOrEmpty(path))
-            {
-                return false;
-            }
-            // Match "payload" or "Payload" as ANY segment in the path, not just
-            // the leaf. When the SDK deserializes an HTTP response such as
-            //   {"status":200,"payload":{"responseData":"..."}}
-            // the Newtonsoft reader walks into `payload` and may encounter nested
-            // byte[] properties at paths like "payload.responseData". These must
-            // also be treated as raw JSON, not base64.
-            foreach (string segment in path.Split('.'))
-            {
-                string s = segment;
-                int bracket = s.IndexOf('[');
-                if (bracket >= 0)
-                {
-                    s = s.Substring(0, bracket);
-                }
-                if (s == "payload" || s == "Payload")
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (reader.TokenType == JsonToken.Null)
+            if (reader.TokenType == JsonTokenType.Null)
             {
                 return null;
             }
-            if (!IsPayloadPath(reader.Path))
+            if (reader.TokenType == JsonTokenType.String)
             {
-                // Default base64 byte[] behavior for non-payload fields.
-                if (reader.TokenType == JsonToken.String)
-                {
-                    return Convert.FromBase64String((string)reader.Value);
-                }
-                if (reader.TokenType == JsonToken.StartArray)
-                {
-                    var arr = JArray.Load(reader);
-                    var bytes = new byte[arr.Count];
-                    for (int i = 0; i < arr.Count; i++)
-                    {
-                        bytes[i] = (byte)arr[i];
-                    }
-                    return bytes;
-                }
-                // For object/number/bool tokens at non-payload paths, mimic
-                // Newtonsoft's default failure mode (throwing JsonReaderException
-                // for byte[]) so the SDK's catch-and-fallback in
-                // DefaultPayloadConvention.GetObject<byte[]>(string) still works.
-                throw new JsonReaderException(
-                    $"Cannot convert {reader.TokenType} to byte[] at path '{reader.Path}'.");
+                string s = reader.GetString();
+                return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(s));
             }
-
-            if (reader.TokenType == JsonToken.String)
-            {
-                // The wire value is a JSON string. Encode the JSON-escaped
-                // string text so callers reading back bytes see the original
-                // JSON token text.
-                var s = (string)reader.Value;
-                return Encoding.UTF8.GetBytes(JsonConvert.ToString(s));
-            }
-            // Object/array/number/bool: capture the raw JSON text as UTF-8 bytes.
-            var token = JToken.ReadFrom(reader);
-            return Encoding.UTF8.GetBytes(token.ToString(Formatting.None));
+            // Object, array, number, bool: capture the raw JSON text as bytes.
+            using var doc = JsonDocument.ParseValue(ref reader);
+            return Encoding.UTF8.GetBytes(doc.RootElement.GetRawText());
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void Write(Utf8JsonWriter writer, byte[] value, JsonSerializerOptions options)
         {
-            var bytes = (byte[])value;
-            if (bytes == null)
+            if (value == null)
             {
-                writer.WriteNull();
+                writer.WriteNullValue();
                 return;
             }
-            if (!IsPayloadPath(writer.Path))
+            if (value.Length == 0)
             {
-                // Default base64 byte[] representation for non-payload fields.
-                writer.WriteValue(bytes);
+                writer.WriteNullValue();
                 return;
             }
-            if (bytes.Length == 0)
-            {
-                // Emit empty array as null to match SDK expectations.
-                writer.WriteNull();
-                return;
-            }
-            string text;
+            // Attempt to write as raw JSON (the payload case).
             try
             {
-                text = Encoding.UTF8.GetString(bytes);
+                string text = Encoding.UTF8.GetString(value);
+                using var doc = JsonDocument.Parse(text);
+                doc.RootElement.WriteTo(writer);
             }
             catch
             {
-                writer.WriteValue(bytes);
-                return;
-            }
-            try
-            {
-                JToken.Parse(text).WriteTo(writer);
-            }
-            catch (JsonException)
-            {
-                // Not valid JSON; fall back to default base64 representation.
-                writer.WriteValue(bytes);
+                // Not valid JSON/UTF-8 — fall back to base64.
+                writer.WriteBase64StringValue(value);
             }
         }
     }

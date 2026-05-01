@@ -3,12 +3,11 @@
 using IO.Swagger.Models;
 using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Client;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
 
 #pragma warning disable CA1304, CA1305, CA1307 // string function could vary with locale
 
@@ -42,26 +41,30 @@ namespace IO.Swagger.Controllers
 
         internal static byte[] ObjectToBytes(object obj)
         {
-            return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(obj));
+            return JsonSerializer.SerializeToUtf8Bytes(obj);
         }
 
-        // Convert a payload byte[] (UTF-8 of a JSON value) returned by the SDK
-        // into a JToken to embed in a wrapper response. Falls back to a JSON
-        // string if the bytes are not valid JSON.
-        internal static JToken PayloadBytesToJson(byte[] bytes)
+        /// <summary>
+        /// Convert a payload byte[] (UTF-8 JSON) returned by the SDK into a
+        /// JsonElement for embedding in a wrapper response.
+        /// </summary>
+        internal static JsonElement? PayloadBytesToJsonElement(byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)
             {
                 return null;
             }
-            string text = Encoding.UTF8.GetString(bytes);
             try
             {
-                return JToken.Parse(text);
+                using var doc = JsonDocument.Parse(bytes);
+                return doc.RootElement.Clone();
             }
             catch (JsonException)
             {
-                return new JValue(text);
+                // Not valid JSON — wrap as a JSON string.
+                string text = Encoding.UTF8.GetString(bytes);
+                using var doc = JsonDocument.Parse(JsonSerializer.Serialize(text));
+                return doc.RootElement.Clone();
             }
         }
 
@@ -70,77 +73,52 @@ namespace IO.Swagger.Controllers
             var request = new EdgeModuleDirectMethodRequest(methodInvokeParameters.MethodName, GlueUtils.ObjectToBytes(methodInvokeParameters.Payload));
             if (methodInvokeParameters.ResponseTimeoutInSeconds.HasValue)
             {
-#if SDK_NET10
                 request.ResponseTimeoutInSeconds = (int)methodInvokeParameters.ResponseTimeoutInSeconds.Value;
-#else
-                request.ResponseTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ResponseTimeoutInSeconds.Value);
-#endif
             }
             if (methodInvokeParameters.ConnectTimeoutInSeconds.HasValue)
             {
-#if SDK_NET10
                 request.ConnectTimeoutInSeconds = (int)methodInvokeParameters.ConnectTimeoutInSeconds.Value;
-#else
-                request.ConnectionTimeout = TimeSpan.FromSeconds(methodInvokeParameters.ConnectTimeoutInSeconds.Value);
-#endif
             }
             return request;
         }
 
-#if SDK_NET10
         /// <summary>
-        /// Convert a PropertyCollection to a JObject that Newtonsoft.Json can
-        /// serialize natively.
+        /// Convert a PropertyCollection to a Dictionary that STJ can serialize
+        /// natively.
         ///
-        /// PropertyCollection extends JsonDictionary (Dictionary&lt;string,object&gt;)
-        /// but stores actual data in an internal IDictionary&lt;string,JsonElement&gt;
-        /// via STJ's [JsonExtensionData].  The base Dictionary is empty.
-        ///
-        /// The 'new GetEnumerator()' on JsonDictionary calls FromJsonElement which
-        /// incorrectly converts string values to empty List&lt;object&gt;.
-        /// We bypass that by reading the internal Properties dictionary directly
-        /// via reflection and using JsonElement.GetRawText() to get the original JSON.
+        /// PropertyCollection stores data in an internal
+        /// IDictionary&lt;string,JsonElement&gt; via STJ's [JsonExtensionData].
+        /// We read that dictionary directly via reflection and use
+        /// JsonElement.Clone() to produce standalone values.
         /// </summary>
-        internal static JObject PropertyCollectionToJObject(PropertyCollection pc)
+        internal static Dictionary<string, object> PropertyCollectionToDict(PropertyCollection pc)
         {
-            var jobj = new JObject();
+            var dict = new Dictionary<string, object>();
 
-            // Walk the type hierarchy to find the Properties dictionary.
-            // PropertyCollection or JsonDictionary may define it at different levels.
-            System.Reflection.PropertyInfo propsProperty = null;
+            PropertyInfo propsProperty = null;
             Type searchType = pc.GetType();
             while (searchType != null && propsProperty == null)
             {
                 propsProperty = searchType.GetProperty("Properties",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly);
+                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
                 if (propsProperty == null)
                     searchType = searchType.BaseType;
             }
 
-            Console.WriteLine($"PropertyCollectionToJObject: found Properties on {searchType?.Name}, type={propsProperty?.PropertyType.Name}");
-
             if (propsProperty != null)
             {
-                var propsDict = propsProperty.GetValue(pc) as System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement>;
+                var propsDict = propsProperty.GetValue(pc) as IDictionary<string, JsonElement>;
                 if (propsDict != null)
                 {
-                    Console.WriteLine($"  Properties has {propsDict.Count} entries: [{string.Join(", ", propsDict.Keys)}]");
                     foreach (var kv in propsDict)
                     {
-                        jobj[kv.Key] = JToken.Parse(kv.Value.GetRawText());
+                        dict[kv.Key] = kv.Value.Clone();
                     }
-                }
-                else
-                {
-                    Console.WriteLine($"  Properties value is null or not IDictionary<string,JsonElement>");
-                    var rawValue = propsProperty.GetValue(pc);
-                    Console.WriteLine($"  Raw value type: {rawValue?.GetType().FullName}");
                 }
             }
 
-            jobj["$version"] = pc.Version;
-            Console.WriteLine("PropertyCollectionToJObject JSON: " + jobj.ToString(Formatting.None));
-            return jobj;
+            dict["$version"] = pc.Version;
+            return dict;
         }
 
         /// <summary>
@@ -155,61 +133,13 @@ namespace IO.Swagger.Controllers
             }
             try
             {
-                return System.Text.Json.JsonSerializer.Deserialize<object>(bytes);
+                using var doc = JsonDocument.Parse(bytes);
+                return doc.RootElement.Clone();
             }
             catch
             {
                 return Encoding.UTF8.GetString(bytes);
             }
         }
-
-        private static object ToNativeValue(object value)
-        {
-            if (value == null) return null;
-            // Handle Newtonsoft JToken types BEFORE the IEnumerable check.
-            // JToken implements IEnumerable<JToken>, so a JValue("some string")
-            // would match IEnumerable<object> and produce [] (empty array)
-            // because JValue yields zero children when enumerated.
-            if (value is JToken jt) return JTokenToNative(jt);
-            if (value is string || value is int || value is long || value is double || value is bool) return value;
-            if (value is DateTimeOffset dto) return dto.ToString("o");
-            if (value is IDictionary<string, object> dict)
-            {
-                return dict.ToDictionary(kv => kv.Key, kv => ToNativeValue(kv.Value));
-            }
-            if (value is IEnumerable<object> list)
-            {
-                return list.Select(ToNativeValue).ToList();
-            }
-            return value;
-        }
-
-        private static object JTokenToNative(JToken token)
-        {
-            switch (token.Type)
-            {
-                case JTokenType.Object:
-                    return ((JObject)token).Properties()
-                        .ToDictionary(p => p.Name, p => JTokenToNative(p.Value));
-                case JTokenType.Array:
-                    return ((JArray)token).Select(JTokenToNative).ToList();
-                case JTokenType.Integer:
-                    return token.Value<long>();
-                case JTokenType.Float:
-                    return token.Value<double>();
-                case JTokenType.String:
-                    return token.Value<string>();
-                case JTokenType.Boolean:
-                    return token.Value<bool>();
-                case JTokenType.Null:
-                case JTokenType.Undefined:
-                    return null;
-                case JTokenType.Date:
-                    return token.Value<DateTimeOffset>().ToString("o");
-                default:
-                    return token.ToString();
-            }
-        }
-#endif
     }
 }

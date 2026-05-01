@@ -6,12 +6,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using IO.Swagger.Models;
 using Microsoft.Azure.Devices;
 using System.Diagnostics;
-using Newtonsoft.Json.Linq;
 using System.Threading;
 
 #pragma warning disable CA1304, CA1305, CA1307 // string function could vary with locale
@@ -84,36 +83,34 @@ namespace IO.Swagger.Controllers
         }
 
         // Workaround for v2 preview SDK bug: invoke direct methods via the IoT
-        // Hub REST API directly so the payload travels as a real JSON value
-        // (instead of being base64-encoded by Newtonsoft when serializing the
-        // DirectMethodServiceRequest.Payload byte[]).
+        // Hub REST API directly so the payload travels as a real JSON value.
         private async Task<object> InvokeMethodViaRestAsync(string connectionId, string relativeUri, MethodInvoke methodInvokeParameters)
         {
             var connStr = connectionStringMap[connectionId];
             var (hostName, keyName, key) = ParseConnectionString(connStr);
 
-            var body = new JObject
+            var bodyDict = new Dictionary<string, object>
             {
                 ["methodName"] = methodInvokeParameters.MethodName,
-                ["payload"] = methodInvokeParameters.Payload == null
-                    ? null
-                    : JToken.FromObject(methodInvokeParameters.Payload),
+                ["payload"] = methodInvokeParameters.Payload,
             };
             if (methodInvokeParameters.ResponseTimeoutInSeconds.HasValue)
             {
-                body["responseTimeoutInSeconds"] = methodInvokeParameters.ResponseTimeoutInSeconds.Value;
+                bodyDict["responseTimeoutInSeconds"] = methodInvokeParameters.ResponseTimeoutInSeconds.Value;
             }
             if (methodInvokeParameters.ConnectTimeoutInSeconds.HasValue)
             {
-                body["connectTimeoutInSeconds"] = methodInvokeParameters.ConnectTimeoutInSeconds.Value;
+                bodyDict["connectTimeoutInSeconds"] = methodInvokeParameters.ConnectTimeoutInSeconds.Value;
             }
+
+            string bodyJson = JsonSerializer.Serialize(bodyDict);
 
             var requestUri = new Uri($"https://{hostName}{relativeUri}?api-version={IotHubApiVersion}");
             using var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 "SharedAccessSignature",
                 BuildSasToken(hostName, keyName, key, TimeSpan.FromMinutes(60)));
-            request.Content = new StringContent(body.ToString(Formatting.None), Encoding.UTF8, "application/json");
+            request.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");
 
             Debug.WriteLine("Invoking via REST: {0}", (object)requestUri);
             using var response = await s_httpClient.SendAsync(request, CancellationToken.None).ConfigureAwait(false);
@@ -126,11 +123,13 @@ namespace IO.Swagger.Controllers
 
             Debug.WriteLine("Response received:");
             Debug.WriteLine(responseBody);
-            var responseJson = JObject.Parse(responseBody);
-            return new JObject(
-                new JProperty("status", responseJson["status"]),
-                new JProperty("payload", responseJson["payload"])
-            );
+            using var responseDoc = JsonDocument.Parse(responseBody);
+            var root = responseDoc.RootElement;
+            return new Dictionary<string, object>
+            {
+                { "status", root.GetProperty("status").Clone() },
+                { "payload", root.TryGetProperty("payload", out var p) ? (object)p.Clone() : null }
+            };
         }
 
         private static (string HostName, string KeyName, string Key) ParseConnectionString(string connectionString)

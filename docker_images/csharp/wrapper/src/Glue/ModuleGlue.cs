@@ -2,12 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using IO.Swagger.Models;
 using Microsoft.Azure.Devices.Client;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -112,11 +111,7 @@ namespace IO.Swagger.Controllers
                     return MessageAcknowledgement.Abandon;
                 }
                 var channel = GetOrCreateInputChannel(connectionId, msg.InputName);
-#if SDK_NET10
                 await channel.Writer.WriteAsync(msg.Payload).ConfigureAwait(false);
-#else
-                await channel.Writer.WriteAsync(msg.GetPayloadAsBytes()).ConfigureAwait(false);
-#endif
                 return MessageAcknowledgement.Complete;
             };
 
@@ -129,11 +124,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableMethodsAsync received for " + connectionId);
         }
 
-#if SDK_NET10
         private PropertyCollection lastDesiredProps = null;
-#else
-        private DesiredProperties lastDesiredProps = null;
-#endif
         private SemaphoreSlim desiredPropMutex = null;
 
         public async Task EnableTwinAsync(string connectionId)
@@ -141,11 +132,7 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("EnableTwinAsync received for " + connectionId);
             var client = objectMap[connectionId];
 
-#if SDK_NET10
             Func<PropertyCollection, Task> handler = async (props) =>
-#else
-            Func<DesiredProperties, Task> handler = async (props) =>
-#endif
             {
                 Console.WriteLine("patch received");
                 lastDesiredProps = props;
@@ -200,9 +187,10 @@ namespace IO.Swagger.Controllers
             object result;
             try
             {
-                result = JsonConvert.DeserializeObject(s);
+                using var doc = JsonDocument.Parse(s);
+                result = doc.RootElement.Clone();
             }
-            catch(JsonReaderException)
+            catch(JsonException)
             {
                 result = s;
             }
@@ -221,18 +209,11 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, moduleId, request, CancellationToken.None).ConfigureAwait(false);
             Console.WriteLine("Response received:");
-            Console.WriteLine(JsonConvert.SerializeObject(response));
-#if SDK_NET10
+            Console.WriteLine(JsonSerializer.Serialize(response));
             return new Dictionary<string, object> {
                 { "status", response.Status },
                 { "payload", GlueUtils.PayloadBytesToNative(response.Payload) }
             };
-#else
-            return new JObject(
-                new JProperty("status", response.Status),
-                new JProperty("payload", GlueUtils.PayloadBytesToJson(response.Payload))
-            );
-#endif
         }
 
         public async Task<object> InvokeDeviceMethodAsync(string connectionId, string deviceId, MethodInvoke methodInvokeParameters)
@@ -241,22 +222,15 @@ namespace IO.Swagger.Controllers
             Console.WriteLine(methodInvokeParameters.ToString());
             var client = objectMap[connectionId];
             var request = GlueUtils.CreateEdgeModuleDirectMethodRequest(methodInvokeParameters);
-            Console.WriteLine("Serialized request preview: " + JsonConvert.SerializeObject(request));
+            Console.WriteLine("Serialized request preview: " + JsonSerializer.Serialize(request));
             Console.WriteLine("Invoking");
             var response = await client.InvokeMethodAsync(deviceId, request, CancellationToken.None).ConfigureAwait(false);
             Console.WriteLine("Response received:");
-            Console.WriteLine(JsonConvert.SerializeObject(response));
-#if SDK_NET10
+            Console.WriteLine(JsonSerializer.Serialize(response));
             return new Dictionary<string, object> {
                 { "status", response.Status },
                 { "payload", GlueUtils.PayloadBytesToNative(response.Payload) }
             };
-#else
-            return new JObject(
-                new JProperty("status", response.Status),
-                new JProperty("payload", GlueUtils.PayloadBytesToJson(response.Payload))
-            );
-#endif
         }
 
         public async Task<Models.Twin> WaitForDesiredPropertyPatchAsync(string connectionId)
@@ -275,16 +249,10 @@ namespace IO.Swagger.Controllers
             Console.WriteLine("mutex triggered.");
 
             Console.WriteLine("Returning patch:");
-            Console.WriteLine(JsonConvert.SerializeObject(lastDesiredProps));
-#if SDK_NET10
+            Console.WriteLine(JsonSerializer.Serialize(lastDesiredProps));
             return new Models.Twin {
-                Desired = GlueUtils.PropertyCollectionToJObject(lastDesiredProps)
+                Desired = GlueUtils.PropertyCollectionToDict(lastDesiredProps)
             };
-#else
-            return new Models.Twin {
-                Desired = JObject.Parse(lastDesiredProps.GetSerializedString())
-            };
-#endif
         }
 
         public async Task<Models.Twin> GetTwinAsync(string connectionId)
@@ -293,62 +261,34 @@ namespace IO.Swagger.Controllers
             var client = objectMap[connectionId];
             TwinProperties t = await client.GetTwinPropertiesAsync().ConfigureAwait(false);
             Console.WriteLine("Twin Received");
-#if SDK_NET10
-            // Use plain dictionaries to avoid Newtonsoft JObject/JToken types
-            // which System.Text.Json (default ASP.NET serializer on .NET 10)
-            // cannot serialize correctly.
             return new Models.Twin {
-                Desired = GlueUtils.PropertyCollectionToJObject(t.Desired),
-                Reported = GlueUtils.PropertyCollectionToJObject(t.Reported)
+                Desired = GlueUtils.PropertyCollectionToDict(t.Desired),
+                Reported = GlueUtils.PropertyCollectionToDict(t.Reported)
             };
-#else
-            Console.WriteLine(JsonConvert.SerializeObject(t));
-            return new Models.Twin {
-                Desired = JObject.Parse(t.Desired.GetSerializedString()),
-                Reported = JObject.Parse(t.Reported.GetSerializedString())
-            };
-#endif
         }
 
         public async Task SendTwinPatchAsync(string connectionId, Models.Twin props)
         {
             Console.WriteLine("SendTwinPatchAsync received for " + connectionId);
-            Console.WriteLine(JsonConvert.SerializeObject(props));
+            Console.WriteLine(JsonSerializer.Serialize(props));
             var client = objectMap[connectionId];
-#if SDK_NET10
             var reportedProps = new PropertyCollection();
-            // ASP.NET on .NET 10 may deserialize the input as JsonElement (System.Text.Json)
-            // instead of JObject (Newtonsoft).
-            if (props.Reported is JObject jobj)
-            {
-                foreach (var p in jobj.Properties())
-                {
-                    reportedProps[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
-                }
-            }
-            else if (props.Reported is System.Text.Json.JsonElement jsonEl)
+            if (props.Reported is JsonElement jsonEl)
             {
                 foreach (var p in jsonEl.EnumerateObject())
                 {
-                    reportedProps[p.Name] = p.Value.ValueKind == System.Text.Json.JsonValueKind.Null
+                    reportedProps[p.Name] = p.Value.ValueKind == JsonValueKind.Null
                         ? null
-                        : System.Text.Json.JsonSerializer.Deserialize<object>(p.Value);
+                        : JsonSerializer.Deserialize<object>(p.Value);
                 }
             }
-#else
-            var reportedProps = new ReportedProperties();
-            foreach (var p in (props.Reported as JObject).Properties())
-            {
-                reportedProps[p.Name] = p.Value.Type == JTokenType.Null ? null : p.Value.ToObject<object>();
-            }
-#endif
             await client.UpdateReportedPropertiesAsync(reportedProps).ConfigureAwait(false);
         }
 
         public async Task<object> RoundtripMethodCallAsync(string connectionId, string methodName, MethodRequestAndResponse requestAndResponse)
         {
             Console.WriteLine("RoundtripMethodCallAsync received for {0} and methodName {1}", connectionId, methodName);
-            Console.WriteLine(JsonConvert.SerializeObject(requestAndResponse));
+            Console.WriteLine(JsonSerializer.Serialize(requestAndResponse));
             var client = objectMap[connectionId];
             var mutex = new System.Threading.SemaphoreSlim(1);
             await mutex.WaitAsync().ConfigureAwait(false);  // Grab the mutex. The handler will release it later
@@ -362,28 +302,11 @@ namespace IO.Swagger.Controllers
 
                 Console.WriteLine("Method invocation received");
 
-#if SDK_NET10
-                // DirectMethodRequest.Payload is public on net10.0 SDK.
                 byte[] rawPayload = methodRequest.Payload;
-#else
-                // DirectMethodRequest.Payload is NOT public on netstandard2.0.
-                // GetPayload<byte[]>() routes through DefaultPayloadConvention
-                // which conflicts with RawJsonByteArrayConverter.
-                // Reflection on _payload is the only option.
-                byte[] rawPayload = (byte[])typeof(DirectMethodRequest)
-                    .GetField("_payload", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    .GetValue(methodRequest);
-#endif
-                object request = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(rawPayload));
-                string received = JsonConvert.SerializeObject(new JRaw(request));
-#if SDK_NET10
-                // requestAndResponse.RequestPayload may be a JsonElement from System.Text.Json deserialization
+                object request = JsonSerializer.Deserialize<object>(rawPayload);
+                string received = JsonSerializer.Serialize(request);
                 string expected;
-                if (requestAndResponse.RequestPayload is Newtonsoft.Json.Linq.JToken jtoken)
-                {
-                    expected = jtoken["payload"].ToString();
-                }
-                else if (requestAndResponse.RequestPayload is System.Text.Json.JsonElement je && je.TryGetProperty("payload", out var payloadProp))
+                if (requestAndResponse.RequestPayload is JsonElement je && je.TryGetProperty("payload", out var payloadProp))
                 {
                     expected = payloadProp.ToString();
                 }
@@ -391,9 +314,6 @@ namespace IO.Swagger.Controllers
                 {
                     expected = requestAndResponse.RequestPayload?.ToString();
                 }
-#else
-                string expected = ((Newtonsoft.Json.Linq.JToken)requestAndResponse.RequestPayload)["payload"].ToString();
-#endif
                 Console.WriteLine("request expected: " + expected);
                 Console.WriteLine("request received: " + received);
                 if (expected != received)
