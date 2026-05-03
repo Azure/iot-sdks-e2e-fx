@@ -1379,7 +1379,7 @@ function New-AzIotTestEnvironment {
 
     $AzureDevOpsRunUrl = Get-AzureDevOpsRunUrl
     if ($null -ne $AzureDevOpsRunUrl) {
-        $ResourceGroupTags.Add("AzureDevOpsRunUrl", $AzureDevOpsRunUrl)
+        $ResourceGroupTags.Add("AzDevOpsRunUrl", $AzureDevOpsRunUrl)
     }
 
     # Create resource group (if does not exist).
