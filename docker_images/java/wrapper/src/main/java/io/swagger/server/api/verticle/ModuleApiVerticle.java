@@ -428,11 +428,16 @@ public class ModuleApiVerticle extends AbstractVerticle {
                     return;
                 }
                 String connectionId = connectionIdParam;
-                service.moduleGetTwin(connectionId, result -> {
-                    if (result.succeeded())
-                        message.reply(new JsonObject(Json.encode(result.result())).encodePrettily());
+                vertx.<Twin>executeBlocking(promise -> {
+                    service.moduleGetTwin(connectionId, result -> {
+                        if (result.succeeded()) promise.complete(result.result());
+                        else promise.fail(result.cause());
+                    });
+                }, false, ar -> {
+                    if (ar.succeeded())
+                        message.reply(new JsonObject(Json.encode(ar.result())).encodePrettily());
                     else {
-                        Throwable cause = result.cause();
+                        Throwable cause = ar.cause();
                         manageError(message, cause, "Module_GetTwin");
                     }
                 });
@@ -539,11 +544,16 @@ public class ModuleApiVerticle extends AbstractVerticle {
                     return;
                 }
                 Twin twin = Json.mapper.readValue(twinParam.encode(), Twin.class);
-                service.modulePatchTwin(connectionId, twin, result -> {
-                    if (result.succeeded())
+                vertx.<Void>executeBlocking(promise -> {
+                    service.modulePatchTwin(connectionId, twin, result -> {
+                        if (result.succeeded()) promise.complete();
+                        else promise.fail(result.cause());
+                    });
+                }, false, ar -> {
+                    if (ar.succeeded())
                         message.reply(null);
                     else {
-                        Throwable cause = result.cause();
+                        Throwable cause = ar.cause();
                         manageError(message, cause, "Module_PatchTwin");
                     }
                 });
