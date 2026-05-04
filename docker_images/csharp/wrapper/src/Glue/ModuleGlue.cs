@@ -192,6 +192,43 @@ namespace IO.Swagger.Controllers
         public async Task EnableTwinAsync(string connectionId)
         {
             Console.WriteLine("EnableTwinAsync received for " + connectionId);
+
+            // EdgeHub only refreshes a module's desired-property state from the cloud on
+            // a fresh module connect; it does not push registry-side patches as long as the
+            // module's MQTT session stays open. Without rebuilding the cached env client,
+            // SDK-pushed DesiredPropertyUpdateCallback notifications never fire for new
+            // patches in twin tests. Recreate the cached client here so this connection
+            // (and any future ConnectFromEnvironment for the same transport) operates on
+            // a fresh MQTT session that pulls the latest desired props on connect.
+            ModuleClient existing = objectMap[connectionId];
+            string transportToReopen = null;
+            ModuleClient toClose = null;
+            lock (envClientLock)
+            {
+                if (ReferenceEquals(existing, cachedEnvClient))
+                {
+                    transportToReopen = cachedEnvTransport;
+                    toClose = cachedEnvClient;
+                    cachedEnvClient = null;
+                    cachedEnvTransport = null;
+                }
+            }
+            if (toClose != null)
+            {
+                Console.WriteLine("Recreating cached env ModuleClient (transport={0}) before enabling twin to refresh edgeHub-side state", transportToReopen as object);
+                try { await toClose.CloseAsync().ConfigureAwait(false); }
+                catch (Exception ex) { Console.WriteLine("Error closing cached env client: " + ex.Message); }
+
+                var newClient = await ModuleClient.CreateFromEnvironmentAsync(GlueUtils.TransportNameToType(transportToReopen)).ConfigureAwait(false);
+                await newClient.OpenAsync().ConfigureAwait(false);
+                lock (envClientLock)
+                {
+                    cachedEnvClient = newClient;
+                    cachedEnvTransport = transportToReopen;
+                }
+                objectMap[connectionId] = newClient;
+            }
+
             var client = objectMap[connectionId];
 
             DesiredPropertyUpdateCallback handler = async (props, context) =>
