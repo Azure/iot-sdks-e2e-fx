@@ -31,6 +31,18 @@ namespace IO.Swagger.Controllers
         private static int objectCount = 0;
         private const string modulePrefix = "module_";
 
+        // Cache one ModuleClient per (transport) for ConnectFromEnvironment.
+        // Each test fixture historically called connect_from_environment + disconnect, which
+        // tore down the underlying MQTT/AMQP session and forced edgeHub to rebuild its cloud
+        // proxy. With ~40 such churns in a single test session, IoT Hub's view of the module
+        // becomes stale and direct method invocations from the service start failing with
+        // 404103 "device isn't online" for minutes. Reusing a single underlying client
+        // eliminates the storm; the client is closed when the container exits or via
+        // CleanupResourcesAsync.
+        private static readonly object envClientLock = new object();
+        private static ModuleClient cachedEnvClient = null;
+        private static string cachedEnvTransport = null;
+
         private static Channel<byte[]> GetOrCreateInputChannel(string connectionId, string inputName)
         {
             ConcurrentDictionary<string, Channel<byte[]>> perConnection;
@@ -65,8 +77,46 @@ namespace IO.Swagger.Controllers
 
         public async Task<ConnectResponse> ConnectFromEnvironmentAsync(string transport)
         {
-            var client = await ModuleClient.CreateFromEnvironmentAsync(GlueUtils.TransportNameToType(transport)).ConfigureAwait(false);
-            await client.OpenAsync().ConfigureAwait(false);
+            ModuleClient client;
+            ModuleClient toClose = null;
+            lock (envClientLock)
+            {
+                if (cachedEnvClient != null && cachedEnvTransport == transport)
+                {
+                    Console.WriteLine("Reusing cached env ModuleClient (transport={0})", transport as object);
+                    client = cachedEnvClient;
+                }
+                else
+                {
+                    client = null;
+                    if (cachedEnvClient != null)
+                    {
+                        Console.WriteLine("Cached env ModuleClient transport changed from {0} to {1}; will recreate", cachedEnvTransport as object, transport as object);
+                        toClose = cachedEnvClient;
+                        cachedEnvClient = null;
+                        cachedEnvTransport = null;
+                    }
+                }
+            }
+
+            if (toClose != null)
+            {
+                try { await toClose.CloseAsync().ConfigureAwait(false); }
+                catch (Exception ex) { Console.WriteLine("Error closing previous env client: " + ex.Message); }
+            }
+
+            if (client == null)
+            {
+                var newClient = await ModuleClient.CreateFromEnvironmentAsync(GlueUtils.TransportNameToType(transport)).ConfigureAwait(false);
+                await newClient.OpenAsync().ConfigureAwait(false);
+                lock (envClientLock)
+                {
+                    cachedEnvClient = newClient;
+                    cachedEnvTransport = transport;
+                }
+                client = newClient;
+            }
+
             var connectionId = modulePrefix + Convert.ToString(++objectCount);
             objectMap[connectionId] = client;
             return new ConnectResponse
@@ -86,8 +136,23 @@ namespace IO.Swagger.Controllers
                 {
                     inputQueues.Remove(connectionId);
                 }
-                await client.CloseAsync().ConfigureAwait(false);
-                Console.WriteLine("Disconnected successfully");
+                bool isCachedEnvClient;
+                lock (envClientLock)
+                {
+                    isCachedEnvClient = ReferenceEquals(client, cachedEnvClient);
+                }
+                if (isCachedEnvClient)
+                {
+                    // Keep the underlying connection open to avoid connection storms against
+                    // edgeHub when subsequent test fixtures reconnect with the same identity.
+                    // The client is closed via CleanupResourcesAsync or container exit.
+                    Console.WriteLine("Skipping close: connection {0} maps to cached env client", connectionId as object);
+                }
+                else
+                {
+                    await client.CloseAsync().ConfigureAwait(false);
+                    Console.WriteLine("Disconnected successfully");
+                }
             }
             else
             {
@@ -338,6 +403,22 @@ namespace IO.Swagger.Controllers
                 {
                     await DisconnectAsync(key).ConfigureAwait(false);
                 }
+            }
+
+            // DisconnectAsync intentionally skips closing the cached env client to avoid
+            // edgeHub connection storms across test fixtures. CleanupResourcesAsync is the
+            // session-level teardown, so close it here.
+            ModuleClient envClient;
+            lock (envClientLock)
+            {
+                envClient = cachedEnvClient;
+                cachedEnvClient = null;
+                cachedEnvTransport = null;
+            }
+            if (envClient != null)
+            {
+                try { await envClient.CloseAsync().ConfigureAwait(false); }
+                catch (Exception ex) { Console.WriteLine("Error closing cached env client: " + ex.Message); }
             }
         }
     }
