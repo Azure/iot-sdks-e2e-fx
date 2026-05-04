@@ -573,18 +573,30 @@ public class ModuleGlue
         }
         else
         {
-            this.setTwinHandler(handler);
             try
             {
-                com.microsoft.azure.sdk.iot.device.twin.Twin twin = client.getTwin();
-                TwinCollection desiredProperties = twin.getDesiredProperties();
-                for (String key : desiredProperties.keySet())
+                com.microsoft.azure.sdk.iot.device.twin.Twin sdkTwin = client.getTwin();
+                JsonObject desired = new JsonObject();
+                JsonObject reported = new JsonObject();
+                TwinCollection desiredProperties = sdkTwin.getDesiredProperties();
+                if (desiredProperties != null)
                 {
-                    onPropertyChanged(new Property(key, desiredProperties.get(key)), null);
+                    for (String key : desiredProperties.keySet())
+                    {
+                        desired.getMap().put(key, desiredProperties.get(key));
+                    }
                 }
+                TwinCollection reportedProperties = sdkTwin.getReportedProperties();
+                if (reportedProperties != null)
+                {
+                    for (String key : reportedProperties.keySet())
+                    {
+                        reported.getMap().put(key, reportedProperties.get(key));
+                    }
+                }
+                handler.handle(Future.succeededFuture(new Twin(desired, reported)));
             } catch (Exception e)
             {
-                this.setTwinHandler(null);
                 handler.handle(Future.failedFuture(e));
             }
         }
