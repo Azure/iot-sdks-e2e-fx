@@ -2202,16 +2202,14 @@ function New-AzIotPythonSdkSampleConfig {
     return $OutFile
 }
 
-function New-AzIotCTransportsE2ETestConfig {
+function New-AzIotuAmqpE2ETestConfig {
     <#
     .SYNOPSIS
-    Creates a test configuration script for the Azure IoT C transport repos
-    (azure-uamqp-c, azure-umqtt-c, azure-uhttp-c).
+    Creates a test configuration script for azure-uamqp-c's iothub_e2e test.
 
     .DESCRIPTION
     Generates a bash or PowerShell script that exports the environment
-    variables required by the iothub_e2e test in azure-uamqp-c (and the
-    matching e2e tests in the sibling C transport repos):
+    variables required by the iothub_e2e test in azure-uamqp-c:
         IOTHUB_CONNECTION_STRING        - service connection string to the IoT Hub
         UAMQP_E2E_DEVICE_KEY            - primary symmetric key of an IoT Hub
                                           device named "eh_testdevice" (the
@@ -2241,7 +2239,7 @@ function New-AzIotCTransportsE2ETestConfig {
 
     .EXAMPLE
     PS> $TestEnvInfo = New-AzIotTestEnvironment -NoDps
-    PS> New-AzIotCTransportsE2ETestConfig -TestEnvInfo $TestEnvInfo -Target bash -OutFile test_config/set_e2e_test_env_vars.sh
+    PS> New-AzIotuAmqpE2ETestConfig -TestEnvInfo $TestEnvInfo -Target bash -OutFile test_config/set_e2e_test_env_vars.sh
     #>
     param(
         [TestEnvironmentInfo]$TestEnvInfo = $null,
@@ -2252,7 +2250,7 @@ function New-AzIotCTransportsE2ETestConfig {
     )
 
     if ([string]::IsNullOrWhiteSpace($OutFile)) {
-        $OutFile = "./azure-c-transports-e2e-test-config"
+        $OutFile = "./azure-uamqp-c-e2e-test-config"
         if ($Target -eq "powershell") {
             $OutFile += ".ps1"
         } else {
@@ -2321,7 +2319,7 @@ function New-AzIotCTransportsE2ETestConfig {
 
     Set-FileContent -Path "$OutFile" -Content "$Content"
 
-    Write-Host "C transports E2E test configuration written to $OutFile"
+    Write-Host "uAMQP E2E test configuration written to $OutFile"
 
     return $OutFile
 }
@@ -2408,7 +2406,7 @@ Export-ModuleMember -Function ConvertFrom-JsonToTestEnvironmentInfo
 Export-ModuleMember -Function New-AzIotCSDKE2ETestConfig
 Export-ModuleMember -Function New-AzIotPythonSDKE2ETestConfig
 Export-ModuleMember -Function New-AzIotPythonSdkSampleConfig
-Export-ModuleMember -Function New-AzIotCTransportsE2ETestConfig
+Export-ModuleMember -Function New-AzIotuAmqpE2ETestConfig
 Export-ModuleMember -Function New-AzIotHortonTestConfig
 
 
