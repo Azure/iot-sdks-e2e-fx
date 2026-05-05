@@ -1356,20 +1356,36 @@ function New-AzIotTestEnvironment {
     }
 
     # Add Azure IoT extension if not already added (required for some az iot commands, e.g. az iot adr ns create)
-    # TODO: install non-preview version after GA.
+    # Preview version is only required when certificate management (ADR) is enabled.
+    # Otherwise prefer the stable (non-preview) extension to avoid preview regressions.
     $AzCliAzureIotExtension = $(az extension list | Convertfrom-json | ?{$_.name -eq "azure-iot"})
 
-    if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $false) {
-        Write-Host "Non-preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing..."
-        az extension remove --name azure-iot --only-show-errors | Out-Null
-        Stop-OnError -Step "Remove non-preview Azure IoT extension"
-        $AzCliAzureIotExtension = $null
-    }
+    if ($EnableCertificateManagement -eq $true) {
+        if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $false) {
+            Write-Host "Non-preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing (certificate management requires preview)..."
+            az extension remove --name azure-iot --only-show-errors | Out-Null
+            Stop-OnError -Step "Remove non-preview Azure IoT extension"
+            $AzCliAzureIotExtension = $null
+        }
 
-    if ($null -eq $AzCliAzureIotExtension) {
-        Write-Host "Installing Azure IoT extension."
-        az extension add --name azure-iot --allow-preview --only-show-errors | Out-Null
-        Stop-OnError -Step "Install Azure IoT extension"
+        if ($null -eq $AzCliAzureIotExtension) {
+            Write-Host "Installing Azure IoT extension (preview, required for certificate management)."
+            az extension add --name azure-iot --allow-preview --only-show-errors | Out-Null
+            Stop-OnError -Step "Install Azure IoT extension (preview)"
+        }
+    } else {
+        if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $true) {
+            Write-Host "Preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing (preferring stable)..."
+            az extension remove --name azure-iot --only-show-errors | Out-Null
+            Stop-OnError -Step "Remove preview Azure IoT extension"
+            $AzCliAzureIotExtension = $null
+        }
+
+        if ($null -eq $AzCliAzureIotExtension) {
+            Write-Host "Installing Azure IoT extension (stable)."
+            az extension add --name azure-iot --only-show-errors | Out-Null
+            Stop-OnError -Step "Install Azure IoT extension (stable)"
+        }
     }
 
     # Add default Azure resource group tags 
@@ -1701,6 +1717,8 @@ function Get-AzIotTestEnvironment {
     Specifies the name of the Device Provisioning Service. If not provided, get the one instance in the resource group.
     .PARAMETER IotHubName
     Specifies the name of the IoT Hub. If not provided, get the IoT Hub linked to the DPS or with the specified name.
+    .PARAMETER EnableCertificateManagement
+    When set, installs the preview azure-iot CLI extension (required for ADR / certificate management commands). Otherwise, the stable extension is installed. Default is off.
 
     .OUTPUTS
     A custom object containing information about the created Azure resources and devices, including connection strings, certificate paths, and enrollment details.
@@ -1712,7 +1730,8 @@ function Get-AzIotTestEnvironment {
         [string]$AzureSubscriptionId = $null,
         [string]$ResourceGroup = $null,
         [string]$DpsName       = $null,
-        [string]$IotHubName    = $null
+        [string]$IotHubName    = $null,
+        [switch]$EnableCertificateManagement
     )
 
     $TestEnvInfo = [TestEnvironmentInfo]::new()
@@ -1742,20 +1761,36 @@ function Get-AzIotTestEnvironment {
     }
 
     # Add Azure IoT extension if not already added (required for some az iot commands, e.g. az iot adr ns create)
-    # TODO: install non-preview version after GA.
+    # Preview version is only required when certificate management (ADR) is enabled.
+    # Otherwise prefer the stable (non-preview) extension to avoid preview regressions.
     $AzCliAzureIotExtension = $(az extension list | Convertfrom-json | ?{$_.name -eq "azure-iot"})
 
-    if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $false) {
-        Write-Host "Non-preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing..."
-        az extension remove --name azure-iot --only-show-errors | Out-Null
-        Stop-OnError -Step "Remove non-preview Azure IoT extension"
-        $AzCliAzureIotExtension = $null
-    }
+    if ($EnableCertificateManagement -eq $true) {
+        if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $false) {
+            Write-Host "Non-preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing (certificate management requires preview)..."
+            az extension remove --name azure-iot --only-show-errors | Out-Null
+            Stop-OnError -Step "Remove non-preview Azure IoT extension"
+            $AzCliAzureIotExtension = $null
+        }
 
-    if ($null -eq $AzCliAzureIotExtension) {
-        Write-Host "Installing Azure IoT extension."
-        az extension add --name azure-iot --allow-preview --only-show-errors | Out-Null
-        Stop-OnError -Step "Install Azure IoT extension"
+        if ($null -eq $AzCliAzureIotExtension) {
+            Write-Host "Installing Azure IoT extension (preview, required for certificate management)."
+            az extension add --name azure-iot --allow-preview --only-show-errors | Out-Null
+            Stop-OnError -Step "Install Azure IoT extension (preview)"
+        }
+    } else {
+        if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $true) {
+            Write-Host "Preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing (preferring stable)..."
+            az extension remove --name azure-iot --only-show-errors | Out-Null
+            Stop-OnError -Step "Remove preview Azure IoT extension"
+            $AzCliAzureIotExtension = $null
+        }
+
+        if ($null -eq $AzCliAzureIotExtension) {
+            Write-Host "Installing Azure IoT extension (stable)."
+            az extension add --name azure-iot --only-show-errors | Out-Null
+            Stop-OnError -Step "Install Azure IoT extension (stable)"
+        }
     }
 
     $AzureResourceGroup = az group show --name "$ResourceGroup" | ConvertFrom-Json
