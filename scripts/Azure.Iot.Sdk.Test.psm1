@@ -853,7 +853,7 @@ class DpsInfo {
             $CertificateExpiration = $DefaultCertificateExpiration
         }
 
-        $GroupX509Enrollment = Add-DpsX509EnrollmentGroup -ResourceGroup $this.ResourceGroup -DpsName $this.GetName() -EnrollmentId $EnrollmentId -IssuerCertificate $IssuerCertificate -IssuerPrivateKey $IssuerPrivateKey -IotHubFqdn $IotHubFqdn -AdrPolicyName $AzureAdrPolicyName -CertificateExpiration $CertificateExpiration
+        $GroupX509Enrollment = Add-DpsX509EnrollmentGroup -ResourceGroup $this.ResourceGroup -DpsName $this.GetName() -EnrollmentId $EnrollmentId -IssuerCertificate $IssuerCertificate -IssuerPrivateKey $IssuerPrivateKey -IotHubFqdn $IotHubFqdn -AdrPolicyName $AzureAdrPolicyName -CertificateExpiration $CertificateExpiration -DpsConnectionString $this.ConnectionString
         $this.Enrollments.GroupX509 += [DpsX509EnrollmentGroupInfo]::new($GroupX509Enrollment.Id, $GroupX509Enrollment.PrimaryCertificate)
         return $GroupX509Enrollment
      }
@@ -1101,15 +1101,20 @@ function Add-DpsSymmetricKeyIndividualEnrollment {
         [string]$ResourceGroup = $null,
         [string]$DpsName = $null,
         [string]$EnrollmentId = $null,
-        [string]$AdrPolicyName = $null
+        [string]$AdrPolicyName = $null,
+        [string]$DpsConnectionString = $null
     )
 
     Write-Host "Creating Azure DPS symmetric-key individual enrollment ($EnrollmentId; $AdrPolicyName)."
 
+    # Use --login to bypass broken policy discovery in azure-iot CLI when a DPS connection string is provided.
+    $LoginArgs = @()
+    if (-not [string]::IsNullOrWhiteSpace($DpsConnectionString)) { $LoginArgs = @("--login", $DpsConnectionString) }
+
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
-        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId  | ConvertFrom-Json
+        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId @LoginArgs | ConvertFrom-Json
     } else {
-        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId --credential-policy $AdrPolicyName | ConvertFrom-Json
+        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId --credential-policy $AdrPolicyName @LoginArgs | ConvertFrom-Json
     }
 
     Stop-OnError -Step "Create an Azure DPS symmetric-key individual enrollment ($EnrollmentId; $AdrPolicyName)"
@@ -1127,7 +1132,8 @@ function Add-DpsX509IndividualEnrollment {
         [string]$DpsName = $null,
         [string]$EnrollmentId = $null,
         [string]$AdrPolicyName = $null,
-        [timespan]$CertificateExpiration = $DefaultCertificateExpiration
+        [timespan]$CertificateExpiration = $DefaultCertificateExpiration,
+        [string]$DpsConnectionString = $null
     )
 
     Write-Host "Creating Azure DPS x509 individual enrollment ($EnrollmentId; $AdrPolicyName; $CertificatesDir; $PrivateKeysDir; $CertificateExpiration)."
@@ -1138,10 +1144,14 @@ function Add-DpsX509IndividualEnrollment {
     $DpsDeviceCertificatePath = New-TempFile -Extension pem
     Export-X509CertificateToPemFile -Cert $DpsDeviceCertificate -Path $DpsDeviceCertificatePath
 
+    # Use --login to bypass broken policy discovery in azure-iot CLI when a DPS connection string is provided.
+    $LoginArgs = @()
+    if (-not [string]::IsNullOrWhiteSpace($DpsConnectionString)) { $LoginArgs = @("--login", $DpsConnectionString) }
+
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
-        az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath | Out-Null
+        az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath @LoginArgs | Out-Null
     } else {
-        az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath --credential-policy $AdrPolicyName | Out-Null
+        az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath --credential-policy $AdrPolicyName @LoginArgs | Out-Null
     }
 
     Stop-OnError -Step "Create an Azure DPS x509 individual enrollment ($EnrollmentId)"
@@ -1159,15 +1169,20 @@ function Add-DpsSymmetricKeyEnrollmentGroup {
         [string]$ResourceGroup = $null,
         [string]$DpsName = $null,
         [string]$EnrollmentId = $null,
-        [string]$AdrPolicyName = $null
+        [string]$AdrPolicyName = $null,
+        [string]$DpsConnectionString = $null
     )
 
     Write-Host "Creating Azure DPS symmetric-key enrollment group ($EnrollmentId; $AdrPolicyName)."
 
+    # Use --login to bypass broken policy discovery in azure-iot CLI when a DPS connection string is provided.
+    $LoginArgs = @()
+    if (-not [string]::IsNullOrWhiteSpace($DpsConnectionString)) { $LoginArgs = @("--login", $DpsConnectionString) }
+
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
-        $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId | ConvertFrom-Json
+        $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId @LoginArgs | ConvertFrom-Json
     } else {
-        $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --credential-policy $AdrPolicyName | ConvertFrom-Json
+        $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --credential-policy $AdrPolicyName @LoginArgs | ConvertFrom-Json
     }
 
     Stop-OnError -Step "Create an Azure Device Provisioning symmetric-key enrollment group ($EnrollmentId; $AdrPolicyName)"
@@ -1188,7 +1203,8 @@ function Add-DpsX509EnrollmentGroup {
         [System.Security.Cryptography.RSA]$IssuerPrivateKey = $null,
         [string]$IotHubFqdn = $null,
         [string]$AdrPolicyName = $null,
-        [timespan]$CertificateExpiration = $DefaultCertificateExpiration
+        [timespan]$CertificateExpiration = $DefaultCertificateExpiration,
+        [string]$DpsConnectionString = $null
     )
 
     Write-Host "Creating Azure DPS x509 enrollment group ($EnrollmentId; $AdrPolicyName)."
@@ -1198,10 +1214,14 @@ function Add-DpsX509EnrollmentGroup {
     $ICACertificatePath = New-TempFile -Extension pem
     $ICA.ExportToPemFile($ICACertificatePath)
 
+    # Use --login to bypass broken policy discovery in azure-iot CLI when a DPS connection string is provided.
+    $LoginArgs = @()
+    if (-not [string]::IsNullOrWhiteSpace($DpsConnectionString)) { $LoginArgs = @("--login", $DpsConnectionString) }
+
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
-        az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn  | Out-Null
+        az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn @LoginArgs | Out-Null
     } else {
-        az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn --credential-policy $AdrPolicyName | Out-Null
+        az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn --credential-policy $AdrPolicyName @LoginArgs | Out-Null
     }
 
     Stop-OnError -Step "Create an Azure Device Provisioning x509 enrollment group ($EnrollmentId; $AdrPolicyName)"
@@ -1517,6 +1537,12 @@ function New-AzIotTestEnvironment {
         # Step was put here to optimize if blocks, since it's common down.
         Write-Host "Creating DPS Root Certificate"
         $DpsRootCertificate = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName
+
+        # Fetch DPS connection string upfront so enrollment commands can use --login
+        # to bypass broken DPS policy discovery in the bundled msrest of the Azure CLI / azure-iot extension.
+        Write-Host "Getting DPS Connection String (early, for enrollment --login)"
+        $DpsConnectionString = $(az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv)
+        Stop-OnError -Step "Get DPS Connection String (early)"
     }
 
     if ($EnableCertificateManagement -eq $true) {
@@ -1587,21 +1613,21 @@ function New-AzIotTestEnvironment {
     if ($NoDps -eq $false) {
         for ($i = 0; $i -lt $DpsSymmKeyIndividualEnrollments; $i++) {
             $EnrollmentId = "$DpsSymmKeyEnrollmentIdPrefix-$i"
-            $EnrollmentInfo = Add-DpsSymmetricKeyIndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $EnrollmentInfo = Add-DpsSymmetricKeyIndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName -DpsConnectionString $DpsConnectionString
 
             $TestEnvInfo.Dps.Enrollments.IndividualSymmetricKey += $EnrollmentInfo
         }
 
         for ($i = 0; $i -lt $DpsX509IndividualEnrollments; $i++) {
             $EnrollmentId = "$DpsX509EnrollmentIdPrefix-$i"
-            $EnrollmentInfo = Add-DpsX509IndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $EnrollmentInfo = Add-DpsX509IndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName -DpsConnectionString $DpsConnectionString
 
             $TestEnvInfo.Dps.Enrollments.IndividualX509 += $EnrollmentInfo
         }
 
         if ($DpsSymmKeyGroupEnrollmentDevices -gt 0) {
             $EnrollmentId = "$DpsSymmKeyEnrollmentIdPrefix-group"
-            $SKEnrollmentGroupInfo = Add-DpsSymmetricKeyEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $SKEnrollmentGroupInfo = Add-DpsSymmetricKeyEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName -DpsConnectionString $DpsConnectionString
 
             $TestEnvInfo.Dps.Enrollments.GroupSymmetricKey += $SKEnrollmentGroupInfo
 
@@ -1612,7 +1638,7 @@ function New-AzIotTestEnvironment {
 
         if ($DpsX509GroupEnrollmentDevices -gt 0) {
             $EnrollmentId = "$DpsX509EnrollmentIdPrefix-group"
-            $X509EnrollmentGroupInfo = Add-DpsX509EnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName -IssuerCertificate $DpsRootCertificate.ToNativeX509Certificate2() -IssuerPrivateKey $DpsRootCertificate.PrivateKey.ToNativeRsaKey() -IotHubFqdn $IotHubFqdn
+            $X509EnrollmentGroupInfo = Add-DpsX509EnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName -IssuerCertificate $DpsRootCertificate.ToNativeX509Certificate2() -IssuerPrivateKey $DpsRootCertificate.PrivateKey.ToNativeRsaKey() -IotHubFqdn $IotHubFqdn -DpsConnectionString $DpsConnectionString
 
             $TestEnvInfo.Dps.Enrollments.GroupX509 += $X509EnrollmentGroupInfo
 
@@ -1696,9 +1722,7 @@ function New-AzIotTestEnvironment {
         $TestEnvInfo.Dps.IdScope = $AzureDps.properties.idScope
         $AzureDps.properties.iotHubs | %{ $TestEnvInfo.Dps.LinkedIotHubs += $_.name }
 
-        Write-Host "Getting DPS Connection String"
-        $TestEnvInfo.Dps.ConnectionString = $(az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv)
-        Stop-OnError -Step "Get DPS Connection String"
+        $TestEnvInfo.Dps.ConnectionString = $DpsConnectionString
 
         $TestEnvInfo.Dps.RootCaCertificates += $DpsRootCertificate
     }
