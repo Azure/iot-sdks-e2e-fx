@@ -2202,6 +2202,130 @@ function New-AzIotPythonSdkSampleConfig {
     return $OutFile
 }
 
+function New-AzIotCTransportsE2ETestConfig {
+    <#
+    .SYNOPSIS
+    Creates a test configuration script for the Azure IoT C transport repos
+    (azure-uamqp-c, azure-umqtt-c, azure-uhttp-c).
+
+    .DESCRIPTION
+    Generates a bash or PowerShell script that exports the environment
+    variables required by the iothub_e2e test in azure-uamqp-c (and the
+    matching e2e tests in the sibling C transport repos):
+        IOTHUB_CONNECTION_STRING        - service connection string to the IoT Hub
+        UAMQP_E2E_DEVICE_KEY            - primary symmetric key of an IoT Hub
+                                          device named "eh_testdevice" (the
+                                          device id is hard-coded in the test)
+        IOTHUB_EVENTHUB_CONNECTION_STRING / IOTHUB_EVENTHUB_LISTEN_NAME /
+        IOTHUB_PARTITION_COUNT          - event hub built-in endpoint info
+        AZURE_RESOURCE_GROUP            - the resource group hosting the hub
+
+    The function ensures an IoT Hub symmetric-key device with the requested
+    DeviceId exists (creating it via 'az iot hub device-identity create' if it
+    is not already present in the supplied TestEnvironmentInfo) and emits its
+    primary key into the generated script.
+
+    .PARAMETER TestEnvInfo
+    The TestEnvironmentInfo object returned by New-AzIotTestEnvironment.
+
+    .PARAMETER Target
+    The target script format: 'bash' or 'powershell'. Default is 'bash'.
+
+    .PARAMETER OutFile
+    The output file path. If not specified, a default name is used.
+
+    .PARAMETER DeviceId
+    The IoT Hub device identifier whose primary key is exported as
+    UAMQP_E2E_DEVICE_KEY. Defaults to "eh_testdevice", which is the id
+    hard-coded in azure-uamqp-c/tests/iothub_e2e/iothub_e2e.c.
+
+    .EXAMPLE
+    PS> $TestEnvInfo = New-AzIotTestEnvironment -NoDps
+    PS> New-AzIotCTransportsE2ETestConfig -TestEnvInfo $TestEnvInfo -Target bash -OutFile test_config/set_e2e_test_env_vars.sh
+    #>
+    param(
+        [TestEnvironmentInfo]$TestEnvInfo = $null,
+        [ValidateSet('powershell', 'bash')]
+        [string]$Target = "bash",
+        [string]$OutFile,
+        [string]$DeviceId = "eh_testdevice"
+    )
+
+    if ([string]::IsNullOrWhiteSpace($OutFile)) {
+        $OutFile = "./azure-c-transports-e2e-test-config"
+        if ($Target -eq "powershell") {
+            $OutFile += ".ps1"
+        } else {
+            $OutFile += ".sh"
+        }
+    }
+
+    # Parse the IoT Hub resource name out of the service connection string.
+    # Format: HostName=<hub>.<suffix>;SharedAccessKeyName=<name>;SharedAccessKey=<key>
+    $HostNamePair = ($TestEnvInfo.IotHub.ConnectionString -split ';' | Where-Object { $_ -like 'HostName=*' } | Select-Object -First 1)
+    if ([string]::IsNullOrWhiteSpace($HostNamePair)) {
+        throw "Could not parse HostName from IoT Hub connection string."
+    }
+    $HostName = $HostNamePair -replace '^HostName=', ''
+    $IotHubName = $HostName.Split('.')[0]
+    $ResourceGroup = $TestEnvInfo.AzureResourceGroup
+
+    # Reuse a previously-provisioned device with the requested id if present;
+    # otherwise create one and store it on TestEnvInfo so subsequent callers
+    # (including persisted JSON snapshots) can find it.
+    $Device = $TestEnvInfo.IotHub.Devices.SymmetricKey | Where-Object { $_.Id -eq $DeviceId } | Select-Object -First 1
+    if ($null -eq $Device) {
+        Write-Host "Creating Azure IoT Hub symmetric-key device ($DeviceId)"
+        $IotHubDeviceInfo = az iot hub device-identity create --resource-group $ResourceGroup --hub-name $IotHubName --device-id $DeviceId | ConvertFrom-Json
+        Stop-OnError -Step "Create Azure IoT Hub symmetric-key device ($DeviceId)"
+        $PrimaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $DeviceId --kt primary | ConvertFrom-Json
+        Stop-OnError -Step "Get Azure IoT Hub device primary connection-string ($DeviceId)"
+        $SecondaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $DeviceId --kt secondary | ConvertFrom-Json
+        Stop-OnError -Step "Get Azure IoT Hub device secondary connection-string ($DeviceId)"
+
+        $Device = [IotHubSymmetricKeyIdentityInfo]::new(
+            $DeviceId,
+            $IotHubDeviceInfo.authentication.symmetricKey.primaryKey,
+            $IotHubDeviceInfo.authentication.symmetricKey.secondaryKey,
+            $PrimaryConnectionString.connectionString,
+            $SecondaryConnectionString.connectionString
+        )
+
+        $TestEnvInfo.IotHub.Devices.SymmetricKey += $Device
+    }
+
+    if ($Target -eq "powershell") {
+        $Lines = @(
+            "`$env:IOTHUB_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.ConnectionString)`""
+            "`$env:IOTHUB_EVENTHUB_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.EventHub.ConnectionString)`""
+            "`$env:IOTHUB_EVENTHUB_LISTEN_NAME = `"$($TestEnvInfo.IotHub.EventHub.CompatibleName)`""
+            "`$env:IOTHUB_PARTITION_COUNT = $($TestEnvInfo.IotHub.EventHub.PartitionCount)"
+            "`$env:IOTHUB_E2E_DEVICE_ID = `"$($Device.Id)`""
+            "`$env:UAMQP_E2E_DEVICE_KEY = `"$($Device.PrimaryKey)`""
+            "`$env:AZURE_RESOURCE_GROUP = `"$($TestEnvInfo.AzureResourceGroup)`""
+        )
+    } else { # bash
+        $Lines = @(
+            "#!/bin/bash"
+            "export IOTHUB_CONNECTION_STRING=`"$($TestEnvInfo.IotHub.ConnectionString)`""
+            "export IOTHUB_EVENTHUB_CONNECTION_STRING=`"$($TestEnvInfo.IotHub.EventHub.ConnectionString)`""
+            "export IOTHUB_EVENTHUB_LISTEN_NAME=`"$($TestEnvInfo.IotHub.EventHub.CompatibleName)`""
+            "export IOTHUB_PARTITION_COUNT=$($TestEnvInfo.IotHub.EventHub.PartitionCount)"
+            "export IOTHUB_E2E_DEVICE_ID=`"$($Device.Id)`""
+            "export UAMQP_E2E_DEVICE_KEY=`"$($Device.PrimaryKey)`""
+            "export AZURE_RESOURCE_GROUP=`"$($TestEnvInfo.AzureResourceGroup)`""
+        )
+    }
+
+    $Content = $($Lines -join "`n") + "`n"
+
+    Set-FileContent -Path "$OutFile" -Content "$Content"
+
+    Write-Host "C transports E2E test configuration written to $OutFile"
+
+    return $OutFile
+}
+
 function New-AzIotHortonTestConfig {
     <#
     .SYNOPSIS
@@ -2284,6 +2408,7 @@ Export-ModuleMember -Function ConvertFrom-JsonToTestEnvironmentInfo
 Export-ModuleMember -Function New-AzIotCSDKE2ETestConfig
 Export-ModuleMember -Function New-AzIotPythonSDKE2ETestConfig
 Export-ModuleMember -Function New-AzIotPythonSdkSampleConfig
+Export-ModuleMember -Function New-AzIotCTransportsE2ETestConfig
 Export-ModuleMember -Function New-AzIotHortonTestConfig
 
 
