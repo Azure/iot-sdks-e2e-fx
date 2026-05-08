@@ -44,9 +44,13 @@ WORKDIR /sdk
 ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
 RUN git pull 
-# Also fetch GitHub pull-request head refs so SHAs that live on contributor
-# forks (rather than upstream branches) are reachable for the checkout below.
-RUN git fetch origin '+refs/pull/*/head:refs/remotes/origin/pr/*'
+# Also fetch the specific PR head commit. This handles PRs whose head branch
+# lives on a contributor fork (rather than an upstream branch), where the SHA
+# isn't reachable from the upstream clone. GitHub's git server supports
+# fetching arbitrary commit SHAs from public repos
+# (uploadpack.allowAnySHA1InWant=true), so this works for both upstream and
+# fork-based PRs.
+RUN git fetch origin $HORTON_COMMIT_SHA
 RUN git checkout $HORTON_COMMIT_SHA
 
 COPY csharp/patchfile /
