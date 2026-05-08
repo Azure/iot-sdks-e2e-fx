@@ -28,6 +28,9 @@ ARG HORTON_COMMIT_NAME
 ARG HORTON_COMMIT_SHA
 WORKDIR /sdk
 RUN git pull
+# Also fetch GitHub pull-request head refs so SHAs that live on contributor
+# forks (rather than upstream branches) are reachable for the checkout below.
+RUN git fetch origin '+refs/pull/*/head:refs/remotes/origin/pr/*'
 RUN git checkout $HORTON_COMMIT_SHA
 
 COPY java/patchfile /
