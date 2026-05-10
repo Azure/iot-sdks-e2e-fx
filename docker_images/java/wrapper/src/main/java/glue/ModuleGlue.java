@@ -618,7 +618,6 @@ public class ModuleGlue
             this._deviceTwinStatusCallback.setHandler(handler);
             try
             {
-                reportedProperties.setVersion(client.getTwin().getReportedProperties().getVersion());
                 client.updateReportedProperties(reportedProperties, 5 * 60 * 1000);
                 handler.handle(Future.succeededFuture());
             }
