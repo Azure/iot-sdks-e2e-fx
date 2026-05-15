@@ -1,6 +1,12 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+# Create compatibility symlink for macro-utils-c header path migration
+# (new repo uses inc/macro_utils/ but SDK headers still reference azure_macro_utils/)
+if [ -d "/sdk/deps/azure-macro-utils-c/inc/macro_utils" ] && [ ! -e "/sdk/deps/azure-macro-utils-c/inc/azure_macro_utils" ]; then
+    ln -s macro_utils /sdk/deps/azure-macro-utils-c/inc/azure_macro_utils
+fi
+
 mkdir /wrapper/build
 cd /wrapper/build 
 [ $? -eq 0 ] || { echo "cd build failed "; exit 1; }
