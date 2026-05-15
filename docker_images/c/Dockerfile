@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/mirror/docker/library/ubuntu:20.04
+FROM mcr.microsoft.com/mirror/docker/library/ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
