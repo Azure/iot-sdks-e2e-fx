@@ -1,10 +1,14 @@
 steps:
 - bash: |
-    mkdir ${HORTON_FRAMEWORKROOT} &&
-    cd ${HORTON_FRAMEWORKROOT} &&
-    git clone https://github.com/Azure/iot-sdks-e2e-fx . &&
-    git checkout $(Horton.FrameworkRef) &&
-    git log -1 --oneline
+    if [ -f "${HORTON_FRAMEWORKROOT}/bin/horton" ]; then
+      echo "e2e-fx framework already present at ${HORTON_FRAMEWORKROOT}"
+      git -C ${HORTON_FRAMEWORKROOT} log -1 --oneline
+    else
+      mkdir -p ${HORTON_FRAMEWORKROOT} &&
+      cd ${HORTON_FRAMEWORKROOT} &&
+      git clone https://github.com/Azure/iot-sdks-e2e-fx . &&
+      git checkout $(Horton.FrameworkRef) &&
+      git log -1 --oneline
+    fi
   displayName: "Clone e2efx repo"
-  condition: and(succeeded(), ne(variables['Build.SourcesDirectory'], variables['Horton.FrameworkRoot']))
 

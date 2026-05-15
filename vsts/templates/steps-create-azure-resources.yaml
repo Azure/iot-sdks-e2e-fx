@@ -2,6 +2,8 @@ parameters:
   azure_location: 'centraluseuap'
 
 steps:
+- checkout: none
+
 - template: steps-ensure-e2e-fx-repo.yaml
 
 - task: AzureCLI@2
