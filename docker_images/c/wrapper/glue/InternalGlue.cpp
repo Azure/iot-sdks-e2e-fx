@@ -67,7 +67,7 @@ std::string InternalGlue::Connect(const char *transportType, std::string connect
 
         sprintf(address, "%p", client);
         std::cout << "InternalGlue::Connect Client Pointer: " << address << std::endl;
-        bool traceOn = true;
+        bool traceOn = false;
         bool rawTraceOn = false;
         size_t sasTokenLifetime = 3600;
         IoTHubClientCore_SetOption(client, "logtrace", &traceOn);

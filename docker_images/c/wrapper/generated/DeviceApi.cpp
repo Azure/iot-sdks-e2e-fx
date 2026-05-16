@@ -854,21 +854,16 @@ void DeviceApiDeviceConnectionIdEventResource::PUT_method_handler(const std::sha
 			// Getting the path params
 			const std::string connectionId = request->get_path_parameter("connectionId", "");
 
-			// Added 1 line in merge
-			device_glue.SendEvent(connectionId, requestBody);
+			try {
+				// Added 1 line in merge
+				device_glue.SendEvent(connectionId, requestBody);
 
-			// Change the value of this variable to the appropriate response before sending the response
-			int status_code = 200;
-
-			/**
-			 * Process the received information here
-			 */
-
-			if (status_code == 200) {
-				// removed "OK" in merge
 				session->close(200, "", { {"Connection", "close"} });
-				return;
+			} catch (const std::exception& e) {
+				std::string error_body = std::string("{\"error\": \"") + e.what() + "\"}";
+				session->close(500, error_body, { {"Content-Type", "application/json"}, {"Connection", "close"} });
 			}
+			return;
 
 		});
 }
