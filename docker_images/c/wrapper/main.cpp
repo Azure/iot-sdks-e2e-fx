@@ -19,6 +19,17 @@
 
 #if unix
 #include "unistd.h"
+#include <signal.h>
+#include <execinfo.h>
+
+static void sigsegv_handler(int sig)
+{
+    void *frames[64];
+    int count = backtrace(frames, 64);
+    fprintf(stderr, "\n*** SIGSEGV (signal %d) ***\n", sig);
+    backtrace_symbols_fd(frames, count, STDERR_FILENO);
+    _exit(139);
+}
 #endif
 
 using namespace std;
@@ -82,6 +93,11 @@ int port = 8082;
 
 int main(const int, const char**)
 {
+#if unix
+    signal(SIGSEGV, sigsegv_handler);
+    signal(SIGABRT, sigsegv_handler);
+#endif
+
     IoTHub_Init();
 
     launch_system_control_app();
