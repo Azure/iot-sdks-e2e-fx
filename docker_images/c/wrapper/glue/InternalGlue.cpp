@@ -14,7 +14,6 @@
 
 InternalGlue::InternalGlue()
 {
-    IoTHub_Init();
 }
 
 InternalGlue::~InternalGlue()

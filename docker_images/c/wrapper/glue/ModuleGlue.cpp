@@ -12,7 +12,6 @@ static std::string client_prefix = "moduleClient_";
 
 ModuleGlue::ModuleGlue()
 {
-    IoTHub_Init();
 }
 
 ModuleGlue::~ModuleGlue()

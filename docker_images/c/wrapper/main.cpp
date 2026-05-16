@@ -15,6 +15,7 @@
 #include "ServiceApi.h"
 #include "DeviceApi.h"
 #include "logger.h"
+#include "iothub.h"
 
 #if unix
 #include "unistd.h"
@@ -81,6 +82,8 @@ int port = 8082;
 
 int main(const int, const char**)
 {
+    IoTHub_Init();
+
     launch_system_control_app();
 
     auto api = make_shared< MergedApi >();
