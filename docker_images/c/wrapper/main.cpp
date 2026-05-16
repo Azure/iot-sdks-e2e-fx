@@ -16,7 +16,12 @@
 #include "DeviceApi.h"
 #include "logger.h"
 #include "iothub.h"
-#include "c_logging/logger.h"
+
+// logger_init() is required by c-logging-v2 (new SDK) but doesn't exist in older SDKs.
+// Use a weak symbol so the binary links regardless of SDK version.
+#if unix
+extern "C" __attribute__((weak)) int logger_init(void);
+#endif
 
 #if unix
 #include "unistd.h"
@@ -97,9 +102,11 @@ int main(const int, const char**)
 #if unix
     signal(SIGSEGV, sigsegv_handler);
     signal(SIGABRT, sigsegv_handler);
+    if (logger_init) {
+        logger_init();
+    }
 #endif
 
-    logger_init();
     IoTHub_Init();
 
     launch_system_control_app();
