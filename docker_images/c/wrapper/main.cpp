@@ -16,6 +16,7 @@
 #include "DeviceApi.h"
 #include "logger.h"
 #include "iothub.h"
+#include "c_logging/logger.h"
 
 #if unix
 #include "unistd.h"
@@ -98,6 +99,7 @@ int main(const int, const char**)
     signal(SIGABRT, sigsegv_handler);
 #endif
 
+    logger_init();
     IoTHub_Init();
 
     launch_system_control_app();
