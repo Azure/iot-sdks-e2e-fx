@@ -68,7 +68,7 @@ std::string InternalGlue::Connect(const char *transportType, std::string connect
         sprintf(address, "%p", client);
         std::cout << "InternalGlue::Connect Client Pointer: " << address << std::endl;
         bool traceOn = true;
-        bool rawTraceOn = true;
+        bool rawTraceOn = false;
         size_t sasTokenLifetime = 3600;
         IoTHubClientCore_SetOption(client, "logtrace", &traceOn);
         IoTHubClientCore_SetOption(client, "rawlogtrace", &rawTraceOn);
@@ -225,8 +225,7 @@ void InternalGlue::EnableTwin(std::string connectionId)
 
 void InternalGlue::SendEvent(std::string connectionId, std::string eventBody)
 {
-    std::cout << "InternalGlue::SendEvent for " << connectionId << std::endl;
-    std::cout << eventBody << std::endl;
+    std::cout << "InternalGlue::SendEvent for " << connectionId << " body size=" << eventBody.size() << std::endl;
     IOTHUB_CLIENT_CORE_HANDLE client = (IOTHUB_CLIENT_CORE_HANDLE)this->clientMap[connectionId];
     if (!client)
     {
