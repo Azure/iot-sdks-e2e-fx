@@ -19,6 +19,10 @@ def get_maximum_telemetry_message_size(client):
     elif client.settings.language == "node":
         # node swagger wrapper limitation
         return 64 * 1024
+    elif client.settings.language == "c":
+        # c-logging-v2 migration: large payloads (127K+) cause connection drops
+        # with the new SDK logging infrastructure. Skip until SDK fix.
+        return 64 * 1024
     else:
         return 255 * 1024
 
