@@ -114,6 +114,23 @@ function Stop-OnError {
     }
 }
 
+function Set-ResourceGroupTags {
+    param(
+        [string]$ResourceGroupId,
+        [Hashtable]$Tags
+    )
+
+    $bodyFile = New-TempFile
+    try {
+        $payload = @{ tags = $Tags } | ConvertTo-Json -Compress
+        Set-FileContent -Path $bodyFile -Content $payload
+        az rest --method PATCH --url "https://management.azure.com${ResourceGroupId}?api-version=2024-03-01" --body "@$bodyFile" --only-show-errors | Out-Null
+    }
+    finally {
+        Remove-Item -Path $bodyFile -ErrorAction SilentlyContinue
+    }
+}
+
 function Join-Hashtable {
     param(
         [Hashtable]$Hashtable,
@@ -1415,14 +1432,14 @@ function New-AzIotTestEnvironment {
             $ResourceGroupTags.Add("UpdatedOn", (Get-Date).ToString("o"))
         }
 
-        $ResourceGroupTagsArgs = @(ConvertTo-TagArguments -Hashtable $ResourceGroupTags)
-        $ResourceGroupTagsString = $ResourceGroupTagsArgs -join " "
+        $ResourceGroupTagsString = Join-Hashtable -Hashtable $ResourceGroupTags
 
         Write-Host "Updating Azure resource group ($ResourceGroup; $ResourceGroupTagsString)"
-        az group update --name "$ResourceGroup" --tags $ResourceGroupTagsArgs --only-show-errors | Out-Null
-        Stop-OnError -Step "Update Azure resource group tags"
 
-       $AzureResourceGroup = az group show --name "$ResourceGroup" | ConvertFrom-Json
+        $AzureResourceGroup = az group show --name "$ResourceGroup" | ConvertFrom-Json
+
+        Set-ResourceGroupTags -ResourceGroupId $AzureResourceGroup.id -Tags $ResourceGroupTags
+        Stop-OnError -Step "Update Azure resource group tags"
     } else {
         if (-not $ResourceGroupTags.ContainsKey("CreatedBy")) {
             $ResourceGroupTags.Add("CreatedBy", $AzureAccount.user.name)
@@ -1432,14 +1449,16 @@ function New-AzIotTestEnvironment {
             $ResourceGroupTags.Add("CreatedOn", (Get-Date).ToString("o"))
         }
 
-        $ResourceGroupTagsArgs = @(ConvertTo-TagArguments -Hashtable $ResourceGroupTags)
-        $ResourceGroupTagsString = $ResourceGroupTagsArgs -join " "
+        $ResourceGroupTagsString = Join-Hashtable -Hashtable $ResourceGroupTags
 
         Write-Host "Creating Azure resource group ($ResourceGroup; $ResourceGroupTagsString)"
 
-        $AzureResourceGroup = az group create --name "$ResourceGroup" --location "$AzureLocation" --tags $ResourceGroupTagsArgs 2>$null | ConvertFrom-json 
+        $AzureResourceGroup = az group create --name "$ResourceGroup" --location "$AzureLocation" 2>$null | ConvertFrom-json 
 
         Stop-OnError -Step "Create Azure resource group"
+
+        Set-ResourceGroupTags -ResourceGroupId $AzureResourceGroup.id -Tags $ResourceGroupTags
+        Stop-OnError -Step "Set Azure resource group tags"
     }
 
     $TestEnvInfo = [TestEnvironmentInfo]::new()
