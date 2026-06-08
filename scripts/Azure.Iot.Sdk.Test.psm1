@@ -1689,7 +1689,7 @@ function New-AzIotTestEnvironment {
         if ($EnableCertificateManagement -eq $true) {
             Write-Host "Updating Azure IoT Hub file upload settings (identity-based, user-assigned identity)"
             az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
-                --fileupload-storage-endpoint "$StorageAccountBlobEndpoint" `
+                --fcs "$StorageAccountBlobEndpoint" `
                 --fc $AzureStorageContainerName `
                 --fileupload-sas-ttl 1 `
                 --fileupload-storage-auth-type identityBased `
@@ -1698,7 +1698,7 @@ function New-AzIotTestEnvironment {
         } else {
             Write-Host "Updating Azure IoT Hub file upload settings (identity-based, system-assigned identity)"
             az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
-                --fileupload-storage-endpoint "$StorageAccountBlobEndpoint" `
+                --fcs "$StorageAccountBlobEndpoint" `
                 --fc $AzureStorageContainerName `
                 --fileupload-sas-ttl 1 `
                 --fileupload-storage-auth-type identityBased `
