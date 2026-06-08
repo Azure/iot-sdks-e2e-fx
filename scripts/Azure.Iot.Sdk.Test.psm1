@@ -1520,9 +1520,15 @@ function New-AzIotTestEnvironment {
             Stop-OnError -Step "Create Device Provisioning Service with ADR integration"
         }
     } else {
-        Write-Host "Creating Azure IoT Hub ($IotHubName)."
-        $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" | ConvertFrom-Json
-        Stop-OnError -Step "Create Azure IoT Hub"
+        if ($EnableFileUpload -eq $true) {
+            Write-Host "Creating Azure IoT Hub ($IotHubName) with system-assigned managed identity."
+            $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" --mi-system-assigned | ConvertFrom-Json
+            Stop-OnError -Step "Create Azure IoT Hub (with system-assigned identity)"
+        } else {
+            Write-Host "Creating Azure IoT Hub ($IotHubName)."
+            $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" | ConvertFrom-Json
+            Stop-OnError -Step "Create Azure IoT Hub"
+        }
 
         if ($NoDps -eq $false) {
             Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
@@ -1656,18 +1662,48 @@ function New-AzIotTestEnvironment {
         az storage container create --name $AzureStorageContainerName --account-name "$StorageAccountName" --only-show-errors | Out-Null
         Stop-OnError -Step "Creating Azure Storage container"
 
-        Write-Host "Getting Azure Storage account connection string"
-        $AzureStorageConnectionString=$(az storage account show-connection-string --name "$StorageAccountName" --resource-group "$ResourceGroup" --query connectionString -o tsv)
-        Stop-OnError -Step "Getting Azure Storage account connection string"
+        # Assign Storage Blob Data Contributor role to IoT Hub's managed identity on the storage account
+        $StorageAccountId = $(az storage account show --name "$StorageAccountName" --resource-group "$ResourceGroup" --query id -o tsv)
+        Stop-OnError -Step "Getting Storage Account resource ID"
 
         if ($EnableCertificateManagement -eq $true) {
-            Write-Host "Updating Azure IoT Hub file upload settings (certificate management)"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --ns-identity-id "$($AzureAdrNamespace.identity.principalId)" | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings (certificate management)"
-        } else {    
-            Write-Host "Updating Azure IoT Hub file upload settings"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings"
+            $FileUploadIdentityPrincipalId = $AzureCertMgmtIdentity.principalId
+            $FileUploadIdentityResourceId = $AzureCertMgmtIdentity.id
+            Write-Host "Assigning Storage Blob Data Contributor role to user-assigned identity on storage account"
+            az role assignment create --assignee-object-id "$FileUploadIdentityPrincipalId" --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope "$StorageAccountId" --only-show-errors | Out-Null
+        } else {
+            $IotHubIdentity = az iot hub show --name "$IotHubName" --resource-group "$ResourceGroup" --query "identity.principalId" -o tsv
+            Stop-OnError -Step "Getting IoT Hub system-assigned identity principal ID"
+            $FileUploadIdentityPrincipalId = $IotHubIdentity
+            Write-Host "Assigning Storage Blob Data Contributor role to IoT Hub system-assigned identity on storage account"
+            az role assignment create --assignee-object-id "$FileUploadIdentityPrincipalId" --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope "$StorageAccountId" --only-show-errors | Out-Null
+        }
+        Stop-OnError -Step "Assigning Storage Blob Data Contributor role"
+
+        # Wait for role assignment propagation
+        Start-Sleep -Seconds 30
+
+        # Configure IoT Hub file upload with identity-based authentication
+        $StorageAccountBlobEndpoint = "https://${StorageAccountName}.blob.core.windows.net"
+
+        if ($EnableCertificateManagement -eq $true) {
+            Write-Host "Updating Azure IoT Hub file upload settings (identity-based, user-assigned identity)"
+            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
+                --fileupload-storage-endpoint "$StorageAccountBlobEndpoint" `
+                --fc $AzureStorageContainerName `
+                --fileupload-sas-ttl 1 `
+                --fileupload-storage-auth-type identityBased `
+                --fileupload-storage-identity "$FileUploadIdentityResourceId" | Out-Null
+            Stop-OnError -Step "Updating Azure IoT Hub file upload settings (identity-based, certificate management)"
+        } else {
+            Write-Host "Updating Azure IoT Hub file upload settings (identity-based, system-assigned identity)"
+            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
+                --fileupload-storage-endpoint "$StorageAccountBlobEndpoint" `
+                --fc $AzureStorageContainerName `
+                --fileupload-sas-ttl 1 `
+                --fileupload-storage-auth-type identityBased `
+                --fileupload-storage-identity "[system]" | Out-Null
+            Stop-OnError -Step "Updating Azure IoT Hub file upload settings (identity-based)"
         }
     }
 
