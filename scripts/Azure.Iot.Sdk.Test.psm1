@@ -1680,30 +1680,44 @@ function New-AzIotTestEnvironment {
         }
         Stop-OnError -Step "Assigning Storage Blob Data Contributor role"
 
-        # Wait for role assignment propagation
-        Start-Sleep -Seconds 30
-
         # Configure IoT Hub file upload with identity-based authentication
+        # Retry loop: RBAC propagation can take up to several minutes
         $StorageAccountBlobEndpoint = "https://${StorageAccountName}.blob.core.windows.net"
+        $FileUploadMaxRetries = 5
+        $FileUploadRetryDelaySec = 30
 
-        if ($EnableCertificateManagement -eq $true) {
-            Write-Host "Updating Azure IoT Hub file upload settings (identity-based, user-assigned identity)"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
-                --fcs "$StorageAccountBlobEndpoint" `
-                --fc $AzureStorageContainerName `
-                --fileupload-sas-ttl 1 `
-                --fileupload-storage-auth-type identityBased `
-                --fileupload-storage-identity "$FileUploadIdentityResourceId" | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings (identity-based, certificate management)"
-        } else {
-            Write-Host "Updating Azure IoT Hub file upload settings (identity-based, system-assigned identity)"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
-                --fcs "$StorageAccountBlobEndpoint" `
-                --fc $AzureStorageContainerName `
-                --fileupload-sas-ttl 1 `
-                --fileupload-storage-auth-type identityBased `
-                --fileupload-storage-identity "[system]" | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings (identity-based)"
+        for ($attempt = 1; $attempt -le $FileUploadMaxRetries; $attempt++) {
+            Write-Host "Waiting ${FileUploadRetryDelaySec}s for role assignment propagation (attempt $attempt of $FileUploadMaxRetries)..."
+            Start-Sleep -Seconds $FileUploadRetryDelaySec
+
+            if ($EnableCertificateManagement -eq $true) {
+                Write-Host "Updating Azure IoT Hub file upload settings (identity-based, user-assigned identity)"
+                az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
+                    --fcs "$StorageAccountBlobEndpoint" `
+                    --fc $AzureStorageContainerName `
+                    --fileupload-sas-ttl 1 `
+                    --fileupload-storage-auth-type identityBased `
+                    --fileupload-storage-identity "$FileUploadIdentityResourceId" | Out-Null
+            } else {
+                Write-Host "Updating Azure IoT Hub file upload settings (identity-based, system-assigned identity)"
+                az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
+                    --fcs "$StorageAccountBlobEndpoint" `
+                    --fc $AzureStorageContainerName `
+                    --fileupload-sas-ttl 1 `
+                    --fileupload-storage-auth-type identityBased `
+                    --fileupload-storage-identity "[system]" | Out-Null
+            }
+
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "IoT Hub file upload configured successfully."
+                break
+            }
+
+            if ($attempt -eq $FileUploadMaxRetries) {
+                Stop-OnError -Step "Updating Azure IoT Hub file upload settings (identity-based)"
+            }
+
+            Write-Host "WARNING: IoT Hub file upload configuration failed (likely RBAC propagation delay). Retrying..."
         }
     }
 
