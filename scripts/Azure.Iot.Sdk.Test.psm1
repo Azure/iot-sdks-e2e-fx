@@ -1692,20 +1692,20 @@ function New-AzIotTestEnvironment {
 
             if ($EnableCertificateManagement -eq $true) {
                 Write-Host "Updating Azure IoT Hub file upload settings (identity-based, user-assigned identity)"
-                az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
+                $null = az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
                     --fcs "$StorageAccountBlobEndpoint" `
                     --fc $AzureStorageContainerName `
                     --fileupload-sas-ttl 1 `
                     --fileupload-storage-auth-type identityBased `
-                    --fileupload-storage-identity "$FileUploadIdentityResourceId" | Out-Null
+                    --fileupload-storage-identity "$FileUploadIdentityResourceId" 2>&1
             } else {
                 Write-Host "Updating Azure IoT Hub file upload settings (identity-based, system-assigned identity)"
-                az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
+                $null = az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" `
                     --fcs "$StorageAccountBlobEndpoint" `
                     --fc $AzureStorageContainerName `
                     --fileupload-sas-ttl 1 `
                     --fileupload-storage-auth-type identityBased `
-                    --fileupload-storage-identity "[system]" | Out-Null
+                    --fileupload-storage-identity "[system]" 2>&1
             }
 
             if ($LASTEXITCODE -eq 0) {
@@ -1714,10 +1714,11 @@ function New-AzIotTestEnvironment {
             }
 
             if ($attempt -eq $FileUploadMaxRetries) {
+                Write-Host "ERROR: IoT Hub file upload configuration failed after $FileUploadMaxRetries attempts."
                 Stop-OnError -Step "Updating Azure IoT Hub file upload settings (identity-based)"
             }
 
-            Write-Host "WARNING: IoT Hub file upload configuration failed (likely RBAC propagation delay). Retrying..."
+            Write-Host "WARNING: IoT Hub file upload configuration failed (attempt $attempt, exit code $LASTEXITCODE). Retrying..."
         }
     }
 
