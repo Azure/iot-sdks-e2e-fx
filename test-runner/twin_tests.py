@@ -139,14 +139,29 @@ class TwinTests(object):
         for i in range(1, 4):
             twin_sent = sample_content.make_desired_props()
 
-            # Keep a single wait future alive and re-send the patch on
-            # timeout.  Cancelling the REST call would leave an orphaned
-            # handler thread on the wrapper that consumes subsequent
-            # patches from the queue.  Total retry budget (max_send_attempts
-            # * send_interval) must stay below default_api_timeout (150s)
-            # or the underlying HTTP read_timeout will kill the future.
-            max_send_attempts = 3
-            send_interval = 45
+            # A single long-poll wait_for_desired_property_patch is kept alive
+            # for the whole patch.  Cancelling it would orphan a wrapper-side
+            # handler thread that then swallows the next patch from the queue.
+            # Because that long-poll is bounded by default_api_timeout (150s),
+            # the entire send/recover schedule below must stay under 150s.
+            #
+            # Recovery strategy when a patch does not arrive:
+            #   - A successful get_twin() only proves the module<->EdgeHub twin
+            #     channel.  Desired-property *delivery* additionally requires
+            #     EdgeHub's cloud-side MessagingServiceClient to finish setting
+            #     up its upstream subscription, which can legitimately take
+            #     ~45s.  So the first attempt waits the longest to give a
+            #     merely-slow proxy time to come online.
+            #   - If that long wait still yields nothing, the cloud proxy is
+            #     wedged rather than slow.  Re-issuing enable_twin from the
+            #     module is a no-op once the twin feature is enabled, so it
+            #     cannot help.  Instead we disconnect/reconnect the module:
+            #     EdgeHub tears the MessagingServiceClient down on disconnect
+            #     (lazily) and rebuilds it on reconnect, giving the upstream
+            #     desired-property subscription a fresh start.  connection_id is
+            #     preserved across disconnect2/connect2, so the pending
+            #     long-poll keeps reading from the same queue.
+            wait_schedule = [45, 30, 30]  # 105s of waits + 2 reconnects < 150s
 
             logger("start waiting for patch {}".format(i))
             patch_future = asyncio.ensure_future(
@@ -156,14 +171,22 @@ class TwinTests(object):
             )
             await asyncio.sleep(3)  # wait for async call to take effect
 
-            for attempt in range(max_send_attempts):
+            for attempt, wait_interval in enumerate(wait_schedule):
+                if attempt > 0:
+                    # Patch was not delivered on the previous attempt; rebuild
+                    # EdgeHub's cloud proxy by reconnecting before resending.
+                    logger("patch {} not received, reconnecting to rebuild EdgeHub cloud proxy".format(i))
+                    await client.disconnect2()
+                    await connect2_with_retry(client)
+                    await client.enable_twin()
+
                 logger("sending patch {} (attempt {})".format(i, attempt + 1))
                 await patch_desired_props(registry, client, twin_sent)
                 logger("patch {} sent".format(i))
 
                 try:
                     await asyncio.wait_for(
-                        asyncio.shield(patch_future), timeout=send_interval
+                        asyncio.shield(patch_future), timeout=wait_interval
                     )
                     logger("patch {} received".format(i))
                     break
@@ -172,15 +195,15 @@ class TwinTests(object):
                         patch_future.result()  # propagate if it failed
                         logger("patch {} received (late)".format(i))
                         break
-                    if attempt < max_send_attempts - 1:
-                        logger("patch {} not received after {}s, resending".format(i, send_interval))
+                    if attempt < len(wait_schedule) - 1:
+                        logger("patch {} not received after {}s".format(i, wait_interval))
                     else:
                         patch_future.cancel()
                         try:
                             await patch_future
                         except (asyncio.CancelledError, Exception):
                             pass
-                        assert False, "Timed out waiting for desired property patch {} after {} send attempts".format(i, max_send_attempts)
+                        assert False, "Timed out waiting for desired property patch {} after {} send attempts".format(i, len(wait_schedule))
 
     @pytest.mark.it(
         "Can set reported properties which can be successfully retrieved by the service"
