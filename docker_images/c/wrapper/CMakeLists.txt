@@ -23,6 +23,15 @@ include_directories(${SHARED_UTIL_INC_FOLDER})
 include_directories(${IOTHUB_SERVICE_CLIENT_INC_FOLDER})
 include_directories(${IOTHUB_CLIENT_INC_FOLDER})
 include_directories("${PROJECT_SOURCE_DIR}/deps/restbed/source")
+# The SDK's public headers still #include "azure_macro_utils/macro_utils.h",
+# but the migrated macro-utils-c submodule only ships headers under "macro_utils/".
+# The SDK bridges this by generating forwarding headers into its build tree
+# (${CMAKE_BINARY_DIR}/azure_macro_utils/...) and adding ${CMAKE_BINARY_DIR} to
+# its own targets' include path. Because this wrapper builds edge_e2e_rest_server
+# in the top-level CMake scope - where the SDK's directory-scoped include path
+# does not reach - it must add that same generated-header directory itself so the
+# legacy "azure_macro_utils/..." includes used by the SDK headers resolve here too.
+include_directories(${CMAKE_BINARY_DIR})
 # MACRO_UTILS_INC_FOLDER is no longer set by the new macro-utils-c CMakeLists.txt;
 # keep it as a fallback for older SDK versions that still define the variable.
 include_directories(${MACRO_UTILS_INC_FOLDER})
