@@ -16,9 +16,24 @@ steps:
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
 - bash: |
-    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+    # docker login to ACR can transiently time out ("request canceled while
+    # waiting for connection").  Retry with backoff so a single network blip
+    # does not fail the whole job.
+    retry() {
+      local max=5 delay=10 n=1
+      until "$@"; do
+        if [ "$n" -ge "$max" ]; then
+          echo "Command failed after $n attempts: $1" >&2
+          return 1
+        fi
+        echo "Attempt $n failed. Retrying in ${delay}s..." >&2
+        sleep "$delay"
+        n=$((n + 1))
+      done
+    }
+    retry docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }}
     if [ $(which sudo) ]; then 
-      sudo docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+      retry sudo docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }}
     fi
   displayName: 'docker login'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['usesDocker'], 'yes'))

@@ -165,7 +165,22 @@ steps:
       )
 
 - bash: |
-    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+    # docker login to ACR can transiently time out ("request canceled while
+    # waiting for connection").  Retry with backoff so a single network blip
+    # does not fail the whole job.
+    retry() {
+      local max=5 delay=10 n=1
+      until "$@"; do
+        if [ "$n" -ge "$max" ]; then
+          echo "Command failed after $n attempts." >&2
+          return 1
+        fi
+        echo "Attempt $n failed. Retrying in ${delay}s..." >&2
+        sleep "$delay"
+        n=$((n + 1))
+      done
+    }
+    retry docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }}
   displayName: 'docker login'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
@@ -188,7 +203,29 @@ steps:
     NODE_BRANCH="main"
 
     echo "Resolving commit SHA for ${NODE_REPO} @ ${NODE_BRANCH}..."
-    COMMIT_SHA=$(curl -sf "https://api.github.com/repos/${NODE_REPO}/git/refs/heads/${NODE_BRANCH}" | python3 -c "import sys,json; print(json.load(sys.stdin)['object']['sha'])")
+    # The GitHub API call can transiently fail or be rate-limited, returning a
+    # non-JSON (or empty) body that crashes json.load.  Retry with backoff and
+    # use an auth token when available to raise the rate limit.
+    AUTH_HEADER=()
+    if [ -n "${GITHUB_TOKEN}" ]; then
+      AUTH_HEADER=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    fi
+    COMMIT_SHA=""
+    for attempt in 1 2 3 4 5; do
+      RESPONSE=$(curl -s "${AUTH_HEADER[@]}" "https://api.github.com/repos/${NODE_REPO}/git/refs/heads/${NODE_BRANCH}" || true)
+      COMMIT_SHA=$(echo "${RESPONSE}" | python3 -c "import sys,json; print(json.load(sys.stdin)['object']['sha'])" 2>/dev/null || true)
+      if [ -n "${COMMIT_SHA}" ]; then
+        break
+      fi
+      echo "Attempt ${attempt}: could not resolve commit SHA. Response was:" >&2
+      echo "${RESPONSE}" | head -c 500 >&2
+      echo "" >&2
+      sleep $((attempt * 10))
+    done
+    if [ -z "${COMMIT_SHA}" ]; then
+      echo "ERROR: failed to resolve commit SHA for ${NODE_REPO} @ ${NODE_BRANCH} after 5 attempts." >&2
+      exit 1
+    fi
     echo "Commit SHA: ${COMMIT_SHA}"
 
     echo "Building ${IMAGE_NAME}..."
