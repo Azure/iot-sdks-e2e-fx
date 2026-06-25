@@ -27,7 +27,7 @@ steps:
 - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
   displayName: 'Component Detection'
   inputs:
-    detectorsFilter: './docker_images/java'
+    directoryExclusionPatterns: './docker_images/java'
     alertWarningLevel: Never
     # This pipeline uses packages that may not be included in shipped packages, so do not file component governance alerts for out-of-date components. Component governance is
     # still run in CI pipelines to catch component governance issues in shipped packages.
