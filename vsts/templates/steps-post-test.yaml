@@ -41,5 +41,6 @@ steps:
   displayName: 'Component Detection'
   inputs:
     alertWarningLevel: Never
+    detectorsFilter: './docker_images/java'
     # This pipeline uses packages that may not be included in shipped packages, so do not file component governance alerts for out-of-date components. Component governance is
     # still run in CI pipelines to catch component governance issues in shipped packages.
