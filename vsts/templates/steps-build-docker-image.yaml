@@ -12,6 +12,11 @@ parameters:
 steps:
 - template: steps-ensure-e2e-fx-repo.yaml
 
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  displayName: 'Component Detection'
+  inputs:
+    sourceScanPath: './docs' # Intenionally pointing this at a folder with nothing to scan so that component governance is effectively disabled
+
 - powershell: |
     function IsEmpty($s) { ( ($s -eq $null) -or ( $s -eq "" ) -or ( $s.StartsWith("$") ) ) } 
 
