@@ -1,0 +1,22 @@
+parameters:
+  # Resource groups created this many hours ago or less are left untouched so that
+  # in-progress pipeline runs are never disturbed.
+  minimumAgeHours: 3
+
+steps:
+- checkout: self
+
+- task: AzureCLI@2
+  displayName: Clean up leftover Azure resource groups
+  inputs:
+    azureSubscription: 'iot hub sdk service connection'
+    scriptType: 'pscore'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      $ErrorActionPreference = 'Stop'
+
+      # The module is the single source of truth for both the resource-group name prefix and
+      # the cleanup logic, so it deletes exactly (and only) what the pipelines create.
+      Import-Module "$env:BUILD_SOURCESDIRECTORY/scripts/Azure.Iot.Sdk.Test.psm1" -Force
+
+      Remove-LeftoverAzureResourceGroups -MinimumAgeHours ${{ parameters.minimumAgeHours }}
