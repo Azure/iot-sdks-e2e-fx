@@ -1292,14 +1292,19 @@ function Remove-LeftoverAzureResourceGroups {
     Deletes resource groups created by this repository's pipelines that are older than a threshold.
 
     .DESCRIPTION
-    Finds every resource group whose name starts with the prefix returned by
-    Get-AzureResourceGroupNamePrefix (i.e. only the resource groups created by this framework's
+    Finds every resource group whose name starts with -Prefix (which defaults to the value returned
+    by Get-AzureResourceGroupNamePrefix, i.e. only the resource groups created by this framework's
     pipelines) and deletes those whose 'CreatedOn' tag shows they were created more than
     -MinimumAgeHours hours ago. Resource groups created within the last -MinimumAgeHours hours are
     left untouched so that in-progress pipeline runs are never disturbed. Resource groups without a
     parseable 'CreatedOn' tag are skipped, because their age cannot be determined safely.
 
     Deletions are issued with '--no-wait'; this function returns after queuing them.
+
+    .PARAMETER Prefix
+    Resource group name prefix to match. Defaults to Get-AzureResourceGroupNamePrefix (this
+    repository's prefix). Another repository that reuses this function should pass the prefix its
+    own pipelines use, so that only its resource groups are considered for deletion.
 
     .PARAMETER MinimumAgeHours
     Minimum age, in hours, a resource group must have before it is eligible for deletion. Resource
@@ -1317,10 +1322,10 @@ function Remove-LeftoverAzureResourceGroups {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
+        [string]$Prefix = $(Get-AzureResourceGroupNamePrefix),
         [int]$MinimumAgeHours = 3
     )
 
-    $Prefix = Get-AzureResourceGroupNamePrefix
     $Now = (Get-Date).ToUniversalTime()
     $Cutoff = $Now.AddHours(-$MinimumAgeHours)
 

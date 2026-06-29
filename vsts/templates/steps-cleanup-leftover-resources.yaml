@@ -2,6 +2,16 @@ parameters:
   # Resource groups created this many hours ago or less are left untouched so that
   # in-progress pipeline runs are never disturbed.
   minimumAgeHours: 3
+  # Resource group name prefix to match. Leave empty to use this framework's own prefix
+  # (Get-AzureResourceGroupNamePrefix). Another repository reusing this template should pass
+  # the prefix its own pipelines use, so that only its resource groups are deleted.
+  resourceGroupPrefix: ''
+  # Azure Resource Manager service connection used to authenticate the cleanup.
+  azureSubscription: 'iot hub sdk service connection'
+  # Path to a checkout of the iot-sdks-e2e-fx framework, which provides the cleanup module.
+  # Defaults to the current repository; a reusing repository that checks the framework out
+  # elsewhere should point this at that location.
+  frameworkRoot: '$(Build.SourcesDirectory)'
 
 steps:
 - checkout: self
@@ -9,14 +19,20 @@ steps:
 - task: AzureCLI@2
   displayName: Clean up leftover Azure resource groups
   inputs:
-    azureSubscription: 'iot hub sdk service connection'
+    azureSubscription: '${{ parameters.azureSubscription }}'
     scriptType: 'pscore'
     scriptLocation: 'inlineScript'
     inlineScript: |
       $ErrorActionPreference = 'Stop'
 
-      # The module is the single source of truth for both the resource-group name prefix and
-      # the cleanup logic, so it deletes exactly (and only) what the pipelines create.
-      Import-Module "$env:BUILD_SOURCESDIRECTORY/scripts/Azure.Iot.Sdk.Test.psm1" -Force
+      # The module is the single source of truth for the cleanup logic, so it deletes exactly
+      # (and only) the resource groups whose names start with the configured prefix.
+      Import-Module "${{ parameters.frameworkRoot }}/scripts/Azure.Iot.Sdk.Test.psm1" -Force
 
-      Remove-LeftoverAzureResourceGroups -MinimumAgeHours ${{ parameters.minimumAgeHours }}
+      $prefix = '${{ parameters.resourceGroupPrefix }}'
+      if ([string]::IsNullOrWhiteSpace($prefix)) {
+          # No prefix supplied: fall back to this framework's own prefix.
+          Remove-LeftoverAzureResourceGroups -MinimumAgeHours ${{ parameters.minimumAgeHours }}
+      } else {
+          Remove-LeftoverAzureResourceGroups -Prefix $prefix -MinimumAgeHours ${{ parameters.minimumAgeHours }}
+      }
