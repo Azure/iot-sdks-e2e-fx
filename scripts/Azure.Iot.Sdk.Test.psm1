@@ -2150,6 +2150,30 @@ function New-AzIotCSDKE2ETestConfig {
         $SymmKeyGroupPrimaryKey = $TestEnvInfo.Dps.Enrollments.GroupSymmetricKey[0].PrimaryKey
     }
 
+    # Emit EVERY DPS x509 individual enrollment, indexed by position, so parallel
+    # test legs (e.g. the Windows and Linux jobs of one workflow run) can each
+    # claim a DISTINCT device and never collide on a single shared device twin.
+    # The unsuffixed IOT_DPS_INDIVIDUAL_* vars above are kept (they equal index 0)
+    # for backward compatibility with consumers that expect a single device.
+    $DpsIndividualEnrollments = @($TestEnvInfo.Dps.Enrollments.IndividualX509)
+    $DpsIndividualCount = $DpsIndividualEnrollments.Count
+    $DpsIndividualIndexedLines = @()
+    for ($i = 0; $i -lt $DpsIndividualCount; $i++) {
+        $Enrollment = $DpsIndividualEnrollments[$i]
+        $EnrollmentCertB64 = ConvertTo-Base64 -Content $Enrollment.Certificate.ToPem()
+        $EnrollmentKeyB64 = ConvertTo-Base64 -Content $Enrollment.Certificate.PrivateKey.ToRsaPkcs1Pem()
+        $EnrollmentRegId = $Enrollment.Id
+        if ($Target -eq "powershell") {
+            $DpsIndividualIndexedLines += "`$env:IOT_DPS_INDIVIDUAL_X509_CERTIFICATE_$i = `"$EnrollmentCertB64`""
+            $DpsIndividualIndexedLines += "`$env:IOT_DPS_INDIVIDUAL_X509_KEY_$i = `"$EnrollmentKeyB64`""
+            $DpsIndividualIndexedLines += "`$env:IOT_DPS_INDIVIDUAL_REGISTRATION_ID_$i = `"$EnrollmentRegId`""
+        } else {
+            $DpsIndividualIndexedLines += "export IOT_DPS_INDIVIDUAL_X509_CERTIFICATE_$i=`"$EnrollmentCertB64`""
+            $DpsIndividualIndexedLines += "export IOT_DPS_INDIVIDUAL_X509_KEY_$i=`"$EnrollmentKeyB64`""
+            $DpsIndividualIndexedLines += "export IOT_DPS_INDIVIDUAL_REGISTRATION_ID_$i=`"$EnrollmentRegId`""
+        }
+    }
+
     if ($Target -eq "powershell") {
         $Lines = @(
             "`$env:IOTHUB_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.ConnectionString)`""
@@ -2169,6 +2193,8 @@ function New-AzIotCSDKE2ETestConfig {
             "`$env:IOT_DPS_INDIVIDUAL_X509_CERTIFICATE = `"$DpsCertificateBase64`""
             "`$env:IOT_DPS_INDIVIDUAL_X509_KEY = `"$DpsPrivateKeyBase64`""
             "`$env:IOT_DPS_INDIVIDUAL_REGISTRATION_ID = `"$DpsRegistrationId`""
+            "`$env:IOT_DPS_INDIVIDUAL_COUNT = $DpsIndividualCount"
+            $DpsIndividualIndexedLines
             "`$env:PROVISIONING_ROOT_CERT = `"$DpsRootCACertificateBase64`""
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
             "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
@@ -2196,6 +2222,8 @@ function New-AzIotCSDKE2ETestConfig {
             "export IOT_DPS_INDIVIDUAL_X509_CERTIFICATE=`"$DpsCertificateBase64`""
             "export IOT_DPS_INDIVIDUAL_X509_KEY=`"$DpsPrivateKeyBase64`""
             "export IOT_DPS_INDIVIDUAL_REGISTRATION_ID=`"$DpsRegistrationId`""
+            "export IOT_DPS_INDIVIDUAL_COUNT=$DpsIndividualCount"
+            $DpsIndividualIndexedLines
             "export PROVISIONING_ROOT_CERT=`"$DpsRootCACertificateBase64`""
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
             "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
