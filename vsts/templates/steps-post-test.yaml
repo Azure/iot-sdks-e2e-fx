@@ -40,7 +40,7 @@ steps:
 - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
   displayName: 'Component Detection'
   inputs:
+    sourceScanPath: '$(Build.ArtifactStagingDirectory)' # Scan an empty directory so that component governance is effectively disabled
     alertWarningLevel: Never
-    sourceScanPath: './docs' # Intenionally pointing this at a folder with nothing to scan so that component governance is effectively disabled
     # This pipeline uses packages that may not be included in shipped packages, so do not file component governance alerts for out-of-date components. Component governance is
     # still run in CI pipelines to catch component governance issues in shipped packages.
