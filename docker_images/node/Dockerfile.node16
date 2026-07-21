@@ -11,6 +11,14 @@ RUN apt update \
 RUN update-alternatives --install /usr/bin/python python $(which python3) 50 \
 &&  update-alternatives --install /usr/bin/pip pip $(which pip3) 50 
 
+# Direct access to public npm registries is blocked on Microsoft-managed build agents.
+# Default to the public registry so external/local `docker build` still works; CI overrides
+# this with --build-arg NPM_REGISTRY=<CFS feed> (see vsts/templates/steps-build-docker-image.yaml).
+# npm's default replace-registry-host=npmjs rewrites any registry.npmjs.org tarball URLs in
+# package-lock.json to the configured registry.
+ARG NPM_REGISTRY=https://registry.npmjs.org/
+ENV npm_config_registry=${NPM_REGISTRY}
+
 RUN npm install lerna@^6 -g
 
 RUN pip install --upgrade pip 
