@@ -199,6 +199,9 @@ steps:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    # Public npm registries are blocked on Microsoft-managed agents; node docker builds
+    # pull packages through the CFS-protected feed (forwarded into the build by horton_build.py).
+    NPM_REGISTRY: https://packagefeedproxy.microsoft.io/npm/
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - bash: |
@@ -236,6 +239,7 @@ steps:
     fi
     echo "Commit SHA: ${COMMIT_SHA}"
 
+    echo "npm registry for ${IMAGE_NAME}: ${NPM_REGISTRY:-https://registry.npmjs.org/ (default)}"
     echo "Building ${IMAGE_NAME}..."
     docker build \
       --tag "${IMAGE_NAME}" \
@@ -243,6 +247,7 @@ steps:
       --build-arg HORTON_REPO="${NODE_REPO}" \
       --build-arg HORTON_COMMIT_NAME="${NODE_BRANCH}" \
       --build-arg HORTON_COMMIT_SHA="${COMMIT_SHA}" \
+      --build-arg NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}" \
       "${CONTEXT}"
 
     echo "Pushing ${IMAGE_NAME}..."
@@ -251,5 +256,8 @@ steps:
   displayName: "build and push default-friend-module"
   env:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    # Public npm registries are blocked on Microsoft-managed agents; build the node image
+    # against the CFS-protected feed.
+    NPM_REGISTRY: https://packagefeedproxy.microsoft.io/npm/
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
