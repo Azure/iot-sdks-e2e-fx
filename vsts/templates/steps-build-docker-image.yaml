@@ -239,6 +239,7 @@ steps:
     fi
     echo "Commit SHA: ${COMMIT_SHA}"
 
+    echo "npm registry for ${IMAGE_NAME}: ${NPM_REGISTRY:-https://registry.npmjs.org/ (default)}"
     echo "Building ${IMAGE_NAME}..."
     docker build \
       --tag "${IMAGE_NAME}" \

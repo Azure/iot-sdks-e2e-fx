@@ -69,6 +69,11 @@ def build_image(tags):
     npm_registry = os.environ.get("NPM_REGISTRY")
     if npm_registry and tags.variant and tags.variant.startswith("node"):
         build_args["NPM_REGISTRY"] = npm_registry
+    if tags.variant and tags.variant.startswith("node"):
+        # Surface the npm registry in every pipeline run (docker layer caching can
+        # hide an equivalent `RUN echo` inside the image).
+        registry_in_use = npm_registry or "https://registry.npmjs.org/ (default)"
+        print(Fore.YELLOW + "npm registry for this build: " + registry_in_use)
 
     build_arg_string = ""
     for arg in build_args:
