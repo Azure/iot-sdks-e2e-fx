@@ -63,6 +63,18 @@ def build_image(tags):
         "HORTON_COMMIT_NAME": tags.commit_name,
         "HORTON_COMMIT_SHA": tags.commit_sha,
     }
+    # Node images run `npm install` during `docker build`. On Microsoft-managed agents the
+    # public npm registries are blocked, so forward the CFS-protected feed (provided via the
+    # NPM_REGISTRY environment variable in the pipeline) into the build as a build-arg.
+    npm_registry = os.environ.get("NPM_REGISTRY")
+    if npm_registry and tags.variant and tags.variant.startswith("node"):
+        build_args["NPM_REGISTRY"] = npm_registry
+    if tags.variant and tags.variant.startswith("node"):
+        # Surface the npm registry in every pipeline run (docker layer caching can
+        # hide an equivalent `RUN echo` inside the image).
+        registry_in_use = npm_registry or "https://registry.npmjs.org/ (default)"
+        print(Fore.YELLOW + "npm registry for this build: " + registry_in_use)
+
     build_arg_string = ""
     for arg in build_args:
         build_arg_string += "--build-arg {}={} ".format(arg, build_args[arg])

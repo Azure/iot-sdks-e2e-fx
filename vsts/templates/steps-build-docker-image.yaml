@@ -12,6 +12,14 @@ parameters:
 steps:
 - template: steps-ensure-e2e-fx-repo.yaml
 
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  displayName: 'Component Detection'
+  inputs:
+    sourceScanPath: '$(Build.ArtifactStagingDirectory)' # Scan an empty directory so that component governance is effectively disabled
+    alertWarningLevel: Never
+    # This pipeline uses packages that may not be included in shipped packages, so do not file component governance alerts for out-of-date components. Component governance is
+    # still run in CI pipelines to catch component governance issues in shipped packages.
+
 - powershell: |
     function IsEmpty($s) { ( ($s -eq $null) -or ( $s -eq "" ) -or ( $s.StartsWith("$") ) ) } 
 
@@ -165,7 +173,22 @@ steps:
       )
 
 - bash: |
-    docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }} 
+    # docker login to ACR can transiently time out ("request canceled while
+    # waiting for connection").  Retry with backoff so a single network blip
+    # does not fail the whole job.
+    retry() {
+      local max=5 delay=10 n=1
+      until "$@"; do
+        if [ "$n" -ge "$max" ]; then
+          echo "Command failed after $n attempts." >&2
+          return 1
+        fi
+        echo "Attempt $n failed. Retrying in ${delay}s..." >&2
+        sleep "$delay"
+        n=$((n + 1))
+      done
+    }
+    retry docker login -u ${{ parameters.repo_user }} -p ${{ parameters.repo_password }} ${{ parameters.repo_address }}
   displayName: 'docker login'
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
@@ -176,6 +199,9 @@ steps:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
     IOTHUB_E2E_REPO_USER: $(IOTHUB-E2E-REPO-USER)
     IOTHUB_E2E_REPO_PASSWORD: $(IOTHUB-E2E-REPO-PASSWORD)
+    # Public npm registries are blocked on Microsoft-managed agents; node docker builds
+    # pull packages through the CFS-protected feed (forwarded into the build by horton_build.py).
+    NPM_REGISTRY: https://packagefeedproxy.microsoft.io/npm/
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 
 - bash: |
@@ -188,9 +214,32 @@ steps:
     NODE_BRANCH="main"
 
     echo "Resolving commit SHA for ${NODE_REPO} @ ${NODE_BRANCH}..."
-    COMMIT_SHA=$(curl -sf "https://api.github.com/repos/${NODE_REPO}/git/refs/heads/${NODE_BRANCH}" | python3 -c "import sys,json; print(json.load(sys.stdin)['object']['sha'])")
+    # The GitHub API call can transiently fail or be rate-limited, returning a
+    # non-JSON (or empty) body that crashes json.load.  Retry with backoff and
+    # use an auth token when available to raise the rate limit.
+    AUTH_HEADER=()
+    if [ -n "${GITHUB_TOKEN}" ]; then
+      AUTH_HEADER=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    fi
+    COMMIT_SHA=""
+    for attempt in 1 2 3 4 5; do
+      RESPONSE=$(curl -s "${AUTH_HEADER[@]}" "https://api.github.com/repos/${NODE_REPO}/git/refs/heads/${NODE_BRANCH}" || true)
+      COMMIT_SHA=$(echo "${RESPONSE}" | python3 -c "import sys,json; print(json.load(sys.stdin)['object']['sha'])" 2>/dev/null || true)
+      if [ -n "${COMMIT_SHA}" ]; then
+        break
+      fi
+      echo "Attempt ${attempt}: could not resolve commit SHA. Response was:" >&2
+      echo "${RESPONSE}" | head -c 500 >&2
+      echo "" >&2
+      sleep $((attempt * 10))
+    done
+    if [ -z "${COMMIT_SHA}" ]; then
+      echo "ERROR: failed to resolve commit SHA for ${NODE_REPO} @ ${NODE_BRANCH} after 5 attempts." >&2
+      exit 1
+    fi
     echo "Commit SHA: ${COMMIT_SHA}"
 
+    echo "npm registry for ${IMAGE_NAME}: ${NPM_REGISTRY:-https://registry.npmjs.org/ (default)}"
     echo "Building ${IMAGE_NAME}..."
     docker build \
       --tag "${IMAGE_NAME}" \
@@ -198,6 +247,7 @@ steps:
       --build-arg HORTON_REPO="${NODE_REPO}" \
       --build-arg HORTON_COMMIT_NAME="${NODE_BRANCH}" \
       --build-arg HORTON_COMMIT_SHA="${COMMIT_SHA}" \
+      --build-arg NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}" \
       "${CONTEXT}"
 
     echo "Pushing ${IMAGE_NAME}..."
@@ -206,5 +256,8 @@ steps:
   displayName: "build and push default-friend-module"
   env:
     IOTHUB_E2E_REPO_ADDRESS: $(IOTHUB-E2E-REPO-ADDRESS)
+    # Public npm registries are blocked on Microsoft-managed agents; build the node image
+    # against the CFS-protected feed.
+    NPM_REGISTRY: https://packagefeedproxy.microsoft.io/npm/
   condition: and(succeeded(), eq(variables['buildImage'],'yes'))
 

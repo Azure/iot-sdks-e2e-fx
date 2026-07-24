@@ -1246,10 +1246,32 @@ function Add-DpsX509EnrollmentGroup {
 }
 
 # <[Azure DPS Helper Functions]>
+function Get-AzureResourceGroupNamePrefix {
+    <#
+    .SYNOPSIS
+    Returns the resource group name prefix used by this repository's pipelines.
+
+    .DESCRIPTION
+    Every resource group created by this framework is named "<prefix><guid>". The prefix is
+    intentionally unique to this repository so that the scheduled cleanup pipeline in
+    vsts/cleanup-leftover-resources.yaml can safely identify and delete ONLY the resource groups
+    created by these pipelines. This is the single source of truth for the prefix; both
+    resource-group creation and the cleanup rely on it, so do not fork this value.
+    #>
+    return "rg-iot-sdk-e2e-"
+}
+
 function New-AzureResourceGroupName {
-    param([string]$Prefix = "rg-", [string]$OutFile = $null)
+    param([string]$Prefix = $(Get-AzureResourceGroupNamePrefix), [string]$OutFile = $null)
+
+    # Azure resource group names may be at most 90 characters long.
+    $MaxResourceGroupNameLength = 90
 
     $ResourceGroupName = $Prefix + $(New-GuidString -NoDashes)
+
+    if ($ResourceGroupName.Length -gt $MaxResourceGroupNameLength) {
+        $ResourceGroupName = $ResourceGroupName.Substring(0, $MaxResourceGroupNameLength)
+    }
 
     if (-not [string]::IsNullOrWhiteSpace($OutFile)) {
         $OutFileDir = Split-Path -Path $OutFile -Parent
@@ -1262,6 +1284,135 @@ function New-AzureResourceGroupName {
     }
 
     return $ResourceGroupName
+}
+
+function Remove-LeftoverAzureResourceGroups {
+    <#
+    .SYNOPSIS
+    Deletes resource groups created by this repository's pipelines that are older than a threshold.
+
+    .DESCRIPTION
+    Finds every resource group whose name starts with -Prefix (which defaults to the value returned
+    by Get-AzureResourceGroupNamePrefix, i.e. only the resource groups created by this framework's
+    pipelines) and deletes those whose 'CreatedOn' tag shows they were created more than
+    -MinimumAgeHours hours ago. Resource groups created within the last -MinimumAgeHours hours are
+    left untouched so that in-progress pipeline runs are never disturbed. Resource groups without a
+    parseable 'CreatedOn' tag are skipped, because their age cannot be determined safely.
+
+    Deletions are issued with '--no-wait'; this function returns after queuing them.
+
+    .PARAMETER Prefix
+    Resource group name prefix to match. Defaults to Get-AzureResourceGroupNamePrefix (this
+    repository's prefix). Another repository that reuses this function should pass the prefix its
+    own pipelines use, so that only its resource groups are considered for deletion.
+
+    .PARAMETER MinimumAgeHours
+    Minimum age, in hours, a resource group must have before it is eligible for deletion. Resource
+    groups created this many hours ago or less are kept. Default is 3.
+
+    .EXAMPLE
+    PS> Remove-LeftoverAzureResourceGroups -MinimumAgeHours 3
+
+    Deletes matching resource groups older than 3 hours.
+
+    .EXAMPLE
+    PS> Remove-LeftoverAzureResourceGroups -WhatIf
+
+    Lists the resource groups that would be deleted without deleting them.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [string]$Prefix = $(Get-AzureResourceGroupNamePrefix),
+        [int]$MinimumAgeHours = 3
+    )
+
+    $Now = (Get-Date).ToUniversalTime()
+    $Cutoff = $Now.AddHours(-$MinimumAgeHours)
+
+    Write-Host "Cleanup run (UTC)     : $($Now.ToString('o'))"
+    Write-Host "Resource group prefix : '$Prefix'"
+    Write-Host "Minimum age to delete : $MinimumAgeHours hour(s) (delete when created at or before $($Cutoff.ToString('o')))"
+
+    $RawJson = az group list --query "[].{name:name, createdOn:tags.CreatedOn, runUrl:tags.AzDevOpsRunUrl}" -o json --only-show-errors
+    Stop-OnError -Step "List Azure resource groups" -Throw
+
+    $Groups = @($RawJson | ConvertFrom-Json | Where-Object {
+        $_.name -and $_.name.StartsWith($Prefix, [System.StringComparison]::OrdinalIgnoreCase)
+    })
+
+    Write-Host "Found $($Groups.Count) resource group(s) matching prefix '$Prefix'."
+
+    $Deleted = [System.Collections.Generic.List[string]]::new()
+    $Skipped = [System.Collections.Generic.List[string]]::new()
+    $Failed  = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($Group in $Groups) {
+        $Name = $Group.name
+        $CreatedOnValue = $Group.createdOn
+
+        if ($null -eq $CreatedOnValue -or [string]::IsNullOrWhiteSpace([string]$CreatedOnValue)) {
+            Write-Host "SKIP   $Name : no 'CreatedOn' tag; age cannot be determined."
+            $Skipped.Add($Name)
+            continue
+        }
+
+        # ConvertFrom-Json parses the ISO-8601 'CreatedOn' tag (which always carries a UTC offset)
+        # into a [datetime], so normalize whatever type we received back to a UTC instant.
+        $CreatedOn = $null
+        try {
+            if ($CreatedOnValue -is [datetimeoffset]) {
+                $CreatedOn = $CreatedOnValue.UtcDateTime
+            } elseif ($CreatedOnValue -is [datetime]) {
+                $CreatedOn = ([datetimeoffset]$CreatedOnValue).UtcDateTime
+            } else {
+                $CreatedOn = [datetimeoffset]::Parse(
+                    [string]$CreatedOnValue,
+                    [System.Globalization.CultureInfo]::InvariantCulture,
+                    [System.Globalization.DateTimeStyles]::AssumeUniversal).UtcDateTime
+            }
+        } catch {
+            Write-Host "SKIP   $Name : unparseable 'CreatedOn' tag value '$CreatedOnValue'."
+            $Skipped.Add($Name)
+            continue
+        }
+
+        $CreatedOnDisplay = $CreatedOn.ToString('o')
+        $AgeHours = [math]::Round(($Now - $CreatedOn).TotalHours, 2)
+
+        if ($CreatedOn -ge $Cutoff) {
+            Write-Host "SKIP   $Name : age $AgeHours h is within the $MinimumAgeHours h threshold (created $CreatedOnDisplay)."
+            $Skipped.Add($Name)
+            continue
+        }
+
+        $RunUrl = if ([string]::IsNullOrWhiteSpace($Group.runUrl)) { "(unknown run)" } else { $Group.runUrl }
+
+        if (-not $PSCmdlet.ShouldProcess($Name, "Delete resource group (age $AgeHours h; $RunUrl)")) {
+            $Skipped.Add($Name)
+            continue
+        }
+
+        Write-Host "DELETE $Name : age $AgeHours h exceeds $MinimumAgeHours h (created $CreatedOnDisplay; $RunUrl)."
+        az group delete --name $Name --yes --no-wait --only-show-errors | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Failed to queue deletion of $Name (az exit code $LASTEXITCODE)."
+            $Failed.Add($Name)
+        } else {
+            $Deleted.Add($Name)
+        }
+    }
+
+    Write-Host ""
+    Write-Host "==== Cleanup summary ===="
+    Write-Host "Queued for deletion        : $($Deleted.Count)"
+    Write-Host "Skipped (too new / no tag) : $($Skipped.Count)"
+    Write-Host "Failed to queue            : $($Failed.Count)"
+    if ($Deleted.Count -gt 0) { Write-Host "Deleted: $($Deleted -join ', ')" }
+    if ($Failed.Count -gt 0)  { Write-Host "Failed : $($Failed -join ', ')" }
+
+    if ($Failed.Count -gt 0) {
+        throw "$($Failed.Count) resource group deletion(s) could not be queued."
+    }
 }
 
 
@@ -1999,6 +2150,30 @@ function New-AzIotCSDKE2ETestConfig {
         $SymmKeyGroupPrimaryKey = $TestEnvInfo.Dps.Enrollments.GroupSymmetricKey[0].PrimaryKey
     }
 
+    # Emit EVERY DPS x509 individual enrollment, indexed by position, so parallel
+    # test legs (e.g. the Windows and Linux jobs of one workflow run) can each
+    # claim a DISTINCT device and never collide on a single shared device twin.
+    # The unsuffixed IOT_DPS_INDIVIDUAL_* vars above are kept (they equal index 0)
+    # for backward compatibility with consumers that expect a single device.
+    $DpsIndividualEnrollments = @($TestEnvInfo.Dps.Enrollments.IndividualX509)
+    $DpsIndividualCount = $DpsIndividualEnrollments.Count
+    $DpsIndividualIndexedLines = @()
+    for ($i = 0; $i -lt $DpsIndividualCount; $i++) {
+        $Enrollment = $DpsIndividualEnrollments[$i]
+        $EnrollmentCertB64 = ConvertTo-Base64 -Content $Enrollment.Certificate.ToPem()
+        $EnrollmentKeyB64 = ConvertTo-Base64 -Content $Enrollment.Certificate.PrivateKey.ToRsaPkcs1Pem()
+        $EnrollmentRegId = $Enrollment.Id
+        if ($Target -eq "powershell") {
+            $DpsIndividualIndexedLines += "`$env:IOT_DPS_INDIVIDUAL_X509_CERTIFICATE_$i = `"$EnrollmentCertB64`""
+            $DpsIndividualIndexedLines += "`$env:IOT_DPS_INDIVIDUAL_X509_KEY_$i = `"$EnrollmentKeyB64`""
+            $DpsIndividualIndexedLines += "`$env:IOT_DPS_INDIVIDUAL_REGISTRATION_ID_$i = `"$EnrollmentRegId`""
+        } else {
+            $DpsIndividualIndexedLines += "export IOT_DPS_INDIVIDUAL_X509_CERTIFICATE_$i=`"$EnrollmentCertB64`""
+            $DpsIndividualIndexedLines += "export IOT_DPS_INDIVIDUAL_X509_KEY_$i=`"$EnrollmentKeyB64`""
+            $DpsIndividualIndexedLines += "export IOT_DPS_INDIVIDUAL_REGISTRATION_ID_$i=`"$EnrollmentRegId`""
+        }
+    }
+
     if ($Target -eq "powershell") {
         $Lines = @(
             "`$env:IOTHUB_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.ConnectionString)`""
@@ -2018,6 +2193,8 @@ function New-AzIotCSDKE2ETestConfig {
             "`$env:IOT_DPS_INDIVIDUAL_X509_CERTIFICATE = `"$DpsCertificateBase64`""
             "`$env:IOT_DPS_INDIVIDUAL_X509_KEY = `"$DpsPrivateKeyBase64`""
             "`$env:IOT_DPS_INDIVIDUAL_REGISTRATION_ID = `"$DpsRegistrationId`""
+            "`$env:IOT_DPS_INDIVIDUAL_COUNT = $DpsIndividualCount"
+            $DpsIndividualIndexedLines
             "`$env:PROVISIONING_ROOT_CERT = `"$DpsRootCACertificateBase64`""
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
             "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
@@ -2045,6 +2222,8 @@ function New-AzIotCSDKE2ETestConfig {
             "export IOT_DPS_INDIVIDUAL_X509_CERTIFICATE=`"$DpsCertificateBase64`""
             "export IOT_DPS_INDIVIDUAL_X509_KEY=`"$DpsPrivateKeyBase64`""
             "export IOT_DPS_INDIVIDUAL_REGISTRATION_ID=`"$DpsRegistrationId`""
+            "export IOT_DPS_INDIVIDUAL_COUNT=$DpsIndividualCount"
+            $DpsIndividualIndexedLines
             "export PROVISIONING_ROOT_CERT=`"$DpsRootCACertificateBase64`""
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
             "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
@@ -3324,7 +3503,9 @@ function Test-SubmoduleConsistency {
 Export-ModuleMember -Function Debug-PSScript
 Export-ModuleMember -Function Invoke-Script
 Export-ModuleMember -Function Set-FileContent
+Export-ModuleMember -Function Get-AzureResourceGroupNamePrefix
 Export-ModuleMember -Function New-AzureResourceGroupName
+Export-ModuleMember -Function Remove-LeftoverAzureResourceGroups
 Export-ModuleMember -Function New-AzIotTestEnvironment
 Export-ModuleMember -Function Get-AzIotTestEnvironment
 Export-ModuleMember -Function ConvertFrom-JsonToTestEnvironmentInfo

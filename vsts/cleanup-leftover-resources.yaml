@@ -1,0 +1,28 @@
+name: $(BuildID)_cleanup_leftover_resources
+
+# This is a scheduled maintenance pipeline only. It must never run on code pushes or PRs.
+trigger: none
+pr: none
+
+# Run every 4 hours. 'always: true' makes the schedule fire even when there are no new commits.
+schedules:
+- cron: '0 */4 * * *'
+  displayName: Every 4 hours
+  branches:
+    include:
+    - master
+  always: true
+
+variables:
+  Horton.FrameworkRoot: $(Build.SourcesDirectory)
+
+stages:
+- stage: cleanup
+  jobs:
+  - job: cleanup_leftover_resources
+    pool:
+      vmImage: 'ubuntu-24.04'
+    steps:
+    - template: templates/steps-cleanup-leftover-resources.yaml
+      parameters:
+        minimumAgeHours: 3
