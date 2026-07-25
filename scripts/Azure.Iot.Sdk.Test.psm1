@@ -3510,6 +3510,7 @@ Export-ModuleMember -Function New-AzIotTestEnvironment
 Export-ModuleMember -Function Get-AzIotTestEnvironment
 Export-ModuleMember -Function ConvertFrom-JsonToTestEnvironmentInfo
 Export-ModuleMember -Function New-AzIotCSDKE2ETestConfig
+Export-ModuleMember -Function New-AzIotNetSDKE2ETestConfig
 Export-ModuleMember -Function New-AzIotPythonSDKE2ETestConfig
 Export-ModuleMember -Function New-AzIotPythonSdkSampleConfig
 Export-ModuleMember -Function New-AzIotuAmqpE2ETestConfig
