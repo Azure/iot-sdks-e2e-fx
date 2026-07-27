@@ -1651,6 +1651,10 @@ function New-AzIotTestEnvironment {
         az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "547f7f0a-69c0-4807-bd9e-0321dfb66a84" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
         Stop-OnError -Step "Assign ADR custom role 2 to UAMI"
 
+        Write-Host "Assigning DeviceRegistry Contributor role to UAMI (547f7f0a-69c0-4807-bd9e-0321dfb66a84)"
+        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "DeviceRegistry Contributor" --scope "/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup" --only-show-errors | Out-Null
+        Stop-OnError -Step "Assign ADR custom role 2 to UAMI"
+
         Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)"
         $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
             --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
