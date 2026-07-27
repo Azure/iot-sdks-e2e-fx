@@ -1653,7 +1653,7 @@ function New-AzIotTestEnvironment {
 
         Write-Host "Assigning DeviceRegistry Contributor role to UAMI (547f7f0a-69c0-4807-bd9e-0321dfb66a84)"
         az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "DeviceRegistry Contributor" --scope "/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign ADR custom role 2 to UAMI"
+        Stop-OnError -Step "Assign DeviceRegistry Contributor role to UAMI"
 
         Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)"
         $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
