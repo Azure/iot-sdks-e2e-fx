@@ -1541,7 +1541,7 @@ function New-AzIotTestEnvironment {
         Stop-OnError -Step "Get Azure account information"
         $AzureSubscriptionId = $AzureAccount.id
     } else {
-        $discard = az account set --subscription "$AzureSubscriptionId" --only-show-errors 2>$null
+        $discard = az account set --subscription "$AzureSubscriptionId" --only-show-errors
         Stop-OnError -Step "Set Azure subscription"
     }
 
@@ -1604,7 +1604,7 @@ function New-AzIotTestEnvironment {
 
         Write-Host "Creating Azure resource group ($ResourceGroup; $ResourceGroupTagsString)"
 
-        $AzureResourceGroup = az group create --name "$ResourceGroup" --location "$AzureLocation" 2>$null | ConvertFrom-json 
+        $AzureResourceGroup = az group create --name "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-json 
 
         Stop-OnError -Step "Create Azure resource group"
 
@@ -1634,13 +1634,13 @@ function New-AzIotTestEnvironment {
 
         $CertMgmtUserIdentity = "$($ResourceGroup)cmuid"
         Write-Host "Creating User-Assigned Managed Identity (UAMI) ($CertMgmtUserIdentity)"
-        $AzureCertMgmtIdentity = az identity create --name "$CertMgmtUserIdentity" --resource-group "$ResourceGroup" --location "$AzureLocation" 2>$null | ConvertFrom-Json
+        $AzureCertMgmtIdentity = az identity create --name "$CertMgmtUserIdentity" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
         Stop-OnError -Step "Create User-Assigned Managed Identity (UAMI)"
 
         $AzureAdrNamespaceName = "azure-adr-ns"
         $AzureAdrPolicyName = "azure-adr-policy"
         Write-Host "Creating ADR Namespace (ns=$AzureAdrNamespaceName; policy=$AzureAdrPolicyName)"
-        $AzureAdrNamespace = az iot adr ns create --name "$AzureAdrNamespaceName" --enable-certificate-management --resource-group "$ResourceGroup" --location "$AzureLocation" --policy-name "$AzureAdrPolicyName" 2>$null | ConvertFrom-Json
+        $AzureAdrNamespace = az iot adr ns create --name "$AzureAdrNamespaceName" --enable-certificate-management --resource-group "$ResourceGroup" --location "$AzureLocation" --policy-name "$AzureAdrPolicyName" | ConvertFrom-Json
         Stop-OnError -Step "Create ADR Namespace"    
 
         Write-Host "Assigning ADR custom role to UAMI (a5c3590a-3a1a-4cd4-9648-ea0a32b15137)"
@@ -1931,7 +1931,7 @@ function Get-AzIotTestEnvironment {
         Stop-OnError -Step "Get Azure account information"
         $AzureSubscriptionId = $AzureAccount.id
     } else {
-        $discard = az account set --subscription "$AzureSubscriptionId" --only-show-errors 2>$null
+        $discard = az account set --subscription "$AzureSubscriptionId" --only-show-errors
         Stop-OnError -Step "Set Azure subscription"
     }
 
