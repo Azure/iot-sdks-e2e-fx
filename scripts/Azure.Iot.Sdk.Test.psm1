@@ -265,9 +265,26 @@ function Wait-AzRoleAssignment {
     )
 
     $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $LastQueryError = $null
 
     while ($true) {
-        $Assignments = az role assignment list --assignee "$PrincipalId" --scope "$Scope" --only-show-errors | ConvertFrom-Json
+        # The query itself must never abort provisioning. `az` can fail (throttling,
+        # transient ARM error) and ConvertFrom-Json then throws on empty/non-JSON
+        # stdout -- which under $ErrorActionPreference = 'Stop' would propagate and
+        # kill the run. Treat any failure here as "not visible yet" and keep polling.
+        $Assignments = $null
+        $LastQueryError = $null
+        try {
+            $global:LASTEXITCODE = 0
+            $Assignments = az role assignment list --assignee "$PrincipalId" --scope "$Scope" --only-show-errors | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) {
+                # az failed but wrote nothing to stdout, so ConvertFrom-Json had
+                # nothing to choke on and did not throw. Record it explicitly.
+                $LastQueryError = "az exited with code $LASTEXITCODE"
+            }
+        } catch {
+            $LastQueryError = $_.Exception.Message
+        }
 
         $Observed = @()
         if ($null -ne $Assignments) {
@@ -286,6 +303,11 @@ function Wait-AzRoleAssignment {
 
         if ((Get-Date) -ge $Deadline) {
             Write-Host "WARNING: $($Missing.Count) role assignment(s) still not visible after $TimeoutSeconds seconds: $($Missing -join ', '). Continuing; the dependent step retries on access-denied."
+            if ($null -ne $LastQueryError) {
+                # Surface it: repeated query failures mean the wait told us nothing,
+                # which is worth knowing when diagnosing a later access-denied error.
+                Write-Host "WARNING: the last role assignment query also failed: $($LastQueryError.Exception.Message)"
+            }
             return
         }
 
