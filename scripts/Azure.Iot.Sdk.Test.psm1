@@ -114,13 +114,17 @@ function Stop-OnError {
     }
 }
 
-function Invoke-AzCliWithRetry {
+function Invoke-WithRetry {
     <#
     .SYNOPSIS
-    Runs an `az` command, retrying with backoff while its stderr matches a
-    pattern known to be transient. Returns stdout parsed from JSON.
+    Runs a script block, retrying with backoff while its stderr matches a
+    pattern known to be transient.
 
     .DESCRIPTION
+    Takes the command as a script block so call sites keep ordinary `az` syntax
+    -- named arguments, line continuations, and `| ConvertFrom-Json` all stay
+    exactly where they were. Whatever the block returns is returned unchanged.
+
     The motivating case is Azure RBAC propagation. `az role assignment create`
     returns as soon as the assignment reaches the RBAC store, but the resource
     providers that ENFORCE it cache permissions and can take minutes to observe
@@ -131,15 +135,18 @@ function Invoke-AzCliWithRetry {
     errors (bad name, quota exhausted, invalid SKU) into slow failures instead
     of fast ones.
 
-    stderr is captured to a temp file rather than merged with `2>&1` so that CLI
-    warnings (preview/extension notices) can never end up concatenated with the
-    JSON payload on the success path.
+    stderr is redirected to a temp file rather than merged with `2>&1`, for two
+    reasons: merged native stderr raises NativeCommandError under
+    `$ErrorActionPreference = 'Stop'` (which the azure/powershell task sets),
+    and merging would concatenate CLI preview/extension notices into the JSON
+    the block is piping to ConvertFrom-Json.
 
     .PARAMETER Step
     Human-readable step name, used in the error message.
 
-    .PARAMETER Arguments
-    Arguments passed through to `az`.
+    .PARAMETER Command
+    Script block to run. Runs in its defining scope, so it can use the caller's
+    variables normally.
 
     .PARAMETER RetryOnPattern
     Regex matched against stderr. Only matching failures are retried.
@@ -151,11 +158,13 @@ function Invoke-AzCliWithRetry {
     Delay before the second attempt; doubles thereafter.
 
     .EXAMPLE
-    PS> $hub = Invoke-AzCliWithRetry -Step "Create hub" -RetryOnPattern '400913' -Arguments @("iot", "hub", "create", "--name", $Name)
+    PS> $Hub = Invoke-WithRetry -Step "Create Azure IoT Hub" -RetryOnPattern '400913' -Command {
+    PS>     az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" | ConvertFrom-Json
+    PS> }
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Step,
-        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][scriptblock]$Command,
         [Parameter(Mandatory = $true)][string]$RetryOnPattern,
         [int]$MaxAttempts = 4,
         [int]$InitialDelaySeconds = 30
@@ -166,8 +175,19 @@ function Invoke-AzCliWithRetry {
     for ($Attempt = 1; $Attempt -le $MaxAttempts; $Attempt++) {
         $StdErrFile = New-TempFile
         try {
-            $StdOut = & az @Arguments 2>$StdErrFile
-            $AzExitCode = $LASTEXITCODE
+            $Result = $null
+            $Caught = $null
+            $global:LASTEXITCODE = 0
+
+            try {
+                $Result = & $Command 2>$StdErrFile
+            } catch {
+                # e.g. ConvertFrom-Json choking on the empty stdout of a failed
+                # command. The real diagnosis is the exit code plus stderr below.
+                $Caught = $_
+            }
+
+            $ExitCode = $LASTEXITCODE
 
             $StdErr = $null
             if (Test-Path -Path $StdErrFile) {
@@ -177,24 +197,24 @@ function Invoke-AzCliWithRetry {
             if (-not [string]::IsNullOrWhiteSpace($StdErr)) {
                 # Printed on success too: az writes preview/extension notices to
                 # stderr, and those are worth having in the log.
-                Write-Host "az output for `"$Step`" (attempt $Attempt of $MaxAttempts):"
+                Write-Host "Output for `"$Step`" (attempt $Attempt of $MaxAttempts):"
                 Write-Host $StdErr.Trim()
             }
 
-            if ($AzExitCode -eq 0) {
-                if ([string]::IsNullOrWhiteSpace($StdOut)) {
-                    return $null
-                }
-                return ($StdOut | ConvertFrom-Json)
+            if ($ExitCode -eq 0 -and $null -eq $Caught) {
+                return $Result
             }
 
             $IsLastAttempt = ($Attempt -ge $MaxAttempts)
             $IsRetryable = ($null -ne $StdErr) -and ($StdErr -match $RetryOnPattern)
 
             if ($IsLastAttempt -or -not $IsRetryable) {
-                # Hand the CLI's own exit code to Stop-OnError so the failure is
-                # reported exactly like a non-retrying call site.
-                $global:LASTEXITCODE = $AzExitCode
+                if ($null -ne $Caught) {
+                    Write-Host $Caught.ToString()
+                }
+                # Hand the command's own exit code to Stop-OnError so the failure
+                # is reported exactly like a non-retrying call site.
+                $global:LASTEXITCODE = if ($ExitCode -ne 0) { $ExitCode } else { 1 }
                 Stop-OnError -Step $Step
                 return $null
             }
@@ -221,7 +241,7 @@ function Wait-AzRoleAssignment {
 
     This is NOT sufficient on its own -- providers cache permissions
     independently -- so callers must still tolerate an access-denied answer
-    afterwards (see Invoke-AzCliWithRetry). Doing both keeps the common case
+    afterwards (see Invoke-WithRetry). Doing both keeps the common case
     fast while still converging in the slow case.
 
     Never fails provisioning: on timeout it warns and returns, because the
@@ -1833,13 +1853,11 @@ function New-AzIotTestEnvironment {
         $AdrPermissionPropagationPattern = '400913|does not have the required DeviceRegistry permissions'
 
         Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)"
-        $AzureIoTHub = Invoke-AzCliWithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
-            -RetryOnPattern $AdrPermissionPropagationPattern -Arguments @(
-                "iot", "hub", "create", "--name", "$IotHubName", "--resource-group", "$ResourceGroup",
-                "--location", "$AzureLocation", "--sku", "GEN2",
-                "--mi-user-assigned", "$($AzureCertMgmtIdentity.id)",
-                "--ns-resource-id", "$($AzureAdrNamespace.id)",
-                "--ns-identity-id", "$($AzureCertMgmtIdentity.id)")
+        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
+            -RetryOnPattern $AdrPermissionPropagationPattern -Command {
+            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
+                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
+        }
 
         Write-Host "Assigning Contributor role on Azure IoT for ADR principal"
         az role assignment create --assignee "$($AzureAdrNamespace.identity.principalId)" --role "Contributor" --scope "$($AzureIoTHub.id)" --only-show-errors | Out-Null
@@ -1851,14 +1869,11 @@ function New-AzIotTestEnvironment {
         
         if ($NoDps -eq $false) {
             Write-Host "Creating Device Provisioning Service with ADR integration ($DpsName)"
-            $AzureDps = Invoke-AzCliWithRetry -Step "Create Device Provisioning Service with ADR integration" `
-                -RetryOnPattern $AdrPermissionPropagationPattern -Arguments @(
-                    "iot", "dps", "create", "--name", "$DpsName", "--resource-group", "$ResourceGroup",
-                    "--location", "$AzureLocation",
-                    "--mi-user-assigned", "$($AzureCertMgmtIdentity.id)",
-                    "--ns-resource-id", "$($AzureAdrNamespace.id)",
-                    "--ns-identity-id", "$($AzureCertMgmtIdentity.id)",
-                    "--only-show-errors")
+            $AzureDps = Invoke-WithRetry -Step "Create Device Provisioning Service with ADR integration" `
+                -RetryOnPattern $AdrPermissionPropagationPattern -Command {
+                az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" `
+                    --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" --only-show-errors | ConvertFrom-Json
+            }
         }
     } else {
         Write-Host "Creating Azure IoT Hub ($IotHubName)."
