@@ -306,7 +306,7 @@ function Wait-AzRoleAssignment {
             if ($null -ne $LastQueryError) {
                 # Surface it: repeated query failures mean the wait told us nothing,
                 # which is worth knowing when diagnosing a later access-denied error.
-                Write-Host "WARNING: the last role assignment query also failed: $($LastQueryError.Exception.Message)"
+                Write-Host "WARNING: the last role assignment query also failed: $LastQueryError"
             }
             return
         }
