@@ -114,6 +114,166 @@ function Stop-OnError {
     }
 }
 
+function Invoke-AzCliWithRetry {
+    <#
+    .SYNOPSIS
+    Runs an `az` command, retrying with backoff while its stderr matches a
+    pattern known to be transient. Returns stdout parsed from JSON.
+
+    .DESCRIPTION
+    The motivating case is Azure RBAC propagation. `az role assignment create`
+    returns as soon as the assignment reaches the RBAC store, but the resource
+    providers that ENFORCE it cache permissions and can take minutes to observe
+    the change. Handing a freshly-granted identity to another provider therefore
+    fails with an access-denied error that would have succeeded moments later.
+
+    -RetryOnPattern keeps that narrow: retrying every failure would turn genuine
+    errors (bad name, quota exhausted, invalid SKU) into slow failures instead
+    of fast ones.
+
+    stderr is captured to a temp file rather than merged with `2>&1` so that CLI
+    warnings (preview/extension notices) can never end up concatenated with the
+    JSON payload on the success path.
+
+    .PARAMETER Step
+    Human-readable step name, used in the error message.
+
+    .PARAMETER Arguments
+    Arguments passed through to `az`.
+
+    .PARAMETER RetryOnPattern
+    Regex matched against stderr. Only matching failures are retried.
+
+    .PARAMETER MaxAttempts
+    Total attempts, including the first.
+
+    .PARAMETER InitialDelaySeconds
+    Delay before the second attempt; doubles thereafter.
+
+    .EXAMPLE
+    PS> $hub = Invoke-AzCliWithRetry -Step "Create hub" -RetryOnPattern '400913' -Arguments @("iot", "hub", "create", "--name", $Name)
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Step,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$RetryOnPattern,
+        [int]$MaxAttempts = 4,
+        [int]$InitialDelaySeconds = 30
+    )
+
+    $Delay = $InitialDelaySeconds
+
+    for ($Attempt = 1; $Attempt -le $MaxAttempts; $Attempt++) {
+        $StdErrFile = New-TempFile
+        try {
+            $StdOut = & az @Arguments 2>$StdErrFile
+            $AzExitCode = $LASTEXITCODE
+
+            $StdErr = $null
+            if (Test-Path -Path $StdErrFile) {
+                $StdErr = Get-Content -Path $StdErrFile -Raw
+            }
+
+            if (-not [string]::IsNullOrWhiteSpace($StdErr)) {
+                # Printed on success too: az writes preview/extension notices to
+                # stderr, and those are worth having in the log.
+                Write-Host "az output for `"$Step`" (attempt $Attempt of $MaxAttempts):"
+                Write-Host $StdErr.Trim()
+            }
+
+            if ($AzExitCode -eq 0) {
+                if ([string]::IsNullOrWhiteSpace($StdOut)) {
+                    return $null
+                }
+                return ($StdOut | ConvertFrom-Json)
+            }
+
+            $IsLastAttempt = ($Attempt -ge $MaxAttempts)
+            $IsRetryable = ($null -ne $StdErr) -and ($StdErr -match $RetryOnPattern)
+
+            if ($IsLastAttempt -or -not $IsRetryable) {
+                # Hand the CLI's own exit code to Stop-OnError so the failure is
+                # reported exactly like a non-retrying call site.
+                $global:LASTEXITCODE = $AzExitCode
+                Stop-OnError -Step $Step
+                return $null
+            }
+
+            Write-Host "`"$Step`" hit a transient error; retrying in $Delay seconds."
+            Start-Sleep -Seconds $Delay
+            $Delay = $Delay * 2
+        }
+        finally {
+            Remove-Item -Path $StdErrFile -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Wait-AzRoleAssignment {
+    <#
+    .SYNOPSIS
+    Blocks until the given role assignments can be read back at their scope.
+
+    .DESCRIPTION
+    `az role assignment create` exiting 0 only means the assignment reached the
+    RBAC store. Reading it back confirms that much, which is the earliest point
+    at which propagation to enforcing resource providers can even begin.
+
+    This is NOT sufficient on its own -- providers cache permissions
+    independently -- so callers must still tolerate an access-denied answer
+    afterwards (see Invoke-AzCliWithRetry). Doing both keeps the common case
+    fast while still converging in the slow case.
+
+    Never fails provisioning: on timeout it warns and returns, because the
+    operation that actually matters is retried by its caller.
+
+    .PARAMETER PrincipalId
+    Object id of the principal the roles were granted to.
+
+    .PARAMETER Scope
+    Resource id the assignments were created against.
+
+    .PARAMETER RoleDefinitionIds
+    Role definition GUIDs expected to be present.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$PrincipalId,
+        [Parameter(Mandatory = $true)][string]$Scope,
+        [Parameter(Mandatory = $true)][string[]]$RoleDefinitionIds,
+        [int]$TimeoutSeconds = 120,
+        [int]$PollIntervalSeconds = 10
+    )
+
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+    while ($true) {
+        $Assignments = az role assignment list --assignee "$PrincipalId" --scope "$Scope" --only-show-errors | ConvertFrom-Json
+
+        $Observed = @()
+        if ($null -ne $Assignments) {
+            $Observed = @($Assignments | ForEach-Object { $_.roleDefinitionId })
+        }
+
+        $Missing = @($RoleDefinitionIds | Where-Object {
+            $RoleId = $_
+            -not ($Observed | Where-Object { $_ -like "*$RoleId" })
+        })
+
+        if ($Missing.Count -eq 0) {
+            Write-Host "All $($RoleDefinitionIds.Count) role assignment(s) are visible at $Scope."
+            return
+        }
+
+        if ((Get-Date) -ge $Deadline) {
+            Write-Host "WARNING: $($Missing.Count) role assignment(s) still not visible after $TimeoutSeconds seconds: $($Missing -join ', '). Continuing; the dependent step retries on access-denied."
+            return
+        }
+
+        Write-Host "Waiting for $($Missing.Count) role assignment(s) to become visible; polling again in $PollIntervalSeconds seconds."
+        Start-Sleep -Seconds $PollIntervalSeconds
+    }
+}
+
 function Set-ResourceGroupTags {
     param(
         [string]$ResourceGroupId,
@@ -1643,18 +1803,43 @@ function New-AzIotTestEnvironment {
         $AzureAdrNamespace = az iot adr ns create --name "$AzureAdrNamespaceName" --enable-certificate-management --resource-group "$ResourceGroup" --location "$AzureLocation" --policy-name "$AzureAdrPolicyName" | ConvertFrom-Json
         Stop-OnError -Step "Create ADR Namespace"    
 
-        Write-Host "Assigning ADR custom role to UAMI (a5c3590a-3a1a-4cd4-9648-ea0a32b15137)"
-        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "a5c3590a-3a1a-4cd4-9648-ea0a32b15137" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
+        # Azure Device Registry Contributor: namespaces/read,
+        # namespaces/devices/*, namespaces/credentials/policies/read.
+        $AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
+        # Azure Device Registry Onboarding: namespaces/write,
+        # namespaces/credentials/*.
+        $AdrOnboardingRoleId = "547f7f0a-69c0-4807-bd9e-0321dfb66a84"
+
+        Write-Host "Assigning ADR custom role to UAMI ($AdrContributorRoleId)"
+        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "$AdrContributorRoleId" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
         Stop-OnError -Step "Assign ADR custom role 1 to UAMI"
 
-        Write-Host "Assigning ADR custom role to UAMI (547f7f0a-69c0-4807-bd9e-0321dfb66a84)"
-        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "547f7f0a-69c0-4807-bd9e-0321dfb66a84" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
+        Write-Host "Assigning ADR custom role to UAMI ($AdrOnboardingRoleId)"
+        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "$AdrOnboardingRoleId" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
         Stop-OnError -Step "Assign ADR custom role 2 to UAMI"
 
+        # IoT Hub and DPS validate this UAMI's DeviceRegistry permissions while
+        # they are being created. The role assignments above were made seconds
+        # ago and the enforcing providers may not observe them yet, so wait for
+        # the assignments to be readable and then tolerate an access-denied
+        # answer for a few attempts. Without this the create fails with
+        # IH400913 "does not have the required DeviceRegistry permissions",
+        # which is purely a propagation artifact.
+        Wait-AzRoleAssignment `
+            -PrincipalId "$($AzureCertMgmtIdentity.principalId)" `
+            -Scope "$($AzureAdrNamespace.id)" `
+            -RoleDefinitionIds @($AdrContributorRoleId, $AdrOnboardingRoleId)
+
+        $AdrPermissionPropagationPattern = '400913|does not have the required DeviceRegistry permissions'
+
         Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)"
-        $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
-            --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
-        Stop-OnError -Step "Create Azure IoT Hub (with certificate management support)"
+        $AzureIoTHub = Invoke-AzCliWithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
+            -RetryOnPattern $AdrPermissionPropagationPattern -Arguments @(
+                "iot", "hub", "create", "--name", "$IotHubName", "--resource-group", "$ResourceGroup",
+                "--location", "$AzureLocation", "--sku", "GEN2",
+                "--mi-user-assigned", "$($AzureCertMgmtIdentity.id)",
+                "--ns-resource-id", "$($AzureAdrNamespace.id)",
+                "--ns-identity-id", "$($AzureCertMgmtIdentity.id)")
 
         Write-Host "Assigning Contributor role on Azure IoT for ADR principal"
         az role assignment create --assignee "$($AzureAdrNamespace.identity.principalId)" --role "Contributor" --scope "$($AzureIoTHub.id)" --only-show-errors | Out-Null
@@ -1666,9 +1851,14 @@ function New-AzIotTestEnvironment {
         
         if ($NoDps -eq $false) {
             Write-Host "Creating Device Provisioning Service with ADR integration ($DpsName)"
-            $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" `
-                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" --only-show-errors | ConvertFrom-Json
-            Stop-OnError -Step "Create Device Provisioning Service with ADR integration"
+            $AzureDps = Invoke-AzCliWithRetry -Step "Create Device Provisioning Service with ADR integration" `
+                -RetryOnPattern $AdrPermissionPropagationPattern -Arguments @(
+                    "iot", "dps", "create", "--name", "$DpsName", "--resource-group", "$ResourceGroup",
+                    "--location", "$AzureLocation",
+                    "--mi-user-assigned", "$($AzureCertMgmtIdentity.id)",
+                    "--ns-resource-id", "$($AzureAdrNamespace.id)",
+                    "--ns-identity-id", "$($AzureCertMgmtIdentity.id)",
+                    "--only-show-errors")
         }
     } else {
         Write-Host "Creating Azure IoT Hub ($IotHubName)."
