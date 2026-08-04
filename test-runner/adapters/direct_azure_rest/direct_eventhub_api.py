@@ -8,6 +8,13 @@ import threading
 from azure.eventhub.aio import EventHubConsumerClient
 from ..adapter_config import logger
 
+# The listener below talks to the IoT Hub built-in Event Hub endpoint. Transient
+# name-resolution and connection failures happen in CI, so retry a few times
+# before giving up. The total delay (5+10+15+20 = 50s) stays well inside the
+# test suite's 300 second timeout.
+LISTENER_MAX_RETRIES = 4
+LISTENER_RETRY_DELAY_SECONDS = 5
+
 
 def json_is_same(a, b):
     # If either parameter is a string, convert it to an object.
@@ -116,38 +123,58 @@ class EventHubApi:
             return positions
 
         async def listener():
-            try:
-                if not self.starting_position:
-                    # if we don't have a starting position, start at the current one and
-                    # save it so we can update it as we receive events.
-                    starting_position = await get_current_position()
-                    self.starting_position = starting_position
-                elif isinstance(self.starting_position, dict):
-                    # if our starting position is a dict, use it and keep updating it as we
-                    # receive events.
-                    starting_position = self.starting_position
-                else:
-                    # if we do have a starting position, but it's not a dict, use it and get
-                    # the current position so we can update it as events come in.
-                    starting_position = self.starting_position
-                    self.starting_position = await get_current_position()
-                logger("EventHubApi: listening at {}".format(starting_position))
-                logger(
-                    "EventHubApi: next starting position = {}".format(
-                        self.starting_position
+            # Nothing awaits this task, so an exception here is invisible to the test
+            # that is waiting for telemetry: it simply never arrives and the test hangs
+            # until the suite timeout fires, reporting a timeout instead of the real
+            # cause. Retry transient failures so a blip self-heals, and log loudly
+            # before giving up so the timeout is at least explained.
+            attempt = 0
+            while True:
+                try:
+                    if not self.starting_position:
+                        # if we don't have a starting position, start at the current one and
+                        # save it so we can update it as we receive events.
+                        starting_position = await get_current_position()
+                        self.starting_position = starting_position
+                    elif isinstance(self.starting_position, dict):
+                        # if our starting position is a dict, use it and keep updating it as we
+                        # receive events.
+                        starting_position = self.starting_position
+                    else:
+                        # if we do have a starting position, but it's not a dict, use it and get
+                        # the current position so we can update it as events come in.
+                        starting_position = self.starting_position
+                        self.starting_position = await get_current_position()
+                    logger("EventHubApi: listening at {}".format(starting_position))
+                    logger(
+                        "EventHubApi: next starting position = {}".format(
+                            self.starting_position
+                        )
                     )
-                )
-                await self.consumer_client.receive(
-                    on_event=on_event,
-                    starting_position=starting_position,
-                    starting_position_inclusive=True,
-                    on_error=on_error,
-                    on_partition_initialize=on_partition_initialize,
-                    on_partition_close=on_partition_close,
-                )
-            except Exception as e:
-                logger("EventHubApi exception: {}".format(e))
-                raise
+                    await self.consumer_client.receive(
+                        on_event=on_event,
+                        starting_position=starting_position,
+                        starting_position_inclusive=True,
+                        on_error=on_error,
+                        on_partition_initialize=on_partition_initialize,
+                        on_partition_close=on_partition_close,
+                    )
+                    return
+                except asyncio.CancelledError:
+                    # start_new_listener() and disconnect() cancel this task on purpose.
+                    raise
+                except Exception as e:
+                    attempt += 1
+                    if attempt > LISTENER_MAX_RETRIES:
+                        logger("EventHubApi exception: {}".format(e))
+                        raise
+                    delay = LISTENER_RETRY_DELAY_SECONDS * attempt
+                    logger(
+                        "EventHubApi: listener attempt {} failed ({}); retrying in {} seconds".format(
+                            attempt, e, delay
+                        )
+                    )
+                    await asyncio.sleep(delay)
 
         self.listener_future = asyncio.ensure_future(listener())
 
