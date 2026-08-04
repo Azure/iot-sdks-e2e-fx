@@ -70,17 +70,30 @@ function New-GuidString {
 }
 
 function New-TempFile {
+    # $Extension is the extension WITHOUT the leading dot (e.g. "pem"); a leading
+    # dot is tolerated. When omitted, the .tmp path is returned unchanged.
     param([string]$Extension = '')
 
-    $TempFilePath = [System.IO.Path]::GetTempFileName()
-    Remove-Item -Path $TempFilePath
+    # GetTempFileName() guarantees the name it returns is unused, but that
+    # guarantee only covers the .tmp file it creates: replacing the extension can
+    # land on a name another process already owns. Retry until the final path is
+    # free so the caller still gets a unique file.
+    $MaxAttempts = 10
 
-    # GetTempFileName() always returns a .tmp path, but some Azure CLI commands
-    # validate by extension: az iot dps certificate create/verify and the
-    # enrollment --cp parameters reject anything that is not .pem or .cer.
-    # Callers passing a certificate must therefore ask for -Extension ".pem".
-    if (-not [string]::IsNullOrEmpty($Extension)) {
-        $TempFilePath = [System.IO.Path]::ChangeExtension($TempFilePath, $Extension)
+    for ($Attempt = 0; $Attempt -lt $MaxAttempts; $Attempt++) {
+        $TempFilePath = [System.IO.Path]::GetTempFileName()
+        Remove-Item -Path $TempFilePath
+
+        if ([string]::IsNullOrEmpty($Extension)) {
+            break
+        }
+
+        $Suffix = if ($Extension.StartsWith('.')) { $Extension } else { ".$Extension" }
+        $TempFilePath = [System.IO.Path]::ChangeExtension($TempFilePath, $Suffix)
+
+        if (-not (Test-Path $TempFilePath)) {
+            break
+        }
     }
 
     return $TempFilePath
@@ -1310,7 +1323,8 @@ function Add-DpsCertificate {
     Write-Host "Running Add-DpsCertificate($DpsCertificateName)"
 
     $PrivateKey = New-RsaPrivateKey
-    $CertificatePath =  New-TempFile -Extension ".pem"
+    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+    $CertificatePath =  New-TempFile -Extension "pem"
     $Certificate = New-Certificate -Subject $Subject -Key $PrivateKey -IssuerCert $IssuerCert -IssuerKey $IssuerKey -IsCA $true -Days $Expiration.TotalDays -OutFile $CertificatePath
 
     az iot dps certificate create --dps-name $DpsName --resource-group $ResourceGroup --name $DpsCertificateName --path $CertificatePath | Out-Null
@@ -1325,7 +1339,8 @@ function Add-DpsCertificate {
     Stop-OnError -Step "az iot dps certificate generate-verification-code"
 
     # Create verification cert
-    $DpsVerificationCertificatePath = New-TempFile -Extension ".pem"
+    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+    $DpsVerificationCertificatePath = New-TempFile -Extension "pem"
     $DpsVerificationCertificateSubject = "CN=$($DpsVerificationCodeInfo.properties.verificationCode)"
 
     $DpsVerificationKey = New-RsaPrivateKey
@@ -1382,7 +1397,8 @@ function Add-DpsX509IndividualEnrollment {
     $DpsDevicePrivateKey = New-RsaPrivateKey
     $DpsDeviceCertificate = New-Certificate -Subject "CN=$EnrollmentId" -Key $DpsDevicePrivateKey -IssuerCert $null -IssuerKey $null -IsCA $false -Days $CertificateExpiration.TotalDays
 
-    $DpsDeviceCertificatePath = New-TempFile -Extension ".pem"
+    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+    $DpsDeviceCertificatePath = New-TempFile -Extension "pem"
     Export-X509CertificateToPemFile -Cert $DpsDeviceCertificate -Path $DpsDeviceCertificatePath
 
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
@@ -1442,7 +1458,8 @@ function Add-DpsX509EnrollmentGroup {
 
     $ICA = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName -Subject $EnrollmentId -IssuerCert $IssuerCertificate -IssuerKey $IssuerPrivateKey -Expiration $CertificateExpiration
 
-    $ICACertificatePath = New-TempFile -Extension ".pem"
+    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+    $ICACertificatePath = New-TempFile -Extension "pem"
     $ICA.ExportToPemFile($ICACertificatePath)
 
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
