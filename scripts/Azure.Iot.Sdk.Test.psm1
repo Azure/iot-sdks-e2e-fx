@@ -70,8 +70,19 @@ function New-GuidString {
 }
 
 function New-TempFile {
+    param([string]$Extension = '')
+
     $TempFilePath = [System.IO.Path]::GetTempFileName()
     Remove-Item -Path $TempFilePath
+
+    # GetTempFileName() always returns a .tmp path, but some Azure CLI commands
+    # validate by extension: az iot dps certificate create/verify and the
+    # enrollment --cp parameters reject anything that is not .pem or .cer.
+    # Callers passing a certificate must therefore ask for -Extension ".pem".
+    if (-not [string]::IsNullOrEmpty($Extension)) {
+        $TempFilePath = [System.IO.Path]::ChangeExtension($TempFilePath, $Extension)
+    }
+
     return $TempFilePath
 }
 
@@ -1299,7 +1310,7 @@ function Add-DpsCertificate {
     Write-Host "Running Add-DpsCertificate($DpsCertificateName)"
 
     $PrivateKey = New-RsaPrivateKey
-    $CertificatePath =  New-TempFile
+    $CertificatePath =  New-TempFile -Extension ".pem"
     $Certificate = New-Certificate -Subject $Subject -Key $PrivateKey -IssuerCert $IssuerCert -IssuerKey $IssuerKey -IsCA $true -Days $Expiration.TotalDays -OutFile $CertificatePath
 
     az iot dps certificate create --dps-name $DpsName --resource-group $ResourceGroup --name $DpsCertificateName --path $CertificatePath | Out-Null
@@ -1314,7 +1325,7 @@ function Add-DpsCertificate {
     Stop-OnError -Step "az iot dps certificate generate-verification-code"
 
     # Create verification cert
-    $DpsVerificationCertificatePath = New-TempFile
+    $DpsVerificationCertificatePath = New-TempFile -Extension ".pem"
     $DpsVerificationCertificateSubject = "CN=$($DpsVerificationCodeInfo.properties.verificationCode)"
 
     $DpsVerificationKey = New-RsaPrivateKey
@@ -1371,7 +1382,7 @@ function Add-DpsX509IndividualEnrollment {
     $DpsDevicePrivateKey = New-RsaPrivateKey
     $DpsDeviceCertificate = New-Certificate -Subject "CN=$EnrollmentId" -Key $DpsDevicePrivateKey -IssuerCert $null -IssuerKey $null -IsCA $false -Days $CertificateExpiration.TotalDays
 
-    $DpsDeviceCertificatePath = New-TempFile
+    $DpsDeviceCertificatePath = New-TempFile -Extension ".pem"
     Export-X509CertificateToPemFile -Cert $DpsDeviceCertificate -Path $DpsDeviceCertificatePath
 
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
@@ -1431,7 +1442,7 @@ function Add-DpsX509EnrollmentGroup {
 
     $ICA = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName -Subject $EnrollmentId -IssuerCert $IssuerCertificate -IssuerKey $IssuerPrivateKey -Expiration $CertificateExpiration
 
-    $ICACertificatePath = New-TempFile
+    $ICACertificatePath = New-TempFile -Extension ".pem"
     $ICA.ExportToPemFile($ICACertificatePath)
 
     if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
