@@ -1,9 +1,20 @@
+parameters:
+  # Must resolve to the same value as the resourceGroupName parameter in
+  # steps-create-azure-resources.yaml -- both are assembled from the build id, which is
+  # identical across every stage of a run. Overriding one without the other would leave the
+  # provisioned group behind.
+  resourceGroupName: 'rg-iot-sdk-e2e-$(Build.BuildId)'
+
 steps:
 - checkout: none
 
+# Runs provisioned before the name became reproducible recorded a random name here, so it is
+# still consulted when present. It is only a fallback: a setup job that never published an
+# artifact is precisely the case this stage has to survive, so a missing one is not an error.
 - download: current
   artifact: test_config
   displayName: Download artifact (test config)
+  continueOnError: true
 
 - task: AzureCLI@2
   inputs:
@@ -12,9 +23,27 @@ steps:
     scriptLocation: 'inlineScript'
     inlineScript: |
       set -e
-      export AZURE_RESOURCE_GROUP=$(cat "$(Pipeline.Workspace)/test_config/azure-resource-group-name.txt")
+      AZURE_RESOURCE_GROUP="${{ parameters.resourceGroupName }}"
+
+      RECORDED_NAME_FILE="$(Pipeline.Workspace)/test_config/azure-resource-group-name.txt"
+      if [ -f "$RECORDED_NAME_FILE" ]; then
+        RECORDED_NAME=$(tr -d "[:space:]" < "$RECORDED_NAME_FILE")
+        if [ -n "$RECORDED_NAME" ]; then
+          AZURE_RESOURCE_GROUP="$RECORDED_NAME"
+        fi
+      fi
+
+      # A setup job cancelled before it created anything leaves nothing to delete.
+      # --output tsv pins the format: the default is configurable per agent (az config set
+      # core.output=...), and the casing of the boolean differs between formats.
+      GROUP_EXISTS=$(az group exists --name "$AZURE_RESOURCE_GROUP" --output tsv | tr "[:upper:]" "[:lower:]" | tr -d "[:space:]")
+      if [ "$GROUP_EXISTS" != "true" ]; then
+        echo "Resource group $AZURE_RESOURCE_GROUP does not exist; nothing to delete."
+        exit 0
+      fi
+
       echo "Deleting Azure resource group: $AZURE_RESOURCE_GROUP"
-      az group delete --name $AZURE_RESOURCE_GROUP --yes --no-wait
+      az group delete --name "$AZURE_RESOURCE_GROUP" --yes --no-wait
   displayName: Destroy Azure Resource Group
   condition: always()
 
