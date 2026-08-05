@@ -1792,6 +1792,9 @@ function New-AzIotTestEnvironment {
         Stop-OnError -Step "Install Azure IoT extension"
     }
 
+    Write-Host "Azure CLI IoT extension version details:"
+    az extension list
+
     # Add default Azure resource group tags 
     if ($ResourceGroupTags -eq $null) {
         $ResourceGroupTags = @{}
