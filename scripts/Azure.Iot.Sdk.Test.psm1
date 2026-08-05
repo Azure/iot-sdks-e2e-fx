@@ -1793,7 +1793,7 @@ function New-AzIotTestEnvironment {
     }
 
     Write-Host "Azure CLI IoT extension version details:"
-    az extension list
+    Write-Host (az extension list)
 
     # Add default Azure resource group tags 
     if ($ResourceGroupTags -eq $null) {
