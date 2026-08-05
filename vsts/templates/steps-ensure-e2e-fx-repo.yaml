@@ -1,14 +1,33 @@
 steps:
 - bash: |
+    set -e
+
     if [ -f "${HORTON_FRAMEWORKROOT}/bin/horton" ]; then
       echo "e2e-fx framework already present at ${HORTON_FRAMEWORKROOT}"
-      git -C ${HORTON_FRAMEWORKROOT} log -1 --oneline
-    else
-      mkdir -p ${HORTON_FRAMEWORKROOT} &&
-      cd ${HORTON_FRAMEWORKROOT} &&
-      git clone https://github.com/Azure/iot-sdks-e2e-fx . &&
-      git checkout $(Horton.FrameworkRef) &&
-      git log -1 --oneline
+      git -C "${HORTON_FRAMEWORKROOT}" log -1 --oneline
+      exit 0
     fi
-  displayName: "Clone e2efx repo"
 
+    # Only reached by a job that checks out no sources of its own.
+    #
+    # Horton.FrameworkRef names the ref to test. While it was undefined, Azure
+    # Pipelines left the literal "$(Horton.FrameworkRef)" in the script, bash
+    # treated it as command substitution, and `git checkout` ran with an empty
+    # argument -- which succeeds and leaves the clone on master. That is how
+    # create_azure_resources came to provision with master instead of the code
+    # under test, for every PR, without anything going red. Refuse to guess.
+    case "${HORTON_FRAMEWORKREF}" in
+      ""|'$('*)
+        echo "ERROR: Horton.FrameworkRef is not set, so there is no way to tell" >&2
+        echo "       which e2e-fx ref this job should run. Either let the job" >&2
+        echo "       check out sources, or set Horton.FrameworkRef." >&2
+        exit 1
+        ;;
+    esac
+
+    mkdir -p "${HORTON_FRAMEWORKROOT}"
+    cd "${HORTON_FRAMEWORKROOT}"
+    git clone https://github.com/Azure/iot-sdks-e2e-fx .
+    git checkout "${HORTON_FRAMEWORKREF}"
+    git log -1 --oneline
+  displayName: "Clone e2efx repo"

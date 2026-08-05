@@ -138,6 +138,44 @@ function Stop-OnError {
     }
 }
 
+# The azure-iot CLI extension version this repo provisions with.
+#
+# Provisioning needs the `az iot adr` command group, which ships only in the
+# preview builds. 0.30.0 final dropped it, and because a final release outranks
+# its own pre-releases, `--allow-preview` started resolving to 0.30.0 instead
+# of 0.30.0b2 -- so the command group disappeared with no change on our side and
+# every provisioning run began failing with:
+#
+#   ERROR: 'adr' is misspelled or not recognized by the system.
+#
+# Pinning is what makes this reproducible: `--allow-preview` selects whatever
+# happens to be newest, which is not a version this repo ever tested against.
+# TODO: drop the pin and install the stable extension once `adr` ships in one.
+$script:AzureIotCliExtensionVersion = "0.30.0b2"
+
+function Install-AzureIotCliExtension {
+    $Extension = $(az extension list --output json --only-show-errors | ConvertFrom-Json | ?{$_.name -eq "azure-iot"})
+
+    if ($null -ne $Extension -and $Extension.version -ne $script:AzureIotCliExtensionVersion) {
+        Write-Host "Azure IoT extension $($Extension.version) found; removing (pinned to $($script:AzureIotCliExtensionVersion))."
+        az extension remove --name azure-iot --only-show-errors | Out-Null
+        Stop-OnError -Step "Remove Azure IoT extension"
+        $Extension = $null
+    }
+
+    if ($null -eq $Extension) {
+        Write-Host "Installing Azure IoT extension $($script:AzureIotCliExtensionVersion)."
+        az extension add --name azure-iot --version $script:AzureIotCliExtensionVersion --allow-preview --only-show-errors | Out-Null
+        Stop-OnError -Step "Install Azure IoT extension"
+    }
+
+    # What actually ended up installed. When a provisioning command goes missing
+    # ("'adr' is misspelled or not recognized"), this is the first thing worth
+    # seeing in the log.
+    Write-Host "Azure CLI IoT extension version details:"
+    az extension list --output table --only-show-errors
+}
+
 function Invoke-WithRetry {
     <#
     .SYNOPSIS
@@ -1775,25 +1813,8 @@ function New-AzIotTestEnvironment {
         Stop-OnError -Step "Set Azure subscription"
     }
 
-    # Add Azure IoT extension if not already added (required for some az iot commands, e.g. az iot adr ns create)
-    # TODO: install non-preview version after GA.
-    $AzCliAzureIotExtension = $(az extension list | Convertfrom-json | ?{$_.name -eq "azure-iot"})
-
-    if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $false) {
-        Write-Host "Non-preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing..."
-        az extension remove --name azure-iot --only-show-errors | Out-Null
-        Stop-OnError -Step "Remove non-preview Azure IoT extension"
-        $AzCliAzureIotExtension = $null
-    }
-
-    if ($null -eq $AzCliAzureIotExtension) {
-        Write-Host "Installing Azure IoT extension."
-        az extension add --name azure-iot --allow-preview --only-show-errors | Out-Null
-        Stop-OnError -Step "Install Azure IoT extension"
-    }
-
-    Write-Host "Azure CLI IoT extension version details:"
-    az extension list
+    # Required for some az iot commands, e.g. az iot adr ns create.
+    Install-AzureIotCliExtension
 
     # Add default Azure resource group tags 
     if ($ResourceGroupTags -eq $null) {
@@ -2193,22 +2214,8 @@ function Get-AzIotTestEnvironment {
         Stop-OnError -Step "Set Azure subscription"
     }
 
-    # Add Azure IoT extension if not already added (required for some az iot commands, e.g. az iot adr ns create)
-    # TODO: install non-preview version after GA.
-    $AzCliAzureIotExtension = $(az extension list | Convertfrom-json | ?{$_.name -eq "azure-iot"})
-
-    if ($null -ne $AzCliAzureIotExtension -and $AzCliAzureIotExtension.preview -eq $false) {
-        Write-Host "Non-preview Azure IoT extension found (version $($AzCliAzureIotExtension.version)). Removing..."
-        az extension remove --name azure-iot --only-show-errors | Out-Null
-        Stop-OnError -Step "Remove non-preview Azure IoT extension"
-        $AzCliAzureIotExtension = $null
-    }
-
-    if ($null -eq $AzCliAzureIotExtension) {
-        Write-Host "Installing Azure IoT extension."
-        az extension add --name azure-iot --allow-preview --only-show-errors | Out-Null
-        Stop-OnError -Step "Install Azure IoT extension"
-    }
+    # Required for some az iot commands, e.g. az iot adr ns create.
+    Install-AzureIotCliExtension
 
     $AzureResourceGroup = az group show --name "$ResourceGroup" | ConvertFrom-Json
 
