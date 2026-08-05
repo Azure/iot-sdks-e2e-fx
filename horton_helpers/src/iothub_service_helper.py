@@ -15,6 +15,30 @@ import connection_string
 import time
 
 
+def _add_service_detail(e):
+    """Fold the service's own explanation into an HttpOperationError message.
+
+    msrest builds its message from the HTTP status alone, so a rejected
+    request surfaces as nothing more than "Operation returned an invalid
+    status code 'Bad Request'".  IoT Hub does say what was wrong, but only in
+    the response body, which never reaches the log -- leaving a failed build
+    with no way to tell a malformed device id from a hub that is out of quota.
+
+    The exception is modified in place rather than replaced: try_delete_device
+    and friends catch HttpOperationError to ignore "not found", so changing the
+    type here would stop those from working.  Callers that swallow the error
+    still print nothing.
+    """
+    body = getattr(getattr(e, "response", None), "text", None)
+    body = body.strip() if body else ""
+    if not body:
+        return
+    detail = "{} -- service said: {}".format(str(e), body)
+    e.args = (detail,) + tuple(e.args[1:])
+    if hasattr(e, "message"):
+        e.message = detail
+
+
 def _retry_transient(fn, retries=5, initial_delay=2):
     """Retry an IoT Hub service call on transient errors.
 
@@ -57,6 +81,7 @@ def _retry_transient(fn, retries=5, initial_delay=2):
                 time.sleep(delay)
                 delay = min(delay * 2, 30)
                 continue
+            _add_service_detail(e)
             raise
     if last_error:
         raise last_error
