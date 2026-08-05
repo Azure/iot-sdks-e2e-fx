@@ -138,6 +138,41 @@ function Stop-OnError {
     }
 }
 
+function ConvertTo-ServiceHostName {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string] $ConnectionString)
+
+    # `az iot hub connection-string show` can hand back the TLS 1.3 preview
+    # DEVICE endpoint (<hub>.device.azure-devices.net) instead of the classic
+    # one, and IoT Hub rejects service operations sent there:
+    #
+    #   errorCode 400000: The requested operation is not supported on this
+    #   hostname. Use the device endpoint for device hostname and the service
+    #   hostname for service operations.
+    #
+    # Measured on hubs created in centraluseuap with the same --mintls 1.2
+    # this module uses, varying only the CLI:
+    #
+    #   no azure-iot extension  -> <hub>.device.azure-devices.net
+    #   azure-iot 0.30.0b2      -> <hub>.azure-devices.net
+    #   azure-iot 0.30.0        -> <hub>.azure-devices.net
+    #
+    # So it is the CORE az implementation that returns the device endpoint; the
+    # extension overrides the command and returns the classic hostname. In the
+    # pipeline the extension is installed and demonstrably active for other
+    # commands, yet this one still produced the device endpoint -- it emits no
+    # "behavior has been altered by the following extension" warning, so it is
+    # not being overridden there. The hub itself is fine either way:
+    # properties.hostName is the classic hostname in every case measured.
+    #
+    # Normalising here makes provisioning independent of which az resolves the
+    # command.
+    if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
+        return $ConnectionString
+    }
+
+    return ($ConnectionString -replace '(?i)\.device\.azure-devices\.net', '.azure-devices.net')
+}
+
 function Invoke-WithRetry {
     <#
     .SYNOPSIS
@@ -2107,7 +2142,7 @@ function New-AzIotTestEnvironment {
     $TestEnvInfo.AzureAdrPolicyName = $AzureAdrPolicyName
 
     Write-Host "Getting IoT Hub Connection String"
-    $TestEnvInfo.IotHub.ConnectionString = $(az iot hub connection-string show -g $ResourceGroup -n $IotHubName --kt primary --pn iothubowner --query connectionString -o tsv)
+    $TestEnvInfo.IotHub.ConnectionString = ConvertTo-ServiceHostName $(az iot hub connection-string show -g $ResourceGroup -n $IotHubName --kt primary --pn iothubowner --query connectionString -o tsv)
     Stop-OnError -Step "Get IoT Hub Connection String"
 
     Write-Host "Getting IoT Hub's Event Hub Connection String"
@@ -2251,7 +2286,7 @@ function Get-AzIotTestEnvironment {
     }
 
     Write-Host "Getting IoT Hub Connection String"
-    $TestEnvInfo.IotHub.ConnectionString = $(az iot hub connection-string show -g $ResourceGroup -n $IotHubName --kt primary --pn iothubowner --query connectionString -o tsv)
+    $TestEnvInfo.IotHub.ConnectionString = ConvertTo-ServiceHostName $(az iot hub connection-string show -g $ResourceGroup -n $IotHubName --kt primary --pn iothubowner --query connectionString -o tsv)
     Stop-OnError -Step "Get IoT Hub Connection String"
 
     Write-Host "Getting IoT Hub's Event Hub Connection String"
