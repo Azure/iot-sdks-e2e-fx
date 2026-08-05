@@ -172,8 +172,18 @@ function Install-AzureIotCliExtension {
     # What actually ended up installed. When a provisioning command goes missing
     # ("'adr' is misspelled or not recognized"), this is the first thing worth
     # seeing in the log.
+    #
+    # Capture the table and re-emit it with Write-Host rather than letting the
+    # native command write straight to the pipeline. A bare `az` call puts its
+    # stdout on the SUCCESS stream, which flows out of this function and into
+    # the caller's return value -- New-AzIotTestEnvironment then returns
+    # Object[] (table lines + the TestEnvironmentInfo) instead of a single
+    # object, and any caller with a typed [TestEnvironmentInfo] parameter fails
+    # with "Cannot convert the System.Object[] value ... to TestEnvironmentInfo".
+    # Write-Host is also the only form that reliably reaches the log from inside
+    # the AzureCLI@2 task, which swallows bare native stdout.
     Write-Host "Azure CLI IoT extension version details:"
-    az extension list --output table --only-show-errors
+    Write-Host (az extension list --output table --only-show-errors | Out-String)
 }
 
 function Invoke-WithRetry {
