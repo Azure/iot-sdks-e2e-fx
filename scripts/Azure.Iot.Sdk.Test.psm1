@@ -1940,7 +1940,7 @@ function New-AzIotTestEnvironment {
         $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
             -RetryOnPattern $AdrPermissionPropagationPattern -Command {
             az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
-                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
+                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --adr-ns-id "$($AzureAdrNamespace.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --adr-identity-id "$($AzureCertMgmtIdentity.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
         }
 
         Write-Host "Assigning Contributor role on Azure IoT for ADR principal"
