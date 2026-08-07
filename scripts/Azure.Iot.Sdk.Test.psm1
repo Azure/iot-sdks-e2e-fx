@@ -1301,6 +1301,10 @@ class TestEnvironmentInfo {
 
     [string]$AzureAdrPolicyName = $null
 
+    [string]$AdrNamespaceResourceId = $null
+
+    [string]$AdrIdentityResourceId = $null
+
     [hashtable]ToHashtable() {
         return [ordered]@{
             AzureResourceGroup = $this.AzureResourceGroup
@@ -1317,6 +1321,8 @@ class TestEnvironmentInfo {
         $TestEnvironmentInfo.AzureAdrPolicyName = $Hashtable.AzureAdrPolicyName
         $TestEnvironmentInfo.IotHub = [IotHubInfo]::FromHashtable($Hashtable.IotHub)
         $TestEnvironmentInfo.Dps = [DpsInfo]::FromHashtable($Hashtable.Dps)
+        $TestEnvironmentInfo.AdrNamespaceResourceId = $Hashtable.AdrNamespaceResourceId
+        $TestEnvironmentInfo.AdrIdentityResourceId = $Hashtable.AdrIdentityResourceId
         # TODO: add container registry
         return $TestEnvironmentInfo
     }
@@ -1899,12 +1905,14 @@ function New-AzIotTestEnvironment {
         $CertMgmtUserIdentity = "$($ResourceGroup)cmuid"
         Write-Host "Creating User-Assigned Managed Identity (UAMI) ($CertMgmtUserIdentity)"
         $AzureCertMgmtIdentity = az identity create --name "$CertMgmtUserIdentity" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
+        $TestEnvInfo.AdrIdentityResourceId = "$($AzureCertMgmtIdentity.id)"
         Stop-OnError -Step "Create User-Assigned Managed Identity (UAMI)"
 
         $AzureAdrNamespaceName = "azure-adr-ns"
         $AzureAdrPolicyName = "azure-adr-policy"
         Write-Host "Creating ADR Namespace (ns=$AzureAdrNamespaceName; policy=$AzureAdrPolicyName)"
         $AzureAdrNamespace = az iot adr ns create --name "$AzureAdrNamespaceName" --enable-certificate-management --resource-group "$ResourceGroup" --location "$AzureLocation" --policy-name "$AzureAdrPolicyName" | ConvertFrom-Json
+        $TestEnvInfo.AdrNamespaceResourceId = "$($AzureAdrNamespace.id)"
         Stop-OnError -Step "Create ADR Namespace"    
 
         # Azure Device Registry Contributor: namespaces/read,
@@ -1940,7 +1948,7 @@ function New-AzIotTestEnvironment {
         $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
             -RetryOnPattern $AdrPermissionPropagationPattern -Command {
             az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
-                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --adr-ns-id "$($AzureAdrNamespace.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --adr-identity-id "$($AzureCertMgmtIdentity.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
+                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
         }
 
         Write-Host "Assigning Contributor role on Azure IoT for ADR principal"
