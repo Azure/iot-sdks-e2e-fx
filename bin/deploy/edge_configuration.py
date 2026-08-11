@@ -33,12 +33,12 @@ class EdgeConfiguration:
         if len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE", None) or "") > 0:
             self.agentImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE"]
         else:
-            self.agentImage = "mcr.microsoft.com/azureiotedge-agent:1.6"
+            self.agentImage = "mcr.microsoft.com/azureiotedge-agent:1.5"
 
         if len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE", None) or "") > 0:
             self.hubImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE"]
         else:
-            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:1.6"
+            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:1.5"
 
         self.config = {
             "moduleContent": {
