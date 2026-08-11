@@ -30,22 +30,15 @@ class EdgeConfiguration:
             "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
         }
 
-        if (
-            False
-            and len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE", None) or "")
-            > 0
-        ):
+        if len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE", None) or "") > 0:
             self.agentImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE"]
         else:
-            self.agentImage = "mcr.microsoft.com/azureiotedge-agent:1.4"
+            self.agentImage = "mcr.microsoft.com/azureiotedge-agent:1.6"
 
-        if (
-            False
-            and len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE", None) or "") > 0
-        ):
+        if len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE", None) or "") > 0:
             self.hubImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE"]
         else:
-            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:1.4"
+            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:1.6"
 
         self.config = {
             "moduleContent": {
@@ -83,6 +76,13 @@ class EdgeConfiguration:
                                     },
                                     "DeviceScopeCacheRefreshDelaySecs": {
                                         "value": "1"
+                                    },
+                                    # EXPERIMENT: edgeHub 1.6 defaults SslProtocols to
+                                    # "tls1.2,tls1.3" where 1.4 was tls1.2 only. Pin it back to
+                                    # tls1.2 to test whether that is what stops friendMod from
+                                    # connecting over mqtts. Must be removed before merging.
+                                    "SslProtocols": {
+                                        "value": "tls1.2"
                                     }
                                 },
                             },
