@@ -4,6 +4,56 @@
 import json
 import os
 
+# Single source of truth for the IoT Edge release line.  scripts/new/install-iotedge.sh
+# pins the host aziot-edge daemon to this same line, so the daemon and the
+# edgeAgent/edgeHub module images can never drift apart by accident.
+EDGE_RELEASE_LINE = os.environ.get("IOTHUB_E2E_EDGE_RELEASE_LINE") or "1.5"
+
+
+def _image_tag(image):
+    """
+    Return the tag portion of an image reference, or None if it has none.
+
+    Only the final path segment is considered, since a registry host may itself
+    contain a colon (myregistry:5000/azureiotedge-hub).  Digest-pinned
+    references carry no version we can check.
+    """
+    last_segment = image.rsplit("/", 1)[-1]
+    if "@" in last_segment:
+        return None
+    if ":" not in last_segment:
+        return None
+    return last_segment.rsplit(":", 1)[1]
+
+
+def _verify_image_on_release_line(variable_name, image):
+    """
+    Reject an image override that is not on the configured release line.
+
+    Running a daemon and module images from different lines is exactly the skew
+    that produced weeks of intermittent EdgeHub twin failures, so a mismatch is
+    an error rather than a warning.  Untagged and digest-pinned references carry
+    no version to compare and are accepted; any other tag must be on the release
+    line.  Set IOTHUB_E2E_EDGE_ALLOW_VERSION_SKEW=1 to allow a deliberate
+    mismatch, including a private image whose tag does not encode a version.
+    """
+    if os.environ.get("IOTHUB_E2E_EDGE_ALLOW_VERSION_SKEW"):
+        return
+
+    tag = _image_tag(image)
+    if tag is None:
+        return
+
+    if tag != EDGE_RELEASE_LINE and not tag.startswith(EDGE_RELEASE_LINE + "."):
+        raise ValueError(
+            "{}={} is not on the {} release line that the host aziot-edge daemon "
+            "is pinned to (IOTHUB_E2E_EDGE_RELEASE_LINE). Mismatched daemon and "
+            "module versions cause intermittent EdgeHub failures. Set "
+            "IOTHUB_E2E_EDGE_ALLOW_VERSION_SKEW=1 if this is intentional.".format(
+                variable_name, image, EDGE_RELEASE_LINE
+            )
+        )
+
 
 class EdgeConfiguration:
     """
@@ -30,15 +80,23 @@ class EdgeConfiguration:
             "password": os.environ["IOTHUB_E2E_REPO_PASSWORD"],
         }
 
-        if len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE", None) or "") > 0:
-            self.agentImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE"]
+        agentImage = os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE", None) or ""
+        if len(agentImage) > 0:
+            _verify_image_on_release_line(
+                "IOTHUB_E2E_EDGE_PRIVATE_AGENTIMAGE", agentImage
+            )
+            self.agentImage = agentImage
         else:
-            self.agentImage = "mcr.microsoft.com/azureiotedge-agent:1.5"
+            self.agentImage = (
+                "mcr.microsoft.com/azureiotedge-agent:" + EDGE_RELEASE_LINE
+            )
 
-        if len(os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE", None) or "") > 0:
-            self.hubImage = os.environ["IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE"]
+        hubImage = os.environ.get("IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE", None) or ""
+        if len(hubImage) > 0:
+            _verify_image_on_release_line("IOTHUB_E2E_EDGE_PRIVATE_HUBIMAGE", hubImage)
+            self.hubImage = hubImage
         else:
-            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:1.5"
+            self.hubImage = "mcr.microsoft.com/azureiotedge-hub:" + EDGE_RELEASE_LINE
 
         self.config = {
             "moduleContent": {

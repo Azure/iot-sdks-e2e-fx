@@ -7,11 +7,14 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 $script_dir/install-microsoft-apt-repo.sh
 [ $? -eq 0 ] || { echo "install-microsoft-apt-repo failed"; exit 1; }
 
-# Keep the host daemon on the same release line as the edgeAgent/edgeHub images
-# deployed by bin/deploy/edge_configuration.py.  Installing aziot-edge unpinned
-# picks up whatever is newest in the Microsoft feed, which is how we ended up
-# running a 1.6.0 daemon against 1.4 module images.
-aziot_edge_line="${IOTHUB_E2E_AZIOT_EDGE_LINE:-1.5}"
+# Keep the host daemon on the same release line as the edgeAgent/edgeHub images.
+# IOTHUB_E2E_EDGE_RELEASE_LINE is the single knob for both: it is read here and
+# by bin/deploy/edge_configuration.py, which also rejects private image
+# overrides from a different line.  Installing aziot-edge unpinned picks up
+# whatever is newest in the Microsoft feed, which is how we ended up running a
+# 1.6.0 daemon against 1.4 module images.  Keep the default in sync with
+# EDGE_RELEASE_LINE in bin/deploy/edge_configuration.py.
+aziot_edge_line="${IOTHUB_E2E_EDGE_RELEASE_LINE:-1.5}"
 
 # Newest candidate version on the requested line.  apt-cache madison emits
 # "  <package> | <version> | <source>", newest first.
