@@ -160,6 +160,50 @@ public class ModuleGlue
         handler.handle(Future.succeededFuture());
     }
 
+    public void disconnect2(String connectionId, Handler<AsyncResult<Void>> handler)
+    {
+        System.out.printf("Disconnect2 for %s%n", connectionId);
+
+        ModuleClient client = getClient(connectionId);
+        if (client == null)
+        {
+            handler.handle(Future.failedFuture(new MainApiException(500, "invalid connection id")));
+            return;
+        }
+
+        // Unlike disconnect, the client stays in the map so connect2 can reopen it
+        // under the same connectionId.  A pending waitForDesiredPropertyPatch long
+        // poll is deliberately left registered: callers reconnect in the middle of
+        // one and expect it to survive.
+        this._deviceTwinStatusCallback.setHandler(null);
+        client.close();
+        handler.handle(Future.succeededFuture());
+    }
+
+    public void connect2(String connectionId, Handler<AsyncResult<Void>> handler)
+    {
+        System.out.printf("Connect2 for %s%n", connectionId);
+
+        ModuleClient client = getClient(connectionId);
+        if (client == null)
+        {
+            handler.handle(Future.failedFuture(new MainApiException(500, "invalid connection id")));
+            return;
+        }
+
+        try
+        {
+            // close() drops the client's twin and direct method state, so the
+            // caller has to re-enable those features after reconnecting.
+            client.open(true);
+            handler.handle(Future.succeededFuture());
+        }
+        catch (Exception e)
+        {
+            handler.handle(Future.failedFuture(e));
+        }
+    }
+
     public void enableInputMessages(String connectionId, Handler<AsyncResult<Void>> handler)
     {
         ModuleClient client = getClient(connectionId);
