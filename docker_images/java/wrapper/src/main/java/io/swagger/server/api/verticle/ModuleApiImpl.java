@@ -32,7 +32,7 @@ public class ModuleApiImpl implements ModuleApi
     @Override
     public void moduleConnect2(String connectionId, Handler<AsyncResult<Void>> handler)
     {
-        throw new java.lang.UnsupportedOperationException("Not supported yet");
+        this._moduleGlue.connect2(connectionId, handler);
     }
 
     //Module_ConnectFromEnvironment
@@ -81,7 +81,7 @@ public class ModuleApiImpl implements ModuleApi
     @Override
     public void moduleDisconnect2(String connectionId, Handler<AsyncResult<Void>> handler)
     {
-        throw new java.lang.UnsupportedOperationException("Not supported yet");
+        this._moduleGlue.disconnect2(connectionId, handler);
     }
 
     //Module_EnableInputMessages
