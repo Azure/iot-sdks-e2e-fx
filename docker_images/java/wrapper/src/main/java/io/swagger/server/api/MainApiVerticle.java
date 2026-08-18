@@ -30,6 +30,17 @@ public class MainApiVerticle extends AbstractVerticle {
     private int serverPort = 8080;
     protected Router router;
 
+    // How long the HTTP layer waits for a handler on the eventbus to reply.
+    //
+    // This must be the *outermost* timeout inside the wrapper. When the eventbus gives up first it reports the failure
+    // as (TIMEOUT, -1), and HttpResponseStatus.valueOf(-1) then throws IllegalArgumentException, so the caller sees an
+    // opaque 500 instead of the real error. Previously this was 90s while a twin patch was allowed 5 minutes, so any
+    // operation slower than 90s produced that opaque 500 even though it was still legitimately in progress. The same
+    // applied to the wait_for_desired_property_patch long poll, which the test runner keeps open for up to 150s.
+    //
+    // Ordering, innermost first: SDK operation (120s) < test runner default_api_timeout (150s) < this (300s).
+    private static final long EVENTBUS_SEND_TIMEOUT_MILLIS = 300 * 1000L;
+
     public int getServerPort() {
         return serverPort;
     }
@@ -76,7 +87,7 @@ public class MainApiVerticle extends AbstractVerticle {
         Router swaggerRouter = SwaggerRouter.swaggerRouter(router, swagger, vertx.eventBus(), new OperationIdServiceIdResolver(), new Function<RoutingContext, DeliveryOptions>() {
             @Override
             public DeliveryOptions apply(RoutingContext t) {
-                return new DeliveryOptions().setSendTimeout(90000);
+                return new DeliveryOptions().setSendTimeout(EVENTBUS_SEND_TIMEOUT_MILLIS);
             }
         });
         deployVerticles(startFuture);

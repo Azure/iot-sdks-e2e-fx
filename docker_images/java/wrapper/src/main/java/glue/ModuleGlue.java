@@ -49,6 +49,11 @@ public class ModuleGlue
     HashMap<String, ModuleClient> _map = new HashMap<>();
     int _clientCount = 0;
 
+    // How long an individual SDK operation is allowed to take. This has to stay below both the eventbus send timeout
+    // in MainApiVerticle and the test runner's default_api_timeout (150s), so that a slow operation is reported by the
+    // SDK, which knows what actually went wrong, rather than by one of the layers wrapping it, which do not.
+    private static final int OPERATION_TIMEOUT_MILLIS = 120 * 1000;
+
     public void connectFromEnvironment(String transportType, Handler<AsyncResult<ConnectResponse>> handler)
     {
         System.out.printf("ConnectFromEnvironment called with transport %s%n", transportType);
@@ -662,7 +667,7 @@ public class ModuleGlue
             this._deviceTwinStatusCallback.setHandler(handler);
             try
             {
-                client.updateReportedProperties(reportedProperties, 5 * 60 * 1000);
+                client.updateReportedProperties(reportedProperties, OPERATION_TIMEOUT_MILLIS);
                 handler.handle(Future.succeededFuture());
             }
             catch (Exception e)
