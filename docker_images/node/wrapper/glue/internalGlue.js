@@ -46,9 +46,11 @@ var getModuleOrDeviceTwin = function(objectCache, connectionId, callback) {
   // cheat: use internal member.  We should really call getTwin the first time
   // and cache the value in this code rather than relying on internal implementations.
   if (client._twin) {
-    callback(null, client._twin);
+    callback(null, glueUtils.attachErrorHandler(client._twin, 'twin'));
   } else {
-    client.getTwin(callback);
+    client.getTwin(function(err, twin) {
+      callback(err, glueUtils.attachErrorHandler(twin, 'twin'));
+    });
   }
 }
 
@@ -59,6 +61,7 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
     resolve(clientCtor.fromConnectionString(connectionString, glueUtils.transportFromType(transportType)));
   })
   .then((client) => {
+    glueUtils.attachErrorHandler(client, 'client');
     if (caCertificate && caCertificate.cert) {
       return client.setOptions({
         ca: caCertificate.cert,
@@ -149,8 +152,9 @@ exports.internal_EnableTwin = function(objectCache, connectionId) {
   debug(`internal_EnableTwin called with ${connectionId}`);
   return glueUtils.makePromise('internal_EnableTwin', function(callback) {
     var client = objectCache.getObject(connectionId)
-    client.getTwin(function(err) {
+    client.getTwin(function(err, twin) {
       glueUtils.debugFunctionResult('client.getTwin', err);
+      glueUtils.attachErrorHandler(twin, 'twin');
       callback(err);
     });
   });
