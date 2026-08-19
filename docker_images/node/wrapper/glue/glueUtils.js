@@ -141,6 +141,33 @@ var setOptionalCert = function(client, cert, done) {
 }
 
 /**
+ * Attach a listener for an object's 'error' event.
+ *
+ * The SDK client and twin objects are EventEmitters, and node terminates the process when an
+ * 'error' event is emitted that has no listener registered for it. These objects legitimately emit
+ * 'error' for transient conditions, such as the service rejecting a reconnect attempt or a
+ * subscription failing to be re-established, so without a listener a recoverable blip takes the
+ * whole wrapper process down. That fails the test that is running and every later test that needs
+ * this wrapper, instead of just the operation that was affected.
+ *
+ * This is a no-op if a listener is already attached, so it is safe to call on objects that the SDK
+ * caches and hands back more than once.
+ *
+ * @param {Object} emitter Client or twin object to attach the handler to
+ * @param {string} name    Name of the object, used when logging
+ *
+ * @returns The object that was passed in, so that this can be used inline
+ */
+var attachErrorHandler = function(emitter, name) {
+  if (emitter && typeof emitter.on === 'function' && emitter.listenerCount('error') === 0) {
+    emitter.on('error', function(err) {
+      debug(`${name} emitted an error event: ${err ? err.message : 'unspecified error'}`);
+    });
+  }
+  return emitter;
+}
+
+/**
  * Replace exports from one file with functions exported from another file.  We use this function
  * to make it easier to re-generate the stub code.  With this, we can replace the auto-generated
  * functions in the service directory with their equivalent functions in the glue folder.
@@ -202,5 +229,6 @@ module.exports = {
   makePromise: makePromise,
   transportFromType: transportFromType,
   setOptionalCert: setOptionalCert,
+  attachErrorHandler: attachErrorHandler,
   replaceExports: replaceExports
 }
