@@ -161,7 +161,7 @@ var setOptionalCert = function(client, cert, done) {
 var attachErrorHandler = function(emitter, name) {
   if (emitter && typeof emitter.on === 'function' && emitter.listenerCount('error') === 0) {
     emitter.on('error', function(err) {
-      debug(` emitted an error event: ${err ? err.message : 'unspecified error'}`);
+      debug(`${name} emitted an error event: ${err ? err.message : 'unspecified error'}`);
     });
   }
   return emitter;
