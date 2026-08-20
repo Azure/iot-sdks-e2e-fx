@@ -101,15 +101,26 @@ class TwinTests(object):
         await client.enable_twin()
 
         max_retries = 12
+
+        # get_twin can fail outright when edgeHub does not answer it, rather than returning a twin
+        # that has not caught up yet. Those two situations need different budgets. Staleness is
+        # cheap to poll for and gets the full 12 iterations. An outright failure is not cheap,
+        # because each one can occupy the wrapper's REST timeout before it even returns, so letting
+        # all 12 iterations absorb failures would let a sustained edgeHub non-response hold this
+        # test open for far longer than the retry bound used everywhere else. Outright failures get
+        # their own small budget, and the last one is re-raised rather than swallowed.
+        failures_allowed = 3
+
         for retry_count in range(max_retries):
-            # get_twin can fail outright when edgeHub does not answer it, rather than returning a
-            # twin that has not caught up yet. That is the same intermittent non-response this loop
-            # already tolerates, so it is retried here instead of failing the test on the spot.
             try:
                 twin_received = await client.get_twin()
             except Exception as e:
-                logger("get_twin failed ({}). Sleeping for 5 seconds and retrying ({}/{}).".format(
-                    e, retry_count + 1, max_retries))
+                failures_allowed -= 1
+                if not failures_allowed:
+                    logger("get_twin failed ({}). No attempts left, failing the test.".format(e))
+                    raise
+                logger("get_twin failed ({}). Sleeping for 5 seconds and retrying ({} attempts left).".format(
+                    e, failures_allowed))
                 await asyncio.sleep(5)
                 continue
 

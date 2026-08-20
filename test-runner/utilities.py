@@ -54,12 +54,20 @@ async def twin_op_with_retry(op, description, retries=3, delay=5):
             return await op()
         except Exception as e:
             last_exc = e
-            logger(
-                "{} attempt {}/{} failed ({}); retrying in {}s".format(
-                    description, attempt + 1, retries, e, delay
+            attempts_left = retries - attempt - 1
+            if attempts_left:
+                logger(
+                    "{} attempt {}/{} failed ({}); retrying in {}s".format(
+                        description, attempt + 1, retries, e, delay
+                    )
                 )
-            )
-            await asyncio.sleep(delay)
+                await asyncio.sleep(delay)
+            else:
+                logger(
+                    "{} attempt {}/{} failed ({}); no attempts left".format(
+                        description, attempt + 1, retries, e
+                    )
+                )
     logger("{} failed after {} attempts".format(description, retries))
     raise last_exc
 
