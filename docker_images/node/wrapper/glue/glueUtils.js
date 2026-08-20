@@ -168,6 +168,34 @@ var attachErrorHandler = function(emitter, name) {
 }
 
 /**
+ * Attach 'error' listeners to a client and to everything hanging off it that can emit 'error'.
+ *
+ * At the moment that means the client itself and its authentication provider. The authentication
+ * provider is a separate EventEmitter that the SDK never attaches a listener to. It emits 'error'
+ * from its token renewal timer when renewing the SAS token fails, which would take the wrapper
+ * process down in exactly the same way an unhandled client error does. That path matters here
+ * because IotEdgeAuthenticationProvider inherits it from SharedAccessKeyAuthenticationProvider, so
+ * it applies to the edge modules these tests spend most of their time running.
+ *
+ * The provider is only reachable through the transport, which is why this reaches into internals.
+ * X509AuthenticationProvider is not an EventEmitter at all, and attachErrorHandler ignores anything
+ * without an 'on' method, so certificate based clients are unaffected.
+ *
+ * @param {Object} client Client object to attach the handlers to
+ *
+ * @returns The client that was passed in, so that this can be used inline
+ */
+var attachClientErrorHandlers = function(client) {
+  attachErrorHandler(client, 'client');
+
+  if (client && client._transport) {
+    attachErrorHandler(client._transport._authenticationProvider, 'authentication provider');
+  }
+
+  return client;
+}
+
+/**
  * Replace exports from one file with functions exported from another file.  We use this function
  * to make it easier to re-generate the stub code.  With this, we can replace the auto-generated
  * functions in the service directory with their equivalent functions in the glue folder.
@@ -230,5 +258,6 @@ module.exports = {
   transportFromType: transportFromType,
   setOptionalCert: setOptionalCert,
   attachErrorHandler: attachErrorHandler,
+  attachClientErrorHandlers: attachClientErrorHandlers,
   replaceExports: replaceExports
 }

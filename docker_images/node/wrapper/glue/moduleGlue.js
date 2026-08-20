@@ -80,7 +80,7 @@ exports.module_CreateFromEnvironment = function(transportType) {
     resolve(ModuleClient.fromEnvironment(glueUtils.transportFromType(transportType)));
   })
   .then((client) => {
-    glueUtils.attachErrorHandler(client, 'client');
+    glueUtils.attachClientErrorHandlers(client);
     if (client && client._transport && client._transport._mqtt) {
       client._transport._mqtt._options.keepalive = defaultPingInterval;
     }

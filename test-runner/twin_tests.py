@@ -7,7 +7,7 @@ import asyncio
 import sample_content
 import limitations
 from horton_logging import logger
-from utilities import connect2_with_retry
+from utilities import connect2_with_retry, twin_op_with_retry
 
 # Amount of time to wait after updating desired properties.
 wait_time_for_desired_property_updates = 5
@@ -101,8 +101,28 @@ class TwinTests(object):
         await client.enable_twin()
 
         max_retries = 12
+
+        # get_twin can fail outright when edgeHub does not answer it, rather than returning a twin
+        # that has not caught up yet. Those two situations need different budgets. Staleness is
+        # cheap to poll for and gets the full 12 iterations. An outright failure is not cheap,
+        # because each one can occupy the wrapper's REST timeout before it even returns, so letting
+        # all 12 iterations absorb failures would let a sustained edgeHub non-response hold this
+        # test open for far longer than the retry bound used everywhere else. Outright failures get
+        # their own small budget, and the last one is re-raised rather than swallowed.
+        failures_allowed = 3
+
         for retry_count in range(max_retries):
-            twin_received = await client.get_twin()
+            try:
+                twin_received = await client.get_twin()
+            except Exception as e:
+                failures_allowed -= 1
+                if not failures_allowed:
+                    logger("get_twin failed ({}). No attempts left, failing the test.".format(e))
+                    raise
+                logger("get_twin failed ({}). Sleeping for 5 seconds and retrying ({} attempts left).".format(
+                    e, failures_allowed))
+                await asyncio.sleep(5)
+                continue
 
             logger("twin sent:    " + str(twin_sent))
             logger("twin received:" + str(twin_received))
@@ -133,7 +153,7 @@ class TwinTests(object):
         # get_twin() round-trip confirms the twin channel is live, so that
         # subsequent desired property patches will be delivered.
         logger("warm-up: verifying twin channel with get_twin")
-        await client.get_twin()
+        await twin_op_with_retry(client.get_twin, "warm-up get_twin")
         logger("warm-up: twin channel is ready")
 
         for i in range(1, 4):
@@ -215,7 +235,9 @@ class TwinTests(object):
         properties_sent = sample_content.make_reported_props()
 
         await client.enable_twin()
-        await client.patch_twin(properties_sent)
+        await twin_op_with_retry(
+            lambda p=properties_sent: client.patch_twin(p), "patch_twin"
+        )
 
         await wait_for_reported_properties_update(
             properties_sent=properties_sent, client=client, registry=registry
@@ -230,10 +252,15 @@ class TwinTests(object):
 
         await client.enable_twin()
 
-        for _ in range(0, 5):
+        for iteration in range(0, 5):
             properties_sent = sample_content.make_reported_props()
 
-            await client.patch_twin(properties_sent)
+            # Sending the same reported properties again is idempotent, so this is safe to retry.
+            # The value is bound as a default argument so the retry cannot pick up a later value.
+            await twin_op_with_retry(
+                lambda p=properties_sent: client.patch_twin(p),
+                "patch_twin {}/5".format(iteration + 1),
+            )
 
             await wait_for_reported_properties_update(
                 properties_sent=properties_sent, client=client, registry=registry

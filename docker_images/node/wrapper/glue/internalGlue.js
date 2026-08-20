@@ -61,7 +61,7 @@ exports.internal_CreateFromConnectionString = function(objectCache, clientCtor, 
     resolve(clientCtor.fromConnectionString(connectionString, glueUtils.transportFromType(transportType)));
   })
   .then((client) => {
-    glueUtils.attachErrorHandler(client, 'client');
+    glueUtils.attachClientErrorHandlers(client);
     if (caCertificate && caCertificate.cert) {
       return client.setOptions({
         ca: caCertificate.cert,

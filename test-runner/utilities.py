@@ -29,6 +29,48 @@ async def connect2_with_retry(client, retries=3, delay=5):
             await asyncio.sleep(delay)
     raise last_exc
 
+
+async def twin_op_with_retry(op, description, retries=3, delay=5):
+    """Retry a twin operation that failed because the service never answered it.
+
+    edgeHub intermittently stops responding to a twin operation on a connection that is otherwise
+    healthy.  The client stays connected, no disconnect is reported, and edgeHub simply logs nothing
+    for the operation.  The SDK under test correctly bounds its wait and reports a timeout, which
+    the wrapper turns into a 500, so the operation fails here even though the client did nothing
+    wrong.
+
+    Retrying is deliberately limited to a small number of attempts, and every attempt is logged, so
+    that this hides an intermittent service problem without hiding a real one.  An SDK that is
+    actually broken fails every attempt and still fails the test, and the log still shows that the
+    retries happened.
+
+    Only use this for operations that are safe to repeat: reading a twin, or writing the same
+    reported properties again.  Do not use it in negative or regression tests, which should see the
+    first exception immediately.
+    """
+    last_exc = None
+    for attempt in range(retries):
+        try:
+            return await op()
+        except Exception as e:
+            last_exc = e
+            attempts_left = retries - attempt - 1
+            if attempts_left:
+                logger(
+                    "{} attempt {}/{} failed ({}); retrying in {}s".format(
+                        description, attempt + 1, retries, e, delay
+                    )
+                )
+                await asyncio.sleep(delay)
+            else:
+                logger(
+                    "{} attempt {}/{} failed ({}); no attempts left".format(
+                        description, attempt + 1, retries, e
+                    )
+                )
+    logger("{} failed after {} attempts".format(description, retries))
+    raise last_exc
+
 default_length = 64
 
 
