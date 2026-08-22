@@ -1,5 +1,14 @@
 parameters:
   azure_location: 'centraluseuap'
+  # Resource group to provision into. The default is assembled from the build id, which is
+  # unique to this run and readable from every stage, so the cleanup stage can name the same
+  # group without the setup job having to hand the name over. A setup job that is cancelled
+  # or loses its agent therefore still gets cleaned up.
+  #
+  # Keep the prefix in step with Get-AzureResourceGroupNamePrefix in
+  # scripts/Azure.Iot.Sdk.Test.psm1: the scheduled cleanup pipeline finds leftover groups by
+  # that prefix, and would stop matching these groups if the two drift apart.
+  resourceGroupName: 'rg-iot-sdk-e2e-$(Build.BuildId)'
 
 steps:
 - template: steps-ensure-e2e-fx-repo.yaml
@@ -12,7 +21,13 @@ steps:
     inlineScript: |
       Import-Module "$(Horton.FrameworkRoot)/scripts/Azure.Iot.Sdk.Test.psm1"
 
-      $ResourceGroupName = New-AzureResourceGroupName -OutFile "test_config/azure-resource-group-name.txt"
+      $ResourceGroupName = "${{ parameters.resourceGroupName }}"
+
+      # Recorded so a human reading the run can see which group it used. The cleanup stage
+      # derives the same name itself and does not depend on this file.
+      New-Item -ItemType Directory -Force -Path test_config | Out-Null
+      Set-Content -Path test_config/azure-resource-group-name.txt -Value $ResourceGroupName -NoNewline
+
       $TestEnvInfo = New-AzIotTestEnvironment -AzureLocation "${{ parameters.azure_location }}" -ResourceGroup $ResourceGroupName -NoDps -AddContainerRegistry -EnableFileUpload
       New-AzIotHortonTestConfig -TestEnvInfo $TestEnvInfo -Target bash -OutFile test_config/set_horton_env_vars.sh
   displayName: Create Azure Resources and Test Config
