@@ -405,6 +405,61 @@ function Set-ResourceGroupTags {
     }
 }
 
+function New-AzureResourceGroup {
+    <#
+    .SYNOPSIS
+    Creates an Azure resource group that already carries its tags the moment it exists.
+
+    .DESCRIPTION
+    Creating the group and tagging it must be a single operation. When they are two
+    operations ('az group create' followed by a tag update), a run that dies in between --
+    an agent that is cancelled, times out, or loses its network -- leaves an untagged
+    resource group behind. Remove-LeftoverAzureResourceGroups cannot determine the age of an
+    untagged group, so it skips it on every run and the group survives forever.
+
+    The tags are sent as JSON in a request body file rather than as '--tags key=value'
+    arguments, for the same reason Set-ResourceGroupTags does it: under the AzureCLI@2 task
+    the array-argument form collapses every pair into a single tag value.
+
+    .PARAMETER SubscriptionId
+    Subscription the resource group is created in.
+
+    .PARAMETER ResourceGroup
+    Name of the resource group to create.
+
+    .PARAMETER Location
+    Azure location for the resource group.
+
+    .PARAMETER Tags
+    Tags to apply as part of the creation itself.
+    #>
+    param(
+        [string]$SubscriptionId,
+        [string]$ResourceGroup,
+        [string]$Location,
+        [Hashtable]$Tags
+    )
+
+    if ($null -eq $Tags) {
+        $Tags = @{}
+    }
+
+    $BodyFile = New-TempFile
+    try {
+        $Payload = @{ location = $Location; tags = $Tags } | ConvertTo-Json -Compress
+        Set-FileContent -Path $BodyFile -Content $Payload
+
+        return az rest `
+            --method PUT `
+            --url "https://management.azure.com/subscriptions/$SubscriptionId/resourcegroups/$($ResourceGroup)?api-version=2024-03-01" `
+            --body "@$BodyFile" `
+            --only-show-errors | ConvertFrom-Json
+    }
+    finally {
+        Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
+    }
+}
+
 function Join-Hashtable {
     param(
         [Hashtable]$Hashtable,
@@ -1868,12 +1923,11 @@ function New-AzIotTestEnvironment {
 
         Write-Host "Creating Azure resource group ($ResourceGroup; $ResourceGroupTagsString)"
 
-        $AzureResourceGroup = az group create --name "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-json 
+        # Created and tagged in one call, so the group is never observable in an untagged
+        # state that the leftover-resource cleanup would have to skip forever.
+        $AzureResourceGroup = New-AzureResourceGroup -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -Location $AzureLocation -Tags $ResourceGroupTags
 
         Stop-OnError -Step "Create Azure resource group"
-
-        Set-ResourceGroupTags -ResourceGroupId $AzureResourceGroup.id -Tags $ResourceGroupTags
-        Stop-OnError -Step "Set Azure resource group tags"
     }
 
     $TestEnvInfo = [TestEnvironmentInfo]::new()
