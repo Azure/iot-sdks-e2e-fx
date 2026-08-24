@@ -98,6 +98,17 @@ class EdgeConfiguration:
         else:
             self.hubImage = "mcr.microsoft.com/azureiotedge-hub:" + EDGE_RELEASE_LINE
 
+        edgeHubEnv = {
+            "DeviceScopeCacheRefreshRateSecs": {"value": "10"},
+            "DeviceScopeCacheRefreshDelaySecs": {"value": "1"},
+        }
+
+        # DIAGNOSTIC: raise EdgeHub's own log level when asked.  info-level logs
+        # do not record the connections that fail on 1.6 at all.
+        edgeLogLevel = os.environ.get("IOTHUB_E2E_EDGE_LOG_LEVEL", None) or ""
+        if len(edgeLogLevel) > 0:
+            edgeHubEnv["RuntimeLogLevel"] = {"value": edgeLogLevel}
+
         self.config = {
             "moduleContent": {
                 "$edgeAgent": {
@@ -128,14 +139,7 @@ class EdgeConfiguration:
                                     "image": self.hubImage,
                                     "createOptions": '{\n  "HostConfig": {\n    "PortBindings": {\n      "8883/tcp": [\n        {\n          "HostPort": "8883"\n        }\n      ],\n      "443/tcp": [\n        {\n          "HostPort": "443"\n        }\n      ],\n      "5671/tcp": [\n        {\n          "HostPort": "5671"\n        }\n      ]\n    }\n  }\n}',
                                 },
-                                "env": {
-                                    "DeviceScopeCacheRefreshRateSecs": {
-                                        "value": "10"
-                                    },
-                                    "DeviceScopeCacheRefreshDelaySecs": {
-                                        "value": "1"
-                                    }
-                                },
+                                "env": edgeHubEnv,
                             },
                         },
                         "modules": {},

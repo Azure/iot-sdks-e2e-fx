@@ -19,10 +19,6 @@ stages:
       vmImage: 'ubuntu-22.04'
     strategy:
       matrix:
-          node18:  { variant: node18 }
-          c:      { language: c }
-          java:   { language: java }
-          csharp: { language: csharp }
           py311:  { variant: py311 }
     steps:
     - template: templates/steps-load-test-config.yaml
@@ -38,24 +34,20 @@ stages:
       - "build_linux_amd64"
     strategy:
       matrix:
-        node18_amqp_iothub_module_and_device:              { suite: node18_amqp_iothub_module_and_device }
-        node18_amqpws_edgehub_module:           { suite: node18_amqpws_edgehub_module }
-        node18_mqttws_edgehub_module:           { suite: node18_mqttws_edgehub_module }
-        c_mqtt_iothub_module_and_device:       { suite: c_mqtt_iothub_module_and_device }
-        c_mqttws_edgehub_module:              { suite: c_mqttws_edgehub_module }
-        java_mqtt_iothub_module:              { suite: java_mqtt_iothub_module }
-        csharp_mqtt_iothub_module:            { suite: csharp_mqtt_iothub_module }
-        csharp_mqttws_edgehub_module:         { suite: csharp_mqttws_edgehub_module }
-        py311_mqtt_iothub_module_and_device_async:    { suite: py311_mqtt_iothub_module_and_device_async }
-        py311_mqtt_iothub_module_and_device:          { suite: py311_mqtt_iothub_module_and_device }
-        py311_mqtt_edgehub_module_async:              { suite: py311_mqtt_edgehub_module_async }
-        py311_mqtt_edgehub_module:                    { suite: py311_mqtt_edgehub_module }
-        py311_mqtt_iothub_module_quick_drop:          { suite: py311_mqtt_iothub_device_quick_drop }
+        py311_edgehub_full_info:
+          suite: py311_mqtt_edgehub_module
+          testcase: ""
+          IOTHUB_E2E_EDGE_LOG_LEVEL: ""
+        py311_edgehub_friend_debug:
+          suite: py311_mqtt_edgehub_module
+          testcase: "-k friend"
+          IOTHUB_E2E_EDGE_LOG_LEVEL: "debug"
     steps:
     - template: templates/steps-load-test-config.yaml
     - template: templates/steps-deploy-and-run-pytest.yaml
       parameters:
         suite: $(suite)
+        testcase: $(testcase)
 
 - stage: cleanup
   dependsOn:

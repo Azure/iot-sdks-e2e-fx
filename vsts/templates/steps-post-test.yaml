@@ -4,6 +4,21 @@ parameters:
   deployment_type: ''
 
 steps:
+- bash: |
+    set +e
+    echo "===== iotedge version ====="
+    iotedge --version
+    echo "===== docker ps -a ====="
+    sudo -n docker ps -a
+    for c in edgeAgent edgeHub friendMod testMod; do
+      echo "===== BEGIN docker logs ${c} ====="
+      sudo -n docker logs --timestamps "${c}" 2>&1
+      echo "===== END docker logs ${c} ====="
+    done
+    exit 0
+  displayName: 'DIAG dump container logs to console'
+  condition: and(always(), ne(variables['skipTest'],'yes'))
+
 - bash:
     source ${HORTON_FRAMEWORKROOT}/bin/activate_horton &&
     ${HORTON_FRAMEWORKROOT}/scripts/fetch-logs.sh ${{ parameters.deployment_type }} $(Build.SourcesDirectory)/results ${{ parameters.log_folder_name }}
