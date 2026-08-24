@@ -7,7 +7,7 @@ import os
 # Single source of truth for the IoT Edge release line.  scripts/new/install-iotedge.sh
 # pins the host aziot-edge daemon to this same line, so the daemon and the
 # edgeAgent/edgeHub module images can never drift apart by accident.
-EDGE_RELEASE_LINE = os.environ.get("IOTHUB_E2E_EDGE_RELEASE_LINE") or "1.5"
+EDGE_RELEASE_LINE = os.environ.get("IOTHUB_E2E_EDGE_RELEASE_LINE") or "1.6"
 
 
 def _image_tag(image):

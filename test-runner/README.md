@@ -12,7 +12,7 @@ Additionally, you need these variables to get to the container repository.
 * `IOTHUB_E2E_REPO_PASSWORD`: Password for the docker container repository that hosts container images
 
 The following variables can be used to customize your edge containers.
-* `IOTHUB_E2E_EDGE_RELEASE_LINE`: IoT Edge release line to use, defaulting to `1.5`. This single
+* `IOTHUB_E2E_EDGE_RELEASE_LINE`: IoT Edge release line to use, defaulting to `1.6`. This single
   setting selects both the default `edgeAgent`/`edgeHub` image tags and the version of the host
   `aziot-edge` daemon that `scripts/new/install-iotedge.sh` installs, so the two cannot drift apart.
 * `IOTHUB_E2E_EDGE_PRIVATE_REGISTRY`: JSON for extra container registry credentials

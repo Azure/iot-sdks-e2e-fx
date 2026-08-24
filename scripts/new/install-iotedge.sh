@@ -14,7 +14,7 @@ $script_dir/install-microsoft-apt-repo.sh
 # whatever is newest in the Microsoft feed, which is how we ended up running a
 # 1.6.0 daemon against 1.4 module images.  Keep the default in sync with
 # EDGE_RELEASE_LINE in bin/deploy/edge_configuration.py.
-aziot_edge_line="${IOTHUB_E2E_EDGE_RELEASE_LINE:-1.5}"
+aziot_edge_line="${IOTHUB_E2E_EDGE_RELEASE_LINE:-1.6}"
 
 # Newest candidate version on the requested line.  apt-cache madison emits
 # "  <package> | <version> | <source>", newest first.
