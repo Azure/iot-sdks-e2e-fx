@@ -140,7 +140,13 @@ steps:
     echo "edge release line: ${IOTHUB_E2E_EDGE_RELEASE_LINE:-default}"
     iotedge --version
     sudo -n docker inspect --format={{.Config.Image}} edgeHub
-    bash ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-loop.sh 127.0.0.1 "${host}" 40 2>&1
+    echo "===== edgeHub shipped DotNetty assembly versions ====="
+    sudo -n docker exec edgeHub sh -c 'cat /app/*.deps.json' 2>&1 \
+      | grep -oE '"DotNetty[A-Za-z.]*/[0-9][0-9.]*"' | tr -d '"' | sort -u
+    echo "===== edgeHub runtime ====="
+    sudo -n docker exec edgeHub sh -c 'cat /app/*.runtimeconfig.json' 2>&1 | tr -d '\n' | head -c 400; echo
+    echo "===== probe ====="
+    bash ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-loop.sh 127.0.0.1 "${host}" 20 2>&1
     exit 0
   displayName: 'DIAG mqtt CONNECT probe'
   condition: and(always(), ne(variables['skipTest'],'yes'))
