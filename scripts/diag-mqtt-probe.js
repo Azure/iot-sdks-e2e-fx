@@ -6,7 +6,7 @@
 // handshake completes (0) or in a later one.
 const tls = require("tls");
 
-const [host, servername, delayMsArg] = process.argv.slice(2);
+const [host, servername, delayMsArg, maxVer] = process.argv.slice(2);
 const delayMs = parseInt(delayMsArg || "0", 10);
 const PORT = 8883;
 const WAIT_MS = 20000;
@@ -54,7 +54,7 @@ let done = false;
 const finish = (msg) => {
   if (done) return;
   done = true;
-  console.log(`RESULT host=${host} delay=${delayMs}ms ${msg}`);
+  console.log(`RESULT host=${host} max=${maxVer||"TLSv1.3"} delay=${delayMs}ms ${msg}`);
   try {
     sock.destroy();
   } catch (e) {
@@ -64,7 +64,7 @@ const finish = (msg) => {
 };
 
 const sock = tls.connect(
-  { host, port: PORT, servername, rejectUnauthorized: false },
+  { host, port: PORT, servername, rejectUnauthorized: false, minVersion: "TLSv1.2", maxVersion: maxVer || "TLSv1.3" },
   () => {
     console.log(`  handshake ok proto=${sock.getProtocol()} at ${el()}ms`);
     const pkt = connectPacket("diagProbe" + process.pid);

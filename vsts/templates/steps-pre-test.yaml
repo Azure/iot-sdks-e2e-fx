@@ -137,11 +137,13 @@ steps:
     echo "friendMod node: $(sudo -n docker exec friendMod node --version 2>&1)"
     echo "friendMod resolves: $(sudo -n docker exec friendMod getent hosts ${host} 2>&1)"
     sudo -n docker cp ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-probe.js friendMod:/tmp/diag-mqtt-probe.js
-    for d in 0 250; do
-      echo "===== HOST(127.0.0.1) delay=${d} ====="
-      timeout 60 node ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-probe.js 127.0.0.1 "${host}" "${d}" 2>&1
-      echo "===== friendMod(${host}) delay=${d} ====="
-      timeout 60 sudo -n docker exec friendMod node /tmp/diag-mqtt-probe.js "${host}" "${host}" "${d}" 2>&1
+    for v in TLSv1.2 TLSv1.3; do
+      for d in 0 250; do
+        echo "===== HOST(127.0.0.1) max=${v} delay=${d} ====="
+        timeout 60 node ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-probe.js 127.0.0.1 "${host}" "${d}" "${v}" 2>&1
+        echo "===== friendMod(${host}) max=${v} delay=${d} ====="
+        timeout 60 sudo -n docker exec friendMod node /tmp/diag-mqtt-probe.js "${host}" "${host}" "${d}" "${v}" 2>&1
+      done
     done
     exit 0
   displayName: 'DIAG mqtt CONNECT probe'
