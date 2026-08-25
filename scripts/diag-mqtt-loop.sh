@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
-# DIAGNOSTIC ONLY.  Repeats the raw TLS+MQTT CONNECT probe N times and prints a
-# one line summary, so the pass rate can be compared between configurations
-# without reading hundreds of lines of build log.
+# DIAGNOSTIC ONLY.  Alternates the client's maximum TLS version attempt by
+# attempt so that any drift in the server's health over time affects both
+# variants equally.  Ordering the two variants in separate batches would leave
+# a degrading server looking like a TLS version difference.
 script_dir=$(cd "$(dirname "$0")" && pwd)
-target=$1; servername=$2; maxver=$3; n=${4:-20}
-ok=0; fail=0; times=""
+target=$1; servername=$2; n=${3:-40}
+declare -A ok fail times
+for v in TLSv1.2 TLSv1.3; do ok[$v]=0; fail[$v]=0; times[$v]=""; done
 for i in $(seq 1 "$n"); do
-  out=$(timeout 30 node "${script_dir}/diag-mqtt-probe.js" "$target" "$servername" 0 "$maxver" 2>&1)
+  if [ $((i % 2)) -eq 1 ]; then v=TLSv1.2; else v=TLSv1.3; fi
+  out=$(timeout 30 node "${script_dir}/diag-mqtt-probe.js" "$target" "$servername" 0 "$v" 2>&1)
   if echo "$out" | grep -q "SERVER ANSWERED"; then
-    ok=$((ok+1))
+    ok[$v]=$(( ${ok[$v]} + 1 ))
     t=$(echo "$out" | sed -n 's/.*SERVER ANSWERED.* at \([0-9]*\)ms.*/\1/p')
-    times="${times}${t} "
+    times[$v]="${times[$v]}${t} "
   else
-    fail=$((fail+1))
+    fail[$v]=$(( ${fail[$v]} + 1 ))
   fi
+  echo "ATTEMPT ${i} max=${v} $(echo "$out" | grep -oE 'SERVER ANSWERED [0-9]+ bytes|NO ANSWER within [0-9]+ms|CLOSED WITH NO ANSWER|ERROR .*' | head -1)"
 done
-echo "SUMMARY target=${target} max=${maxver} attempts=${n} answered=${ok} failed=${fail} times_ms=[${times}]"
+for v in TLSv1.2 TLSv1.3; do
+  echo "SUMMARY target=${target} max=${v} answered=${ok[$v]} failed=${fail[$v]} times_ms=[${times[$v]}]"
+done
