@@ -145,8 +145,14 @@ steps:
       | grep -oE '"DotNetty[A-Za-z.]*/[0-9][0-9.]*"' | tr -d '"' | sort -u
     echo "===== edgeHub runtime ====="
     sudo -n docker exec edgeHub sh -c 'cat /app/*.runtimeconfig.json' 2>&1 | tr -d '\n' | head -c 400; echo
+    mem() {
+      echo "--- MEM[$1] host: $(free -m | awk '/^Mem:/{print "total="$2" used="$3" avail="$7}')"
+      sudo -n docker stats --no-stream --format "    MEM[$1] {{.Name}} {{.MemUsage}} {{.MemPerc}}" 2>&1
+    }
+    mem before
     echo "===== probe ====="
     bash ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-loop.sh 127.0.0.1 "${host}" 20 2>&1
+    mem after
     exit 0
   displayName: 'DIAG mqtt CONNECT probe'
   condition: and(always(), ne(variables['skipTest'],'yes'))
