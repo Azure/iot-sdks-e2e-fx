@@ -34,15 +34,23 @@ stages:
       - "build_linux_amd64"
     strategy:
       matrix:
-        py311_friend_default_tls:
+        edge15_default:
           suite: py311_mqtt_edgehub_module
-          testcase: "-k friend"
-          IOTHUB_E2E_EDGE_LOG_LEVEL: "debug"
+          testcase: "-k test_invalid_transport"
+          IOTHUB_E2E_EDGE_RELEASE_LINE: "1.5"
+          IOTHUB_E2E_EDGE_LOG_LEVEL: ""
           IOTHUB_E2E_EDGE_SSL_PROTOCOLS: ""
-        py311_friend_tls12_only:
+        edge16_default:
           suite: py311_mqtt_edgehub_module
-          testcase: "-k friend"
-          IOTHUB_E2E_EDGE_LOG_LEVEL: "debug"
+          testcase: "-k test_invalid_transport"
+          IOTHUB_E2E_EDGE_RELEASE_LINE: "1.6"
+          IOTHUB_E2E_EDGE_LOG_LEVEL: ""
+          IOTHUB_E2E_EDGE_SSL_PROTOCOLS: ""
+        edge16_tls12:
+          suite: py311_mqtt_edgehub_module
+          testcase: "-k test_invalid_transport"
+          IOTHUB_E2E_EDGE_RELEASE_LINE: "1.6"
+          IOTHUB_E2E_EDGE_LOG_LEVEL: ""
           IOTHUB_E2E_EDGE_SSL_PROTOCOLS: "Tls12"
     steps:
     - template: templates/steps-load-test-config.yaml

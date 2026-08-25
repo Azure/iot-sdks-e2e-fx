@@ -137,13 +137,11 @@ steps:
     echo "friendMod node: $(sudo -n docker exec friendMod node --version 2>&1)"
     echo "friendMod resolves: $(sudo -n docker exec friendMod getent hosts ${host} 2>&1)"
     sudo -n docker cp ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-probe.js friendMod:/tmp/diag-mqtt-probe.js
+    echo "edge release line: ${IOTHUB_E2E_EDGE_RELEASE_LINE:-default}"
+    iotedge --version
+    sudo -n docker inspect --format={{.Config.Image}} edgeHub
     for v in TLSv1.2 TLSv1.3; do
-      for d in 0 250; do
-        echo "===== HOST(127.0.0.1) max=${v} delay=${d} ====="
-        timeout 60 node ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-probe.js 127.0.0.1 "${host}" "${d}" "${v}" 2>&1
-        echo "===== friendMod(${host}) max=${v} delay=${d} ====="
-        timeout 60 sudo -n docker exec friendMod node /tmp/diag-mqtt-probe.js "${host}" "${host}" "${d}" "${v}" 2>&1
-      done
+      bash ${HORTON_FRAMEWORKROOT}/scripts/diag-mqtt-loop.sh 127.0.0.1 "${host}" "${v}" 20 2>&1
     done
     exit 0
   displayName: 'DIAG mqtt CONNECT probe'
