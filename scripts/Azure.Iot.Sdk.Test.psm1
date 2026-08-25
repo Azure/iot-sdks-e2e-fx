@@ -388,6 +388,38 @@ function Wait-AzRoleAssignment {
     }
 }
 
+function Merge-ResourceGroupTags {
+    <#
+    .SYNOPSIS
+    Adds tags to a resource group without disturbing the tags it already carries.
+
+    .DESCRIPTION
+    Set-ResourceGroupTags PATCHes the resource group itself, which replaces the whole tags
+    collection with whatever is supplied. That is correct where the caller knows the complete
+    desired set, but wrong for adding a single tag to a group whose other tags -- for example
+    'AzDevOpsRunUrl' -- must survive. This uses the dedicated tags endpoint with an explicit
+    Merge operation instead, so existing tags are left alone.
+    #>
+    param(
+        [string]$ResourceGroupId,
+        [Hashtable]$Tags
+    )
+
+    $BodyFile = New-TempFile
+    try {
+        $Payload = @{ operation = "Merge"; properties = @{ tags = $Tags } } | ConvertTo-Json -Compress -Depth 5
+        Set-FileContent -Path $BodyFile -Content $Payload
+        az rest `
+            --method PATCH `
+            --url "https://management.azure.com${ResourceGroupId}/providers/Microsoft.Resources/tags/default?api-version=2021-04-01" `
+            --body "@$BodyFile" `
+            --only-show-errors | Out-Null
+    }
+    finally {
+        Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
+    }
+}
+
 function Set-ResourceGroupTags {
     param(
         [string]$ResourceGroupId,
@@ -1619,6 +1651,46 @@ function New-AzureResourceGroupName {
     return $ResourceGroupName
 }
 
+# Tag this cleanup writes on a prefixed resource group that has no usable 'CreatedOn'.
+# It records the first time the cleanup saw the group, which is what lets an untagged group
+# age out and eventually be deleted instead of being skipped on every run forever.
+$script:FirstObservedTagName = "CleanupFirstObservedOn"
+
+function ConvertTo-UtcDateTime {
+    <#
+    .SYNOPSIS
+    Normalizes an ISO-8601 tag value to a UTC [datetime], or $null when it cannot be parsed.
+
+    .DESCRIPTION
+    ConvertFrom-Json may hand back an ISO-8601 tag value already converted to [datetime] or
+    [datetimeoffset] rather than as a string, so every shape is normalized to one UTC instant.
+    Returns $null for a missing, empty or unparseable value so callers can decide what an
+    unknown timestamp means rather than having an exception thrown at them.
+    #>
+    param($Value)
+
+    if ($null -eq $Value -or [string]::IsNullOrWhiteSpace([string]$Value)) {
+        return $null
+    }
+
+    try {
+        if ($Value -is [datetimeoffset]) {
+            return $Value.UtcDateTime
+        }
+
+        if ($Value -is [datetime]) {
+            return ([datetimeoffset]$Value).UtcDateTime
+        }
+
+        return [datetimeoffset]::Parse(
+            [string]$Value,
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::AssumeUniversal).UtcDateTime
+    } catch {
+        return $null
+    }
+}
+
 function Remove-LeftoverAzureResourceGroups {
     <#
     .SYNOPSIS
@@ -1629,8 +1701,14 @@ function Remove-LeftoverAzureResourceGroups {
     by Get-AzureResourceGroupNamePrefix, i.e. only the resource groups created by this framework's
     pipelines) and deletes those whose 'CreatedOn' tag shows they were created more than
     -MinimumAgeHours hours ago. Resource groups created within the last -MinimumAgeHours hours are
-    left untouched so that in-progress pipeline runs are never disturbed. Resource groups without a
-    parseable 'CreatedOn' tag are skipped, because their age cannot be determined safely.
+    left untouched so that in-progress pipeline runs are never disturbed.
+
+    A resource group whose 'CreatedOn' tag is missing or unparseable has no knowable age. Such a
+    group used to be skipped on every run, which meant nothing ever deleted it and it leaked
+    forever. It is now aged from the first time this cleanup observed it: the run stamps it with a
+    'CleanupFirstObservedOn' tag, and a later run deletes it once that stamp is older than
+    -UntaggedMinimumAgeHours. A group belonging to a run that is still in flight is therefore never
+    deleted on sight; it gets a full grace period first.
 
     Deletions are issued with '--no-wait'; this function returns after queuing them.
 
@@ -1643,6 +1721,12 @@ function Remove-LeftoverAzureResourceGroups {
     Minimum age, in hours, a resource group must have before it is eligible for deletion. Resource
     groups created this many hours ago or less are kept. Default is 3.
 
+    .PARAMETER UntaggedMinimumAgeHours
+    How long, in hours, a resource group with no usable 'CreatedOn' tag is left alone after this
+    cleanup first observes it. Deliberately longer than -MinimumAgeHours, because the age of such a
+    group is unknown and the grace period is the only thing protecting an in-flight run. Default
+    is 24.
+
     .EXAMPLE
     PS> Remove-LeftoverAzureResourceGroups -MinimumAgeHours 3
 
@@ -1651,22 +1735,26 @@ function Remove-LeftoverAzureResourceGroups {
     .EXAMPLE
     PS> Remove-LeftoverAzureResourceGroups -WhatIf
 
-    Lists the resource groups that would be deleted without deleting them.
+    Lists the resource groups that would be deleted without deleting them, and without stamping
+    any untagged group.
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [string]$Prefix = $(Get-AzureResourceGroupNamePrefix),
-        [int]$MinimumAgeHours = 3
+        [int]$MinimumAgeHours = 3,
+        [int]$UntaggedMinimumAgeHours = 24
     )
 
     $Now = (Get-Date).ToUniversalTime()
     $Cutoff = $Now.AddHours(-$MinimumAgeHours)
+    $UntaggedCutoff = $Now.AddHours(-$UntaggedMinimumAgeHours)
 
     Write-Host "Cleanup run (UTC)     : $($Now.ToString('o'))"
     Write-Host "Resource group prefix : '$Prefix'"
     Write-Host "Minimum age to delete : $MinimumAgeHours hour(s) (delete when created at or before $($Cutoff.ToString('o')))"
+    Write-Host "Untagged grace period : $UntaggedMinimumAgeHours hour(s) after this cleanup first observes the group"
 
-    $RawJson = az group list --query "[].{name:name, createdOn:tags.CreatedOn, runUrl:tags.AzDevOpsRunUrl}" -o json --only-show-errors
+    $RawJson = az group list --query "[].{name:name, id:id, createdOn:tags.CreatedOn, firstObservedOn:tags.$($script:FirstObservedTagName), runUrl:tags.AzDevOpsRunUrl}" -o json --only-show-errors
     Stop-OnError -Step "List Azure resource groups" -Throw
 
     $Groups = @($RawJson | ConvertFrom-Json | Where-Object {
@@ -1677,35 +1765,70 @@ function Remove-LeftoverAzureResourceGroups {
 
     $Deleted = [System.Collections.Generic.List[string]]::new()
     $Skipped = [System.Collections.Generic.List[string]]::new()
+    $Stamped = [System.Collections.Generic.List[string]]::new()
     $Failed  = [System.Collections.Generic.List[string]]::new()
 
     foreach ($Group in $Groups) {
         $Name = $Group.name
         $CreatedOnValue = $Group.createdOn
 
-        if ($null -eq $CreatedOnValue -or [string]::IsNullOrWhiteSpace([string]$CreatedOnValue)) {
-            Write-Host "SKIP   $Name : no 'CreatedOn' tag; age cannot be determined."
-            $Skipped.Add($Name)
-            continue
-        }
+        $CreatedOn = ConvertTo-UtcDateTime -Value $CreatedOnValue
 
-        # ConvertFrom-Json parses the ISO-8601 'CreatedOn' tag (which always carries a UTC offset)
-        # into a [datetime], so normalize whatever type we received back to a UTC instant.
-        $CreatedOn = $null
-        try {
-            if ($CreatedOnValue -is [datetimeoffset]) {
-                $CreatedOn = $CreatedOnValue.UtcDateTime
-            } elseif ($CreatedOnValue -is [datetime]) {
-                $CreatedOn = ([datetimeoffset]$CreatedOnValue).UtcDateTime
+        if ($null -eq $CreatedOn) {
+            # No usable 'CreatedOn'. Such a group used to be skipped on every run forever, so
+            # nothing ever deleted it. Instead, age it from the first time this cleanup saw it:
+            # stamp it now, and delete it once that stamp is $UntaggedMinimumAgeHours old. A
+            # group belonging to a run in flight is therefore never deleted on sight -- it gets
+            # a full grace period first.
+            if ([string]::IsNullOrWhiteSpace([string]$CreatedOnValue)) {
+                $Reason = "no 'CreatedOn' tag"
             } else {
-                $CreatedOn = [datetimeoffset]::Parse(
-                    [string]$CreatedOnValue,
-                    [System.Globalization.CultureInfo]::InvariantCulture,
-                    [System.Globalization.DateTimeStyles]::AssumeUniversal).UtcDateTime
+                $Reason = "unparseable 'CreatedOn' tag value '$CreatedOnValue'"
             }
-        } catch {
-            Write-Host "SKIP   $Name : unparseable 'CreatedOn' tag value '$CreatedOnValue'."
-            $Skipped.Add($Name)
+
+            $FirstObserved = ConvertTo-UtcDateTime -Value $Group.firstObservedOn
+
+            if ($null -eq $FirstObserved) {
+                if ($PSCmdlet.ShouldProcess($Name, "Stamp '$($script:FirstObservedTagName)' ($Reason)")) {
+                    Write-Host "STAMP  $Name : $Reason; recording first-observed time, eligible for deletion after $UntaggedMinimumAgeHours h."
+                    Merge-ResourceGroupTags -ResourceGroupId $Group.id -Tags @{ $script:FirstObservedTagName = $Now.ToString('o') }
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Warning "Failed to stamp $Name (az exit code $LASTEXITCODE); it will be retried on the next run."
+                        $global:LASTEXITCODE = 0
+                        $Skipped.Add($Name)
+                    } else {
+                        $Stamped.Add($Name)
+                    }
+                } else {
+                    $Skipped.Add($Name)
+                }
+                continue
+            }
+
+            $ObservedAgeHours = [math]::Round(($Now - $FirstObserved).TotalHours, 2)
+
+            if ($FirstObserved -ge $UntaggedCutoff) {
+                Write-Host "SKIP   $Name : $Reason; first observed $ObservedAgeHours h ago, within the $UntaggedMinimumAgeHours h untagged grace period."
+                $Skipped.Add($Name)
+                continue
+            }
+
+            $RunUrl = if ([string]::IsNullOrWhiteSpace($Group.runUrl)) { "(unknown run)" } else { $Group.runUrl }
+
+            if (-not $PSCmdlet.ShouldProcess($Name, "Delete resource group (untagged; first observed $ObservedAgeHours h ago; $RunUrl)")) {
+                $Skipped.Add($Name)
+                continue
+            }
+
+            Write-Host "DELETE $Name : $Reason; first observed $ObservedAgeHours h ago, exceeding the $UntaggedMinimumAgeHours h untagged grace period ($RunUrl)."
+            az group delete --name $Name --yes --no-wait --only-show-errors | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Failed to queue deletion of $Name (az exit code $LASTEXITCODE)."
+                $Failed.Add($Name)
+            } else {
+                $Deleted.Add($Name)
+            }
+
             continue
         }
 
@@ -1738,9 +1861,11 @@ function Remove-LeftoverAzureResourceGroups {
     Write-Host ""
     Write-Host "==== Cleanup summary ===="
     Write-Host "Queued for deletion        : $($Deleted.Count)"
-    Write-Host "Skipped (too new / no tag) : $($Skipped.Count)"
+    Write-Host "Skipped / not processed       : $($Skipped.Count)"
+    Write-Host "Stamped (untagged, ageing) : $($Stamped.Count)"
     Write-Host "Failed to queue            : $($Failed.Count)"
     if ($Deleted.Count -gt 0) { Write-Host "Deleted: $($Deleted -join ', ')" }
+    if ($Stamped.Count -gt 0) { Write-Host "Stamped: $($Stamped -join ', ')" }
     if ($Failed.Count -gt 0)  { Write-Host "Failed : $($Failed -join ', ')" }
 
     if ($Failed.Count -gt 0) {
