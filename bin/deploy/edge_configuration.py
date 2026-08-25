@@ -109,6 +109,11 @@ class EdgeConfiguration:
         if len(edgeLogLevel) > 0:
             edgeHubEnv["RuntimeLogLevel"] = {"value": edgeLogLevel}
 
+        # DIAGNOSTIC: pin the TLS versions EdgeHub offers.  Default is Tls12,Tls13.
+        edgeSslProtocols = os.environ.get("IOTHUB_E2E_EDGE_SSL_PROTOCOLS", None) or ""
+        if len(edgeSslProtocols) > 0:
+            edgeHubEnv["SslProtocols"] = {"value": edgeSslProtocols}
+
         self.config = {
             "moduleContent": {
                 "$edgeAgent": {

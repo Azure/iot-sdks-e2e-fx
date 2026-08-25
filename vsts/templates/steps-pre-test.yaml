@@ -99,6 +99,37 @@ steps:
   displayName: 'Wait for EdgeHub scope cache propagation'
   condition: and(succeeded(), ne(variables['skipTest'],'yes'), eq(variables['deploymentType'], 'iotedge'))
 
+- bash: |
+    set +e
+    host=$(hostname)
+    echo "hostname=${host}"
+    export PROBE_HOST="${host}"
+    openssl version
+    for v in tls1_2 tls1_3; do
+      echo "===== openssl s_client -${v} to 127.0.0.1:8883 ====="
+      timeout 25 openssl s_client -connect 127.0.0.1:8883 -servername "${host}" -${v} </dev/null 2>&1 | head -40
+      echo "openssl_exit=${PIPESTATUS[0]}"
+    done
+    echo "===== node tls probe ====="
+    node -e '
+      const tls=require("tls");
+      const host=process.env.PROBE_HOST;
+      function probe(max){
+        return new Promise(res=>{
+          const t=Date.now();
+          const s=tls.connect({host:"127.0.0.1",port:8883,servername:host,rejectUnauthorized:false,maxVersion:max,minVersion:"TLSv1.2"},()=>{
+            res(max+" CONNECTED proto="+s.getProtocol()+" in "+(Date.now()-t)+"ms"); s.destroy();
+          });
+          s.setTimeout(25000,()=>{res(max+" TIMEOUT after "+(Date.now()-t)+"ms"); s.destroy();});
+          s.on("error",e=>res(max+" ERROR "+e.message+" after "+(Date.now()-t)+"ms"));
+        });
+      }
+      (async()=>{ console.log(await probe("TLSv1.2")); console.log(await probe("TLSv1.3")); })();
+    ' 2>&1 | head -20
+    exit 0
+  displayName: 'DIAG probe edgeHub TLS'
+  condition: and(always(), ne(variables['skipTest'],'yes'))
+
 - bash: 
     ${HORTON_FRAMEWORKROOT}/bin/horton get_credentials
   displayName: 'Get credentials'
