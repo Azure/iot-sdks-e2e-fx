@@ -240,14 +240,60 @@ steps:
 
     echo "npm registry for ${IMAGE_NAME}: ${NPM_REGISTRY:-https://registry.npmjs.org/ (default)}"
     echo "Building ${IMAGE_NAME}..."
-    docker build \
-      --tag "${IMAGE_NAME}" \
-      --file "${DOCKERFILE}" \
-      --build-arg HORTON_REPO="${NODE_REPO}" \
-      --build-arg HORTON_COMMIT_NAME="${NODE_BRANCH}" \
-      --build-arg HORTON_COMMIT_SHA="${COMMIT_SHA}" \
-      --build-arg NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}" \
-      "${CONTEXT}"
+    # The `lerna bootstrap --hoist` layer installs ~640 packages and prints
+    # nothing at all while it does it.  Healthy runs sit silent there for
+    # 8-27 minutes; when the feed degrades it can sit silent indefinitely, and
+    # with no bound the step simply consumes whatever is left of the job and is
+    # killed without an error of its own.  Bound the build and retry it, so a
+    # stall is reported as a stall and a one-off blip costs one attempt instead
+    # of the whole run.
+    #
+    # 40 minutes is comfortably above the slowest healthy run seen (33m) and
+    # fits the job budget twice over: ~22 minutes of checkout and language
+    # image, plus two 40 minute attempts and the push, stays inside the 120
+    # minute job timeout.  The retry is cheap because the layers completed by
+    # the first attempt are still in the local image cache, so a second attempt
+    # resumes at the layer that stalled rather than rebuilding from scratch.
+    BUILD_TIMEOUT_SECONDS="${BUILD_TIMEOUT_SECONDS:-2400}"
+    ATTEMPTS=2
+
+    build_friend_module() {
+      timeout --signal=TERM --kill-after=60 "${BUILD_TIMEOUT_SECONDS}" \
+        docker build \
+          --tag "${IMAGE_NAME}" \
+          --file "${DOCKERFILE}" \
+          --build-arg HORTON_REPO="${NODE_REPO}" \
+          --build-arg HORTON_COMMIT_NAME="${NODE_BRANCH}" \
+          --build-arg HORTON_COMMIT_SHA="${COMMIT_SHA}" \
+          --build-arg NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org/}" \
+          "${CONTEXT}"
+    }
+
+    built=0
+    attempt=1
+    while [ "${attempt}" -le "${ATTEMPTS}" ]; do
+      echo "Build attempt ${attempt} of ${ATTEMPTS}..."
+      set +e
+      build_friend_module
+      rc=$?
+      set -e
+      if [ "${rc}" -eq 0 ]; then
+        built=1
+        break
+      fi
+      # 124, or 137 after --kill-after, is `timeout` reporting that it had to
+      # stop the build itself.
+      if [ "${rc}" -eq 124 ] || [ "${rc}" -eq 137 ]; then
+        echo "Build made no progress within ${BUILD_TIMEOUT_SECONDS}s and was stopped." >&2
+      else
+        echo "Build failed with exit code ${rc}." >&2
+      fi
+      attempt=$((attempt + 1))
+    done
+    if [ "${built}" != "1" ]; then
+      echo "ERROR: could not build ${IMAGE_NAME} after ${ATTEMPTS} attempts." >&2
+      exit 1
+    fi
 
     echo "Pushing ${IMAGE_NAME}..."
     docker push "${IMAGE_NAME}"

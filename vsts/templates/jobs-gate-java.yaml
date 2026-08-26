@@ -2,6 +2,11 @@ jobs:
 - job: "build_linux_amd64"
   pool:
     vmImage: 'ubuntu-22.04'
+  # The job checks out the SDK with full history and nested submodules and then
+  # builds two docker images, one of them the node friend module. That is ~55
+  # minutes on a healthy run, so the 60 minute default left no headroom and a
+  # slow npm install cancelled the job instead of just running long.
+  timeoutInMinutes: 120
   steps:
   - template: steps-load-test-config.yaml
   - template: steps-build-docker-image.yaml
