@@ -1861,7 +1861,7 @@ function Remove-LeftoverAzureResourceGroups {
     Write-Host ""
     Write-Host "==== Cleanup summary ===="
     Write-Host "Queued for deletion        : $($Deleted.Count)"
-    Write-Host "Skipped / not processed       : $($Skipped.Count)"
+    Write-Host "Skipped / not processed    : $($Skipped.Count)"
     Write-Host "Stamped (untagged, ageing) : $($Stamped.Count)"
     Write-Host "Failed to queue            : $($Failed.Count)"
     if ($Deleted.Count -gt 0) { Write-Host "Deleted: $($Deleted -join ', ')" }
