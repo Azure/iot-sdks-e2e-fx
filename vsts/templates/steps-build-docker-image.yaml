@@ -250,10 +250,13 @@ steps:
     #
     # 40 minutes is comfortably above the slowest healthy run seen (33m) and
     # fits the job budget twice over: ~22 minutes of checkout and language
-    # image, plus two 40 minute attempts and the push, stays inside the 120
-    # minute job timeout.  The retry is cheap because the layers completed by
-    # the first attempt are still in the local image cache, so a second attempt
-    # resumes at the layer that stalled rather than rebuilding from scratch.
+    # image, plus two attempts and the push, stays inside the 120 minute job
+    # timeout.  An attempt can take up to a minute longer than the bound,
+    # because --kill-after gives docker that long to tear down after SIGTERM
+    # before it is killed outright; two attempts are therefore ~82 minutes at
+    # worst.  The retry is cheap because the layers completed by the first
+    # attempt are still in the local image cache, so a second attempt resumes
+    # at the layer that stalled rather than rebuilding from scratch.
     BUILD_TIMEOUT_SECONDS="${BUILD_TIMEOUT_SECONDS:-2400}"
     ATTEMPTS=2
 
@@ -284,7 +287,7 @@ steps:
       # 124, or 137 after --kill-after, is `timeout` reporting that it had to
       # stop the build itself.
       if [ "${rc}" -eq 124 ] || [ "${rc}" -eq 137 ]; then
-        echo "Build made no progress within ${BUILD_TIMEOUT_SECONDS}s and was stopped." >&2
+        echo "Build did not finish within ${BUILD_TIMEOUT_SECONDS}s and was stopped." >&2
       else
         echo "Build failed with exit code ${rc}." >&2
       fi
