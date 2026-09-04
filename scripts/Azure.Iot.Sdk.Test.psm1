@@ -2642,6 +2642,22 @@ function New-AzIotTestEnvironment {
         $AzureAdrPolicyName = "azure-adr-policy"
         $AzureAdrCertificateAuthorityName = "default"
 
+        # Activating a GEN2 hub is work the IoT Hub service does on its own behalf, not as any
+        # identity of ours, so the service's own application needs access to the group the namespace
+        # is in. Without it the hub is accepted, activates for several minutes and then settles at
+        # state=ActivationFailed, saying nothing about why.
+        $AzureIotHubAppId = "89d10474-74af-4874-99a7-c23c2f643083"    # Azure IoT Hub, same in every tenant.
+        $AzureIotHubObjectId = "0aab4033-4ad9-4b0b-9934-542334eceffb" # Its service principal object id.
+        $ResourceGroupScope = "/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup"
+
+        Write-Host "Granting the IoT Hub service access to the resource group ($ResourceGroupScope)"
+        if ($IsAzureAccountServicePrincipal) {
+            az role assignment create --assignee-object-id $AzureIotHubObjectId --assignee-principal-type ServicePrincipal --role $script:ContributorRoleId --scope "$ResourceGroupScope" --only-show-errors | Out-Null
+        } else {
+            az role assignment create --assignee $AzureIotHubAppId --role $script:ContributorRoleId --scope "$ResourceGroupScope" --only-show-errors | Out-Null
+        }
+        Stop-OnError -Step "Grant the IoT Hub service access to the resource group"
+
         # A user-assigned identity, because the hub names the identity by RESOURCE ID and a
         # system-assigned one does not have a resource id to name.
         $CertMgmtIdentityName = "$($ResourceGroup)cmuid"
