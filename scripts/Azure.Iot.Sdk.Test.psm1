@@ -1609,9 +1609,11 @@ $script:IotHubDataContributorRoleId = "4fc6c259-987e-4a07-842e-c321cc9d413f"
 $script:ContributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 
 # The namespace link saga runs as the namespace's managed identity, whose grants are eventually
-# consistent. Until they replicate, linking fails with one of these; they are retried, everything
-# else fails immediately.
-$script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady|AuthorizationFailed'
+# consistent. Until they replicate, linking fails with one of these -- either outright, or by
+# settling an endpoint to Failed after the fact. Both are recovered by re-submitting the same
+# namespace, whose identity keeps replicating; everything else fails immediately.
+$script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady|AuthorizationFailed|LinkInitiateFailed|NamespaceMiTokenAcquisitionFailed|OutboundIdentityUnavailable'
+$script:AdrLinkMaxAttempts = 5
 
 function New-AdrNamespace {
     <#
@@ -1658,8 +1660,10 @@ function Connect-AdrNamespace {
 
     The call returns immediately with the endpoints at linkingState=InProgress; ADR completes the
     link asynchronously. The saga runs as the namespace identity, so a link attempted before that
-    identity's grants have replicated fails on a role-propagation error -- the failed endpoints are
-    re-PUTtable, so the whole link is simply retried.
+    identity's grants have replicated fails on a role-propagation error -- either outright, or by
+    settling an endpoint to Failed once the saga runs. The failed endpoints are re-PUTtable, so the
+    whole link is re-submitted against the same namespace, whose identity keeps replicating. A
+    failure for any other reason is final and is raised on the spot.
 
     Linking can also leave the namespace at provisioningState=Failed with every endpoint Succeeded.
     That is healed here, because otherwise device registration later fails with errorCode 403000.
@@ -1672,57 +1676,69 @@ function Connect-AdrNamespace {
     )
 
     $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
-
-    Write-Host "Linking IoT Hub and DPS to ADR namespace"
-    Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" `
-        -RetryOnPattern $script:AdrRolePropagationPattern -MaxAttempts 5 -Command {
-        Invoke-AzRest -Method PUT -Url $Url -Body @{
-            location = $Location
-            identity = @{ type = "SystemAssigned" }
-            properties = @{
-                messaging = @{ endpoints = @{ "hub-1" = @{
-                    endpointType = "Microsoft.Devices/IotHubs"
-                    resourceId = $IotHubId
-                    inboundCallerIdentity = @{ type = "SystemAssigned" }
-                    provisioning = @{ availability = "Available"; allocationWeight = 1 }
-                } } }
-                provisioning = @{ endpoints = @{ "dps-1" = @{
-                    endpointType = "Microsoft.Devices/provisioningServices"
-                    resourceId = $DpsId
-                    inboundCallerIdentity = @{ type = "SystemAssigned" }
-                } } }
-            }
+    $LinkBody = @{
+        location = $Location
+        identity = @{ type = "SystemAssigned" }
+        properties = @{
+            messaging = @{ endpoints = @{ "hub-1" = @{
+                endpointType = "Microsoft.Devices/IotHubs"
+                resourceId = $IotHubId
+                inboundCallerIdentity = @{ type = "SystemAssigned" }
+                provisioning = @{ availability = "Available"; allocationWeight = 1 }
+            } } }
+            provisioning = @{ endpoints = @{ "dps-1" = @{
+                endpointType = "Microsoft.Devices/provisioningServices"
+                resourceId = $DpsId
+                inboundCallerIdentity = @{ type = "SystemAssigned" }
+            } } }
         }
-    } | Out-Null
+    }
 
-    # Endpoint linkingState is the source of truth: the namespace itself can read Succeeded while an
-    # endpoint is still InProgress, and a failed endpoint is where the reason is recorded.
-    $Deadline = (Get-Date).AddSeconds(900)
-    while ($true) {
-        # As in Wait-AzProvisioningState, a failed read during a poll that runs for minutes is
-        # transient and says nothing about the link, so it costs an attempt rather than the run.
-        $Namespace = Invoke-AzRest -Url $Url -AllowFailure
-        $Endpoints = if ($null -ne $Namespace) {
-            @($Namespace.properties.messaging.endpoints.PSObject.Properties) + `
-            @($Namespace.properties.provisioning.endpoints.PSObject.Properties)
-        } else { @() }
-        $States = @($Endpoints | %{ $_.Value.linkingState })
+    for ($Attempt = 1; $Attempt -le $script:AdrLinkMaxAttempts; $Attempt++) {
+        Write-Host "Linking IoT Hub and DPS to ADR namespace (attempt $Attempt of $($script:AdrLinkMaxAttempts))"
+        # Retries a link REJECTED outright; an accepted link that later fails is handled below.
+        Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" `
+            -RetryOnPattern $script:AdrRolePropagationPattern -MaxAttempts 3 -Command {
+            Invoke-AzRest -Method PUT -Url $Url -Body $LinkBody
+        } | Out-Null
+
+        # Endpoint linkingState is the source of truth: the namespace itself can read Succeeded while
+        # an endpoint is still InProgress, and a failed endpoint is where the reason is recorded.
+        $Deadline = (Get-Date).AddSeconds(900)
+        while ($true) {
+            # As in Wait-AzProvisioningState, a failed read during a poll that runs for minutes is
+            # transient and says nothing about the link, so it costs an attempt rather than the run.
+            $Namespace = Invoke-AzRest -Url $Url -AllowFailure
+            $Endpoints = if ($null -ne $Namespace) {
+                @($Namespace.properties.messaging.endpoints.PSObject.Properties) + `
+                @($Namespace.properties.provisioning.endpoints.PSObject.Properties)
+            } else { @() }
+            $States = @($Endpoints | %{ $_.Value.linkingState })
+
+            if ($States.Count -gt 0 -and @($States | ?{ $_ -notin @("Succeeded", "Failed") }).Count -eq 0) {
+                break
+            }
+
+            if ((Get-Date) -ge $Deadline) {
+                throw "ADR namespace link did not complete within 900 seconds (endpoint states: $($States -join ', '))."
+            }
+
+            Write-Host "Waiting for ADR namespace link (endpoint states: $($States -join ', '))."
+            Start-Sleep -Seconds 15
+        }
 
         $Failed = @($Endpoints | ?{ $_.Value.linkingState -eq "Failed" })
-        if ($Failed.Count -gt 0) {
-            throw "ADR namespace link failed for endpoint '$($Failed[0].Name)': $($Failed[0].Value.linkingError.code)."
-        }
-
-        if ($States.Count -gt 0 -and @($States | ?{ $_ -ne "Succeeded" }).Count -eq 0) {
+        if ($Failed.Count -eq 0) {
             break
         }
 
-        if ((Get-Date) -ge $Deadline) {
-            throw "ADR namespace link did not complete within 900 seconds (endpoint states: $($States -join ', '))."
+        $FailedCode = $Failed[0].Value.linkingError.code
+        if ($FailedCode -notmatch $script:AdrRolePropagationPattern -or $Attempt -eq $script:AdrLinkMaxAttempts) {
+            throw "ADR namespace link failed for endpoint '$($Failed[0].Name)': $FailedCode."
         }
 
-        Write-Host "Waiting for ADR namespace link (endpoint states: $($States -join ', '))."
-        Start-Sleep -Seconds 15
+        Write-Host "Link endpoint '$($Failed[0].Name)' failed with $FailedCode while the namespace role assignments replicate; re-submitting."
+        Start-Sleep -Seconds 30
     }
 
     # Heal a namespace left Failed by an otherwise successful link. A tags-only update re-runs
