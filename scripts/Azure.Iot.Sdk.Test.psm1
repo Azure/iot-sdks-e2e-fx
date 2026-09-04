@@ -494,7 +494,10 @@ function Wait-AzProvisioningState {
         }
 
         if ($State -eq "Failed" -or $State -eq "Canceled") {
-            throw "$Step reached provisioningState '$State'."
+            # The resource is included because provisioningState alone does not say why: an
+            # asynchronous failure records its reason on the resource, and without it the only
+            # thing to go on is the word 'Failed'.
+            throw "$Step reached provisioningState '$State'. Resource: $($Resource | ConvertTo-Json -Depth 10 -Compress)"
         }
 
         if ((Get-Date) -ge $Deadline) {
