@@ -1628,7 +1628,8 @@ function Connect-AdrNamespace {
     .DESCRIPTION
     Replaces the public-preview wiring, where the hub and DPS were pointed at the namespace with
     '--ns-resource-id'/'--ns-identity-id' at creation time. The relationship is now expressed on the
-    NAMESPACE, as endpoints: a messaging endpoint for the hub, a provisioning endpoint for the DPS.
+    NAMESPACE, as endpoints: the hub is a messaging endpoint, the DPS a provisioning one. The two
+    carry different resource types, and only the hub endpoint carries provisioning availability.
 
     The call returns immediately with the endpoints at linkingState=InProgress; ADR completes the
     link asynchronously. The saga runs as the namespace identity, so a link attempted before that
@@ -1640,23 +1641,31 @@ function Connect-AdrNamespace {
     #>
     param(
         [string]$NamespaceId,
+        [string]$Location,
         [string]$IotHubId,
         [string]$DpsId
     )
 
     $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
-    $Endpoint = @{
-        endpointType = "Microsoft.Devices/IotHubs"
-        inboundCallerIdentity = @{ type = "SystemAssigned" }
-    }
 
     Write-Host "Linking IoT Hub and DPS to ADR namespace"
     Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" `
         -RetryOnPattern $script:AdrRolePropagationPattern -MaxAttempts 5 -Command {
-        Invoke-AzRest -Method PATCH -Url $Url -Body @{
+        Invoke-AzRest -Method PUT -Url $Url -Body @{
+            location = $Location
+            identity = @{ type = "SystemAssigned" }
             properties = @{
-                messaging    = @{ endpoints = @{ hub = $Endpoint + @{ resourceId = $IotHubId } } }
-                provisioning = @{ endpoints = @{ dps = $Endpoint + @{ resourceId = $DpsId } } }
+                messaging = @{ endpoints = @{ "hub-1" = @{
+                    endpointType = "Microsoft.Devices/IotHubs"
+                    resourceId = $IotHubId
+                    inboundCallerIdentity = @{ type = "SystemAssigned" }
+                    provisioning = @{ availability = "Available"; allocationWeight = 1 }
+                } } }
+                provisioning = @{ endpoints = @{ "dps-1" = @{
+                    endpointType = "Microsoft.Devices/provisioningServices"
+                    resourceId = $DpsId
+                    inboundCallerIdentity = @{ type = "SystemAssigned" }
+                } } }
             }
         }
     } | Out-Null
@@ -1687,11 +1696,24 @@ function Connect-AdrNamespace {
         Start-Sleep -Seconds 15
     }
 
-    # Heal a namespace left Failed by an otherwise successful link.
-    if ($Namespace.properties.provisioningState -ne "Succeeded") {
-        Write-Host "Namespace left at provisioningState=$($Namespace.properties.provisioningState) after linking; reconciling."
-        Invoke-AzRest -Method PATCH -Url $Url -Body @{ properties = @{} } | Out-Null
-        Wait-AzProvisioningState -Url $Url -Step "ADR namespace reconcile"
+    # Heal a namespace left Failed by an otherwise successful link. A tags-only update re-runs
+    # namespace reconciliation; re-sending the endpoints instead is rejected as immutable. The state
+    # can read Failed for a while after the update is accepted, so it is polled rather than judged
+    # on first read.
+    if ($Namespace.properties.provisioningState -eq "Failed") {
+        Write-Host "Namespace left at provisioningState=Failed after linking; reconciling."
+        $Tags = @{}
+        $Namespace.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value }
+        $Tags["AdrReconcileUtc"] = (Get-Date).ToUniversalTime().ToString("o")
+        Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags } | Out-Null
+
+        $Deadline = (Get-Date).AddSeconds(300)
+        while ((Invoke-AzRest -Url $Url).properties.provisioningState -ne "Succeeded") {
+            if ((Get-Date) -ge $Deadline) {
+                throw "ADR namespace did not recover from provisioningState=Failed; device registration would fail with errorCode 403000."
+            }
+            Start-Sleep -Seconds 10
+        }
     }
 }
 
@@ -2597,7 +2619,7 @@ function New-AzIotTestEnvironment {
             -Scope "$($AzureIoTHub.id)" `
             -RoleDefinitionIds @($script:ContributorRoleId, $script:IotHubDataContributorRoleId)
 
-        Connect-AdrNamespace -NamespaceId $AzureAdrNamespace.id -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id
+        Connect-AdrNamespace -NamespaceId $AzureAdrNamespace.id -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id
 
         # After the link, so that ADR has a hub to sync the issuing CA certificate to.
         New-AdrCertificateAuthority -NamespaceId $AzureAdrNamespace.id -Location $AzureLocation `
