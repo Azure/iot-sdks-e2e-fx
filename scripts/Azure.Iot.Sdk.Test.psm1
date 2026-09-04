@@ -2729,10 +2729,18 @@ function New-AzIotTestEnvironment {
             Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
         }
 
+        # Both directions are waited for. The link reads the DPS as the namespace identity and writes
+        # to the namespace as the DPS identity, and a grant that is not yet effective in either
+        # direction surfaces only as "the linked resource could not be read".
         Wait-AzRoleAssignment `
             -PrincipalId "$($DpsPrincipalId)" `
             -Scope "$($AdrNamespaceId)" `
             -RoleDefinitionIds @($script:ContributorRoleId, $script:AdrContributorRoleId)
+
+        Wait-AzRoleAssignment `
+            -PrincipalId "$($AdrNamespacePrincipalId)" `
+            -Scope "$($AzureDps.id)" `
+            -RoleDefinitionIds @($script:ContributorRoleId)
 
         # Being readable is not the same as being enforced: the providers that check these grants
         # cache them, so the link is given a head start rather than racing the first attempt against
