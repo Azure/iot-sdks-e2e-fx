@@ -1323,7 +1323,7 @@ class AdrPolicyReference {
     }
 
     static [AdrPolicyReference]FromHashtable([hashtable]$Hashtable) {
-        if ($null -eq $Hashtable) { return $null }
+        if ($null -eq $Hashtable) { return [AdrPolicyReference]::new() }
         return [AdrPolicyReference]::new($Hashtable.NamespaceName, $Hashtable.CertificateAuthorityName, $Hashtable.CertificatePolicyName)
     }
 }
@@ -1338,7 +1338,10 @@ class DpsInfo {
     [X509CertificateInfo[]]$RootCaCertificates = @()
     [DpsEnrollmentsSet]$Enrollments = [DpsEnrollmentsSet]::new()
     [string[]]$LinkedIotHubs = @()
-    [AdrPolicyReference]$AdrPolicy = $null
+    # Always present, never null: an environment without certificate management simply carries an
+    # incomplete reference. Callers gate on IsComplete(), and the generated test configuration reads
+    # the three names directly.
+    [AdrPolicyReference]$AdrPolicy = [AdrPolicyReference]::new()
 
     DpsInfo() { }
 
@@ -1409,7 +1412,7 @@ class DpsInfo {
             RootCaCertificates = Convert-CollectionToHashtable -Collection $this.RootCaCertificates
             Enrollments =  ConvertTo-Hashtable -Object $this.Enrollments
             LinkedIotHubs = $this.LinkedIotHubs
-            AdrPolicy = if ($null -ne $this.AdrPolicy) { $this.AdrPolicy.ToHashtable() } else { $null }
+            AdrPolicy = $this.AdrPolicy.ToHashtable()
         }
      }
 
@@ -1534,7 +1537,10 @@ class TestEnvironmentInfo {
 
     [ContainerRegistryInfo[]]$ContainerRegistry = @()
 
-    [AdrPolicyReference]$AdrPolicy = $null
+    # Always present, never null: an environment without certificate management simply carries an
+    # incomplete reference. Callers gate on IsComplete(), and the generated test configuration reads
+    # the three names directly.
+    [AdrPolicyReference]$AdrPolicy = [AdrPolicyReference]::new()
 
     [hashtable]ToHashtable() {
         return [ordered]@{
@@ -1542,7 +1548,7 @@ class TestEnvironmentInfo {
             IotHub = ConvertTo-Hashtable -Object $this.IotHub
             Dps = ConvertTo-Hashtable -Object $this.Dps
             # TODO: add container registry
-            AdrPolicy = if ($null -ne $this.AdrPolicy) { $this.AdrPolicy.ToHashtable() } else { $null }
+            AdrPolicy = $this.AdrPolicy.ToHashtable()
         }
     }
 
@@ -1572,9 +1578,12 @@ class TestEnvironmentInfo {
 # ADR resources are created through ARM directly: the azure-iot CLI extension only ever exposed the
 # public-preview object model (a namespace credential holding policies, selected by name) and has no
 # command for the certificate-authority model that replaced it.
-$script:AdrApiVersion = "2026-11-02-preview"
-$script:DpsControlPlaneApiVersion = "2026-03-01-preview"
-$script:DpsEnrollmentApiVersion = "2026-11-01"
+#
+# Overridable from the environment so a cloud or region where one of these versions is not registered
+# can be unblocked without a code change.
+$script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-02-preview" }
+$script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
+$script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
 
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*.
 $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
@@ -2629,7 +2638,7 @@ function New-AzIotTestEnvironment {
 
         $AzureAdrPolicy = [AdrPolicyReference]::new($AzureAdrNamespaceName, $AzureAdrCertificateAuthorityName, $AzureAdrPolicyName)
     } else {
-        $AzureAdrPolicy = $null # Used below on enrollment creation.
+        $AzureAdrPolicy = [AdrPolicyReference]::new() # Incomplete: no policy is referenced below.
     }
 
     if ($NoDps -eq $false) {
