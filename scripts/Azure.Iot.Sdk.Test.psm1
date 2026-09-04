@@ -1628,9 +1628,10 @@ function New-AdrIssueCertificateRole {
     Issuing a device certificate in response to a CSR is a DATA action on the namespace, and no
     built-in role carries it, so the DPS identity can only be granted it through a custom role.
 
-    An existing role of the same name is reused rather than duplicated: the definition is
-    subscription-wide and outlives the resource group, and a subscription has a limited number of
-    them.
+    An existing definition is reused wherever possible: a subscription has a limited number of them,
+    they outlive the resource group, and creating one past that limit fails the whole run. So the
+    expected name is looked for first, then any role that already grants the action under a different
+    name, and only then is one created.
     #>
     param(
         [string]$SubscriptionId,
@@ -1638,11 +1639,22 @@ function New-AdrIssueCertificateRole {
     )
 
     $Base = "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Authorization/roleDefinitions"
-    $Existing = Invoke-AzRest -Url "$($Base)?api-version=$($script:RoleApiVersion)&`$filter=roleName%20eq%20'$RoleName'" -AllowFailure
+    $Scope = "/subscriptions/$SubscriptionId"
 
-    if ($Existing.value.Count -gt 0) {
-        Write-Host "Reusing custom role '$RoleName' for ADR certificate issuance."
-        return $Existing.value[0].name
+    # Matched here rather than with a server-side $filter: the roles have to be examined for the data
+    # action anyway, and a filter that silently returns nothing would send this straight to creating
+    # a duplicate.
+    $Custom = Invoke-AzRest -Url "$($Base)?api-version=$($script:RoleApiVersion)&`$filter=type%20eq%20'CustomRole'" -AllowFailure
+    $Assignable = $Custom.value | ?{ $_.properties.assignableScopes | ?{ $Scope -eq $_ -or $Scope.StartsWith("$_/") } }
+
+    $Match = $Assignable | ?{ $_.properties.roleName -eq $RoleName } | Select-Object -First 1
+    if ($null -eq $Match) {
+        $Match = $Assignable | ?{ $_.properties.permissions.dataActions -contains $script:AdrIssueCertificateAction } | Select-Object -First 1
+    }
+
+    if ($null -ne $Match) {
+        Write-Host "Reusing custom role '$($Match.properties.roleName)' for ADR certificate issuance."
+        return $Match.name
     }
 
     $RoleId = (New-Guid).Guid
@@ -1651,7 +1663,7 @@ function New-AdrIssueCertificateRole {
         properties = @{
             roleName = $RoleName
             description = "Grants the DPS identity the ADR certificate-issuance data action."
-            assignableScopes = @("/subscriptions/$SubscriptionId")
+            assignableScopes = @($Scope)
             permissions = @(@{
                 actions = @()
                 notActions = @()
