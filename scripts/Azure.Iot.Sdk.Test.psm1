@@ -482,7 +482,11 @@ function Wait-AzProvisioningState {
     $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 
     while ($true) {
-        $State = (Invoke-AzRest -Url $Url -AllowFailure).properties.provisioningState
+        # A failed read is deliberately not fatal: these resources are polled for minutes, and a
+        # transient ARM or CLI failure along the way says nothing about the provisioning itself.
+        # The state is simply unknown for this attempt, and the deadline still applies.
+        $Resource = Invoke-AzRest -Url $Url -AllowFailure
+        $State = if ($null -ne $Resource) { $Resource.properties.provisioningState } else { $null }
 
         if ($State -eq "Succeeded") {
             return
