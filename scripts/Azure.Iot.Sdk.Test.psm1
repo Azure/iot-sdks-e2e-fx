@@ -1600,6 +1600,7 @@ class TestEnvironmentInfo {
 $script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-02-preview" }
 $script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
 $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
+$script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-06-01-preview" }
 
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*.
 $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
@@ -2625,13 +2626,21 @@ function New-AzIotTestEnvironment {
     # relationship used to be established at creation time, by pointing both resources at a namespace
     # and a user-assigned identity, and that is no longer how ADR models it. Each resource now
     # authenticates as its own system-assigned identity, so the shared identity is gone too.
-    # Only a GEN2 hub can be linked to an ADR namespace; the link saga rejects an S1 hub as
-    # LinkableResourceNotReady, however long it is retried. The generation is the one thing the
-    # previous model got right here, so it is kept.
+    # Created through ARM for the same reason as the DPS below: certificate management needs a GEN2
+    # hub -- the link saga rejects an S1 hub as LinkableResourceNotReady however long it is retried --
+    # and 'az iot hub create --sku' does not accept that generation outside preview builds of the
+    # azure-iot extension.
     $IotHubSku = if ($EnableCertificateManagement) { "GEN2" } else { "S1" }
     Write-Host "Creating Azure IoT Hub ($IotHubName; sku=$IotHubSku)."
-    $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku $IotHubSku --mintls "1.2" --mi-system-assigned | ConvertFrom-Json
-    Stop-OnError -Step "Create Azure IoT Hub"
+    $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
+    Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
+        location = $AzureLocation
+        sku = @{ name = $IotHubSku; capacity = 1 }
+        identity = @{ type = "SystemAssigned" }
+        properties = @{ minTlsVersion = "1.2" }
+    } | Out-Null
+    Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
+    $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
 
     if ($NoDps -eq $false) {
         # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
