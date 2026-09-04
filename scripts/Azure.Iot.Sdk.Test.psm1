@@ -2627,24 +2627,27 @@ function New-AzIotTestEnvironment {
     Stop-OnError -Step "Create Azure IoT Hub"
 
     if ($NoDps -eq $false) {
+        # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
+        # identity, which is what authenticates it to the ADR namespace. The identity cannot be added
+        # afterwards -- DPS rejects a managed-identity PATCH with IH400158 -- and the CLI accepts
+        # identity flags only in preview builds of the azure-iot extension, so neither route works.
         Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
-        $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
-        Stop-OnError -Step "Create Device Provisioning Service"
+        $DpsUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
+        Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
+            location = $AzureLocation
+            sku = @{ name = "S1"; capacity = 1 }
+            identity = @{ type = "SystemAssigned" }
+            properties = @{}
+        } | Out-Null
+        Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName)" -TimeoutSeconds 1200
+        # Re-read: idScope and the identity's principalId are populated as it provisions.
+        $AzureDps = Invoke-AzRest -Url $DpsUrl
     }
 
     if ($EnableCertificateManagement -eq $true) {
         if ($NoDps -eq $true) {
             throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
         }
-
-        # The DPS authenticates to the namespace as itself, and its identity is turned on through ARM
-        # rather than at creation: 'az iot dps create' accepts identity flags only in preview builds
-        # of the azure-iot extension, so using them would tie provisioning to a preview version.
-        Write-Host "Enabling the system-assigned identity on the DPS ($DpsName)"
-        $DpsUrl = "https://management.azure.com$($AzureDps.id)?api-version=$($script:DpsControlPlaneApiVersion)"
-        Invoke-AzRest -Method PATCH -Url $DpsUrl -Body @{ identity = @{ type = "SystemAssigned" } } | Out-Null
-        Wait-AzProvisioningState -Url $DpsUrl -Step "DPS system-assigned identity"
-        $AzureDps = Invoke-AzRest -Url $DpsUrl
 
         $AzureAdrNamespaceName = "azure-adr-ns"
         $AzureAdrPolicyName = "azure-adr-policy"
