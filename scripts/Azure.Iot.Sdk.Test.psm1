@@ -138,34 +138,34 @@ function Stop-OnError {
     }
 }
 
-# The azure-iot CLI extension is used for IoT Hub and DPS resource management only.
+# The azure-iot CLI extension is used for IoT Hub and DPS resource management.
 #
-# It is deliberately NOT pinned any more. The pin existed because provisioning
-# needed the `az iot adr` command group, which only ever shipped in preview
-# builds. That command group models ADR the way public preview did -- a
-# namespace credential holding policies, referenced from an enrollment by name --
-# and that model has since been replaced (see New-AdrCertificateAuthority). The
-# extension has no command for the model that replaced it, so every ADR call
-# here goes to ARM directly via `az rest` and the pin buys nothing.
+# It is pinned to a PREVIEW build because certificate management needs a GEN2 hub wired to an Azure
+# Device Registry namespace, and the arguments for that -- --sku GEN2, --ns-resource-id,
+# --ns-identity-id -- ship only in the preview line. The stable extension rejects them, and building
+# the same hub straight through ARM is not equivalent: the request is accepted and the hub then
+# settles at state=ActivationFailed.
 #
-# Nothing here depends on a preview build: the ADR resources are created through
-# ARM, and so is the DPS system-assigned identity, whose creation-time flags are
-# preview-only. What IS installed still has to be current, though -- an agent
-# carrying an old extension would otherwise keep it forever -- so an extension
-# that is already present is updated rather than left alone.
+# The ADR resources themselves are NOT created with this extension. Its `az iot adr` command group
+# models the retired public-preview object model -- a namespace credential holding policies, selected
+# by name -- and has no command for the certificate-authority model that replaced it, so every ADR
+# call here goes to ARM directly (see New-AdrCertificateAuthority).
+$script:AzureIotCliExtensionVersion = "0.30.0b2"
+
 function Install-AzureIotCliExtension {
     $Extension = $(az extension list --output json --only-show-errors | ConvertFrom-Json | ?{$_.name -eq "azure-iot"})
 
+    if ($null -ne $Extension -and $Extension.version -ne $script:AzureIotCliExtensionVersion) {
+        Write-Host "Azure IoT extension $($Extension.version) found; removing (pinned to $($script:AzureIotCliExtensionVersion))."
+        az extension remove --name azure-iot --only-show-errors | Out-Null
+        Stop-OnError -Step "Remove Azure IoT extension"
+        $Extension = $null
+    }
+
     if ($null -eq $Extension) {
-        Write-Host "Installing Azure IoT extension."
-        az extension add --name azure-iot --only-show-errors | Out-Null
+        Write-Host "Installing Azure IoT extension $($script:AzureIotCliExtensionVersion)."
+        az extension add --name azure-iot --version $script:AzureIotCliExtensionVersion --allow-preview --only-show-errors | Out-Null
         Stop-OnError -Step "Install Azure IoT extension"
-    } else {
-        # No suppression here: the command succeeds when the extension is already current, so a
-        # failure is a real one and worth stopping for.
-        Write-Host "Azure IoT extension $($Extension.version) found; updating."
-        az extension update --name azure-iot --only-show-errors | Out-Null
-        Stop-OnError -Step "Update Azure IoT extension"
     }
 
     # What actually ended up installed. When a provisioning command goes missing,
@@ -1603,7 +1603,6 @@ class TestEnvironmentInfo {
 $script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-02-preview" }
 $script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
 $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
-$script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-05-01-preview" }
 
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*, and the data actions,
 # including the certificate issuance a CSR needs.
@@ -2683,40 +2682,23 @@ function New-AzIotTestEnvironment {
             -RoleDefinitionIds @($script:AdrContributorRoleId, $script:AdrOnboardingRoleId)
     }
 
-    # Created through ARM rather than with 'az iot hub create': certificate management needs a GEN2
-    # hub, and the CLI's --sku does not accept that generation outside preview builds of the azure-iot
-    # extension. A GEN2 hub also REQUIRES the Device Registry properties below, and a hub of any other
-    # generation must not carry them. The GEN2 shape is otherwise kept exactly as the previous model
-    # had it, down to carrying only the user-assigned identity and not setting a minimum TLS version:
-    # activation fails, asynchronously and without saying why, if it is given anything else.
-    $IotHubSku = if ($EnableCertificateManagement) { "GEN2" } else { "S1" }
-
+    # Certificate management needs a GEN2 hub wired to the namespace as it is created. The wiring is
+    # only valid on that generation, and both are expressed with preview-only arguments, which is why
+    # the extension is pinned. The hub reaches the namespace as the user-assigned identity, and the
+    # grants made above are validated during creation, so a create that lands before they are enforced
+    # is retried rather than failing the run.
     if ($EnableCertificateManagement -eq $true) {
-        $IotHubProperties = @{
-            deviceRegistry = @{
-                namespaceResourceId = $AzureAdrNamespace.id
-                identityResourceId = $CertMgmtIdentity.id
-            }
-        }
-        $IotHubIdentity = @{
-            type = "UserAssigned"
-            userAssignedIdentities = @{ "$($CertMgmtIdentity.id)" = @{} }
+        Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)."
+        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
+            -RetryOnPattern '400913|does not have the required DeviceRegistry permissions' -Command {
+            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
+                --mi-user-assigned "$($CertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($CertMgmtIdentity.id)" | ConvertFrom-Json
         }
     } else {
-        $IotHubProperties = @{ minTlsVersion = "1.2" }
-        $IotHubIdentity = @{ type = "SystemAssigned" }
+        Write-Host "Creating Azure IoT Hub ($IotHubName)."
+        $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" --mi-system-assigned | ConvertFrom-Json
+        Stop-OnError -Step "Create Azure IoT Hub"
     }
-
-    Write-Host "Creating Azure IoT Hub ($IotHubName; sku=$IotHubSku)."
-    $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
-    Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
-        location = $AzureLocation
-        sku = @{ name = $IotHubSku; capacity = 1 }
-        identity = $IotHubIdentity
-        properties = $IotHubProperties
-    } | Out-Null
-    Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
-    $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
 
     if ($NoDps -eq $false) {
         # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
