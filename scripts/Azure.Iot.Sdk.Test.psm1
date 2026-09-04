@@ -2621,23 +2621,68 @@ function New-AzIotTestEnvironment {
     # $AzureKeyVault = az keyvault create --name "$KeyVaultName" --resource-group "$ResourceGroup" --location "$AzureLocation" 2>$null | ConvertFrom-Json
     # Stop-OnError -Step "Create Azure Key Vault"
 
-    # Certificate management is wired up in a different order from everything else here. The hub and
-    # the DPS are created plain, and the ADR namespace is then LINKED to them afterwards -- the
-    # relationship used to be established at creation time, by pointing both resources at a namespace
-    # and a user-assigned identity, and that is no longer how ADR models it. Each resource now
-    # authenticates as its own system-assigned identity, so the shared identity is gone too.
-    # Created through ARM for the same reason as the DPS below: certificate management needs a GEN2
-    # hub -- the link saga rejects an S1 hub as LinkableResourceNotReady however long it is retried --
-    # and 'az iot hub create --sku' does not accept that generation outside preview builds of the
-    # azure-iot extension.
+    # Certificate management is wired up in a different order from everything else here. A GEN2 hub
+    # carries the ADR namespace, and the identity it reaches that namespace with, in its own
+    # properties and cannot be created without them, so the namespace and identity come first. Only
+    # the DPS is attached afterwards, through the namespace itself: pointing a DPS at a namespace as
+    # it is created is what the previous model did and it now fails validation.
+    if ($EnableCertificateManagement -eq $true) {
+        if ($NoDps -eq $true) {
+            throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
+        }
+
+        $AzureAdrNamespaceName = "azure-adr-ns"
+        $AzureAdrPolicyName = "azure-adr-policy"
+        $AzureAdrCertificateAuthorityName = "default"
+
+        # A user-assigned identity, because the hub names the identity by RESOURCE ID and a
+        # system-assigned one does not have a resource id to name.
+        $CertMgmtIdentityName = "$($ResourceGroup)cmuid"
+        Write-Host "Creating User-Assigned Managed Identity ($CertMgmtIdentityName)"
+        $CertMgmtIdentity = az identity create --name "$CertMgmtIdentityName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
+        Stop-OnError -Step "Create User-Assigned Managed Identity"
+
+        $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
+
+        # Creating the hub validates that this identity can actually reach the namespace, so the grant
+        # has to be in place and observable first; without it the hub create fails IH400913.
+        Write-Host "Granting the certificate-management identity access to the ADR namespace"
+        az role assignment create --assignee-object-id $CertMgmtIdentity.principalId --assignee-principal-type ServicePrincipal --role $script:AdrContributorRoleId --scope $AzureAdrNamespace.id --only-show-errors | Out-Null
+        Stop-OnError -Step "Grant the certificate-management identity access to the ADR namespace"
+
+        Wait-AzRoleAssignment `
+            -PrincipalId "$($CertMgmtIdentity.principalId)" `
+            -Scope "$($AzureAdrNamespace.id)" `
+            -RoleDefinitionIds @($script:AdrContributorRoleId)
+    }
+
+    # Created through ARM rather than with 'az iot hub create': certificate management needs a GEN2
+    # hub, and the CLI's --sku does not accept that generation outside preview builds of the azure-iot
+    # extension. A GEN2 hub also REQUIRES the Device Registry properties below, and a hub of any other
+    # generation must not carry them.
     $IotHubSku = if ($EnableCertificateManagement) { "GEN2" } else { "S1" }
+    $IotHubProperties = @{ minTlsVersion = "1.2" }
+    $IotHubIdentity = @{ type = "SystemAssigned" }
+
+    if ($EnableCertificateManagement -eq $true) {
+        $IotHubProperties["deviceRegistry"] = @{
+            namespaceResourceId = $AzureAdrNamespace.id
+            identityResourceId = $CertMgmtIdentity.id
+        }
+        # The hub can only use an identity that is assigned to it.
+        $IotHubIdentity = @{
+            type = "SystemAssigned, UserAssigned"
+            userAssignedIdentities = @{ "$($CertMgmtIdentity.id)" = @{} }
+        }
+    }
+
     Write-Host "Creating Azure IoT Hub ($IotHubName; sku=$IotHubSku)."
     $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
     Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
         location = $AzureLocation
         sku = @{ name = $IotHubSku; capacity = 1 }
-        identity = @{ type = "SystemAssigned" }
-        properties = @{ minTlsVersion = "1.2" }
+        identity = $IotHubIdentity
+        properties = $IotHubProperties
     } | Out-Null
     Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
     $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
@@ -2661,16 +2706,6 @@ function New-AzIotTestEnvironment {
     }
 
     if ($EnableCertificateManagement -eq $true) {
-        if ($NoDps -eq $true) {
-            throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
-        }
-
-        $AzureAdrNamespaceName = "azure-adr-ns"
-        $AzureAdrPolicyName = "azure-adr-policy"
-        $AzureAdrCertificateAuthorityName = "default"
-
-        $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
-
         # Contributor is granted in BOTH directions because the linking saga acts as the namespace
         # identity against the hub and the DPS, and as those resources' identities against the
         # namespace; granting it one way leaves the link reporting LinkableResourceNotReady. On top of
