@@ -2625,8 +2625,12 @@ function New-AzIotTestEnvironment {
     # relationship used to be established at creation time, by pointing both resources at a namespace
     # and a user-assigned identity, and that is no longer how ADR models it. Each resource now
     # authenticates as its own system-assigned identity, so the shared identity is gone too.
-    Write-Host "Creating Azure IoT Hub ($IotHubName)."
-    $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" --mi-system-assigned | ConvertFrom-Json
+    # Only a GEN2 hub can be linked to an ADR namespace; the link saga rejects an S1 hub as
+    # LinkableResourceNotReady, however long it is retried. The generation is the one thing the
+    # previous model got right here, so it is kept.
+    $IotHubSku = if ($EnableCertificateManagement) { "GEN2" } else { "S1" }
+    Write-Host "Creating Azure IoT Hub ($IotHubName; sku=$IotHubSku)."
+    $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku $IotHubSku --mintls "1.2" --mi-system-assigned | ConvertFrom-Json
     Stop-OnError -Step "Create Azure IoT Hub"
 
     if ($NoDps -eq $false) {
