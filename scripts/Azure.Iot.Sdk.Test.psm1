@@ -1718,8 +1718,15 @@ function Connect-AdrNamespace {
                 @($Namespace.properties.provisioning.endpoints.PSObject.Properties)
             } else { @() }
             $States = @($Endpoints | %{ $_.Value.linkingState })
+            $Failed = @($Endpoints | ?{ $_.Value.linkingState -eq "Failed" })
 
-            if ($States.Count -gt 0 -and @($States | ?{ $_ -notin @("Succeeded", "Failed") }).Count -eq 0) {
+            # A failure ends the attempt immediately. Waiting for the other endpoints to settle would
+            # only burn the deadline: one of them may never carry a state at all.
+            if ($Failed.Count -gt 0) {
+                break
+            }
+
+            if ($States.Count -gt 0 -and @($States | ?{ $_ -ne "Succeeded" }).Count -eq 0) {
                 break
             }
 
@@ -1731,14 +1738,13 @@ function Connect-AdrNamespace {
             Start-Sleep -Seconds 15
         }
 
-        $Failed = @($Endpoints | ?{ $_.Value.linkingState -eq "Failed" })
         if ($Failed.Count -eq 0) {
             break
         }
 
         $FailedCode = $Failed[0].Value.linkingError.code
         if ($FailedCode -notmatch $script:AdrRolePropagationPattern -or $Attempt -eq $script:AdrLinkMaxAttempts) {
-            throw "ADR namespace link failed for endpoint '$($Failed[0].Name)': $FailedCode."
+            throw "ADR namespace link failed for endpoint '$($Failed[0].Name)': $($Failed[0].Value.linkingError | ConvertTo-Json -Depth 5 -Compress)"
         }
 
         # Grows with each attempt, to a cap: each re-submission actively probes whether the grants
