@@ -161,10 +161,11 @@ function Install-AzureIotCliExtension {
         az extension add --name azure-iot --only-show-errors | Out-Null
         Stop-OnError -Step "Install Azure IoT extension"
     } else {
-        # Already up to date is reported as a failure, so the exit code is reset rather than checked.
+        # No suppression here: the command succeeds when the extension is already current, so a
+        # failure is a real one and worth stopping for.
         Write-Host "Azure IoT extension $($Extension.version) found; updating."
-        az extension update --name azure-iot --only-show-errors 2>$null | Out-Null
-        $global:LASTEXITCODE = 0
+        az extension update --name azure-iot --only-show-errors | Out-Null
+        Stop-OnError -Step "Update Azure IoT extension"
     }
 
     # What actually ended up installed. When a provisioning command goes missing,
