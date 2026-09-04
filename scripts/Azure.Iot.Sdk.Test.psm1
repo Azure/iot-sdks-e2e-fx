@@ -2670,21 +2670,25 @@ function New-AzIotTestEnvironment {
     # Created through ARM rather than with 'az iot hub create': certificate management needs a GEN2
     # hub, and the CLI's --sku does not accept that generation outside preview builds of the azure-iot
     # extension. A GEN2 hub also REQUIRES the Device Registry properties below, and a hub of any other
-    # generation must not carry them.
+    # generation must not carry them. The GEN2 shape is otherwise kept exactly as the previous model
+    # had it, down to carrying only the user-assigned identity and not setting a minimum TLS version:
+    # activation fails, asynchronously and without saying why, if it is given anything else.
     $IotHubSku = if ($EnableCertificateManagement) { "GEN2" } else { "S1" }
-    $IotHubProperties = @{ minTlsVersion = "1.2" }
-    $IotHubIdentity = @{ type = "SystemAssigned" }
 
     if ($EnableCertificateManagement -eq $true) {
-        $IotHubProperties["deviceRegistry"] = @{
-            namespaceResourceId = $AzureAdrNamespace.id
-            identityResourceId = $CertMgmtIdentity.id
+        $IotHubProperties = @{
+            deviceRegistry = @{
+                namespaceResourceId = $AzureAdrNamespace.id
+                identityResourceId = $CertMgmtIdentity.id
+            }
         }
-        # The hub can only use an identity that is assigned to it.
         $IotHubIdentity = @{
-            type = "SystemAssigned, UserAssigned"
+            type = "UserAssigned"
             userAssignedIdentities = @{ "$($CertMgmtIdentity.id)" = @{} }
         }
+    } else {
+        $IotHubProperties = @{ minTlsVersion = "1.2" }
+        $IotHubIdentity = @{ type = "SystemAssigned" }
     }
 
     Write-Host "Creating Azure IoT Hub ($IotHubName; sku=$IotHubSku)."
@@ -2718,27 +2722,25 @@ function New-AzIotTestEnvironment {
 
     if ($EnableCertificateManagement -eq $true) {
         # Contributor is granted in BOTH directions because the linking saga acts as the namespace
-        # identity against the hub and the DPS, and as those resources' identities against the
-        # namespace; granting it one way leaves the link reporting LinkableResourceNotReady. On top of
-        # that sit the data-plane roles: device registration runs as the DPS identity, and ADR mirrors
-        # devices into the hub as the namespace identity. Azure Device Registry Contributor is what
-        # lets the DPS write enrollments AND issue a certificate for a CSR -- it already carries the
-        # issueCertificate data action, so no custom role is needed here.
+        # identity against the DPS, and as the DPS identity against the namespace; granting it one way
+        # leaves the link reporting LinkableResourceNotReady. The namespace identity additionally gets
+        # the two roles ADR needs on a hub it is attached to, and Azure Device Registry Contributor is
+        # what lets the DPS write enrollments AND issue a certificate for a CSR -- it already carries
+        # the issueCertificate data action, so no custom role is needed here. The hub reaches the
+        # namespace as the user-assigned identity granted above, not as itself.
         $AdrNamespaceId = $AzureAdrNamespace.id
         $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
-        $IotHubPrincipalId = $AzureIoTHub.identity.principalId
         $DpsPrincipalId = $AzureDps.identity.principalId
 
         Write-Host "Assigning roles between the ADR namespace, the IoT Hub and the DPS"
         @(
             @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureIoTHub.id },
-            @{ Assignee = $IotHubPrincipalId;       Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+            @{ Assignee = $AdrNamespacePrincipalId; Role = "IoT Hub Registry Contributor";      Scope = $AzureIoTHub.id },
             @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureDps.id },
             @{ Assignee = $DpsPrincipalId;          Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
             @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
             @{ Assignee = $DpsPrincipalId;          Role = $script:AdrContributorRoleId;        Scope = $AdrNamespaceId },
-            @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
-            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id }
+            @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id }
         ) | %{
             az role assignment create --assignee-object-id $_.Assignee --assignee-principal-type ServicePrincipal --role $_.Role --scope $_.Scope --only-show-errors | Out-Null
             Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
@@ -2747,7 +2749,7 @@ function New-AzIotTestEnvironment {
         Wait-AzRoleAssignment `
             -PrincipalId "$($AdrNamespacePrincipalId)" `
             -Scope "$($AzureIoTHub.id)" `
-            -RoleDefinitionIds @($script:ContributorRoleId, $script:IotHubDataContributorRoleId)
+            -RoleDefinitionIds @($script:ContributorRoleId)
 
         # Being readable is not the same as being enforced: the providers that check these grants
         # cache them, so the link is given a head start rather than racing the first attempt against
