@@ -147,6 +147,12 @@ function Stop-OnError {
 # and that model has since been replaced (see New-AdrCertificateAuthority). The
 # extension has no command for the model that replaced it, so every ADR call
 # here goes to ARM directly via `az rest` and the pin buys nothing.
+#
+# Nothing here depends on a preview build: the ADR resources are created through
+# ARM, and so is the DPS system-assigned identity, whose creation-time flags are
+# preview-only. What IS installed still has to be current, though -- an agent
+# carrying an old extension would otherwise keep it forever -- so an extension
+# that is already present is updated rather than left alone.
 function Install-AzureIotCliExtension {
     $Extension = $(az extension list --output json --only-show-errors | ConvertFrom-Json | ?{$_.name -eq "azure-iot"})
 
@@ -154,6 +160,11 @@ function Install-AzureIotCliExtension {
         Write-Host "Installing Azure IoT extension."
         az extension add --name azure-iot --only-show-errors | Out-Null
         Stop-OnError -Step "Install Azure IoT extension"
+    } else {
+        # Already up to date is reported as a failure, so the exit code is reset rather than checked.
+        Write-Host "Azure IoT extension $($Extension.version) found; updating."
+        az extension update --name azure-iot --only-show-errors 2>$null | Out-Null
+        $global:LASTEXITCODE = 0
     }
 
     # What actually ended up installed. When a provisioning command goes missing,
@@ -2593,7 +2604,7 @@ function New-AzIotTestEnvironment {
 
     if ($NoDps -eq $false) {
         Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
-        $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mi-system-assigned | ConvertFrom-Json
+        $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
         Stop-OnError -Step "Create Device Provisioning Service"
     }
 
@@ -2601,6 +2612,15 @@ function New-AzIotTestEnvironment {
         if ($NoDps -eq $true) {
             throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
         }
+
+        # The DPS authenticates to the namespace as itself, and its identity is turned on through ARM
+        # rather than at creation: 'az iot dps create' accepts identity flags only in preview builds
+        # of the azure-iot extension, so using them would tie provisioning to a preview version.
+        Write-Host "Enabling the system-assigned identity on the DPS ($DpsName)"
+        $DpsUrl = "https://management.azure.com$($AzureDps.id)?api-version=$($script:DpsControlPlaneApiVersion)"
+        Invoke-AzRest -Method PATCH -Url $DpsUrl -Body @{ identity = @{ type = "SystemAssigned" } } | Out-Null
+        Wait-AzProvisioningState -Url $DpsUrl -Step "DPS system-assigned identity"
+        $AzureDps = Invoke-AzRest -Url $DpsUrl
 
         $AzureAdrNamespaceName = "azure-adr-ns"
         $AzureAdrPolicyName = "azure-adr-policy"
