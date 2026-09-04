@@ -1603,17 +1603,66 @@ $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DP
 
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*.
 $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
-# IoT Hub Data Contributor: the namespace identity writes device identities into the linked hub.
+# IoT Hub Data Contributor: device registration and enrollment writes run as a managed identity.
 $script:IotHubDataContributorRoleId = "4fc6c259-987e-4a07-842e-c321cc9d413f"
 # Contributor.
 $script:ContributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c"
+$script:RoleApiVersion = "2022-04-01"
+# Issuing a device certificate for a CSR is an ADR DATA action, which no built-in role carries.
+$script:AdrIssueCertificateAction = "Microsoft.DeviceRegistry/namespaces/credentials/policies/issueCertificate/action"
 
 # The namespace link saga runs as the namespace's managed identity, whose grants are eventually
 # consistent. Until they replicate, linking fails with one of these -- either outright, or by
 # settling an endpoint to Failed after the fact. Both are recovered by re-submitting the same
 # namespace, whose identity keeps replicating; everything else fails immediately.
 $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady|AuthorizationFailed|LinkInitiateFailed|NamespaceMiTokenAcquisitionFailed|OutboundIdentityUnavailable'
-$script:AdrLinkMaxAttempts = 5
+$script:AdrLinkMaxAttempts = 12
+
+function New-AdrIssueCertificateRole {
+    <#
+    .SYNOPSIS
+    Returns the id of a custom role granting the ADR certificate-issuance data action, creating it
+    if the subscription does not already have one.
+
+    .DESCRIPTION
+    Issuing a device certificate in response to a CSR is a DATA action on the namespace, and no
+    built-in role carries it, so the DPS identity can only be granted it through a custom role.
+
+    An existing role of the same name is reused rather than duplicated: the definition is
+    subscription-wide and outlives the resource group, and a subscription has a limited number of
+    them.
+    #>
+    param(
+        [string]$SubscriptionId,
+        [string]$RoleName = "adr-e2e-issuecert"
+    )
+
+    $Base = "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Authorization/roleDefinitions"
+    $Existing = Invoke-AzRest -Url "$($Base)?api-version=$($script:RoleApiVersion)&`$filter=roleName%20eq%20'$RoleName'" -AllowFailure
+
+    if ($Existing.value.Count -gt 0) {
+        Write-Host "Reusing custom role '$RoleName' for ADR certificate issuance."
+        return $Existing.value[0].name
+    }
+
+    $RoleId = (New-Guid).Guid
+    Write-Host "Creating custom role '$RoleName' for ADR certificate issuance."
+    Invoke-AzRest -Method PUT -Url "$Base/$($RoleId)?api-version=$($script:RoleApiVersion)" -Body @{
+        properties = @{
+            roleName = $RoleName
+            description = "Grants the DPS identity the ADR certificate-issuance data action."
+            assignableScopes = @("/subscriptions/$SubscriptionId")
+            permissions = @(@{
+                actions = @()
+                notActions = @()
+                dataActions = @($script:AdrIssueCertificateAction)
+                notDataActions = @()
+            })
+        }
+    } | Out-Null
+
+    return $RoleId
+}
 
 function New-AdrNamespace {
     <#
@@ -1737,8 +1786,11 @@ function Connect-AdrNamespace {
             throw "ADR namespace link failed for endpoint '$($Failed[0].Name)': $FailedCode."
         }
 
-        Write-Host "Link endpoint '$($Failed[0].Name)' failed with $FailedCode while the namespace role assignments replicate; re-submitting."
-        Start-Sleep -Seconds 30
+        # Grows with each attempt, to a cap: each re-submission actively probes whether the grants
+        # have taken effect, so several short waits beat one long blind sleep.
+        $RetryWait = [Math]::Min(60, 30 * $Attempt)
+        Write-Host "Link endpoint '$($Failed[0].Name)' failed with $FailedCode while the namespace role assignments replicate; re-submitting in $RetryWait seconds."
+        Start-Sleep -Seconds $RetryWait
     }
 
     # Heal a namespace left Failed by an otherwise successful link. A tags-only update re-runs
@@ -2655,27 +2707,47 @@ function New-AzIotTestEnvironment {
 
         $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
 
-        # Grants in both directions: the hub and DPS identities read the namespace, and the namespace
-        # identity writes device identities into the hub. The 'Azure Device Registry Onboarding' role
-        # the previous model needed is not used any more -- issuing certificates is authorized
-        # through the namespace link, not through a role on a shared identity.
+        # Contributor is granted in BOTH directions because the linking saga acts as the namespace
+        # identity against the hub and the DPS, and as those resources' identities against the
+        # namespace; granting it one way leaves the link reporting LinkableResourceNotReady. On top of
+        # that sit the data-plane roles: enrollment writes and device registration run as the DPS
+        # identity, ADR mirrors devices into the hub as the namespace identity, and issuing a
+        # certificate for a CSR needs the data action carried by the custom role above. The
+        # 'Azure Device Registry Onboarding' role the previous model used is not part of this.
+        $IssueCertificateRoleId = New-AdrIssueCertificateRole -SubscriptionId $AzureSubscriptionId
+        $AdrNamespaceId = $AzureAdrNamespace.id
+        $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
+        $IotHubPrincipalId = $AzureIoTHub.identity.principalId
+        $DpsPrincipalId = $AzureDps.identity.principalId
+
         Write-Host "Assigning roles between the ADR namespace, the IoT Hub and the DPS"
         @(
-            @{ Assignee = $AzureIoTHub.identity.principalId;            Role = $script:AdrContributorRoleId;         Scope = $AzureAdrNamespace.id },
-            @{ Assignee = $AzureDps.identity.principalId;               Role = $script:AdrContributorRoleId;         Scope = $AzureAdrNamespace.id },
-            @{ Assignee = $AzureAdrNamespace.identity.principalId;      Role = $script:ContributorRoleId;            Scope = $AzureIoTHub.id },
-            @{ Assignee = $AzureAdrNamespace.identity.principalId;      Role = $script:IotHubDataContributorRoleId;  Scope = $AzureIoTHub.id }
+            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureIoTHub.id },
+            @{ Assignee = $IotHubPrincipalId;       Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureDps.id },
+            @{ Assignee = $DpsPrincipalId;          Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+            @{ Assignee = $DpsPrincipalId;          Role = $script:AdrContributorRoleId;        Scope = $AdrNamespaceId },
+            @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
+            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
+            @{ Assignee = $DpsPrincipalId;          Role = $IssueCertificateRoleId;             Scope = $AdrNamespaceId }
         ) | %{
             az role assignment create --assignee-object-id $_.Assignee --assignee-principal-type ServicePrincipal --role $_.Role --scope $_.Scope --only-show-errors | Out-Null
             Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
         }
 
         Wait-AzRoleAssignment `
-            -PrincipalId "$($AzureAdrNamespace.identity.principalId)" `
+            -PrincipalId "$($AdrNamespacePrincipalId)" `
             -Scope "$($AzureIoTHub.id)" `
             -RoleDefinitionIds @($script:ContributorRoleId, $script:IotHubDataContributorRoleId)
 
-        Connect-AdrNamespace -NamespaceId $AzureAdrNamespace.id -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id
+        # Being readable is not the same as being enforced: the providers that check these grants
+        # cache them, so the link is given a head start rather than racing the first attempt against
+        # replication that has visibly only just finished.
+        Write-Host "Waiting 60 seconds for the new role assignments to take effect."
+        Start-Sleep -Seconds 60
+
+        Connect-AdrNamespace -NamespaceId $AdrNamespaceId -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id
 
         # After the link, so that ADR has a hub to sync the issuing CA certificate to.
         New-AdrCertificateAuthority -NamespaceId $AzureAdrNamespace.id -Location $AzureLocation `
