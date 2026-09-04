@@ -1602,8 +1602,12 @@ $script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $e
 $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
 $script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-05-01-preview" }
 
-# Azure Device Registry Contributor: namespaces/read, namespaces/devices/*.
+# Azure Device Registry Contributor: namespaces/read, namespaces/devices/*, and the data actions,
+# including the certificate issuance a CSR needs.
 $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
+# Azure Device Registry Onboarding: namespaces/write, namespaces/credentials/*. A hub registers
+# itself with the namespace as it provisions, so its identity needs to be able to write.
+$script:AdrOnboardingRoleId = "547f7f0a-69c0-4807-bd9e-0321dfb66a84"
 # IoT Hub Data Contributor: device registration and enrollment writes run as a managed identity.
 $script:IotHubDataContributorRoleId = "4fc6c259-987e-4a07-842e-c321cc9d413f"
 # Contributor.
@@ -2644,16 +2648,20 @@ function New-AzIotTestEnvironment {
 
         $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
 
-        # Creating the hub validates that this identity can actually reach the namespace, so the grant
-        # has to be in place and observable first; without it the hub create fails IH400913.
+        # Creating the hub validates that this identity can reach the namespace, and the hub then
+        # registers itself with the namespace as it provisions, so both grants have to be in place and
+        # observable first. Reading is not enough: without the write the create passes validation and
+        # then fails asynchronously, leaving the hub at provisioningState=Failed.
         Write-Host "Granting the certificate-management identity access to the ADR namespace"
-        az role assignment create --assignee-object-id $CertMgmtIdentity.principalId --assignee-principal-type ServicePrincipal --role $script:AdrContributorRoleId --scope $AzureAdrNamespace.id --only-show-errors | Out-Null
-        Stop-OnError -Step "Grant the certificate-management identity access to the ADR namespace"
+        @($script:AdrContributorRoleId, $script:AdrOnboardingRoleId) | %{
+            az role assignment create --assignee-object-id $CertMgmtIdentity.principalId --assignee-principal-type ServicePrincipal --role $_ --scope $AzureAdrNamespace.id --only-show-errors | Out-Null
+            Stop-OnError -Step "Grant role $_ on the ADR namespace"
+        }
 
         Wait-AzRoleAssignment `
             -PrincipalId "$($CertMgmtIdentity.principalId)" `
             -Scope "$($AzureAdrNamespace.id)" `
-            -RoleDefinitionIds @($script:AdrContributorRoleId)
+            -RoleDefinitionIds @($script:AdrContributorRoleId, $script:AdrOnboardingRoleId)
     }
 
     # Created through ARM rather than with 'az iot hub create': certificate management needs a GEN2
@@ -2712,8 +2720,7 @@ function New-AzIotTestEnvironment {
         # that sit the data-plane roles: device registration runs as the DPS identity, and ADR mirrors
         # devices into the hub as the namespace identity. Azure Device Registry Contributor is what
         # lets the DPS write enrollments AND issue a certificate for a CSR -- it already carries the
-        # issueCertificate data action, so no custom role is needed. The 'Azure Device Registry
-        # Onboarding' role the previous model used is not part of this.
+        # issueCertificate data action, so no custom role is needed here.
         $AdrNamespaceId = $AzureAdrNamespace.id
         $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
         $IotHubPrincipalId = $AzureIoTHub.identity.principalId
