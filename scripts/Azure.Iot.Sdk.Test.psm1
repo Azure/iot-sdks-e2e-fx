@@ -1607,9 +1607,6 @@ $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
 $script:IotHubDataContributorRoleId = "4fc6c259-987e-4a07-842e-c321cc9d413f"
 # Contributor.
 $script:ContributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c"
-$script:RoleApiVersion = "2022-04-01"
-# Issuing a device certificate for a CSR is an ADR DATA action, which no built-in role carries.
-$script:AdrIssueCertificateAction = "Microsoft.DeviceRegistry/namespaces/credentials/policies/issueCertificate/action"
 
 # The namespace link saga runs as the namespace's managed identity, whose grants are eventually
 # consistent. Until they replicate, linking fails with one of these -- either outright, or by
@@ -1617,64 +1614,6 @@ $script:AdrIssueCertificateAction = "Microsoft.DeviceRegistry/namespaces/credent
 # namespace, whose identity keeps replicating; everything else fails immediately.
 $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady|AuthorizationFailed|LinkInitiateFailed|NamespaceMiTokenAcquisitionFailed|OutboundIdentityUnavailable'
 $script:AdrLinkMaxAttempts = 12
-
-function New-AdrIssueCertificateRole {
-    <#
-    .SYNOPSIS
-    Returns the id of a custom role granting the ADR certificate-issuance data action, creating it
-    if the subscription does not already have one.
-
-    .DESCRIPTION
-    Issuing a device certificate in response to a CSR is a DATA action on the namespace, and no
-    built-in role carries it, so the DPS identity can only be granted it through a custom role.
-
-    An existing definition is reused wherever possible: a subscription has a limited number of them,
-    they outlive the resource group, and creating one past that limit fails the whole run. So the
-    expected name is looked for first, then any role that already grants the action under a different
-    name, and only then is one created.
-    #>
-    param(
-        [string]$SubscriptionId,
-        [string]$RoleName = "adr-e2e-issuecert"
-    )
-
-    $Base = "https://management.azure.com/subscriptions/$SubscriptionId/providers/Microsoft.Authorization/roleDefinitions"
-    $Scope = "/subscriptions/$SubscriptionId"
-
-    # Matched here rather than with a server-side $filter: the roles have to be examined for the data
-    # action anyway, and a filter that silently returns nothing would send this straight to creating
-    # a duplicate.
-    $Custom = Invoke-AzRest -Url "$($Base)?api-version=$($script:RoleApiVersion)&`$filter=type%20eq%20'CustomRole'" -AllowFailure
-    $Assignable = $Custom.value | ?{ $_.properties.assignableScopes | ?{ $Scope -eq $_ -or $Scope.StartsWith("$_/") } }
-
-    $Match = $Assignable | ?{ $_.properties.roleName -eq $RoleName } | Select-Object -First 1
-    if ($null -eq $Match) {
-        $Match = $Assignable | ?{ $_.properties.permissions.dataActions -contains $script:AdrIssueCertificateAction } | Select-Object -First 1
-    }
-
-    if ($null -ne $Match) {
-        Write-Host "Reusing custom role '$($Match.properties.roleName)' for ADR certificate issuance."
-        return $Match.name
-    }
-
-    $RoleId = (New-Guid).Guid
-    Write-Host "Creating custom role '$RoleName' for ADR certificate issuance."
-    Invoke-AzRest -Method PUT -Url "$Base/$($RoleId)?api-version=$($script:RoleApiVersion)" -Body @{
-        properties = @{
-            roleName = $RoleName
-            description = "Grants the DPS identity the ADR certificate-issuance data action."
-            assignableScopes = @($Scope)
-            permissions = @(@{
-                actions = @()
-                notActions = @()
-                dataActions = @($script:AdrIssueCertificateAction)
-                notDataActions = @()
-            })
-        }
-    } | Out-Null
-
-    return $RoleId
-}
 
 function New-AdrNamespace {
     <#
@@ -2722,11 +2661,11 @@ function New-AzIotTestEnvironment {
         # Contributor is granted in BOTH directions because the linking saga acts as the namespace
         # identity against the hub and the DPS, and as those resources' identities against the
         # namespace; granting it one way leaves the link reporting LinkableResourceNotReady. On top of
-        # that sit the data-plane roles: enrollment writes and device registration run as the DPS
-        # identity, ADR mirrors devices into the hub as the namespace identity, and issuing a
-        # certificate for a CSR needs the data action carried by the custom role above. The
-        # 'Azure Device Registry Onboarding' role the previous model used is not part of this.
-        $IssueCertificateRoleId = New-AdrIssueCertificateRole -SubscriptionId $AzureSubscriptionId
+        # that sit the data-plane roles: device registration runs as the DPS identity, and ADR mirrors
+        # devices into the hub as the namespace identity. Azure Device Registry Contributor is what
+        # lets the DPS write enrollments AND issue a certificate for a CSR -- it already carries the
+        # issueCertificate data action, so no custom role is needed. The 'Azure Device Registry
+        # Onboarding' role the previous model used is not part of this.
         $AdrNamespaceId = $AzureAdrNamespace.id
         $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
         $IotHubPrincipalId = $AzureIoTHub.identity.principalId
@@ -2741,8 +2680,7 @@ function New-AzIotTestEnvironment {
             @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
             @{ Assignee = $DpsPrincipalId;          Role = $script:AdrContributorRoleId;        Scope = $AdrNamespaceId },
             @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
-            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
-            @{ Assignee = $DpsPrincipalId;          Role = $IssueCertificateRoleId;             Scope = $AdrNamespaceId }
+            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id }
         ) | %{
             az role assignment create --assignee-object-id $_.Assignee --assignee-principal-type ServicePrincipal --role $_.Role --scope $_.Scope --only-show-errors | Out-Null
             Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
