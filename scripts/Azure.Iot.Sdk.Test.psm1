@@ -1699,9 +1699,13 @@ function Connect-AdrNamespace {
     # endpoint is still InProgress, and a failed endpoint is where the reason is recorded.
     $Deadline = (Get-Date).AddSeconds(900)
     while ($true) {
-        $Namespace = Invoke-AzRest -Url $Url
-        $Endpoints = @($Namespace.properties.messaging.endpoints.PSObject.Properties) + `
-                     @($Namespace.properties.provisioning.endpoints.PSObject.Properties)
+        # As in Wait-AzProvisioningState, a failed read during a poll that runs for minutes is
+        # transient and says nothing about the link, so it costs an attempt rather than the run.
+        $Namespace = Invoke-AzRest -Url $Url -AllowFailure
+        $Endpoints = if ($null -ne $Namespace) {
+            @($Namespace.properties.messaging.endpoints.PSObject.Properties) + `
+            @($Namespace.properties.provisioning.endpoints.PSObject.Properties)
+        } else { @() }
         $States = @($Endpoints | %{ $_.Value.linkingState })
 
         $Failed = @($Endpoints | ?{ $_.Value.linkingState -eq "Failed" })
@@ -1727,18 +1731,14 @@ function Connect-AdrNamespace {
     # on first read.
     if ($Namespace.properties.provisioningState -eq "Failed") {
         Write-Host "Namespace left at provisioningState=Failed after linking; reconciling."
+        # Guarded because the namespace is created without tags: piping a null property into
+        # ForEach-Object still runs the body once, with a null key.
         $Tags = @{}
-        $Namespace.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value }
+        if ($null -ne $Namespace.tags) { $Namespace.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value } }
         $Tags["AdrReconcileUtc"] = (Get-Date).ToUniversalTime().ToString("o")
         Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags } | Out-Null
 
-        $Deadline = (Get-Date).AddSeconds(300)
-        while ((Invoke-AzRest -Url $Url).properties.provisioningState -ne "Succeeded") {
-            if ((Get-Date) -ge $Deadline) {
-                throw "ADR namespace did not recover from provisioningState=Failed; device registration would fail with errorCode 403000."
-            }
-            Start-Sleep -Seconds 10
-        }
+        Wait-AzProvisioningState -Url $Url -Step "ADR namespace reconcile" -TimeoutSeconds 300
     }
 }
 
@@ -1832,8 +1832,11 @@ function Sync-DpsAdrConfiguration {
 
     Write-Host "Pushing the linked ADR namespace into the DPS data plane (tags-only update)."
     try {
+        # Guarded because the DPS is created without tags: piping a null property into ForEach-Object
+        # still runs the body once, with a null key, which would fail the sync before it is attempted.
+        $Dps = Invoke-AzRest -Url $Url
         $Tags = @{}
-        (Invoke-AzRest -Url $Url).tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value }
+        if ($null -ne $Dps.tags) { $Dps.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value } }
         $Tags["AdrDataplaneSyncUtc"] = (Get-Date).ToUniversalTime().ToString("o")
 
         Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags } | Out-Null
