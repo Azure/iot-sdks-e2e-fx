@@ -1600,7 +1600,7 @@ class TestEnvironmentInfo {
 $script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-02-preview" }
 $script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
 $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
-$script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-06-01-preview" }
+$script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-05-01-preview" }
 
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*.
 $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
