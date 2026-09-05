@@ -1610,9 +1610,6 @@ $script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERS
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*, and the data actions,
 # including the certificate issuance a CSR needs.
 $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
-# Azure Device Registry Onboarding: namespaces/write, namespaces/credentials/*. A hub registers
-# itself with the namespace as it provisions, so its identity needs to be able to write.
-$script:AdrOnboardingRoleId = "547f7f0a-69c0-4807-bd9e-0321dfb66a84"
 # IoT Hub Data Contributor: device registration and enrollment writes run as a managed identity.
 $script:IotHubDataContributorRoleId = "4fc6c259-987e-4a07-842e-c321cc9d413f"
 # Contributor.
@@ -1705,16 +1702,14 @@ function New-AdrNamespace {
 function Connect-AdrNamespace {
     <#
     .SYNOPSIS
-    Attaches a DPS to an ADR namespace as a provisioning endpoint, and waits for the link.
+    Attaches an IoT Hub and a DPS to an ADR namespace, and waits for the link to complete.
 
     .DESCRIPTION
-    Replaces the public-preview wiring, where a DPS was pointed at the namespace with
-    '--ns-resource-id'/'--ns-identity-id' as it was created. That now fails validation; the
-    relationship is expressed on the NAMESPACE instead, as an endpoint.
-
-    Only the DPS is attached here. A hub is a messaging endpoint and adds itself while it activates,
-    which is also why this has to run BEFORE the hub is created: ADR refuses a messaging endpoint
-    unless the namespace already has a provisioning one.
+    Replaces the public-preview wiring, where the hub and DPS were pointed at the namespace with
+    '--ns-resource-id'/'--ns-identity-id' as they were created. That now fails validation; the
+    relationship is expressed on the NAMESPACE instead, as endpoints: the hub as a messaging
+    endpoint, the DPS as a provisioning one. Both go in a single write, because ADR refuses a
+    messaging endpoint unless the namespace also has a provisioning one.
 
     The call returns immediately with the endpoint at linkingState=InProgress; ADR completes the link
     asynchronously. The link runs as the namespace identity, so one attempted before that identity's
@@ -1909,7 +1904,9 @@ function Sync-DpsAdrConfiguration {
     own. Remove once the DPS resource provider pushes configuration when a link commits.
     #>
     param(
-        [string]$DpsId
+        [string]$DpsId,
+        # Chooses the ARM host, so it must match the location the DPS was created in.
+        [string]$Location
     )
 
     $Url = "$(Get-DpsArmHost -Location $Location)$($DpsId)?api-version=$($script:DpsControlPlaneApiVersion)"
@@ -2708,7 +2705,7 @@ function New-AzIotTestEnvironment {
             location = $AzureLocation
             sku = @{ name = "S1"; capacity = 1 }
             identity = @{ type = "SystemAssigned" }
-            properties = @{ disableLocalAuth = $false }
+            properties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
         } | Out-Null
         Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
         $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
