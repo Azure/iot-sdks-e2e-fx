@@ -412,7 +412,11 @@ function Invoke-AzRest {
 
     $BodyFile = $null
     try {
-        $Arguments = @("rest", "--method", $Method, "--url", $Url, "--only-show-errors")
+        # The token audience is stated rather than left to be derived from the URL: the CLI only
+        # infers it for the hosts in `az cloud show`, so a regional ARM host gets no Authorization
+        # header at all and the call comes back as an authentication failure.
+        $Arguments = @("rest", "--method", $Method, "--url", $Url,
+                       "--resource", "https://management.azure.com/", "--only-show-errors")
 
         if ($null -ne $Body) {
             $BodyFile = New-TempFile
