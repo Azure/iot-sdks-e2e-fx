@@ -1620,6 +1620,50 @@ $script:ContributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 # namespace, whose identity keeps replicating; everything else fails immediately.
 $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady|AuthorizationFailed|LinkInitiateFailed|NamespaceMiTokenAcquisitionFailed|OutboundIdentityUnavailable'
 $script:AdrLinkMaxAttempts = 12
+# Whole-namespace recovery cycles: recreate and re-grant if the in-place link retries are exhausted.
+$script:AdrLinkMaxCycles = 2
+
+function Get-DpsArmHost {
+    <#
+    .SYNOPSIS
+    Returns the ARM host DPS control-plane calls go to for a location.
+
+    .DESCRIPTION
+    The DPS manifest that carries the ADR linking surface is registered regionally in the canary
+    locations, so a DPS created through the global host there does not come up with it. Everything
+    else, including the namespace and the hub, uses the global host.
+    #>
+    param([string]$Location)
+
+    if ($Location -like "*euap") {
+        return "https://$Location.management.azure.com"
+    }
+    return "https://management.azure.com"
+}
+
+function Remove-AdrNamespace {
+    <#
+    .SYNOPSIS
+    Deletes an ADR namespace and waits for it to be gone.
+
+    .DESCRIPTION
+    Recovery of last resort for a namespace whose identity never becomes usable to the linking saga.
+    Recreating it mints a fresh identity; the grants are then made against that one.
+    #>
+    param([string]$NamespaceId)
+
+    $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
+    Write-Host "Deleting ADR namespace to recover the link."
+    Invoke-AzRest -Method DELETE -Url $Url -AllowFailure | Out-Null
+
+    $Deadline = (Get-Date).AddSeconds(600)
+    while ($null -ne (Invoke-AzRest -Url $Url -AllowFailure)) {
+        if ((Get-Date) -ge $Deadline) {
+            throw "ADR namespace was not deleted within 600 seconds."
+        }
+        Start-Sleep -Seconds 10
+    }
+}
 
 function New-AdrNamespace {
     <#
@@ -1864,7 +1908,7 @@ function Sync-DpsAdrConfiguration {
         [string]$DpsId
     )
 
-    $Url = "https://management.azure.com$($DpsId)?api-version=$($script:DpsControlPlaneApiVersion)"
+    $Url = "$(Get-DpsArmHost -Location $Location)$($DpsId)?api-version=$($script:DpsControlPlaneApiVersion)"
 
     Write-Host "Pushing the linked ADR namespace into the DPS data plane (tags-only update)."
     try {
@@ -2675,7 +2719,7 @@ function New-AzIotTestEnvironment {
         # identity, which is what authenticates it to the ADR namespace. The identity cannot be added
         # afterwards: DPS rejects a managed-identity PATCH with IH400158.
         Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
-        $DpsUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
+        $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
         Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
             location = $AzureLocation
             sku = @{ name = "S1"; capacity = 1 }
@@ -2688,63 +2732,80 @@ function New-AzIotTestEnvironment {
     }
 
     if ($EnableCertificateManagement -eq $true) {
-        $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
+        # The namespace, its grants and the link are one unit, retried as one. The link runs as the
+        # namespace identity, and an identity that never becomes usable to it cannot be waited out:
+        # the recovery is to recreate the namespace, which mints a fresh one, and grant against that.
+        for ($Cycle = 1; $Cycle -le $script:AdrLinkMaxCycles; $Cycle++) {
+            $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
 
-        # Contributor is granted in BOTH directions for both resources: the link reads the hub and the
-        # DPS as the namespace identity, and reads the namespace as theirs, and a grant missing in
-        # either direction surfaces only as "the linked resource could not be read". The namespace
-        # also needs it on ITSELF, because the device-create it runs writes its own resource. On top
-        # of those sit the data-plane roles, and Azure Device Registry Contributor, which is what lets
-        # the DPS write enrollments and issue a certificate for a CSR: it already carries the
-        # issueCertificate data action, so no custom role is needed.
-        $AdrNamespaceId = $AzureAdrNamespace.id
-        $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
-        $IotHubPrincipalId = $AzureIoTHub.identity.principalId
-        $DpsPrincipalId = $AzureDps.identity.principalId
+            # Contributor is granted in BOTH directions for both resources: the link reads the hub and
+            # the DPS as the namespace identity, and reads the namespace as theirs, and a grant missing
+            # in either direction surfaces only as "the linked resource could not be read". The
+            # namespace also needs it on ITSELF, because the device-create it runs writes its own
+            # resource. On top of those sit the data-plane roles, and Azure Device Registry
+            # Contributor, which is what lets the DPS write enrollments and issue a certificate for a
+            # CSR: it already carries the issueCertificate data action, so no custom role is needed.
+            $AdrNamespaceId = $AzureAdrNamespace.id
+            $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
+            $IotHubPrincipalId = $AzureIoTHub.identity.principalId
+            $DpsPrincipalId = $AzureDps.identity.principalId
 
-        Write-Host "Assigning roles between the ADR namespace, the IoT Hub and the DPS"
-        @(
-            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureIoTHub.id },
-            @{ Assignee = $IotHubPrincipalId;       Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
-            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureDps.id },
-            @{ Assignee = $DpsPrincipalId;          Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
-            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
-            @{ Assignee = $DpsPrincipalId;          Role = $script:AdrContributorRoleId;        Scope = $AdrNamespaceId },
-            @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
-            @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id }
-        ) | %{
-            az role assignment create --assignee-object-id $_.Assignee --assignee-principal-type ServicePrincipal --role $_.Role --scope $_.Scope --only-show-errors | Out-Null
-            Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
+            Write-Host "Assigning roles between the ADR namespace, the IoT Hub and the DPS (cycle $Cycle of $($script:AdrLinkMaxCycles))"
+            @(
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureIoTHub.id },
+                @{ Assignee = $IotHubPrincipalId;       Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureDps.id },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:AdrContributorRoleId;        Scope = $AdrNamespaceId },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id }
+            ) | %{
+                az role assignment create --assignee-object-id $_.Assignee --assignee-principal-type ServicePrincipal --role $_.Role --scope $_.Scope --only-show-errors | Out-Null
+                Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
+            }
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($AdrNamespacePrincipalId)" `
+                -Scope "$($AzureIoTHub.id)" `
+                -RoleDefinitionIds @($script:ContributorRoleId, $script:IotHubDataContributorRoleId)
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($AdrNamespacePrincipalId)" `
+                -Scope "$($AzureDps.id)" `
+                -RoleDefinitionIds @($script:ContributorRoleId)
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($DpsPrincipalId)" `
+                -Scope "$($AdrNamespaceId)" `
+                -RoleDefinitionIds @($script:ContributorRoleId, $script:AdrContributorRoleId)
+
+            # Being readable is not the same as being enforced: the providers that check these grants
+            # cache them, so the link is given a head start rather than racing the first attempt
+            # against replication that has visibly only just finished. A recreated namespace starts
+            # replicating from scratch, so the head start grows with the cycle.
+            $HeadStart = 60 * $Cycle
+            Write-Host "Waiting $HeadStart seconds for the new role assignments to take effect."
+            Start-Sleep -Seconds $HeadStart
+
+            try {
+                Connect-AdrNamespace -NamespaceId $AdrNamespaceId -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id
+                break
+            }
+            catch {
+                if ($Cycle -ge $script:AdrLinkMaxCycles) {
+                    throw
+                }
+                Write-Host "Linking did not succeed ($($_.Exception.Message)); recreating the namespace and retrying."
+                Remove-AdrNamespace -NamespaceId $AdrNamespaceId
+            }
         }
-
-        Wait-AzRoleAssignment `
-            -PrincipalId "$($AdrNamespacePrincipalId)" `
-            -Scope "$($AzureIoTHub.id)" `
-            -RoleDefinitionIds @($script:ContributorRoleId, $script:IotHubDataContributorRoleId)
-
-        Wait-AzRoleAssignment `
-            -PrincipalId "$($AdrNamespacePrincipalId)" `
-            -Scope "$($AzureDps.id)" `
-            -RoleDefinitionIds @($script:ContributorRoleId)
-
-        Wait-AzRoleAssignment `
-            -PrincipalId "$($DpsPrincipalId)" `
-            -Scope "$($AdrNamespaceId)" `
-            -RoleDefinitionIds @($script:ContributorRoleId, $script:AdrContributorRoleId)
-
-        # Being readable is not the same as being enforced: the providers that check these grants
-        # cache them, so the link is given a head start rather than racing the first attempt against
-        # replication that has visibly only just finished.
-        Write-Host "Waiting 60 seconds for the new role assignments to take effect."
-        Start-Sleep -Seconds 60
-
-        Connect-AdrNamespace -NamespaceId $AdrNamespaceId -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id
 
         # After the link, so that ADR has a hub to sync the issuing CA certificate to.
         New-AdrCertificateAuthority -NamespaceId $AdrNamespaceId -Location $AzureLocation `
             -CertificateAuthorityName $AzureAdrCertificateAuthorityName -PolicyName $AzureAdrPolicyName | Out-Null
 
-        Sync-DpsAdrConfiguration -DpsId $AzureDps.id
+        Sync-DpsAdrConfiguration -DpsId $AzureDps.id -Location $AzureLocation
 
         $AzureAdrPolicy = [AdrPolicyReference]::new($AzureAdrNamespaceName, $AzureAdrCertificateAuthorityName, $AzureAdrPolicyName)
     } else {
