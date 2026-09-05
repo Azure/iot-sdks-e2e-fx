@@ -1377,6 +1377,64 @@ class ContainerRegistryInfo {
      ContainerRegistryInfo() { }
 }
 
+class AduInfo {
+    # Generation requested by the caller: 'Gen1' or 'Gen2'. Records what was
+    # asked for; the ADUv2 device flow itself is hub-generation agnostic because
+    # it runs device -> DPS -> ADR -> ADU and never touches IoT Hub.
+    [string]$Generation = $null
+
+    # Microsoft.DeviceUpdate/updateInstances
+    [string]$UpdateInstanceName = $null
+    [string]$UpdateInstanceResourceId = $null
+
+    # Microsoft.DeviceRegistry/namespaces
+    [string]$AdrNamespaceName = $null
+    [string]$AdrNamespaceResourceId = $null
+    [string]$AdrNamespacePrincipalId = $null
+
+    # ARM endpoint the ADU/ADR preview resources were created through. Canary
+    # regions are served by a REGIONAL endpoint, not the global one.
+    [string]$ArmEndpoint = $null
+    [string]$ApiVersion = $null
+    [string]$Location = $null
+
+    # DPS enrollment group the device authenticates its update calls with.
+    [string]$DpsEnrollmentGroupId = $null
+
+    [hashtable]ToHashtable() {
+        return [ordered]@{
+            Generation = $this.Generation
+            UpdateInstanceName = $this.UpdateInstanceName
+            UpdateInstanceResourceId = $this.UpdateInstanceResourceId
+            AdrNamespaceName = $this.AdrNamespaceName
+            AdrNamespaceResourceId = $this.AdrNamespaceResourceId
+            AdrNamespacePrincipalId = $this.AdrNamespacePrincipalId
+            ArmEndpoint = $this.ArmEndpoint
+            ApiVersion = $this.ApiVersion
+            Location = $this.Location
+            DpsEnrollmentGroupId = $this.DpsEnrollmentGroupId
+        }
+    }
+
+    static [AduInfo]FromHashtable([hashtable]$Hashtable) {
+        $AduInfo = [AduInfo]::new()
+        if ($null -eq $Hashtable) { return $AduInfo }
+        $AduInfo.Generation = $Hashtable.Generation
+        $AduInfo.UpdateInstanceName = $Hashtable.UpdateInstanceName
+        $AduInfo.UpdateInstanceResourceId = $Hashtable.UpdateInstanceResourceId
+        $AduInfo.AdrNamespaceName = $Hashtable.AdrNamespaceName
+        $AduInfo.AdrNamespaceResourceId = $Hashtable.AdrNamespaceResourceId
+        $AduInfo.AdrNamespacePrincipalId = $Hashtable.AdrNamespacePrincipalId
+        $AduInfo.ArmEndpoint = $Hashtable.ArmEndpoint
+        $AduInfo.ApiVersion = $Hashtable.ApiVersion
+        $AduInfo.Location = $Hashtable.Location
+        $AduInfo.DpsEnrollmentGroupId = $Hashtable.DpsEnrollmentGroupId
+        return $AduInfo
+    }
+
+    AduInfo() { }
+}
+
 class TestEnvironmentInfo {
     [string]$AzureResourceGroup = $null
 
@@ -1388,6 +1446,8 @@ class TestEnvironmentInfo {
 
     [string]$AzureAdrPolicyName = $null
 
+    [AduInfo]$Adu = [AduInfo]::new()
+
     [hashtable]ToHashtable() {
         return [ordered]@{
             AzureResourceGroup = $this.AzureResourceGroup
@@ -1395,6 +1455,7 @@ class TestEnvironmentInfo {
             Dps = ConvertTo-Hashtable -Object $this.Dps
             # TODO: add container registry
             AzureAdrPolicyName = $this.AzureAdrPolicyName
+            Adu = ConvertTo-Hashtable -Object $this.Adu
         }
     }
 
@@ -1404,6 +1465,7 @@ class TestEnvironmentInfo {
         $TestEnvironmentInfo.AzureAdrPolicyName = $Hashtable.AzureAdrPolicyName
         $TestEnvironmentInfo.IotHub = [IotHubInfo]::FromHashtable($Hashtable.IotHub)
         $TestEnvironmentInfo.Dps = [DpsInfo]::FromHashtable($Hashtable.Dps)
+        $TestEnvironmentInfo.Adu = [AduInfo]::FromHashtable($Hashtable.Adu)
         # TODO: add container registry
         return $TestEnvironmentInfo
     }
@@ -1418,6 +1480,347 @@ class TestEnvironmentInfo {
     }
 }
 
+
+
+# <[Azure Device Update (ADU) Helper Functions]>
+
+<#
+.SYNOPSIS
+Returns the ARM endpoint that serves a given Azure location.
+
+.DESCRIPTION
+Canary (EUAP) regions are served by a REGIONAL ARM endpoint, not the global one.
+The ADU/ADR preview api-version is deployed there first, and the global endpoint
+does not answer for it, so the endpoint has to follow the location.
+#>
+function Get-ArmEndpointForLocation {
+    param(
+        [Parameter(Mandatory)] [string]$Location
+    )
+
+    $Normalized = ($Location -replace '\s', '').ToLowerInvariant()
+    if ($Normalized -match 'euap$') {
+        return "https://$Normalized.management.azure.com"
+    }
+    return 'https://management.azure.com'
+}
+
+<#
+.SYNOPSIS
+Reports whether the ADU/ADR resource providers offer the required resource types
+in a location, and whether this identity can read them.
+
+.DESCRIPTION
+Diagnostic only -- it never throws. ADU is preview and is not deployed to every
+region, and the identity running CI may not be entitled to it. Calling this
+before provisioning turns "the deployment mysteriously failed" into a specific,
+readable statement about what is and is not available.
+#>
+function Test-AzIotAduRegionSupport {
+    param(
+        [Parameter(Mandatory)] [string]$Location
+    )
+
+    $Result = [ordered]@{
+        Location                  = $Location
+        ArmEndpoint               = (Get-ArmEndpointForLocation -Location $Location)
+        UpdateInstancesLocations  = @()
+        AdrNamespacesLocations    = @()
+        UpdateInstancesSupported  = $false
+        AdrNamespacesSupported    = $false
+    }
+
+    $Normalized = ($Location -replace '\s', '').ToLowerInvariant()
+
+    foreach ($Probe in @(
+            @{ Namespace = 'Microsoft.DeviceUpdate';   Type = 'updateInstances'; Key = 'UpdateInstances' },
+            @{ Namespace = 'Microsoft.DeviceRegistry'; Type = 'namespaces';      Key = 'AdrNamespaces' })) {
+
+        $Locations = @()
+        try {
+            $Provider = az provider show --namespace $Probe.Namespace --only-show-errors -o json 2>$null | ConvertFrom-Json
+            if ($null -ne $Provider) {
+                $ResourceType = @($Provider.resourceTypes | Where-Object { $_.resourceType -eq $Probe.Type }) | Select-Object -First 1
+                if ($null -ne $ResourceType) {
+                    $Locations = @($ResourceType.locations)
+                }
+            }
+        } catch {
+            Write-Host "  Could not read provider $($Probe.Namespace): $($_.Exception.Message)"
+        }
+
+        $Result["$($Probe.Key)Locations"] = $Locations
+        $Result["$($Probe.Key)Supported"] = [bool](@($Locations | Where-Object {
+            ($_ -replace '\s', '').ToLowerInvariant() -eq $Normalized
+        }).Count -gt 0)
+    }
+
+    Write-Host "ADU region support for '$Location':"
+    Write-Host "  ARM endpoint                       : $($Result.ArmEndpoint)"
+    Write-Host "  Microsoft.DeviceUpdate/updateInstances supported: $($Result.UpdateInstancesSupported)"
+    Write-Host "    regions: $($Result.UpdateInstancesLocations -join ', ')"
+    Write-Host "  Microsoft.DeviceRegistry/namespaces supported   : $($Result.AdrNamespacesSupported)"
+    Write-Host "    regions: $($Result.AdrNamespacesLocations -join ', ')"
+
+    return $Result
+}
+
+<#
+.SYNOPSIS
+Issues an ARM REST call through the Azure CLI and returns the parsed body.
+#>
+function Invoke-AzIotArmRest {
+    param(
+        [Parameter(Mandatory)] [string]$Method,
+        [Parameter(Mandatory)] [string]$Uri,
+        [object]$BodyObject = $null,
+        [string]$Operation = 'ARM request',
+        [switch]$AllowNotFound
+    )
+
+    $Arguments = @('rest', '--method', $Method, '--url', $Uri, '--resource', 'https://management.azure.com/', '--only-show-errors', '-o', 'json')
+
+    $BodyFile = $null
+    if ($null -ne $BodyObject) {
+        $BodyFile = New-TempFile
+        ($BodyObject | ConvertTo-Json -Depth 20) | Set-Content -LiteralPath $BodyFile -Encoding utf8
+        $Arguments += @('--body', "@$BodyFile")
+    }
+
+    try {
+        $Output = @(& az @Arguments 2>&1)
+        $ExitCode = $LASTEXITCODE
+        $Text = ($Output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+
+        if ($ExitCode -ne 0) {
+            if ($AllowNotFound -and ($Text -match '(?i)\bResourceNotFound\b|\bNotFound\b|\b404\b')) {
+                return $null
+            }
+            throw "$Operation failed (az exit code $ExitCode): $Text"
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Text)) {
+            return $null
+        }
+        return $Text | ConvertFrom-Json
+    }
+    finally {
+        if ($null -ne $BodyFile -and (Test-Path -LiteralPath $BodyFile)) {
+            Remove-Item -LiteralPath $BodyFile -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+Polls an ARM resource until its provisioningState leaves the transient states.
+#>
+function Wait-AzIotArmProvisioning {
+    param(
+        [Parameter(Mandatory)] [string]$Uri,
+        [Parameter(Mandatory)] [string]$ResourceLabel,
+        [int]$TimeoutSeconds = 900,
+        [int]$PollSeconds = 15
+    )
+
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $Resource = $null
+
+    while ((Get-Date) -lt $Deadline) {
+        $Resource = Invoke-AzIotArmRest -Method get -Uri $Uri -Operation "Read $ResourceLabel"
+        $State = $Resource.properties.provisioningState
+
+        if ([string]::IsNullOrWhiteSpace($State) -or $State -eq 'Succeeded') {
+            return $Resource
+        }
+        if ($State -eq 'Failed' -or $State -eq 'Canceled') {
+            throw "$ResourceLabel provisioning ended in state '$State'."
+        }
+
+        Write-Host "  $ResourceLabel is '$State'; waiting $PollSeconds s ..."
+        Start-Sleep -Seconds $PollSeconds
+    }
+
+    throw "$ResourceLabel did not reach a terminal provisioning state within $TimeoutSeconds seconds."
+}
+
+<#
+.SYNOPSIS
+Creates a role assignment through ARM REST, tolerating an existing one.
+#>
+function New-AzIotArmRoleAssignment {
+    param(
+        [Parameter(Mandatory)] [string]$ArmEndpoint,
+        [Parameter(Mandatory)] [string]$Scope,
+        [Parameter(Mandatory)] [string]$PrincipalId,
+        [Parameter(Mandatory)] [string]$RoleDefinitionId,
+        [Parameter(Mandatory)] [string]$SubscriptionId,
+        [string]$PrincipalType = 'ServicePrincipal',
+        [string]$RoleApiVersion = '2022-04-01',
+        [string]$Operation = 'role assignment'
+    )
+
+    # Deterministic name so a re-run reuses the assignment instead of creating a
+    # duplicate (ARM rejects a second assignment of the same role+principal+scope
+    # under a different name with RoleAssignmentExists).
+    $Seed = "$Scope|$PrincipalId|$RoleDefinitionId"
+    $Sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $Hash = $Sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Seed))
+    } finally {
+        $Sha.Dispose()
+    }
+    $NameGuid = [guid]::new($Hash[0..15]).ToString()
+
+    $Uri = "$ArmEndpoint$Scope/providers/Microsoft.Authorization/roleAssignments/$NameGuid`?api-version=$RoleApiVersion"
+    $Body = [ordered]@{
+        properties = [ordered]@{
+            principalId      = $PrincipalId
+            principalType    = $PrincipalType
+            roleDefinitionId = "/subscriptions/$SubscriptionId/providers/Microsoft.Authorization/roleDefinitions/$RoleDefinitionId"
+        }
+    }
+
+    try {
+        return Invoke-AzIotArmRest -Method put -Uri $Uri -BodyObject $Body -Operation "Create $Operation"
+    }
+    catch {
+        if ($_.Exception.Message -match '(?i)RoleAssignmentExists') {
+            Write-Host "  $Operation already exists; continuing."
+            return $null
+        }
+        throw
+    }
+}
+
+<#
+.SYNOPSIS
+Provisions the Azure Device Update resources an ADUv2 device test needs.
+
+.DESCRIPTION
+Creates, in this order:
+
+  1. Microsoft.DeviceUpdate/updateInstances  -- the update instance (ADU account)
+  2. Microsoft.DeviceRegistry/namespaces     -- the ADR namespace, with a
+                                                SystemAssigned identity
+  3. Device Update Contributor + Administrator on the update instance, granted to
+     the namespace identity so ADR can drive ADU
+
+Both resources are created through ARM REST rather than `az iot adr`, because the
+preview api-version carries fields the shipped CLI extension does not model.
+
+The device side of ADUv2 goes device -> DPS -> ADR -> ADU and never touches IoT
+Hub, so this is independent of the IoT Hub generation; -EnableADU records the
+generation the caller asked for but provisions the same resources either way.
+#>
+function New-AzIotAduResources {
+    param(
+        [Parameter(Mandatory)] [string]$ResourceGroup,
+        [Parameter(Mandatory)] [string]$AzureSubscriptionId,
+        [Parameter(Mandatory)] [string]$AzureLocation,
+        [Parameter(Mandatory)] [string]$Generation,
+        [string]$UpdateInstanceName = $null,
+        [string]$AdrNamespaceName = $null,
+        [string]$ApiVersion = '2026-11-02-preview',
+        [Hashtable]$Tags = $null
+    )
+
+    # Device Update Contributor: read/write the update instance's content.
+    $DeviceUpdateContributorRoleId = 'f82fbe13-0f98-4809-af81-b82c343db82f'
+    # Device Update Administrator: full management of the update instance.
+    $DeviceUpdateAdministratorRoleId = '02ca0879-e8e4-47a5-a61e-5c618b76e64a'
+
+    if ([string]::IsNullOrWhiteSpace($UpdateInstanceName)) {
+        $UpdateInstanceName = "adu-$(New-GuidString -NoDashes -MaxLength 20)"
+    }
+    if ([string]::IsNullOrWhiteSpace($AdrNamespaceName)) {
+        $AdrNamespaceName = "adu-ns-$(New-GuidString -NoDashes -MaxLength 16)"
+    }
+
+    $ArmEndpoint = Get-ArmEndpointForLocation -Location $AzureLocation
+
+    $AduInfo = [AduInfo]::new()
+    $AduInfo.Generation = $Generation
+    $AduInfo.ArmEndpoint = $ArmEndpoint
+    $AduInfo.ApiVersion = $ApiVersion
+    $AduInfo.Location = $AzureLocation
+    $AduInfo.UpdateInstanceName = $UpdateInstanceName
+    $AduInfo.AdrNamespaceName = $AdrNamespaceName
+
+    Write-Host "Provisioning Azure Device Update resources (generation=$Generation, location=$AzureLocation)."
+    Write-Host "  ARM endpoint: $ArmEndpoint"
+    Write-Host "  api-version : $ApiVersion"
+
+    # Surface an unsupported region as a clear message rather than an opaque ARM
+    # error part-way through provisioning.
+    $Support = Test-AzIotAduRegionSupport -Location $AzureLocation
+    if (-not $Support.UpdateInstancesSupported) {
+        Write-Host "WARNING: Microsoft.DeviceUpdate/updateInstances does not advertise '$AzureLocation'. Attempting anyway."
+    }
+    if (-not $Support.AdrNamespacesSupported) {
+        Write-Host "WARNING: Microsoft.DeviceRegistry/namespaces does not advertise '$AzureLocation'. Attempting anyway."
+    }
+
+    $ResourceBase = "/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers"
+    $UpdateInstanceResourceId = "$ResourceBase/Microsoft.DeviceUpdate/updateInstances/$UpdateInstanceName"
+    $AdrNamespaceResourceId = "$ResourceBase/Microsoft.DeviceRegistry/namespaces/$AdrNamespaceName"
+
+    $AduInfo.UpdateInstanceResourceId = $UpdateInstanceResourceId
+    $AduInfo.AdrNamespaceResourceId = $AdrNamespaceResourceId
+
+    $UpdateInstanceUri = "$ArmEndpoint$UpdateInstanceResourceId`?api-version=$ApiVersion"
+    $AdrNamespaceUri = "$ArmEndpoint$AdrNamespaceResourceId`?api-version=$ApiVersion"
+
+    # 1. The update instance.
+    Write-Host "Creating ADU update instance ($UpdateInstanceName)."
+    $UpdateInstanceBody = [ordered]@{ location = $AzureLocation }
+    if ($null -ne $Tags -and $Tags.Count -gt 0) {
+        $UpdateInstanceBody['tags'] = $Tags
+    }
+    Invoke-AzIotArmRest -Method put -Uri $UpdateInstanceUri -BodyObject $UpdateInstanceBody `
+        -Operation "Create ADU update instance ($UpdateInstanceName)" | Out-Null
+    Wait-AzIotArmProvisioning -Uri $UpdateInstanceUri -ResourceLabel "ADU update instance '$UpdateInstanceName'" | Out-Null
+
+    # 2. The ADR namespace, with the identity ADU authorizes.
+    Write-Host "Creating ADR namespace ($AdrNamespaceName)."
+    $AdrNamespaceBody = [ordered]@{
+        location   = $AzureLocation
+        identity   = @{ type = 'SystemAssigned' }
+        properties = @{}
+    }
+    if ($null -ne $Tags -and $Tags.Count -gt 0) {
+        $AdrNamespaceBody['tags'] = $Tags
+    }
+    Invoke-AzIotArmRest -Method put -Uri $AdrNamespaceUri -BodyObject $AdrNamespaceBody `
+        -Operation "Create ADR namespace ($AdrNamespaceName)" | Out-Null
+    $AdrNamespace = Wait-AzIotArmProvisioning -Uri $AdrNamespaceUri -ResourceLabel "ADR namespace '$AdrNamespaceName'"
+
+    $AdrNamespacePrincipalId = $AdrNamespace.identity.principalId
+    if ([string]::IsNullOrWhiteSpace($AdrNamespacePrincipalId)) {
+        # The identity can lag the resource; re-read once before giving up.
+        $AdrNamespace = Invoke-AzIotArmRest -Method get -Uri $AdrNamespaceUri -Operation 'Re-read ADR namespace identity'
+        $AdrNamespacePrincipalId = $AdrNamespace.identity.principalId
+    }
+    if ([string]::IsNullOrWhiteSpace($AdrNamespacePrincipalId)) {
+        throw "ADR namespace '$AdrNamespaceName' has no identity.principalId; ADU cannot be linked to it."
+    }
+    $AduInfo.AdrNamespacePrincipalId = $AdrNamespacePrincipalId
+
+    # 3. Let the namespace identity drive the update instance.
+    Write-Host "Granting the ADR namespace identity access to the update instance."
+    New-AzIotArmRoleAssignment -ArmEndpoint $ArmEndpoint -Scope $UpdateInstanceResourceId `
+        -PrincipalId $AdrNamespacePrincipalId -RoleDefinitionId $DeviceUpdateContributorRoleId `
+        -SubscriptionId $AzureSubscriptionId -Operation 'Device Update Contributor for the ADR namespace' | Out-Null
+    New-AzIotArmRoleAssignment -ArmEndpoint $ArmEndpoint -Scope $UpdateInstanceResourceId `
+        -PrincipalId $AdrNamespacePrincipalId -RoleDefinitionId $DeviceUpdateAdministratorRoleId `
+        -SubscriptionId $AzureSubscriptionId -Operation 'Device Update Administrator for the ADR namespace' | Out-Null
+
+    Write-Host "Azure Device Update resources are provisioned."
+    Write-Host "  update instance: $UpdateInstanceResourceId"
+    Write-Host "  ADR namespace  : $AdrNamespaceResourceId"
+
+    return $AduInfo
+}
 
 # <[Azure DPS Helper Functions]>
 
@@ -1973,7 +2376,16 @@ function New-AzIotTestEnvironment {
         [switch]$EnableFileUpload,
         [switch]$NoDps,
         [switch]$EnableCertificateManagement,
-        [switch]$AddContainerRegistry
+        [switch]$AddContainerRegistry,
+        # None | Gen1 | Gen2. Anything other than None provisions the Azure
+        # Device Update resources (update instance + ADR namespace + role
+        # assignments). The ADUv2 device flow runs device -> DPS -> ADR -> ADU
+        # and never touches IoT Hub, so it is hub-generation agnostic: the value
+        # is recorded on the returned info object but does not change what is
+        # created. Kept as a string rather than a switch because callers already
+        # pass a generation.
+        [ValidateSet('None', 'Gen1', 'Gen2')]
+        [string]$EnableADU = 'None'
     )
 
     $IotHubFqdn = "$($IotHubName).$($IotHubDomainName)"
@@ -2342,6 +2754,24 @@ function New-AzIotTestEnvironment {
         Stop-OnError -Step "Get DPS Connection String"
 
         $TestEnvInfo.Dps.RootCaCertificates += $DpsRootCertificate
+    }
+
+    if ($EnableADU -ne 'None') {
+        $TestEnvInfo.Adu = New-AzIotAduResources `
+            -ResourceGroup $ResourceGroup `
+            -AzureSubscriptionId $AzureSubscriptionId `
+            -AzureLocation $AzureLocation `
+            -Generation $EnableADU `
+            -Tags $ResourceGroupTags
+
+        # The device authenticates its update calls with the DPS enrollment-group
+        # credential, so record which group a test should derive its key from.
+        # The key itself is NOT copied here: it stays on the enrollment-group
+        # entry, and a device derives its own per-registration key from it.
+        $AduEnrollmentGroup = @($TestEnvInfo.Dps.Enrollments.GroupSymmetricKey) | Select-Object -First 1
+        if ($null -ne $AduEnrollmentGroup) {
+            $TestEnvInfo.Adu.DpsEnrollmentGroupId = $AduEnrollmentGroup.Id
+        }
     }
 
     return $TestEnvInfo
@@ -3972,3 +4402,6 @@ Export-ModuleMember -Function New-AzIotHortonTestConfig
 Export-ModuleMember -Function Test-SubmoduleConsistency
 
 
+Export-ModuleMember -Function Get-ArmEndpointForLocation
+Export-ModuleMember -Function Test-AzIotAduRegionSupport
+Export-ModuleMember -Function New-AzIotAduResources
