@@ -406,6 +406,10 @@ function Invoke-AzRest {
         [switch]$AllowFailure
     )
 
+    if ($Url -notmatch 'api-version=[^&\s]+') {
+        throw "URL is missing an api-version: $Url"
+    }
+
     $BodyFile = $null
     try {
         $Arguments = @("rest", "--method", $Method, "--url", $Url, "--only-show-errors")
@@ -1597,6 +1601,7 @@ $script:AdrNamespaceTags = @{ useMiSdk = "true" }
 $script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-02-preview" }
 $script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
 $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
+$script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-05-01-preview" }
 
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*, and the data actions,
 # including the certificate issuance a CSR needs.
