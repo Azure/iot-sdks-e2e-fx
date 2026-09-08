@@ -1810,8 +1810,9 @@ function Connect-AdrNamespace {
     # on first read.
     if ($Namespace.properties.provisioningState -eq "Failed") {
         Write-Host "Namespace left at provisioningState=Failed after linking; reconciling."
-        # Guarded because the namespace is created without tags: piping a null property into
-        # ForEach-Object still runs the body once, with a null key.
+        # This module always creates the namespace with tags, but a namespace it merely found could
+        # have none, and piping a null property into ForEach-Object still runs the body once, with a
+        # null key. Guarded so the reconcile does not fail on one.
         $Tags = @{}
         if ($null -ne $Namespace.tags) { $Namespace.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value } }
         $Tags["AdrReconcileUtc"] = (Get-Date).ToUniversalTime().ToString("o")
