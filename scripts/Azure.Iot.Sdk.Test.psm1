@@ -277,7 +277,13 @@ function Invoke-WithRetry {
                 # Hand the command's own exit code to Stop-OnError so the failure
                 # is reported exactly like a non-retrying call site.
                 $global:LASTEXITCODE = if ($ExitCode -ne 0) { $ExitCode } else { 1 }
-                Stop-OnError -Step $Step -Throw:$ThrowOnFailure
+                if ($ThrowOnFailure) {
+                    # The error text goes in the exception, not just the log. A caller that recovers
+                    # from a failure has to recognise WHICH failure it was, and the step name and an
+                    # exit code do not say; the reason is only in what the command wrote to stderr.
+                    throw "ERROR: `"$Step`" failed (exit code $LASTEXITCODE): $(($StdErr, $Caught | ?{ $_ }) -join ' ')".Trim()
+                }
+                Stop-OnError -Step $Step
                 return $null
             }
 
