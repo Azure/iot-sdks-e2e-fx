@@ -1837,15 +1837,26 @@ function Connect-AdrNamespace {
             break
         }
 
-        $FailedCode = $Failed[0].Value.linkingError.code
-        if ($FailedCode -notmatch $script:AdrRolePropagationPattern -or $Attempt -eq $script:AdrLinkMaxAttempts) {
-            throw "ADR namespace link failed for endpoint '$($Failed[0].Name)': $($Failed[0].Value.linkingError | ConvertTo-Json -Depth 5 -Compress)"
+        # Every endpoint is reported, not just the first failure. Which endpoint failed and which
+        # succeeded is the first thing asked of a link failure, and naming only one leaves it
+        # ambiguous whether the others were fine or simply not mentioned.
+        $Summary = ($Endpoints | %{
+            $Code = $_.Value.linkingError.code
+            "$($_.Name)=$($_.Value.linkingState)$(if ($Code) { " ($Code)" })"
+        }) -join ', '
+
+        # A permanent failure on ANY endpoint ends it. Judging only the first would retry a
+        # recoverable hub error while a permanent DPS one went unmentioned until the budget ran out.
+        $Permanent = @($Failed | ?{ $_.Value.linkingError.code -notmatch $script:AdrRolePropagationPattern })
+        if ($Permanent.Count -gt 0 -or $Attempt -eq $script:AdrLinkMaxAttempts) {
+            $Detail = ($Failed | %{ "$($_.Name): $($_.Value.linkingError | ConvertTo-Json -Depth 5 -Compress)" }) -join "; "
+            throw "ADR namespace link failed. Endpoints: $Summary. Errors: $Detail"
         }
 
         # Grows with each attempt, to a cap: each re-submission actively probes whether the grants
         # have taken effect, so several short waits beat one long blind sleep.
         $RetryWait = [Math]::Min(60, 30 * $Attempt)
-        Write-Host "Link endpoint '$($Failed[0].Name)' failed with $FailedCode while the namespace role assignments replicate; re-submitting in $RetryWait seconds."
+        Write-Host "Link not complete ($Summary) while the namespace role assignments replicate; re-submitting in $RetryWait seconds."
         Start-Sleep -Seconds $RetryWait
     }
 
