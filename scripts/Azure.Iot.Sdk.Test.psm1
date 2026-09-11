@@ -1805,10 +1805,12 @@ function Connect-AdrNamespace {
             # As in Wait-AzProvisioningState, a failed read during a poll that runs for minutes is
             # transient and says nothing about the link, so it costs an attempt rather than the run.
             $Namespace = Invoke-AzRest -Url $Url -AllowFailure
-            $Endpoints = if ($null -ne $Namespace) {
-                @($Namespace.properties.messaging.endpoints.PSObject.Properties) + `
-                @($Namespace.properties.provisioning.endpoints.PSObject.Properties)
-            } else { @() }
+            # Each group is read separately and nulls are dropped: an ABSENT group still yields one
+            # entry when enumerated, so a missing DPS endpoint would otherwise be counted as though
+            # it were present and reported as an unnamed endpoint with no state.
+            $Messaging = @($Namespace.properties.messaging.endpoints.PSObject.Properties | ?{ $null -ne $_ })
+            $Provisioning = @($Namespace.properties.provisioning.endpoints.PSObject.Properties | ?{ $null -ne $_ })
+            $Endpoints = $Messaging + $Provisioning
             $States = @($Endpoints | %{ $_.Value.linkingState })
             $Failed = @($Endpoints | ?{ $_.Value.linkingState -eq "Failed" })
 
@@ -1818,10 +1820,11 @@ function Connect-AdrNamespace {
                 break
             }
 
-            # Both endpoints are required, not merely the ones that happen to have been returned:
-            # if ADR omits or drops one, a single Succeeded endpoint would otherwise be read as a
-            # finished link and setup would go on to create the CA and enrollments unlinked.
-            if ($States.Count -ge 2 -and @($States | ?{ $_ -ne "Succeeded" }).Count -eq 0) {
+            # The link is complete only when BOTH groups carry an endpoint and every one of them
+            # Succeeded. Counting endpoints alone is not enough: ADR can return the hub and omit the
+            # DPS, and setup would then create the CA and the enrollments against an unlinked DPS.
+            if ($Messaging.Count -gt 0 -and $Provisioning.Count -gt 0 -and
+                @($States | ?{ $_ -ne "Succeeded" }).Count -eq 0) {
                 break
             }
 
@@ -1840,10 +1843,14 @@ function Connect-AdrNamespace {
         # Every endpoint is reported, not just the first failure. Which endpoint failed and which
         # succeeded is the first thing asked of a link failure, and naming only one leaves it
         # ambiguous whether the others were fine or simply not mentioned.
-        $Summary = ($Endpoints | %{
-            $Code = $_.Value.linkingError.code
-            "$($_.Name)=$($_.Value.linkingState)$(if ($Code) { " ($Code)" })"
-        }) -join ', '
+        $Summary = (@(
+            $(if ($Messaging.Count -eq 0) { "messaging=<no endpoint>" })
+            $(if ($Provisioning.Count -eq 0) { "provisioning=<no endpoint>" })
+            $($Endpoints | %{
+                $Code = $_.Value.linkingError.code
+                "$($_.Name)=$($_.Value.linkingState)$(if ($Code) { " ($Code)" })"
+            })
+        ) | ?{ $_ }) -join ', '
 
         # A permanent failure on ANY endpoint ends it. Judging only the first would retry a
         # recoverable hub error while a permanent DPS one went unmentioned until the budget ran out.
