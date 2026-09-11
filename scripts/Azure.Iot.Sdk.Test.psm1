@@ -226,7 +226,10 @@ function Invoke-WithRetry {
         [Parameter(Mandatory = $true)][scriptblock]$Command,
         [Parameter(Mandatory = $true)][string]$RetryOnPattern,
         [int]$MaxAttempts = 4,
-        [int]$InitialDelaySeconds = 30
+        [int]$InitialDelaySeconds = 30,
+        # Throw on final failure instead of ending the run. Needed by callers that recover from the
+        # failure themselves; without it Stop-OnError exits the host and their catch never runs.
+        [switch]$ThrowOnFailure
     )
 
     $Delay = $InitialDelaySeconds
@@ -274,7 +277,7 @@ function Invoke-WithRetry {
                 # Hand the command's own exit code to Stop-OnError so the failure
                 # is reported exactly like a non-retrying call site.
                 $global:LASTEXITCODE = if ($ExitCode -ne 0) { $ExitCode } else { 1 }
-                Stop-OnError -Step $Step
+                Stop-OnError -Step $Step -Throw:$ThrowOnFailure
                 return $null
             }
 
@@ -1793,7 +1796,9 @@ function Connect-AdrNamespace {
     for ($Attempt = 1; $Attempt -le $script:AdrLinkMaxAttempts; $Attempt++) {
         Write-Host "Linking IoT Hub and DPS to ADR namespace (attempt $Attempt of $($script:AdrLinkMaxAttempts))"
         # Retries a link REJECTED outright; an accepted link that later fails is handled below.
-        Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" `
+        # Throws rather than exiting: a rejected link is recoverable by the cycle around this, and
+        # Stop-OnError would otherwise end the run before the catch could see it.
+        Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" -ThrowOnFailure `
             -RetryOnPattern "$($script:AdrRolePropagationPattern)|$($script:ArmTransientPattern)" -MaxAttempts 3 -Command {
             Invoke-AzRest -Method PUT -Url $Url -Body $LinkBody
         } | Out-Null
@@ -2780,20 +2785,28 @@ function New-AzIotTestEnvironment {
     }
 
     if ($NoDps -eq $false) {
-        # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
-        # identity, which is what authenticates it to the ADR namespace. The identity cannot be added
-        # afterwards: DPS rejects a managed-identity PATCH with IH400158.
-        Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
-        $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
-        Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
-            location = $AzureLocation
-            sku = @{ name = "S1"; capacity = 1 }
-            identity = @{ type = "SystemAssigned" }
-            properties = @{}
-        } | Out-Null
-        Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName)" -TimeoutSeconds 1200
-        # Re-read: idScope and the identity's principalId are populated as it provisions.
-        $AzureDps = Invoke-AzRest -Url $DpsUrl
+        if ($EnableCertificateManagement -eq $true) {
+            # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
+            # identity, which is what authenticates it to the ADR namespace. The identity cannot be
+            # added afterwards: DPS rejects a managed-identity PATCH with IH400158. Confined to this
+            # branch so ordinary provisioning keeps the CLI create and does not take a dependency on
+            # a preview api-version it has no use for.
+            Write-Host "Creating Azure Device Provisioning Service ($DpsName, with certificate management support)."
+            $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
+            Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
+                location = $AzureLocation
+                sku = @{ name = "S1"; capacity = 1 }
+                identity = @{ type = "SystemAssigned" }
+                properties = @{}
+            } | Out-Null
+            Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName)" -TimeoutSeconds 1200
+            # Re-read: idScope and the identity's principalId are populated as it provisions.
+            $AzureDps = Invoke-AzRest -Url $DpsUrl
+        } else {
+            Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
+            $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
+            Stop-OnError -Step "Create Device Provisioning Service"
+        }
     }
 
     if ($EnableCertificateManagement -eq $true) {
