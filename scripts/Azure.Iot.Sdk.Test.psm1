@@ -452,6 +452,31 @@ function Invoke-AzRest {
     }
 }
 
+function Invoke-AzResourceProbe {
+    <#
+    .SYNOPSIS
+    Reports whether an ARM resource is 'Present', 'Absent', or 'Unknown'.
+
+    .DESCRIPTION
+    A failed read and a resource that does not exist look identical to a caller that only checks for
+    a result, which makes a transient failure indistinguishable from a deletion having completed.
+    This separates the two: only a 404 (or an explicit not-found) is 'Absent'; any other failure is
+    'Unknown', so a caller can keep waiting instead of concluding.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Url)
+
+    $Output = az rest --method GET --url $Url --resource "https://management.azure.com/" --only-show-errors 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        return "Present"
+    }
+    $global:LASTEXITCODE = 0
+
+    if ("$Output" -match 'ResourceNotFound|NotFound|\(404\)|was not found') {
+        return "Absent"
+    }
+    return "Unknown"
+}
+
 function Wait-AzProvisioningState {
     <#
     .SYNOPSIS
@@ -1664,10 +1689,17 @@ function Remove-AdrNamespace {
     Write-Host "Deleting ADR namespace to recover the link."
     Invoke-AzRest -Method DELETE -Url $Url -AllowFailure | Out-Null
 
+    # Confirm the namespace is GONE rather than merely unreadable: a transient ARM failure also
+    # yields no resource, and treating that as "deleted" lets the next create race a namespace that
+    # still exists. `az group exists`-style existence is read separately from the call succeeding.
     $Deadline = (Get-Date).AddSeconds(600)
-    while ($null -ne (Invoke-AzRest -Url $Url -AllowFailure)) {
+    while ($true) {
+        $Probe = Invoke-AzResourceProbe -Url $Url
+        if ($Probe -eq "Absent") {
+            return
+        }
         if ((Get-Date) -ge $Deadline) {
-            throw "ADR namespace was not deleted within 600 seconds."
+            throw "ADR namespace was not confirmed deleted within 600 seconds (last probe: $Probe)."
         }
         Start-Sleep -Seconds 10
     }
@@ -1732,7 +1764,10 @@ function Connect-AdrNamespace {
         [string]$NamespaceId,
         [string]$Location,
         [string]$IotHubId,
-        [string]$DpsId
+        [string]$DpsId,
+        # How long one attempt waits for the endpoints to settle. Parameterised so a test can drive
+        # the timeout path without waiting out the real budget.
+        [int]$LinkTimeoutSeconds = 900
     )
 
     $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
@@ -1765,7 +1800,7 @@ function Connect-AdrNamespace {
 
         # Endpoint linkingState is the source of truth: the namespace itself can read Succeeded while
         # an endpoint is still InProgress, and a failed endpoint is where the reason is recorded.
-        $Deadline = (Get-Date).AddSeconds(900)
+        $Deadline = (Get-Date).AddSeconds($LinkTimeoutSeconds)
         while ($true) {
             # As in Wait-AzProvisioningState, a failed read during a poll that runs for minutes is
             # transient and says nothing about the link, so it costs an attempt rather than the run.
@@ -1783,12 +1818,15 @@ function Connect-AdrNamespace {
                 break
             }
 
-            if ($States.Count -gt 0 -and @($States | ?{ $_ -ne "Succeeded" }).Count -eq 0) {
+            # Both endpoints are required, not merely the ones that happen to have been returned:
+            # if ADR omits or drops one, a single Succeeded endpoint would otherwise be read as a
+            # finished link and setup would go on to create the CA and enrollments unlinked.
+            if ($States.Count -ge 2 -and @($States | ?{ $_ -ne "Succeeded" }).Count -eq 0) {
                 break
             }
 
             if ((Get-Date) -ge $Deadline) {
-                throw "ADR namespace link did not complete within 900 seconds (endpoint states: $($States -join ', '))."
+                throw "ADR namespace link did not complete within $LinkTimeoutSeconds seconds (endpoint states: $($States -join ', '))."
             }
 
             Write-Host "Waiting for ADR namespace link (endpoint states: $($States -join ', '))."
@@ -2802,7 +2840,12 @@ function New-AzIotTestEnvironment {
                 break
             }
             catch {
-                if ($Cycle -ge $script:AdrLinkMaxCycles) {
+                # Recreating is destructive and only helps the one case it exists for: an identity
+                # that never becomes usable to the link. Connect-AdrNamespace already raises
+                # everything else on the spot -- a rejected schema, a resource error, a timeout --
+                # and those are surfaced rather than answered by deleting the namespace.
+                if ($Cycle -ge $script:AdrLinkMaxCycles -or
+                    $_.Exception.Message -notmatch $script:AdrRolePropagationPattern) {
                     throw
                 }
                 Write-Host "Linking did not succeed ($($_.Exception.Message)); recreating the namespace and retrying."
