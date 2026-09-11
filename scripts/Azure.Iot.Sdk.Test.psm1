@@ -2030,7 +2030,7 @@ function New-DpsServiceSasToken {
         $Hmac.Dispose()
     }
 
-    return "SharedAccessSignature sr=$([uri]::EscapeDataString($ServiceHost))&sig=$([uri]::EscapeDataString($Signature))&se=$Expiry&skn=$($Parts['SharedAccessKeyName'])"
+    return "SharedAccessSignature sr=$([uri]::EscapeDataString($ServiceHost))&sig=$([uri]::EscapeDataString($Signature))&se=$Expiry&skn=$([uri]::EscapeDataString($Parts['SharedAccessKeyName']))"
 }
 
 function Set-DpsEnrollment {
@@ -2067,7 +2067,7 @@ function Set-DpsEnrollment {
     Stop-OnError -Step "Get DPS connection string ($DpsName)"
 
     $ServiceHost = ($ConnectionString.Split(';') | ?{ $_ -like "HostName=*" }).Split('=', 2)[1]
-    $Url = "https://$ServiceHost/$Collection/$($EnrollmentId)?api-version=$($script:DpsEnrollmentApiVersion)"
+    $Url = "https://$ServiceHost/$Collection/$([uri]::EscapeDataString($EnrollmentId))?api-version=$($script:DpsEnrollmentApiVersion)"
     $Headers = @(
         "Authorization=$(New-DpsServiceSasToken -ConnectionString $ConnectionString)",
         "Content-Type=application/json"
@@ -3091,12 +3091,12 @@ function Get-AzIotTestEnvironment {
 
     if ([string]::IsNullOrWhiteSpace($IotHubName)) {
         if ($LinkedIotHubNames.Count -eq 0) {
-            throw "Device Provisioning Service ($DpsName) does not have linked IoT hubs"
+            throw "Device Provisioning Service ($($AzureDps.name)) does not have linked IoT hubs"
         }
 
         $IotHubName = $LinkedIotHubNames[0]
     } elseif ($IotHubName -notin $LinkedIotHubNames) {
-        throw "Iot Hub $IotHubName is not linked to $DpsName"
+        throw "IoT Hub $IotHubName is not linked to $($AzureDps.name)"
     }
 
     $AzureIoTHub = az iot hub show --resource-group "$ResourceGroup" --name "$IotHubName" | ConvertFrom-Json
