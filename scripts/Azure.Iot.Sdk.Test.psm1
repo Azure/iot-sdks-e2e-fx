@@ -1620,6 +1620,13 @@ $script:ContributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 # settling an endpoint to Failed after the fact. Both are recovered by re-submitting the same
 # namespace, whose identity keeps replicating; everything else fails immediately.
 $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady|AuthorizationFailed|LinkInitiateFailed|NamespaceMiTokenAcquisitionFailed|OutboundIdentityUnavailable'
+
+# ARM itself can answer a link submission with a transient failure -- a 503 'Our services aren't
+# available right now' has ended a run mid-way through the retries. It says nothing about the link,
+# so it is retried rather than failing the run.
+# Matched on the words ARM uses, not on bare status numbers: a correlation id or a resource name
+# can contain '503' and a false match would keep retrying a real error.
+$script:ArmTransientPattern = 'Service ?Unavailable|Gateway ?Timeout|Too ?Many ?Requests|InternalServerError|ServerTimeout|ServerBusy'
 $script:AdrLinkMaxAttempts = 12
 # Whole-namespace recovery cycles: recreate and re-grant if the in-place link retries are exhausted.
 $script:AdrLinkMaxCycles = 2
@@ -1752,7 +1759,7 @@ function Connect-AdrNamespace {
         Write-Host "Linking IoT Hub and DPS to ADR namespace (attempt $Attempt of $($script:AdrLinkMaxAttempts))"
         # Retries a link REJECTED outright; an accepted link that later fails is handled below.
         Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" `
-            -RetryOnPattern $script:AdrRolePropagationPattern -MaxAttempts 3 -Command {
+            -RetryOnPattern "$($script:AdrRolePropagationPattern)|$($script:ArmTransientPattern)" -MaxAttempts 3 -Command {
             Invoke-AzRest -Method PUT -Url $Url -Body $LinkBody
         } | Out-Null
 
