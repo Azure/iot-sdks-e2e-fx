@@ -461,42 +461,6 @@ function Invoke-AzRest {
     }
 }
 
-function Invoke-AzResourceProbe {
-    <#
-    .SYNOPSIS
-    Reports whether an ARM resource is 'Present', 'Absent', or 'Unknown'.
-
-    .DESCRIPTION
-    A failed read and a resource that does not exist look identical to a caller that only checks for
-    a result, which makes a transient failure indistinguishable from a deletion having completed.
-    This separates the two: only a 404 (or an explicit not-found) is 'Absent'; any other failure is
-    'Unknown', so a caller can keep waiting instead of concluding.
-    #>
-    param([Parameter(Mandatory = $true)][string]$Url)
-
-    # stderr goes to a file rather than being merged with 2>&1, for the reason Invoke-WithRetry
-    # gives: merged native stderr raises NativeCommandError under $ErrorActionPreference = 'Stop',
-    # which the pipeline task sets. Merged, an ordinary 404 would throw here before it could be
-    # classified, and the namespace-deletion wait could never see 'Absent'.
-    $StdErrFile = New-TempFile
-    try {
-        $null = az rest --method GET --url $Url --resource "https://management.azure.com/" --only-show-errors 2>$StdErrFile
-        if ($LASTEXITCODE -eq 0) {
-            return "Present"
-        }
-        $global:LASTEXITCODE = 0
-
-        $StdErr = if (Test-Path -Path $StdErrFile) { Get-Content -Path $StdErrFile -Raw } else { "" }
-        if ($StdErr -match 'ResourceNotFound|NotFound|\(404\)|was not found') {
-            return "Absent"
-        }
-        return "Unknown"
-    }
-    finally {
-        Remove-Item -Path $StdErrFile -ErrorAction SilentlyContinue
-    }
-}
-
 function Wait-AzProvisioningState {
     <#
     .SYNOPSIS
@@ -1703,23 +1667,38 @@ function Remove-AdrNamespace {
     Recovery of last resort for a namespace whose identity never becomes usable to the linking saga.
     Recreating it mints a fresh identity; the grants are then made against that one.
     #>
-    param([string]$NamespaceId)
+    param(
+        [string]$NamespaceId,
+        [int]$TimeoutSeconds = 600
+    )
 
     $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
     Write-Host "Deleting ADR namespace to recover the link."
     Invoke-AzRest -Method DELETE -Url $Url -AllowFailure | Out-Null
 
-    # Confirm the namespace is GONE rather than merely unreadable: a transient ARM failure also
-    # yields no resource, and treating that as "deleted" lets the next create race a namespace that
-    # still exists. `az group exists`-style existence is read separately from the call succeeding.
-    $Deadline = (Get-Date).AddSeconds(600)
+    # Waits for the namespace to be GONE, not merely unreadable: a transient failure also returns
+    # nothing, and reading that as "deleted" lets the next create race a namespace that still
+    # exists. Only a not-found ends the wait. stderr goes to a file rather than being merged with
+    # 2>&1, for the reason Invoke-WithRetry gives: merged native stderr raises NativeCommandError
+    # under the Stop preference the pipeline task sets, so an ordinary 404 would throw here first.
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ($true) {
-        $Probe = Invoke-AzResourceProbe -Url $Url
-        if ($Probe -eq "Absent") {
+        $StdErrFile = New-TempFile
+        try {
+            $null = az rest --method GET --url $Url --resource "https://management.azure.com/" --only-show-errors 2>$StdErrFile
+            $Found = ($LASTEXITCODE -eq 0)
+            $global:LASTEXITCODE = 0
+            $StdErr = if (Test-Path -Path $StdErrFile) { Get-Content -Path $StdErrFile -Raw } else { "" }
+        }
+        finally {
+            Remove-Item -Path $StdErrFile -ErrorAction SilentlyContinue
+        }
+
+        if (-not $Found -and $StdErr -match 'ResourceNotFound|NotFound|\(404\)|was not found') {
             return
         }
         if ((Get-Date) -ge $Deadline) {
-            throw "ADR namespace was not confirmed deleted within 600 seconds (last probe: $Probe)."
+            throw "ADR namespace was not confirmed deleted within $TimeoutSeconds seconds."
         }
         Start-Sleep -Seconds 10
     }
@@ -2177,21 +2156,6 @@ function Set-DpsEnrollment {
     }
 }
 
-function Test-AdrPolicyInUse {
-    <#
-    .SYNOPSIS
-    True when an enrollment carries a usable ADR certificate policy reference.
-
-    .DESCRIPTION
-    Decides which way an enrollment is written. Only the ADR reference needs the DPS service API,
-    because the CLI cannot express the three names; everything else keeps the CLI path it has always
-    used, so ordinary provisioning does not inherit an api-version it has no use for.
-    #>
-    param([AdrPolicyReference]$AdrPolicy)
-
-    return ($null -ne $AdrPolicy -and $AdrPolicy.IsComplete())
-}
-
 function Add-AdrPolicyReference {
     <#
     .SYNOPSIS
@@ -2228,7 +2192,7 @@ function Add-DpsSymmetricKeyIndividualEnrollment {
 
     Write-Host "Creating Azure DPS symmetric-key individual enrollment ($EnrollmentId)."
 
-    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
         $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId | ConvertFrom-Json
         Stop-OnError -Step "Create an Azure DPS symmetric-key individual enrollment ($EnrollmentId)"
     } else {
@@ -2262,7 +2226,7 @@ function Add-DpsX509IndividualEnrollment {
     $DpsDevicePrivateKey = New-RsaPrivateKey
     $DpsDeviceCertificate = New-Certificate -Subject "CN=$EnrollmentId" -Key $DpsDevicePrivateKey -IssuerCert $null -IssuerKey $null -IsCA $false -Days $CertificateExpiration.TotalDays
 
-    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
         # az iot dps validates certificate files by name: only .pem and .cer are accepted.
         $DpsDeviceCertificatePath = New-TempFile -Extension "pem"
         try {
@@ -2304,7 +2268,7 @@ function Add-DpsSymmetricKeyEnrollmentGroup {
 
     Write-Host "Creating Azure DPS symmetric-key enrollment group ($EnrollmentId)."
 
-    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
         $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId | ConvertFrom-Json
         Stop-OnError -Step "Create an Azure DPS symmetric-key enrollment group ($EnrollmentId)"
     } else {
@@ -2342,7 +2306,7 @@ function Add-DpsX509EnrollmentGroup {
     # group enrollment presents a chain, and DPS validates it against a CA it has verified.
     $ICA = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName -Subject $EnrollmentId -IssuerCert $IssuerCertificate -IssuerKey $IssuerPrivateKey -Expiration $CertificateExpiration
 
-    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
         # az iot dps validates certificate files by name: only .pem and .cer are accepted.
         $ICACertificatePath = New-TempFile -Extension "pem"
         try {
