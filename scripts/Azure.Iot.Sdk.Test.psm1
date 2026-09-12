@@ -474,16 +474,27 @@ function Invoke-AzResourceProbe {
     #>
     param([Parameter(Mandatory = $true)][string]$Url)
 
-    $Output = az rest --method GET --url $Url --resource "https://management.azure.com/" --only-show-errors 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        return "Present"
-    }
-    $global:LASTEXITCODE = 0
+    # stderr goes to a file rather than being merged with 2>&1, for the reason Invoke-WithRetry
+    # gives: merged native stderr raises NativeCommandError under $ErrorActionPreference = 'Stop',
+    # which the pipeline task sets. Merged, an ordinary 404 would throw here before it could be
+    # classified, and the namespace-deletion wait could never see 'Absent'.
+    $StdErrFile = New-TempFile
+    try {
+        $null = az rest --method GET --url $Url --resource "https://management.azure.com/" --only-show-errors 2>$StdErrFile
+        if ($LASTEXITCODE -eq 0) {
+            return "Present"
+        }
+        $global:LASTEXITCODE = 0
 
-    if ("$Output" -match 'ResourceNotFound|NotFound|\(404\)|was not found') {
-        return "Absent"
+        $StdErr = if (Test-Path -Path $StdErrFile) { Get-Content -Path $StdErrFile -Raw } else { "" }
+        if ($StdErr -match 'ResourceNotFound|NotFound|\(404\)|was not found') {
+            return "Absent"
+        }
+        return "Unknown"
     }
-    return "Unknown"
+    finally {
+        Remove-Item -Path $StdErrFile -ErrorAction SilentlyContinue
+    }
 }
 
 function Wait-AzProvisioningState {
@@ -1995,7 +2006,12 @@ function Sync-DpsAdrConfiguration {
         if ($null -ne $Dps.tags) { $Dps.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value } }
         $Tags["AdrDataplaneSyncUtc"] = (Get-Date).ToUniversalTime().ToString("o")
 
-        Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags } | Out-Null
+        # Retried: enrollment creation retries only the enrollment PUT, so a push that never lands
+        # leaves every one of those attempts failing 400004 with nothing to repair it.
+        Invoke-WithRetry -Step "Push the linked ADR namespace into the DPS data plane" -ThrowOnFailure `
+            -RetryOnPattern $script:ArmTransientPattern -MaxAttempts 3 -InitialDelaySeconds 15 -Command {
+            Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags }
+        } | Out-Null
         Wait-AzProvisioningState -Url $Url -Step "DPS ADR configuration push" -TimeoutSeconds 300
     }
     catch {
@@ -2161,6 +2177,21 @@ function Set-DpsEnrollment {
     }
 }
 
+function Test-AdrPolicyInUse {
+    <#
+    .SYNOPSIS
+    True when an enrollment carries a usable ADR certificate policy reference.
+
+    .DESCRIPTION
+    Decides which way an enrollment is written. Only the ADR reference needs the DPS service API,
+    because the CLI cannot express the three names; everything else keeps the CLI path it has always
+    used, so ordinary provisioning does not inherit an api-version it has no use for.
+    #>
+    param([AdrPolicyReference]$AdrPolicy)
+
+    return ($null -ne $AdrPolicy -and $AdrPolicy.IsComplete())
+}
+
 function Add-AdrPolicyReference {
     <#
     .SYNOPSIS
@@ -2197,13 +2228,18 @@ function Add-DpsSymmetricKeyIndividualEnrollment {
 
     Write-Host "Creating Azure DPS symmetric-key individual enrollment ($EnrollmentId)."
 
-    $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
-        registrationId = $EnrollmentId
-        attestation = @{ type = "symmetricKey" }
-        provisioningStatus = "enabled"
-    }
+    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId | ConvertFrom-Json
+        Stop-OnError -Step "Create an Azure DPS symmetric-key individual enrollment ($EnrollmentId)"
+    } else {
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            registrationId = $EnrollmentId
+            attestation = @{ type = "symmetricKey" }
+            provisioningStatus = "enabled"
+        }
 
-    $EnrollmentInfo = Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollments" -EnrollmentId $EnrollmentId -Body $Body
+        $EnrollmentInfo = Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollments" -EnrollmentId $EnrollmentId -Body $Body
+    }
 
     return [DpsSymmetricKeyIndividualEnrollmentInfo]::new(
         $EnrollmentId,
@@ -2226,18 +2262,31 @@ function Add-DpsX509IndividualEnrollment {
     $DpsDevicePrivateKey = New-RsaPrivateKey
     $DpsDeviceCertificate = New-Certificate -Subject "CN=$EnrollmentId" -Key $DpsDevicePrivateKey -IssuerCert $null -IssuerKey $null -IsCA $false -Days $CertificateExpiration.TotalDays
 
-    # An individual x509 enrollment pins the device's own certificate, so the certificate travels in
-    # the request body rather than as a file path an 'az' command reads.
-    $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
-        registrationId = $EnrollmentId
-        attestation = @{
-            type = "x509"
-            x509 = @{ clientCertificates = @{ primary = @{ certificate = [Convert]::ToBase64String($DpsDeviceCertificate.RawData) } } }
+    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+        # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+        $DpsDeviceCertificatePath = New-TempFile -Extension "pem"
+        try {
+            Export-X509CertificateToPemFile -Cert $DpsDeviceCertificate -Path $DpsDeviceCertificatePath
+            az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath | Out-Null
+            Stop-OnError -Step "Create an Azure DPS x509 individual enrollment ($EnrollmentId)"
         }
-        provisioningStatus = "enabled"
-    }
+        finally {
+            Remove-Item -Path $DpsDeviceCertificatePath -ErrorAction SilentlyContinue
+        }
+    } else {
+        # An individual x509 enrollment pins the device's own certificate, so the certificate travels
+        # in the request body rather than as a file path an 'az' command reads.
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            registrationId = $EnrollmentId
+            attestation = @{
+                type = "x509"
+                x509 = @{ clientCertificates = @{ primary = @{ certificate = [Convert]::ToBase64String($DpsDeviceCertificate.RawData) } } }
+            }
+            provisioningStatus = "enabled"
+        }
 
-    Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollments" -EnrollmentId $EnrollmentId -Body $Body | Out-Null
+        Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollments" -EnrollmentId $EnrollmentId -Body $Body | Out-Null
+    }
 
     return [DpsX509IndividualEnrollmentInfo]::new(
         $EnrollmentId,
@@ -2255,13 +2304,18 @@ function Add-DpsSymmetricKeyEnrollmentGroup {
 
     Write-Host "Creating Azure DPS symmetric-key enrollment group ($EnrollmentId)."
 
-    $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
-        enrollmentGroupId = $EnrollmentId
-        attestation = @{ type = "symmetricKey" }
-        provisioningStatus = "enabled"
-    }
+    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+        $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId | ConvertFrom-Json
+        Stop-OnError -Step "Create an Azure DPS symmetric-key enrollment group ($EnrollmentId)"
+    } else {
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            enrollmentGroupId = $EnrollmentId
+            attestation = @{ type = "symmetricKey" }
+            provisioningStatus = "enabled"
+        }
 
-    $EnrollmentInfo = Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" -EnrollmentId $EnrollmentId -Body $Body
+        $EnrollmentInfo = Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" -EnrollmentId $EnrollmentId -Body $Body
+    }
 
     return [DpsSymmetricKeyEnrollmentGroupInfo]::new(
         $EnrollmentId,
@@ -2288,18 +2342,31 @@ function Add-DpsX509EnrollmentGroup {
     # group enrollment presents a chain, and DPS validates it against a CA it has verified.
     $ICA = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName -Subject $EnrollmentId -IssuerCert $IssuerCertificate -IssuerKey $IssuerPrivateKey -Expiration $CertificateExpiration
 
-    $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
-        enrollmentGroupId = $EnrollmentId
-        attestation = @{
-            type = "x509"
-            x509 = @{ caReferences = @{ primary = $EnrollmentId.Replace(" ", "-") } }
+    if (-not (Test-AdrPolicyInUse -AdrPolicy $AdrPolicy)) {
+        # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+        $ICACertificatePath = New-TempFile -Extension "pem"
+        try {
+            $ICA.ExportToPemFile($ICACertificatePath)
+            az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn | Out-Null
+            Stop-OnError -Step "Create an Azure DPS x509 enrollment group ($EnrollmentId)"
         }
-        provisioningStatus = "enabled"
-        allocationPolicy = "static"
-        iotHubs = @($IotHubFqdn)
-    }
+        finally {
+            Remove-Item -Path $ICACertificatePath -ErrorAction SilentlyContinue
+        }
+    } else {
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            enrollmentGroupId = $EnrollmentId
+            attestation = @{
+                type = "x509"
+                x509 = @{ caReferences = @{ primary = $EnrollmentId.Replace(" ", "-") } }
+            }
+            provisioningStatus = "enabled"
+            allocationPolicy = "static"
+            iotHubs = @($IotHubFqdn)
+        }
 
-    Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" -EnrollmentId $EnrollmentId -Body $Body | Out-Null
+        Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" -EnrollmentId $EnrollmentId -Body $Body | Out-Null
+    }
 
     return [DpsX509EnrollmentGroupInfo]::new($EnrollmentId, $ICA)
 }
