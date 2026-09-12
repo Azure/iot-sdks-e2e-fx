@@ -3287,7 +3287,16 @@ function Get-AzIotTestEnvironment {
     $TestEnvInfo.Dps.DeviceFqdn = $AzureDps.properties.deviceProvisioningHostName
     $TestEnvInfo.Dps.ServiceFqdn = $AzureDps.properties.serviceOperationsHostName
     $TestEnvInfo.Dps.IdScope = $AzureDps.properties.idScope
-    $TestEnvInfo.Dps.LinkedIotHubs += $LinkedIotHubNames
+    # FQDNs, not the short names used for selection above: this list is what an enrollment's iotHubs
+    # is set from (DpsInfo.AddX509GroupEnrollment reads LinkedIotHubs[0]), and a short name there is
+    # rejected. The ADR endpoints carry ARM resource ids, so the host name is read from the hub.
+    foreach ($Name in $LinkedIotHubNames) {
+        $TestEnvInfo.Dps.LinkedIotHubs += if ($Name -eq $IotHubName) {
+            $AzureIoTHub.properties.hostName
+        } else {
+            az iot hub show --resource-group "$ResourceGroup" --name "$Name" --query properties.hostName -o tsv
+        }
+    }
 
     Write-Host "Getting DPS Connection String"
     $TestEnvInfo.Dps.ConnectionString = $(az iot dps connection-string show -g $ResourceGroup -n $AzureDps.name --kt primary --pn provisioningserviceowner --query connectionString -o tsv)
