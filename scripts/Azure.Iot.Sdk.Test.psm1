@@ -150,8 +150,9 @@ function Stop-OnError {
 #
 # Pinning is what makes this reproducible: `--allow-preview` selects whatever
 # happens to be newest, which is not a version this repo ever tested against.
+# 0.30.0b2 was removed from the extension index; 0.32.0b1 still ships `az iot adr`.
 # TODO: drop the pin and install the stable extension once `adr` ships in one.
-$script:AzureIotCliExtensionVersion = "0.30.0b2"
+$script:AzureIotCliExtensionVersion = "0.32.0b1"
 
 function Install-AzureIotCliExtension {
     $Extension = $(az extension list --output json --only-show-errors | ConvertFrom-Json | ?{$_.name -eq "azure-iot"})
