@@ -150,9 +150,18 @@ function Stop-OnError {
 #
 # Pinning is what makes this reproducible: `--allow-preview` selects whatever
 # happens to be newest, which is not a version this repo ever tested against.
-# 0.30.0b2 was removed from the extension index; 0.32.0b1 still ships `az iot adr`.
+#
+# Installed from the release wheel rather than by name, because 0.30.0b2 was
+# pulled from the Azure CLI extension index and `--version` no longer resolves
+# it. The newer indexed previews are not substitutes: 0.31.0 dropped `adr`, and
+# 0.32.0b1 returns the device-facing hostname (<hub>.device.azure-devices.net)
+# from `az iot hub connection-string show`, which aims the SDK e2e service
+# clients at an endpoint serving no service-side AMQP links -- c2d, methods,
+# twin and file-upload notifications all fail there while device telemetry,
+# which never reads that string, keeps passing.
 # TODO: drop the pin and install the stable extension once `adr` ships in one.
-$script:AzureIotCliExtensionVersion = "0.32.0b1"
+$script:AzureIotCliExtensionVersion = "0.30.0b2"
+$script:AzureIotCliExtensionSource = "https://github.com/Azure/azure-iot-cli-extension/releases/download/v$($script:AzureIotCliExtensionVersion)/azure_iot-$($script:AzureIotCliExtensionVersion)-py3-none-any.whl"
 
 function Install-AzureIotCliExtension {
     $Extension = $(az extension list --output json --only-show-errors | ConvertFrom-Json | ?{$_.name -eq "azure-iot"})
@@ -166,7 +175,7 @@ function Install-AzureIotCliExtension {
 
     if ($null -eq $Extension) {
         Write-Host "Installing Azure IoT extension $($script:AzureIotCliExtensionVersion)."
-        az extension add --name azure-iot --version $script:AzureIotCliExtensionVersion --allow-preview --only-show-errors | Out-Null
+        az extension add --source $script:AzureIotCliExtensionSource --yes --only-show-errors | Out-Null
         Stop-OnError -Step "Install Azure IoT extension"
     }
 
