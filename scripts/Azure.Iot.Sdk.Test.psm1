@@ -1693,8 +1693,13 @@ function Remove-AdrNamespace {
     )
 
     $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
+    # Retried: a discarded transient failure would leave the loop below polling a namespace that
+    # was never asked to go, turning a brief outage into the full timeout.
     Write-Host "Deleting ADR namespace to recover the link."
-    Invoke-AzRest -Method DELETE -Url $Url -AllowFailure | Out-Null
+    Invoke-WithRetry -Step "Delete ADR namespace" -ThrowOnFailure `
+        -RetryOnPattern $script:ArmTransientPattern -MaxAttempts 3 -InitialDelaySeconds 10 -Command {
+        Invoke-AzRest -Method DELETE -Url $Url -AllowFailure
+    } | Out-Null
 
     # Waits for the namespace to be GONE, not merely unreadable: a transient failure also returns
     # nothing, and reading that as "deleted" lets the next create race a namespace that still
@@ -2722,6 +2727,12 @@ function New-AzIotTestEnvironment {
         [switch]$AddContainerRegistry
     )
 
+    # Argument checks come before anything that touches Azure, so a bad invocation cannot leave a
+    # resource group behind.
+    if ($EnableCertificateManagement -eq $true -and $NoDps -eq $true) {
+        throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
+    }
+
     $IotHubFqdn = "$($IotHubName).$($IotHubDomainName)"
 
     # Login to Azure if not already
@@ -2812,10 +2823,6 @@ function New-AzIotTestEnvironment {
     # system-assigned identity, and an ADR namespace they are both attached to afterwards through the
     # namespace's own endpoints. Nothing is pointed at anything else as it is created, which is what
     # the retired public-preview model did.
-    if ($EnableCertificateManagement -eq $true -and $NoDps -eq $true) {
-        throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
-    }
-
     if ($EnableCertificateManagement -eq $true) {
         $AzureAdrNamespaceName = "azure-adr-ns"
         $AzureAdrPolicyName = "azure-adr-policy"
@@ -2913,6 +2920,13 @@ function New-AzIotTestEnvironment {
                 -PrincipalId "$($DpsPrincipalId)" `
                 -Scope "$($AdrNamespaceId)" `
                 -RoleDefinitionIds @($script:ContributorRoleId, $script:AdrContributorRoleId)
+
+            # Device registration runs as the DPS identity against the hub, so its hub-scope grant
+            # is waited for as well; only the namespace-scope ones were.
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($DpsPrincipalId)" `
+                -Scope "$($AzureIoTHub.id)" `
+                -RoleDefinitionIds @($script:IotHubDataContributorRoleId)
 
             # Being readable is not the same as being enforced: the providers that check these grants
             # cache them, so the link is given a head start rather than racing the first attempt
