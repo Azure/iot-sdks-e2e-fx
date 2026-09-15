@@ -1856,10 +1856,13 @@ function Connect-AdrNamespace {
             # worth distinguishing from one that moved.
             $Updating = @($Namespace.properties.updating.endpoints.PSObject.Properties | ?{ $null -ne $_ })
 
+            # A namespace whose identity no longer matches the principal its grants were made
+            # against cannot work: the link may still report success, but every later ADR call runs
+            # as an identity holding nothing. Raised so the cycle around this recreates and regrants
+            # rather than carrying on with an environment that is already unusable.
             $Principal = $Namespace.identity.principalId
             if ($ExpectedPrincipalId -and $Principal -and $Principal -ne $ExpectedPrincipalId) {
-                Write-Host "WARNING: the namespace identity is $Principal but the role grants were made against $ExpectedPrincipalId; those grants are pointing at a principal that no longer exists."
-                $ExpectedPrincipalId = $Principal
+                throw "AdrMiNotAuthorized: the namespace identity is $Principal but its role grants were made against $ExpectedPrincipalId, so those grants hold nothing."
             }
             $Endpoints = $Messaging + $Provisioning
             $States = @($Endpoints | %{ $_.Value.linkingState })
@@ -1933,7 +1936,21 @@ function Connect-AdrNamespace {
         $Tags["AdrReconcileUtc"] = (Get-Date).ToUniversalTime().ToString("o")
         Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags } | Out-Null
 
-        Wait-AzProvisioningState -Url $Url -Step "ADR namespace reconcile" -TimeoutSeconds 300
+        # Not Wait-AzProvisioningState: it treats the first Failed read as terminal, which is the
+        # state being healed. The reconcile is accepted before the namespace stops reporting it, so
+        # Failed is tolerated here until it clears or the deadline passes.
+        $Deadline = (Get-Date).AddSeconds(300)
+        while ($true) {
+            $State = (Invoke-AzRest -Url $Url -AllowFailure).properties.provisioningState
+            if ($State -eq "Succeeded") {
+                return
+            }
+            if ((Get-Date) -ge $Deadline) {
+                throw "ADR namespace did not recover from provisioningState=Failed within 300 seconds (last state: '$State')."
+            }
+            Write-Host "Waiting for the ADR namespace reconcile (provisioningState=$State)."
+            Start-Sleep -Seconds 10
+        }
     }
 }
 
