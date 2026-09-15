@@ -2718,7 +2718,6 @@ function New-AzIotTestEnvironment {
     }
 
     $AzureAccount = az account show | ConvertFrom-Json
-    $IsAzureAccountServicePrincipal = $AzureAccount.user.type -eq "servicePrincipal"
 
     # Subscription id...
     if ([string]::IsNullOrWhiteSpace($AzureSubscriptionId)) {
