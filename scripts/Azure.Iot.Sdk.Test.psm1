@@ -1696,10 +1696,20 @@ function Remove-AdrNamespace {
     # Retried: a discarded transient failure would leave the loop below polling a namespace that
     # was never asked to go, turning a brief outage into the full timeout.
     Write-Host "Deleting ADR namespace to recover the link."
-    Invoke-WithRetry -Step "Delete ADR namespace" -ThrowOnFailure `
-        -RetryOnPattern $script:ArmTransientPattern -MaxAttempts 3 -InitialDelaySeconds 10 -Command {
-        Invoke-AzRest -Method DELETE -Url $Url -AllowFailure
-    } | Out-Null
+    try {
+        Invoke-WithRetry -Step "Delete ADR namespace" -ThrowOnFailure `
+            -RetryOnPattern $script:ArmTransientPattern -MaxAttempts 3 -InitialDelaySeconds 10 -Command {
+            # NOT -AllowFailure: that resets the exit code, so the retry would see success and the
+            # retry this exists for would never happen.
+            Invoke-AzRest -Method DELETE -Url $Url
+        } | Out-Null
+    }
+    catch {
+        # Already gone is the end state being asked for, not a failure. Anything else propagates.
+        if ("$_" -notmatch 'ResourceNotFound|NotFound|\(404\)|was not found') { throw }
+        Write-Host "ADR namespace was already absent."
+        return
+    }
 
     # Waits for the namespace to be GONE, not merely unreadable: a transient failure also returns
     # nothing, and reading that as "deleted" lets the next create race a namespace that still
@@ -1789,6 +1799,11 @@ function Connect-AdrNamespace {
         [string]$Location,
         [string]$IotHubId,
         [string]$DpsId,
+        # The principal the namespace's role grants were made against. The link resends the
+        # identity, and if a write ever replaced that principal the grants would point at one that
+        # no longer exists -- which ADR reports as the linked resource being unreadable, exactly
+        # like a grant that has not replicated. Checked so the two can be told apart.
+        [string]$ExpectedPrincipalId,
         # How long one attempt waits for the endpoints to settle. Parameterised so a test can drive
         # the timeout path without waiting out the real budget.
         [int]$LinkTimeoutSeconds = 900
@@ -1836,6 +1851,16 @@ function Connect-AdrNamespace {
             # it were present and reported as an unnamed endpoint with no state.
             $Messaging = @($Namespace.properties.messaging.endpoints.PSObject.Properties | ?{ $null -ne $_ })
             $Provisioning = @($Namespace.properties.provisioning.endpoints.PSObject.Properties | ?{ $null -ne $_ })
+            # `updating` is read for reporting only. We never submit one, but ADR can carry an
+            # endpoint there, so an endpoint that is missing from the two sections we do submit is
+            # worth distinguishing from one that moved.
+            $Updating = @($Namespace.properties.updating.endpoints.PSObject.Properties | ?{ $null -ne $_ })
+
+            $Principal = $Namespace.identity.principalId
+            if ($ExpectedPrincipalId -and $Principal -and $Principal -ne $ExpectedPrincipalId) {
+                Write-Host "WARNING: the namespace identity is $Principal but the role grants were made against $ExpectedPrincipalId; those grants are pointing at a principal that no longer exists."
+                $ExpectedPrincipalId = $Principal
+            }
             $Endpoints = $Messaging + $Provisioning
             $States = @($Endpoints | %{ $_.Value.linkingState })
             $Failed = @($Endpoints | ?{ $_.Value.linkingState -eq "Failed" })
@@ -1876,6 +1901,7 @@ function Connect-AdrNamespace {
                 $Code = $_.Value.linkingError.code
                 "$($_.Name)=$($_.Value.linkingState)$(if ($Code) { " ($Code)" })"
             })
+            $($Updating | %{ "updating/$($_.Name)=$($_.Value.linkingState)" })
         ) | ?{ $_ }) -join ', '
 
         # A permanent failure on ANY endpoint ends it. Judging only the first would retry a
@@ -2937,7 +2963,7 @@ function New-AzIotTestEnvironment {
             Start-Sleep -Seconds $HeadStart
 
             try {
-                Connect-AdrNamespace -NamespaceId $AdrNamespaceId -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id
+                Connect-AdrNamespace -NamespaceId $AdrNamespaceId -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id -ExpectedPrincipalId $AdrNamespacePrincipalId
                 break
             }
             catch {
