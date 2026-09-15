@@ -138,23 +138,43 @@ function Stop-OnError {
     }
 }
 
-# The azure-iot CLI extension is used for IoT Hub and DPS resource management only, and is NOT
-# pinned. Everything ADR touches -- the namespace, the certificate authorities, the link, and the
-# hub and DPS that take part in it -- goes to ARM directly, so nothing here needs the preview line.
-# Its `az iot adr` command group models the retired public-preview object model and has no command
-# for the certificate-authority model that replaced it (see New-AdrCertificateAuthority).
+# The azure-iot CLI extension version this repo provisions with.
+#
+# ADR no longer needs it: the namespace, the certificate authorities and the link
+# are created through ARM directly (see New-AdrCertificateAuthority), so the
+# `az iot adr` command group -- which models the retired public-preview object
+# model and has no command for the one that replaced it -- is not used here.
+#
+# The pin stays for the OTHER reasons below, which still hold: this module reads
+# `az iot hub connection-string show` for the service-side clients, and pinning
+# is what makes the version reproducible rather than whatever is newest.
+#
+# Installed from the release wheel rather than by name, because 0.30.0b2 was
+# pulled from the Azure CLI extension index and `--version` no longer resolves
+# it. The newer indexed previews are not substitutes: 0.31.0 dropped `adr`, and
+# 0.32.0b1 returns the device-facing hostname (<hub>.device.azure-devices.net)
+# from `az iot hub connection-string show`, which aims the SDK e2e service
+# clients at an endpoint serving no service-side AMQP links -- c2d, methods,
+# twin and file-upload notifications all fail there while device telemetry,
+# which never reads that string, keeps passing.
+# TODO: drop the pin and install the stable extension once `adr` ships in one.
+$script:AzureIotCliExtensionVersion = "0.30.0b2"
+$script:AzureIotCliExtensionSource = "https://github.com/Azure/azure-iot-cli-extension/releases/download/v$($script:AzureIotCliExtensionVersion)/azure_iot-$($script:AzureIotCliExtensionVersion)-py3-none-any.whl"
+
 function Install-AzureIotCliExtension {
     $Extension = $(az extension list --output json --only-show-errors | ConvertFrom-Json | ?{$_.name -eq "azure-iot"})
 
+    if ($null -ne $Extension -and $Extension.version -ne $script:AzureIotCliExtensionVersion) {
+        Write-Host "Azure IoT extension $($Extension.version) found; removing (pinned to $($script:AzureIotCliExtensionVersion))."
+        az extension remove --name azure-iot --only-show-errors | Out-Null
+        Stop-OnError -Step "Remove Azure IoT extension"
+        $Extension = $null
+    }
+
     if ($null -eq $Extension) {
-        Write-Host "Installing Azure IoT extension."
-        az extension add --name azure-iot --only-show-errors | Out-Null
+        Write-Host "Installing Azure IoT extension $($script:AzureIotCliExtensionVersion)."
+        az extension add --source $script:AzureIotCliExtensionSource --yes --only-show-errors | Out-Null
         Stop-OnError -Step "Install Azure IoT extension"
-    } else {
-        # The command succeeds when the extension is already current, so a failure is a real one.
-        Write-Host "Azure IoT extension $($Extension.version) found; updating."
-        az extension update --name azure-iot --only-show-errors | Out-Null
-        Stop-OnError -Step "Update Azure IoT extension"
     }
 
     # What actually ended up installed. When a provisioning command goes missing,
