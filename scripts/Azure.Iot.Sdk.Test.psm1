@@ -140,16 +140,14 @@ function Stop-OnError {
 
 # The azure-iot CLI extension version this repo provisions with.
 #
-# Provisioning needs the `az iot adr` command group, which ships only in the
-# preview builds. 0.30.0 final dropped it, and because a final release outranks
-# its own pre-releases, `--allow-preview` started resolving to 0.30.0 instead
-# of 0.30.0b2 -- so the command group disappeared with no change on our side and
-# every provisioning run began failing with:
+# ADR no longer needs it: the namespace, the certificate authorities and the link
+# are created through ARM directly (see New-AdrCertificateAuthority), so the
+# `az iot adr` command group -- which models the retired public-preview object
+# model and has no command for the one that replaced it -- is not used here.
 #
-#   ERROR: 'adr' is misspelled or not recognized by the system.
-#
-# Pinning is what makes this reproducible: `--allow-preview` selects whatever
-# happens to be newest, which is not a version this repo ever tested against.
+# The pin stays for the OTHER reasons below, which still hold: this module reads
+# `az iot hub connection-string show` for the service-side clients, and pinning
+# is what makes the version reproducible rather than whatever is newest.
 #
 # Installed from the release wheel rather than by name, because 0.30.0b2 was
 # pulled from the Azure CLI extension index and `--version` no longer resolves
@@ -179,9 +177,8 @@ function Install-AzureIotCliExtension {
         Stop-OnError -Step "Install Azure IoT extension"
     }
 
-    # What actually ended up installed. When a provisioning command goes missing
-    # ("'adr' is misspelled or not recognized"), this is the first thing worth
-    # seeing in the log.
+    # What actually ended up installed. When a provisioning command goes missing,
+    # this is the first thing worth seeing in the log.
     #
     # Capture the table and re-emit it with Write-Host rather than letting the
     # native command write straight to the pipeline. A bare `az` call puts its
@@ -249,7 +246,10 @@ function Invoke-WithRetry {
         [Parameter(Mandatory = $true)][scriptblock]$Command,
         [Parameter(Mandatory = $true)][string]$RetryOnPattern,
         [int]$MaxAttempts = 4,
-        [int]$InitialDelaySeconds = 30
+        [int]$InitialDelaySeconds = 30,
+        # Throw on final failure instead of ending the run. Needed by callers that recover from the
+        # failure themselves; without it Stop-OnError exits the host and their catch never runs.
+        [switch]$ThrowOnFailure
     )
 
     $Delay = $InitialDelaySeconds
@@ -297,6 +297,12 @@ function Invoke-WithRetry {
                 # Hand the command's own exit code to Stop-OnError so the failure
                 # is reported exactly like a non-retrying call site.
                 $global:LASTEXITCODE = if ($ExitCode -ne 0) { $ExitCode } else { 1 }
+                if ($ThrowOnFailure) {
+                    # The error text goes in the exception, not just the log. A caller that recovers
+                    # from a failure has to recognise WHICH failure it was, and the step name and an
+                    # exit code do not say; the reason is only in what the command wrote to stderr.
+                    throw "ERROR: `"$Step`" failed (exit code $LASTEXITCODE): $(($StdErr, $Caught | ?{ $_ }) -join ' ')".Trim()
+                }
                 Stop-OnError -Step $Step
                 return $null
             }
@@ -395,6 +401,137 @@ function Wait-AzRoleAssignment {
 
         Write-Host "Waiting for $($Missing.Count) role assignment(s) to become visible; polling again in $PollIntervalSeconds seconds."
         Start-Sleep -Seconds $PollIntervalSeconds
+    }
+}
+
+function Invoke-AzRest {
+    <#
+    .SYNOPSIS
+    Calls an ARM endpoint with `az rest`, passing the body as a file, and returns parsed JSON.
+
+    .DESCRIPTION
+    `az rest --body` only reliably carries JSON when it is handed a file: under the AzureCLI@2
+    task an inline body is re-quoted by the shell and arrives malformed. Every ARM call in this
+    module therefore writes a temp file first, and this collapses that boilerplate into one place.
+
+    .PARAMETER Method
+    HTTP method. Defaults to GET, which takes no body.
+
+    .PARAMETER Url
+    Fully-qualified ARM URL, including the api-version query parameter.
+
+    .PARAMETER Body
+    Request payload as a hashtable. Serialized to JSON; omit for GET.
+
+    .PARAMETER AllowFailure
+    Return $null instead of stopping when the call fails. Used for existence and state probes, where
+    a failure is an answer rather than an error; stderr is suppressed in that case only, so that
+    callers wrapping this in Invoke-WithRetry can still see -- and match on -- a real error.
+    #>
+    param(
+        [string]$Method = "GET",
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Hashtable]$Body = $null,
+        [switch]$AllowFailure
+    )
+
+    if ($Url -notmatch 'api-version=[^&\s]+') {
+        throw "URL is missing an api-version: $Url"
+    }
+
+    $BodyFile = $null
+    try {
+        # The token audience is stated rather than left to be derived from the URL: the CLI only
+        # infers it for the hosts in `az cloud show`, so a regional ARM host gets no Authorization
+        # header at all and the call comes back as an authentication failure.
+        $Arguments = @("rest", "--method", $Method, "--url", $Url,
+                       "--resource", "https://management.azure.com/", "--only-show-errors")
+
+        if ($null -ne $Body) {
+            $BodyFile = New-TempFile
+            Set-FileContent -Path $BodyFile -Content ($Body | ConvertTo-Json -Compress -Depth 10)
+            $Arguments += @("--body", "@$BodyFile")
+        }
+
+        if ($AllowFailure) {
+            $Response = az @Arguments 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $global:LASTEXITCODE = 0
+                return $null
+            }
+        } else {
+            $Response = az @Arguments
+            if ($LASTEXITCODE -ne 0) {
+                # Throws rather than exits, so a call wrapped in Invoke-WithRetry can be retried;
+                # an unhandled throw still fails the run for every other caller.
+                Stop-OnError -Step "$Method $Url" -Throw
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Response)) {
+            return $null
+        }
+
+        return $Response | ConvertFrom-Json
+    }
+    finally {
+        if ($null -ne $BodyFile) {
+            Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Wait-AzProvisioningState {
+    <#
+    .SYNOPSIS
+    Polls an ARM resource until its provisioningState is terminal, and throws unless it succeeded.
+
+    .DESCRIPTION
+    The ADR resources created here (namespace, certificate authorities, certificate policy) are
+    provisioned asynchronously: the PUT returns immediately and the outcome only shows up in
+    provisioningState. Creating a child before its parent is Succeeded fails, so each create waits.
+
+    .PARAMETER Url
+    ARM URL of the resource, including api-version.
+
+    .PARAMETER Step
+    Human-readable name of the resource, used in progress and error messages.
+
+    .PARAMETER TimeoutSeconds
+    How long to wait for a terminal state before giving up.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$Step,
+        [int]$TimeoutSeconds = 600
+    )
+
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+    while ($true) {
+        # A failed read is deliberately not fatal: these resources are polled for minutes, and a
+        # transient ARM or CLI failure along the way says nothing about the provisioning itself.
+        # The state is simply unknown for this attempt, and the deadline still applies.
+        $Resource = Invoke-AzRest -Url $Url -AllowFailure
+        $State = if ($null -ne $Resource) { $Resource.properties.provisioningState } else { $null }
+
+        if ($State -eq "Succeeded") {
+            return
+        }
+
+        if ($State -eq "Failed" -or $State -eq "Canceled") {
+            # The resource is included because provisioningState alone does not say why: an
+            # asynchronous failure records its reason on the resource, and without it the only
+            # thing to go on is the word 'Failed'.
+            throw "$Step reached provisioningState '$State'. Resource: $($Resource | ConvertTo-Json -Depth 10 -Compress)"
+        }
+
+        if ((Get-Date) -ge $Deadline) {
+            throw "$Step did not reach a terminal provisioningState within $TimeoutSeconds seconds (last state: '$State')."
+        }
+
+        Write-Host "Waiting for $Step (provisioningState=$State)."
+        Start-Sleep -Seconds 10
     }
 }
 
@@ -1194,6 +1331,49 @@ class DpsEnrollmentsSet {
      }
 }
 
+class AdrPolicyReference {
+    <#
+    Identifies the ADR certificate policy an enrollment issues device certificates from.
+
+    Public preview identified it with a single name ('credentialPolicyName'). It is now addressed by
+    the three names below, which enrollments must carry together -- a partial reference is not a
+    weaker reference, it is an invalid one -- so IsComplete() gates every use of it.
+    #>
+    [string]$NamespaceName = $null
+    [string]$CertificateAuthorityName = $null
+    [string]$CertificatePolicyName = $null
+
+    AdrPolicyReference() { }
+
+    AdrPolicyReference([string]$NamespaceName, [string]$CertificateAuthorityName, [string]$CertificatePolicyName) {
+        $this.NamespaceName = $NamespaceName
+        $this.CertificateAuthorityName = $CertificateAuthorityName
+        $this.CertificatePolicyName = $CertificatePolicyName
+    }
+
+    [bool]IsComplete() {
+        return -not (
+            [string]::IsNullOrWhiteSpace($this.NamespaceName) -or
+            [string]::IsNullOrWhiteSpace($this.CertificateAuthorityName) -or
+            [string]::IsNullOrWhiteSpace($this.CertificatePolicyName)
+        )
+    }
+
+    [hashtable]ToHashtable() {
+        return [ordered]@{
+            NamespaceName = $this.NamespaceName
+            CertificateAuthorityName = $this.CertificateAuthorityName
+            CertificatePolicyName = $this.CertificatePolicyName
+        }
+    }
+
+    static [AdrPolicyReference]FromHashtable([hashtable]$Hashtable) {
+        if ($null -eq $Hashtable) { return [AdrPolicyReference]::new() }
+        return [AdrPolicyReference]::new($Hashtable.NamespaceName, $Hashtable.CertificateAuthorityName, $Hashtable.CertificatePolicyName)
+    }
+}
+
+
 class DpsInfo {
     [string]$ResourceGroup = $null
     [string]$DeviceFqdn = $null
@@ -1203,6 +1383,10 @@ class DpsInfo {
     [X509CertificateInfo[]]$RootCaCertificates = @()
     [DpsEnrollmentsSet]$Enrollments = [DpsEnrollmentsSet]::new()
     [string[]]$LinkedIotHubs = @()
+    # Always present, never null: an environment without certificate management simply carries an
+    # incomplete reference. Callers gate on IsComplete(), and the generated test configuration reads
+    # the three names directly.
+    [AdrPolicyReference]$AdrPolicy = [AdrPolicyReference]::new()
 
     DpsInfo() { }
 
@@ -1225,7 +1409,7 @@ class DpsInfo {
         [string]$IotHubFqdn,
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$IssuerCertificate,
         [System.Security.Cryptography.RSA]$IssuerPrivateKey,
-        [string]$AzureAdrPolicyName,
+        [AdrPolicyReference]$AdrPolicyReference,
         [timespan]$CertificateExpiration,
         [bool]$UseAdrPolicy
     ) {
@@ -1248,8 +1432,8 @@ class DpsInfo {
             throw "Both IssuerCertificate and IssuerPrivateKey must be provided together"
         }
 
-        if ([string]::IsNullOrWhiteSpace($AzureAdrPolicyName) -and $UseAdrPolicy) {
-            $AzureAdrPolicyName = $this.AzureAdrPolicyName
+        if ($null -eq $AdrPolicyReference -and $UseAdrPolicy) {
+            $AdrPolicyReference = $this.AdrPolicy
         }
 
         if ($null -eq $CertificateExpiration) {
@@ -1258,7 +1442,7 @@ class DpsInfo {
             $CertificateExpiration = $DefaultCertificateExpiration
         }
 
-        $GroupX509Enrollment = Add-DpsX509EnrollmentGroup -ResourceGroup $this.ResourceGroup -DpsName $this.GetName() -EnrollmentId $EnrollmentId -IssuerCertificate $IssuerCertificate -IssuerPrivateKey $IssuerPrivateKey -IotHubFqdn $IotHubFqdn -AdrPolicyName $AzureAdrPolicyName -CertificateExpiration $CertificateExpiration
+        $GroupX509Enrollment = Add-DpsX509EnrollmentGroup -ResourceGroup $this.ResourceGroup -DpsName $this.GetName() -EnrollmentId $EnrollmentId -IssuerCertificate $IssuerCertificate -IssuerPrivateKey $IssuerPrivateKey -IotHubFqdn $IotHubFqdn -AdrPolicy $AdrPolicyReference -CertificateExpiration $CertificateExpiration
         $this.Enrollments.GroupX509 += [DpsX509EnrollmentGroupInfo]::new($GroupX509Enrollment.Id, $GroupX509Enrollment.PrimaryCertificate)
         return $GroupX509Enrollment
      }
@@ -1273,6 +1457,7 @@ class DpsInfo {
             RootCaCertificates = Convert-CollectionToHashtable -Collection $this.RootCaCertificates
             Enrollments =  ConvertTo-Hashtable -Object $this.Enrollments
             LinkedIotHubs = $this.LinkedIotHubs
+            AdrPolicy = $this.AdrPolicy.ToHashtable()
         }
      }
 
@@ -1286,6 +1471,7 @@ class DpsInfo {
         if ($null -ne $Hashtable.RootCaCertificates) { $DpsInfo.RootCaCertificates = @($Hashtable.RootCaCertificates | ?{ $null -ne $_ } | %{ [X509CertificateInfo]::FromHashtable($_) }) }
         $DpsInfo.Enrollments = [DpsEnrollmentsSet]::FromHashtable($Hashtable.Enrollments)
         $DpsInfo.LinkedIotHubs = $Hashtable.LinkedIotHubs
+        $DpsInfo.AdrPolicy = [AdrPolicyReference]::FromHashtable($Hashtable.AdrPolicy)
         return $DpsInfo
     }
 }
@@ -1396,7 +1582,10 @@ class TestEnvironmentInfo {
 
     [ContainerRegistryInfo[]]$ContainerRegistry = @()
 
-    [string]$AzureAdrPolicyName = $null
+    # Always present, never null: an environment without certificate management simply carries an
+    # incomplete reference. Callers gate on IsComplete(), and the generated test configuration reads
+    # the three names directly.
+    [AdrPolicyReference]$AdrPolicy = [AdrPolicyReference]::new()
 
     [hashtable]ToHashtable() {
         return [ordered]@{
@@ -1404,14 +1593,14 @@ class TestEnvironmentInfo {
             IotHub = ConvertTo-Hashtable -Object $this.IotHub
             Dps = ConvertTo-Hashtable -Object $this.Dps
             # TODO: add container registry
-            AzureAdrPolicyName = $this.AzureAdrPolicyName
+            AdrPolicy = $this.AdrPolicy.ToHashtable()
         }
     }
 
     static [TestEnvironmentInfo]FromHashtable([hashtable]$Hashtable) {
         $TestEnvironmentInfo = [TestEnvironmentInfo]::new()
         $TestEnvironmentInfo.AzureResourceGroup = $Hashtable.AzureResourceGroup
-        $TestEnvironmentInfo.AzureAdrPolicyName = $Hashtable.AzureAdrPolicyName
+        $TestEnvironmentInfo.AdrPolicy = [AdrPolicyReference]::FromHashtable($Hashtable.AdrPolicy)
         $TestEnvironmentInfo.IotHub = [IotHubInfo]::FromHashtable($Hashtable.IotHub)
         $TestEnvironmentInfo.Dps = [DpsInfo]::FromHashtable($Hashtable.Dps)
         # TODO: add container registry
@@ -1428,6 +1617,454 @@ class TestEnvironmentInfo {
     }
 }
 
+
+# <[Azure Device Registry (ADR) Helper Functions]>
+
+# Tag the reference E2E harness for this feature puts on every namespace it creates and links. ADR
+# reads it as a feature flag: without it the linking saga takes a different path and reports the
+# resource it is linking as unreadable.
+$script:AdrNamespaceTags = @{ useMiSdk = "true" }
+
+# ADR resources are created through ARM directly: the azure-iot CLI extension only ever exposed the
+# public-preview object model (a namespace credential holding policies, selected by name) and has no
+# command for the certificate-authority model that replaced it.
+#
+# Overridable from the environment so a cloud or region where one of these versions is not registered
+# can be unblocked without a code change.
+$script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-02-preview" }
+$script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
+$script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
+$script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-06-01-preview" }
+
+# Azure Device Registry Contributor: namespaces/read, namespaces/devices/*, and the data actions,
+# including the certificate issuance a CSR needs.
+$script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
+# IoT Hub Data Contributor: device registration and enrollment writes run as a managed identity.
+$script:IotHubDataContributorRoleId = "4fc6c259-987e-4a07-842e-c321cc9d413f"
+# Contributor.
+$script:ContributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c"
+
+# The namespace link saga runs as the namespace's managed identity, whose grants are eventually
+# consistent. Until they replicate, linking fails with one of these -- either outright, or by
+# settling an endpoint to Failed after the fact. Both are recovered by re-submitting the same
+# namespace, whose identity keeps replicating; everything else fails immediately.
+$script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady|AuthorizationFailed|LinkInitiateFailed|NamespaceMiTokenAcquisitionFailed|OutboundIdentityUnavailable'
+
+# ARM itself can answer a link submission with a transient failure -- a 503 'Our services aren't
+# available right now' has ended a run mid-way through the retries. It says nothing about the link,
+# so it is retried rather than failing the run.
+# Matched on the words ARM uses, not on bare status numbers: a correlation id or a resource name
+# can contain '503' and a false match would keep retrying a real error.
+$script:ArmTransientPattern = 'Service ?Unavailable|Gateway ?Timeout|Too ?Many ?Requests|InternalServerError|ServerTimeout|ServerBusy'
+$script:AdrLinkMaxAttempts = 12
+# Whole-namespace recovery cycles: recreate and re-grant if the in-place link retries are exhausted.
+$script:AdrLinkMaxCycles = 2
+
+function Get-DpsArmHost {
+    <#
+    .SYNOPSIS
+    Returns the ARM host DPS control-plane calls go to for a location.
+
+    .DESCRIPTION
+    The DPS manifest that carries the ADR linking surface is registered regionally in the canary
+    locations, so a DPS created through the global host there does not come up with it. Everything
+    else, including the namespace and the hub, uses the global host.
+    #>
+    param([string]$Location)
+
+    if ($Location -like "*euap") {
+        return "https://$Location.management.azure.com"
+    }
+    return "https://management.azure.com"
+}
+
+function Remove-AdrNamespace {
+    <#
+    .SYNOPSIS
+    Deletes an ADR namespace and waits for it to be gone.
+
+    .DESCRIPTION
+    Recovery of last resort for a namespace whose identity never becomes usable to the linking saga.
+    Recreating it mints a fresh identity; the grants are then made against that one.
+    #>
+    param(
+        [string]$NamespaceId,
+        [int]$TimeoutSeconds = 600
+    )
+
+    $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
+    # Retried: a discarded transient failure would leave the loop below polling a namespace that
+    # was never asked to go, turning a brief outage into the full timeout.
+    Write-Host "Deleting ADR namespace to recover the link."
+    try {
+        Invoke-WithRetry -Step "Delete ADR namespace" -ThrowOnFailure `
+            -RetryOnPattern $script:ArmTransientPattern -MaxAttempts 3 -InitialDelaySeconds 10 -Command {
+            # NOT -AllowFailure: that resets the exit code, so the retry would see success and the
+            # retry this exists for would never happen.
+            Invoke-AzRest -Method DELETE -Url $Url
+        } | Out-Null
+    }
+    catch {
+        # Already gone is the end state being asked for, not a failure. Anything else propagates.
+        if ("$_" -notmatch 'ResourceNotFound|NotFound|\(404\)|was not found') { throw }
+        Write-Host "ADR namespace was already absent."
+        return
+    }
+
+    # Waits for the namespace to be GONE, not merely unreadable: a transient failure also returns
+    # nothing, and reading that as "deleted" lets the next create race a namespace that still
+    # exists. Only a not-found ends the wait. stderr goes to a file rather than being merged with
+    # 2>&1, for the reason Invoke-WithRetry gives: merged native stderr raises NativeCommandError
+    # under the Stop preference the pipeline task sets, so an ordinary 404 would throw here first.
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ($true) {
+        $StdErrFile = New-TempFile
+        try {
+            $null = az rest --method GET --url $Url --resource "https://management.azure.com/" --only-show-errors 2>$StdErrFile
+            $Found = ($LASTEXITCODE -eq 0)
+            $global:LASTEXITCODE = 0
+            $StdErr = if (Test-Path -Path $StdErrFile) { Get-Content -Path $StdErrFile -Raw } else { "" }
+        }
+        finally {
+            Remove-Item -Path $StdErrFile -ErrorAction SilentlyContinue
+        }
+
+        if (-not $Found -and $StdErr -match 'ResourceNotFound|NotFound|\(404\)|was not found') {
+            return
+        }
+        if ((Get-Date) -ge $Deadline) {
+            throw "ADR namespace was not confirmed deleted within $TimeoutSeconds seconds."
+        }
+        Start-Sleep -Seconds 10
+    }
+}
+
+function New-AdrNamespace {
+    <#
+    .SYNOPSIS
+    Creates a system-assigned-identity ADR namespace and returns it.
+
+    .DESCRIPTION
+    Certificate management is no longer switched on at namespace creation, and no policy name is
+    supplied here: both are properties of the certificate authorities created under the namespace
+    afterwards (see New-AdrCertificateAuthority).
+    #>
+    param(
+        [string]$SubscriptionId,
+        [string]$ResourceGroup,
+        [string]$NamespaceName,
+        [string]$Location
+    )
+
+    $Url = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.DeviceRegistry/namespaces/$($NamespaceName)?api-version=$($script:AdrApiVersion)"
+
+    Write-Host "Creating ADR namespace ($NamespaceName)"
+    Invoke-AzRest -Method PUT -Url $Url -Body @{
+        location = $Location
+        identity = @{ type = "SystemAssigned" }
+        tags = $script:AdrNamespaceTags
+    } | Out-Null
+
+    Wait-AzProvisioningState -Url $Url -Step "ADR namespace ($NamespaceName)"
+
+    # Re-read rather than use the PUT response: the principalId is assigned asynchronously and can
+    # still be absent from the body the create returned.
+    return Invoke-AzRest -Url $Url
+}
+
+function Connect-AdrNamespace {
+    <#
+    .SYNOPSIS
+    Attaches an IoT Hub and a DPS to an ADR namespace, and waits for the link to complete.
+
+    .DESCRIPTION
+    Replaces the public-preview wiring, where the hub and DPS were pointed at the namespace with
+    '--ns-resource-id'/'--ns-identity-id' as they were created. That now fails validation; the
+    relationship is expressed on the NAMESPACE instead, as endpoints: the hub as a messaging
+    endpoint, the DPS as a provisioning one. Both go in a single write, because ADR refuses a
+    messaging endpoint unless the namespace also has a provisioning one.
+
+    The call returns immediately with the endpoint at linkingState=InProgress; ADR completes the link
+    asynchronously. The link runs as the namespace identity, so one attempted before that identity's
+    grants have replicated fails on a role-propagation error -- either outright, or by settling the
+    endpoint to Failed once it runs. A failed endpoint is re-PUTtable, so the link is re-submitted
+    against the same namespace, whose identity keeps replicating. A failure for any other reason is
+    final and is raised on the spot.
+
+    Linking can also leave the namespace at provisioningState=Failed with the endpoint Succeeded.
+    That is healed here, because otherwise device registration later fails with errorCode 403000.
+    #>
+    param(
+        [string]$NamespaceId,
+        [string]$Location,
+        [string]$IotHubId,
+        [string]$DpsId,
+        # The principal the namespace's role grants were made against. The link resends the
+        # identity, and if a write ever replaced that principal the grants would point at one that
+        # no longer exists -- which ADR reports as the linked resource being unreadable, exactly
+        # like a grant that has not replicated. Checked so the two can be told apart.
+        [string]$ExpectedPrincipalId,
+        # How long one attempt waits for the endpoints to settle. Parameterised so a test can drive
+        # the timeout path without waiting out the real budget.
+        [int]$LinkTimeoutSeconds = 900
+    )
+
+    $Url = "https://management.azure.com$($NamespaceId)?api-version=$($script:AdrApiVersion)"
+    $LinkBody = @{
+        location = $Location
+        identity = @{ type = "SystemAssigned" }
+        tags = $script:AdrNamespaceTags
+        properties = @{
+            messaging = @{ endpoints = @{ "hub-1" = @{
+                endpointType = "Microsoft.Devices/IotHubs"
+                resourceId = $IotHubId
+                inboundCallerIdentity = @{ type = "SystemAssigned" }
+                provisioning = @{ availability = "Available"; allocationWeight = 1 }
+            } } }
+            provisioning = @{ endpoints = @{ "dps-1" = @{
+                endpointType = "Microsoft.Devices/provisioningServices"
+                resourceId = $DpsId
+                inboundCallerIdentity = @{ type = "SystemAssigned" }
+            } } }
+        }
+    }
+
+    for ($Attempt = 1; $Attempt -le $script:AdrLinkMaxAttempts; $Attempt++) {
+        Write-Host "Linking IoT Hub and DPS to ADR namespace (attempt $Attempt of $($script:AdrLinkMaxAttempts))"
+        # Retries a link REJECTED outright; an accepted link that later fails is handled below.
+        # Throws rather than exiting: a rejected link is recoverable by the cycle around this, and
+        # Stop-OnError would otherwise end the run before the catch could see it.
+        Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" -ThrowOnFailure `
+            -RetryOnPattern "$($script:AdrRolePropagationPattern)|$($script:ArmTransientPattern)" -MaxAttempts 3 -Command {
+            Invoke-AzRest -Method PUT -Url $Url -Body $LinkBody
+        } | Out-Null
+
+        # Endpoint linkingState is the source of truth: the namespace itself can read Succeeded while
+        # an endpoint is still InProgress, and a failed endpoint is where the reason is recorded.
+        $Deadline = (Get-Date).AddSeconds($LinkTimeoutSeconds)
+        while ($true) {
+            # As in Wait-AzProvisioningState, a failed read during a poll that runs for minutes is
+            # transient and says nothing about the link, so it costs an attempt rather than the run.
+            $Namespace = Invoke-AzRest -Url $Url -AllowFailure
+            # Each group is read separately and nulls are dropped: an ABSENT group still yields one
+            # entry when enumerated, so a missing DPS endpoint would otherwise be counted as though
+            # it were present and reported as an unnamed endpoint with no state.
+            $Messaging = @($Namespace.properties.messaging.endpoints.PSObject.Properties | ?{ $null -ne $_ })
+            $Provisioning = @($Namespace.properties.provisioning.endpoints.PSObject.Properties | ?{ $null -ne $_ })
+            # `updating` is read for reporting only. We never submit one, but ADR can carry an
+            # endpoint there, so an endpoint that is missing from the two sections we do submit is
+            # worth distinguishing from one that moved.
+            $Updating = @($Namespace.properties.updating.endpoints.PSObject.Properties | ?{ $null -ne $_ })
+
+            # A namespace whose identity no longer matches the principal its grants were made
+            # against cannot work: the link may still report success, but every later ADR call runs
+            # as an identity holding nothing. Raised so the cycle around this recreates and regrants
+            # rather than carrying on with an environment that is already unusable.
+            $Principal = $Namespace.identity.principalId
+            if ($ExpectedPrincipalId -and $Principal -and $Principal -ne $ExpectedPrincipalId) {
+                throw "AdrMiNotAuthorized: the namespace identity is $Principal but its role grants were made against $ExpectedPrincipalId, so those grants hold nothing."
+            }
+            $Endpoints = $Messaging + $Provisioning
+            $States = @($Endpoints | %{ $_.Value.linkingState })
+            $Failed = @($Endpoints | ?{ $_.Value.linkingState -eq "Failed" })
+
+            # A failure ends the attempt immediately. Waiting for the other endpoints to settle would
+            # only burn the deadline: one of them may never carry a state at all.
+            if ($Failed.Count -gt 0) {
+                break
+            }
+
+            # The link is complete only when BOTH groups carry an endpoint and every one of them
+            # Succeeded. Counting endpoints alone is not enough: ADR can return the hub and omit the
+            # DPS, and setup would then create the CA and the enrollments against an unlinked DPS.
+            if ($Messaging.Count -gt 0 -and $Provisioning.Count -gt 0 -and
+                @($States | ?{ $_ -ne "Succeeded" }).Count -eq 0) {
+                break
+            }
+
+            if ((Get-Date) -ge $Deadline) {
+                throw "ADR namespace link did not complete within $LinkTimeoutSeconds seconds (endpoint states: $($States -join ', '))."
+            }
+
+            Write-Host "Waiting for ADR namespace link (endpoint states: $($States -join ', '))."
+            Start-Sleep -Seconds 15
+        }
+
+        if ($Failed.Count -eq 0) {
+            break
+        }
+
+        # Every endpoint is reported, not just the first failure. Which endpoint failed and which
+        # succeeded is the first thing asked of a link failure, and naming only one leaves it
+        # ambiguous whether the others were fine or simply not mentioned.
+        $Summary = (@(
+            $(if ($Messaging.Count -eq 0) { "messaging=<no endpoint>" })
+            $(if ($Provisioning.Count -eq 0) { "provisioning=<no endpoint>" })
+            $($Endpoints | %{
+                $Code = $_.Value.linkingError.code
+                "$($_.Name)=$($_.Value.linkingState)$(if ($Code) { " ($Code)" })"
+            })
+            $($Updating | %{ "updating/$($_.Name)=$($_.Value.linkingState)" })
+        ) | ?{ $_ }) -join ', '
+
+        # A permanent failure on ANY endpoint ends it. Judging only the first would retry a
+        # recoverable hub error while a permanent DPS one went unmentioned until the budget ran out.
+        $Permanent = @($Failed | ?{ $_.Value.linkingError.code -notmatch $script:AdrRolePropagationPattern })
+        if ($Permanent.Count -gt 0 -or $Attempt -eq $script:AdrLinkMaxAttempts) {
+            $Detail = ($Failed | %{ "$($_.Name): $($_.Value.linkingError | ConvertTo-Json -Depth 5 -Compress)" }) -join "; "
+            throw "ADR namespace link failed. Endpoints: $Summary. Errors: $Detail"
+        }
+
+        # Grows with each attempt, to a cap: each re-submission actively probes whether the grants
+        # have taken effect, so several short waits beat one long blind sleep.
+        $RetryWait = [Math]::Min(60, 30 * $Attempt)
+        Write-Host "Link not complete ($Summary) while the namespace role assignments replicate; re-submitting in $RetryWait seconds."
+        Start-Sleep -Seconds $RetryWait
+    }
+
+    # Heal a namespace left Failed by an otherwise successful link. A tags-only update re-runs
+    # namespace reconciliation; re-sending the endpoints instead is rejected as immutable. The state
+    # can read Failed for a while after the update is accepted, so it is polled rather than judged
+    # on first read.
+    if ($Namespace.properties.provisioningState -eq "Failed") {
+        Write-Host "Namespace left at provisioningState=Failed after linking; reconciling."
+        # This module always creates the namespace with tags, but a namespace it merely found could
+        # have none, and piping a null property into ForEach-Object still runs the body once, with a
+        # null key. Guarded so the reconcile does not fail on one.
+        $Tags = @{}
+        if ($null -ne $Namespace.tags) { $Namespace.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value } }
+        $Tags["AdrReconcileUtc"] = (Get-Date).ToUniversalTime().ToString("o")
+        Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags } | Out-Null
+
+        # Not Wait-AzProvisioningState: it treats the first Failed read as terminal, which is the
+        # state being healed. The reconcile is accepted before the namespace stops reporting it, so
+        # Failed is tolerated here until it clears or the deadline passes.
+        $Deadline = (Get-Date).AddSeconds(300)
+        while ($true) {
+            $State = (Invoke-AzRest -Url $Url -AllowFailure).properties.provisioningState
+            if ($State -eq "Succeeded") {
+                return
+            }
+            if ((Get-Date) -ge $Deadline) {
+                throw "ADR namespace did not recover from provisioningState=Failed within 300 seconds (last state: '$State')."
+            }
+            Write-Host "Waiting for the ADR namespace reconcile (provisioningState=$State)."
+            Start-Sleep -Seconds 10
+        }
+    }
+}
+
+function New-AdrCertificateAuthority {
+    <#
+    .SYNOPSIS
+    Creates the ADR certificate authority chain and the certificate policy devices are issued from.
+    Returns the name of the issuing CA that enrollments must reference.
+
+    .DESCRIPTION
+    Replaces the public-preview 'namespaces/<ns>/credentials/default/policies/<policy>' object, which
+    no longer exists. Leaf issuance now requires a full chain, because a certificate policy has to
+    hang off an ISSUING CA -- ADR rejects a policy created under a root with 409
+    PolicyRequiresIssuingCa:
+
+        namespaces/<ns>/certificateAuthorities/<ca>-root                          self-managed root
+        namespaces/<ns>/certificateAuthorities/<ca>                               issuing CA (ICA)
+        namespaces/<ns>/certificateAuthorities/<ca>/certificatePolicies/<policy>   leaf issuance
+
+    The root is self-managed, so ADR generates its key and certificate on create. The ICA is issued
+    internally by that root (issuerType=Microsoft). Enrollments reference the ICA, never the root.
+
+    Must run AFTER the namespace is linked to the IoT Hub: creating the ICA makes ADR sync the CA
+    certificate to the linked hub, and with no link there is no hub to sync it to. The
+    'credential sync' step of the previous model is gone -- trust now flows over that link.
+    #>
+    param(
+        [string]$NamespaceId,
+        [string]$Location,
+        [string]$CertificateAuthorityName,
+        [string]$PolicyName,
+        [int]$LeafValidityDays = 30
+    )
+
+    $RootUrl   = "https://management.azure.com$NamespaceId/certificateAuthorities/$($CertificateAuthorityName)-root?api-version=$($script:AdrApiVersion)"
+    $IcaUrl    = "https://management.azure.com$NamespaceId/certificateAuthorities/$($CertificateAuthorityName)?api-version=$($script:AdrApiVersion)"
+    $PolicyUrl = "https://management.azure.com$NamespaceId/certificateAuthorities/$CertificateAuthorityName/certificatePolicies/$($PolicyName)?api-version=$($script:AdrApiVersion)"
+
+    Write-Host "Creating ADR root certificate authority ($CertificateAuthorityName-root)"
+    Invoke-AzRest -Method PUT -Url $RootUrl -Body @{
+        location = $Location
+        properties = @{ certificateAuthorityType = "Root"; keyType = "ECC" }
+    } | Out-Null
+    Wait-AzProvisioningState -Url $RootUrl -Step "ADR root certificate authority"
+
+    Write-Host "Creating ADR issuing certificate authority ($CertificateAuthorityName)"
+    Invoke-AzRest -Method PUT -Url $IcaUrl -Body @{
+        location = $Location
+        properties = @{
+            certificateAuthorityType = "ICA"
+            keyType = "ECC"
+            issuer = @{
+                issuerType = "Microsoft"
+                certificateAuthorityResourceId = "$NamespaceId/certificateAuthorities/$CertificateAuthorityName-root"
+            }
+        }
+    } | Out-Null
+    Wait-AzProvisioningState -Url $IcaUrl -Step "ADR issuing certificate authority"
+
+    Write-Host "Creating ADR certificate policy ($PolicyName)"
+    Invoke-AzRest -Method PUT -Url $PolicyUrl -Body @{
+        location = $Location
+        properties = @{ certificate = @{ validityPeriodInDays = $LeafValidityDays } }
+    } | Out-Null
+    Wait-AzProvisioningState -Url $PolicyUrl -Step "ADR certificate policy"
+
+    return $CertificateAuthorityName
+}
+
+function Sync-DpsAdrConfiguration {
+    <#
+    .SYNOPSIS
+    Forces the DPS data plane to pick up the ADR namespace it has just been linked to.
+
+    .DESCRIPTION
+    WORKAROUND. Committing an ADR link records it in the DPS resource provider but does not push the
+    DPS scale-unit configuration, so the data plane never learns about the namespace and every
+    enrollment write fails with errorCode 400004 ("A Device Registry Namespace is required to be set
+    on this DPS instance"). Re-running the DPS update path does push that configuration, and a
+    tags-only update is the most benign way to trigger it.
+
+    Best effort by design: the push is asynchronous, so the data plane can converge even when the
+    control-plane update times out settling, and enrollment creation waits that window out on its
+    own. Remove once the DPS resource provider pushes configuration when a link commits.
+    #>
+    param(
+        [string]$DpsId,
+        # Chooses the ARM host, so it must match the location the DPS was created in.
+        [string]$Location
+    )
+
+    $Url = "$(Get-DpsArmHost -Location $Location)$($DpsId)?api-version=$($script:DpsControlPlaneApiVersion)"
+
+    Write-Host "Pushing the linked ADR namespace into the DPS data plane (tags-only update)."
+    try {
+        # Guarded because the DPS is created without tags: piping a null property into ForEach-Object
+        # still runs the body once, with a null key, which would fail the sync before it is attempted.
+        $Dps = Invoke-AzRest -Url $Url
+        $Tags = @{}
+        if ($null -ne $Dps.tags) { $Dps.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value } }
+        $Tags["AdrDataplaneSyncUtc"] = (Get-Date).ToUniversalTime().ToString("o")
+
+        # Retried: enrollment creation retries only the enrollment PUT, so a push that never lands
+        # leaves every one of those attempts failing 400004 with nothing to repair it.
+        Invoke-WithRetry -Step "Push the linked ADR namespace into the DPS data plane" -ThrowOnFailure `
+            -RetryOnPattern $script:ArmTransientPattern -MaxAttempts 3 -InitialDelaySeconds 15 -Command {
+            Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags }
+        } | Out-Null
+        Wait-AzProvisioningState -Url $Url -Step "DPS ADR configuration push" -TimeoutSeconds 300
+    }
+    catch {
+        Write-Host "DPS ADR configuration push did not settle cleanly ($($_.Exception.Message)); continuing, as enrollment creation waits for the data plane anyway."
+    }
+}
 
 # <[Azure DPS Helper Functions]>
 
@@ -1503,23 +2140,138 @@ function Add-DpsCertificate {
     return [X509CertificateInfo]::new($PrivateKey, $Certificate)
 }
 
+function New-DpsServiceSasToken {
+    <#
+    .SYNOPSIS
+    Builds a SharedAccessSignature for the DPS service API from a DPS connection string.
+    #>
+    param(
+        [string]$ConnectionString,
+        [int]$TtlSeconds = 3600
+    )
+
+    $Parts = @{}
+    $ConnectionString.Split(';') | ?{ $_ -match '=' } | %{
+        $Name, $Value = $_.Split('=', 2)
+        $Parts[$Name] = $Value
+    }
+
+    $ServiceHost = $Parts["HostName"]
+    $Expiry = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + $TtlSeconds
+
+    $Hmac = New-Object System.Security.Cryptography.HMACSHA256
+    try {
+        $Hmac.Key = [Convert]::FromBase64String($Parts["SharedAccessKey"])
+        $Signature = [Convert]::ToBase64String($Hmac.ComputeHash([Text.Encoding]::UTF8.GetBytes("$ServiceHost`n$Expiry")))
+    } finally {
+        $Hmac.Dispose()
+    }
+
+    return "SharedAccessSignature sr=$([uri]::EscapeDataString($ServiceHost))&sig=$([uri]::EscapeDataString($Signature))&se=$Expiry&skn=$([uri]::EscapeDataString($Parts['SharedAccessKeyName']))"
+}
+
+function Set-DpsEnrollment {
+    <#
+    .SYNOPSIS
+    Creates or updates a DPS enrollment through the DPS service API, and returns it.
+
+    .DESCRIPTION
+    Enrollments are written over REST rather than with 'az iot dps enrollment[-group] create' because
+    the CLI cannot express the ADR certificate policy reference any more: it only ever offered the
+    public-preview '--credential-policy', and the property that replaced it is a set of three names
+    (see Add-AdrPolicyReference).
+
+    The first enrollment written after a DPS is linked to an ADR namespace commonly fails while the
+    link propagates, in two distinct ways, both of which clear on their own:
+
+      403000  the DPS identity's Device Registry grant has not replicated yet;
+      400004  the DPS data plane has not picked up the linked namespace yet.
+
+    Both are retried. Any other failure is a real error and is surfaced immediately.
+
+    .PARAMETER Collection
+    'enrollmentGroups' for a group enrollment, 'enrollments' for an individual one.
+    #>
+    param(
+        [string]$ResourceGroup,
+        [string]$DpsName,
+        [ValidateSet("enrollmentGroups", "enrollments")][string]$Collection,
+        [string]$EnrollmentId,
+        [Hashtable]$Body
+    )
+
+    $ConnectionString = az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv
+    Stop-OnError -Step "Get DPS connection string ($DpsName)"
+
+    $ServiceHost = ($ConnectionString.Split(';') | ?{ $_ -like "HostName=*" }).Split('=', 2)[1]
+    $Url = "https://$ServiceHost/$Collection/$([uri]::EscapeDataString($EnrollmentId))?api-version=$($script:DpsEnrollmentApiVersion)"
+    $Headers = @(
+        "Authorization=$(New-DpsServiceSasToken -ConnectionString $ConnectionString)",
+        "Content-Type=application/json"
+    )
+
+    return Invoke-WithRetry -Step "Create DPS enrollment ($EnrollmentId)" `
+        -RetryOnPattern '403000|400004' -MaxAttempts 8 -InitialDelaySeconds 15 -Command {
+        $BodyFile = New-TempFile
+        try {
+            Set-FileContent -Path $BodyFile -Content ($Body | ConvertTo-Json -Compress -Depth 10)
+            az rest --method PUT --url $Url --body "@$BodyFile" --headers $Headers `
+                --skip-authorization-header --only-show-errors | ConvertFrom-Json
+        }
+        finally {
+            Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Add-AdrPolicyReference {
+    <#
+    .SYNOPSIS
+    Adds the ADR certificate policy reference to an enrollment body, if one was supplied.
+
+    .DESCRIPTION
+    Public preview referenced the policy by a single name. It is now addressed by three, which have
+    to travel together -- a partial reference is rejected -- so an incomplete one is treated the same
+    as no reference at all and the enrollment is written without certificate management.
+
+    Note the certificate authority named here is the ISSUING CA, never the root it chains up to.
+    #>
+    param(
+        [Hashtable]$Body,
+        [AdrPolicyReference]$AdrPolicy
+    )
+
+    if ($null -ne $AdrPolicy -and $AdrPolicy.IsComplete()) {
+        $Body["namespaceName"] = $AdrPolicy.NamespaceName
+        $Body["certificateAuthorityName"] = $AdrPolicy.CertificateAuthorityName
+        $Body["certificatePolicyName"] = $AdrPolicy.CertificatePolicyName
+    }
+
+    return $Body
+}
+
 function Add-DpsSymmetricKeyIndividualEnrollment {
     param(
         [string]$ResourceGroup = $null,
         [string]$DpsName = $null,
         [string]$EnrollmentId = $null,
-        [string]$AdrPolicyName = $null
+        [AdrPolicyReference]$AdrPolicy = $null
     )
 
-    Write-Host "Creating Azure DPS symmetric-key individual enrollment ($EnrollmentId; $AdrPolicyName)."
+    Write-Host "Creating Azure DPS symmetric-key individual enrollment ($EnrollmentId)."
 
-    if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
-        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId  | ConvertFrom-Json
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
+        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId | ConvertFrom-Json
+        Stop-OnError -Step "Create an Azure DPS symmetric-key individual enrollment ($EnrollmentId)"
     } else {
-        $EnrollmentInfo = az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at symmetricKey --enrollment-id $EnrollmentId --credential-policy $AdrPolicyName | ConvertFrom-Json
-    }
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            registrationId = $EnrollmentId
+            attestation = @{ type = "symmetricKey" }
+            provisioningStatus = "enabled"
+        }
 
-    Stop-OnError -Step "Create an Azure DPS symmetric-key individual enrollment ($EnrollmentId; $AdrPolicyName)"
+        $EnrollmentInfo = Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollments" -EnrollmentId $EnrollmentId -Body $Body
+    }
 
     return [DpsSymmetricKeyIndividualEnrollmentInfo]::new(
         $EnrollmentId,
@@ -1533,28 +2285,40 @@ function Add-DpsX509IndividualEnrollment {
         [string]$ResourceGroup = $null,
         [string]$DpsName = $null,
         [string]$EnrollmentId = $null,
-        [string]$AdrPolicyName = $null,
+        [AdrPolicyReference]$AdrPolicy = $null,
         [timespan]$CertificateExpiration = $DefaultCertificateExpiration
     )
 
-    Write-Host "Creating Azure DPS x509 individual enrollment ($EnrollmentId; $AdrPolicyName; $CertificatesDir; $PrivateKeysDir; $CertificateExpiration)."
+    Write-Host "Creating Azure DPS x509 individual enrollment ($EnrollmentId; $CertificateExpiration)."
 
     $DpsDevicePrivateKey = New-RsaPrivateKey
     $DpsDeviceCertificate = New-Certificate -Subject "CN=$EnrollmentId" -Key $DpsDevicePrivateKey -IssuerCert $null -IssuerKey $null -IsCA $false -Days $CertificateExpiration.TotalDays
 
-    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
-    $DpsDeviceCertificatePath = New-TempFile -Extension "pem"
-    Export-X509CertificateToPemFile -Cert $DpsDeviceCertificate -Path $DpsDeviceCertificatePath
-
-    if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
-        az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath | Out-Null
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
+        # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+        $DpsDeviceCertificatePath = New-TempFile -Extension "pem"
+        try {
+            Export-X509CertificateToPemFile -Cert $DpsDeviceCertificate -Path $DpsDeviceCertificatePath
+            az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath | Out-Null
+            Stop-OnError -Step "Create an Azure DPS x509 individual enrollment ($EnrollmentId)"
+        }
+        finally {
+            Remove-Item -Path $DpsDeviceCertificatePath -ErrorAction SilentlyContinue
+        }
     } else {
-        az iot dps enrollment create --dps-name $DpsName --resource-group $ResourceGroup --at x509 --enrollment-id $EnrollmentId --cp $DpsDeviceCertificatePath --credential-policy $AdrPolicyName | Out-Null
+        # An individual x509 enrollment pins the device's own certificate, so the certificate travels
+        # in the request body rather than as a file path an 'az' command reads.
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            registrationId = $EnrollmentId
+            attestation = @{
+                type = "x509"
+                x509 = @{ clientCertificates = @{ primary = @{ certificate = [Convert]::ToBase64String($DpsDeviceCertificate.RawData) } } }
+            }
+            provisioningStatus = "enabled"
+        }
+
+        Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollments" -EnrollmentId $EnrollmentId -Body $Body | Out-Null
     }
-
-    Stop-OnError -Step "Create an Azure DPS x509 individual enrollment ($EnrollmentId)"
-
-    Remove-Item $DpsDeviceCertificatePath
 
     return [DpsX509IndividualEnrollmentInfo]::new(
         $EnrollmentId,
@@ -1567,18 +2331,23 @@ function Add-DpsSymmetricKeyEnrollmentGroup {
         [string]$ResourceGroup = $null,
         [string]$DpsName = $null,
         [string]$EnrollmentId = $null,
-        [string]$AdrPolicyName = $null
+        [AdrPolicyReference]$AdrPolicy = $null
     )
 
-    Write-Host "Creating Azure DPS symmetric-key enrollment group ($EnrollmentId; $AdrPolicyName)."
+    Write-Host "Creating Azure DPS symmetric-key enrollment group ($EnrollmentId)."
 
-    if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
         $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId | ConvertFrom-Json
+        Stop-OnError -Step "Create an Azure DPS symmetric-key enrollment group ($EnrollmentId)"
     } else {
-        $EnrollmentInfo = az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --credential-policy $AdrPolicyName | ConvertFrom-Json
-    }
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            enrollmentGroupId = $EnrollmentId
+            attestation = @{ type = "symmetricKey" }
+            provisioningStatus = "enabled"
+        }
 
-    Stop-OnError -Step "Create an Azure Device Provisioning symmetric-key enrollment group ($EnrollmentId; $AdrPolicyName)"
+        $EnrollmentInfo = Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" -EnrollmentId $EnrollmentId -Body $Body
+    }
 
     return [DpsSymmetricKeyEnrollmentGroupInfo]::new(
         $EnrollmentId,
@@ -1595,27 +2364,41 @@ function Add-DpsX509EnrollmentGroup {
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$IssuerCertificate = $null,
         [System.Security.Cryptography.RSA]$IssuerPrivateKey = $null,
         [string]$IotHubFqdn = $null,
-        [string]$AdrPolicyName = $null,
+        [AdrPolicyReference]$AdrPolicy = $null,
         [timespan]$CertificateExpiration = $DefaultCertificateExpiration
     )
 
-    Write-Host "Creating Azure DPS x509 enrollment group ($EnrollmentId; $AdrPolicyName)."
+    Write-Host "Creating Azure DPS x509 enrollment group ($EnrollmentId)."
 
+    # The group's signing CA still has to be uploaded to DPS and proved possession of: a device in a
+    # group enrollment presents a chain, and DPS validates it against a CA it has verified.
     $ICA = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName -Subject $EnrollmentId -IssuerCert $IssuerCertificate -IssuerKey $IssuerPrivateKey -Expiration $CertificateExpiration
 
-    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
-    $ICACertificatePath = New-TempFile -Extension "pem"
-    $ICA.ExportToPemFile($ICACertificatePath)
-
-    if ([string]::IsNullOrWhiteSpace($AdrPolicyName)) {
-        az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn  | Out-Null
+    if ($null -eq $AdrPolicy -or -not $AdrPolicy.IsComplete()) {
+        # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+        $ICACertificatePath = New-TempFile -Extension "pem"
+        try {
+            $ICA.ExportToPemFile($ICACertificatePath)
+            az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn | Out-Null
+            Stop-OnError -Step "Create an Azure DPS x509 enrollment group ($EnrollmentId)"
+        }
+        finally {
+            Remove-Item -Path $ICACertificatePath -ErrorAction SilentlyContinue
+        }
     } else {
-        az iot dps enrollment-group create --dps-name $DpsName --resource-group $ResourceGroup --enrollment-id $EnrollmentId --ap static --cp $ICACertificatePath --provisioning-status enabled --iot-hubs $IotHubFqdn --credential-policy $AdrPolicyName | Out-Null
+        $Body = Add-AdrPolicyReference -AdrPolicy $AdrPolicy -Body @{
+            enrollmentGroupId = $EnrollmentId
+            attestation = @{
+                type = "x509"
+                x509 = @{ caReferences = @{ primary = $EnrollmentId.Replace(" ", "-") } }
+            }
+            provisioningStatus = "enabled"
+            allocationPolicy = "static"
+            iotHubs = @($IotHubFqdn)
+        }
+
+        Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" -EnrollmentId $EnrollmentId -Body $Body | Out-Null
     }
-
-    Stop-OnError -Step "Create an Azure Device Provisioning x509 enrollment group ($EnrollmentId; $AdrPolicyName)"
-
-    Remove-Item $ICACertificatePath
 
     return [DpsX509EnrollmentGroupInfo]::new($EnrollmentId, $ICA)
 }
@@ -1943,7 +2726,8 @@ function New-AzIotTestEnvironment {
     .PARAMETER NoDps
     Specifies whether to skip creating a Device Provisioning Service. Default is false.
     .PARAMETER EnableCertificateManagement
-    Specifies whether to enable certificate management in IoT Hub and DPS using Azure Device Registration (ADR). Default is false.
+    Specifies whether to enable certificate management for IoT Hub and DPS using Azure Device Registry (ADR). Default is false.
+    Creates an ADR namespace, links the IoT Hub and DPS to it, and creates the certificate authority chain devices are issued certificates from. Requires a DPS, so it cannot be combined with -NoDps.
 
     .OUTPUTS
     A custom object containing information about the created Azure resources and devices, including connection strings, certificate paths, and enrollment details.
@@ -1986,6 +2770,12 @@ function New-AzIotTestEnvironment {
         [switch]$AddContainerRegistry
     )
 
+    # Argument checks come before anything that touches Azure, so a bad invocation cannot leave a
+    # resource group behind.
+    if ($EnableCertificateManagement -eq $true -and $NoDps -eq $true) {
+        throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
+    }
+
     $IotHubFqdn = "$($IotHubName).$($IotHubDomainName)"
 
     # Login to Azure if not already
@@ -2002,7 +2792,6 @@ function New-AzIotTestEnvironment {
     }
 
     $AzureAccount = az account show | ConvertFrom-Json
-    $IsAzureAccountServicePrincipal = $AzureAccount.user.type -eq "servicePrincipal"
 
     # Subscription id...
     if ([string]::IsNullOrWhiteSpace($AzureSubscriptionId)) {
@@ -2013,7 +2802,7 @@ function New-AzIotTestEnvironment {
         Stop-OnError -Step "Set Azure subscription"
     }
 
-    # Required for some az iot commands, e.g. az iot adr ns create.
+    # Required for the IoT Hub and DPS command groups. ADR is reached through ARM directly.
     Install-AzureIotCliExtension
 
     # Add default Azure resource group tags 
@@ -2072,110 +2861,165 @@ function New-AzIotTestEnvironment {
     # $AzureKeyVault = az keyvault create --name "$KeyVaultName" --resource-group "$ResourceGroup" --location "$AzureLocation" 2>$null | ConvertFrom-Json
     # Stop-OnError -Step "Create Azure Key Vault"
 
+    # Certificate management provisions the same three resources as the reference E2E harness for
+    # this feature does, in the same shape: a plain S1 hub and a plain DPS, each with its own
+    # system-assigned identity, and an ADR namespace they are both attached to afterwards through the
+    # namespace's own endpoints. Nothing is pointed at anything else as it is created, which is what
+    # the retired public-preview model did.
     if ($EnableCertificateManagement -eq $true) {
-        $AzureIotHubAppId = "89d10474-74af-4874-99a7-c23c2f643083" # Azure IoT Hub application ID (same for all tenants)
-        $AzureIotHubObjectId = "0aab4033-4ad9-4b0b-9934-542334eceffb" # Manually obtained...
-
-        $ResourceGroupScope = "/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup"
-        Write-Host "Creating Azure role assignment for certificate management (scope=$ResourceGroupScope)"
-        if ($IsAzureAccountServicePrincipal) {
-            az role assignment create --assignee-object-id $AzureIotHubObjectId --assignee-principal-type ServicePrincipal --role Contributor --scope "$ResourceGroupScope" --only-show-errors | Out-Null
-        } else {
-            az role assignment create --assignee $AzureIotHubAppId --role Contributor --scope "$ResourceGroupScope" --only-show-errors | Out-Null
-        }
-        Stop-OnError -Step "Create Azure role assignment for certificate management"
-
-        $CertMgmtUserIdentity = "$($ResourceGroup)cmuid"
-        Write-Host "Creating User-Assigned Managed Identity (UAMI) ($CertMgmtUserIdentity)"
-        $AzureCertMgmtIdentity = az identity create --name "$CertMgmtUserIdentity" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
-        Stop-OnError -Step "Create User-Assigned Managed Identity (UAMI)"
-
         $AzureAdrNamespaceName = "azure-adr-ns"
         $AzureAdrPolicyName = "azure-adr-policy"
-        Write-Host "Creating ADR Namespace (ns=$AzureAdrNamespaceName; policy=$AzureAdrPolicyName)"
-        $AzureAdrNamespace = az iot adr ns create --name "$AzureAdrNamespaceName" --enable-certificate-management --resource-group "$ResourceGroup" --location "$AzureLocation" --policy-name "$AzureAdrPolicyName" | ConvertFrom-Json
-        Stop-OnError -Step "Create ADR Namespace"    
+        $AzureAdrCertificateAuthorityName = "default"
 
-        # Azure Device Registry Contributor: namespaces/read,
-        # namespaces/devices/*, namespaces/credentials/policies/read.
-        $AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
-        # Azure Device Registry Onboarding: namespaces/write,
-        # namespaces/credentials/*.
-        $AdrOnboardingRoleId = "547f7f0a-69c0-4807-bd9e-0321dfb66a84"
-
-        Write-Host "Assigning ADR custom role to UAMI ($AdrContributorRoleId)"
-        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "$AdrContributorRoleId" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign ADR custom role 1 to UAMI"
-
-        Write-Host "Assigning ADR custom role to UAMI ($AdrOnboardingRoleId)"
-        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "$AdrOnboardingRoleId" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign ADR custom role 2 to UAMI"
-
-        # IoT Hub and DPS validate this UAMI's DeviceRegistry permissions while
-        # they are being created. The role assignments above were made seconds
-        # ago and the enforcing providers may not observe them yet, so wait for
-        # the assignments to be readable and then tolerate an access-denied
-        # answer for a few attempts. Without this the create fails with
-        # IH400913 "does not have the required DeviceRegistry permissions",
-        # which is purely a propagation artifact.
-        Wait-AzRoleAssignment `
-            -PrincipalId "$($AzureCertMgmtIdentity.principalId)" `
-            -Scope "$($AzureAdrNamespace.id)" `
-            -RoleDefinitionIds @($AdrContributorRoleId, $AdrOnboardingRoleId)
-
-        $AdrPermissionPropagationPattern = '400913|does not have the required DeviceRegistry permissions'
-
-        Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)"
-        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
-            -RetryOnPattern $AdrPermissionPropagationPattern -Command {
-            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
-                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
-        }
-
-        Write-Host "Assigning Contributor role on Azure IoT for ADR principal"
-        az role assignment create --assignee "$($AzureAdrNamespace.identity.principalId)" --role "Contributor" --scope "$($AzureIoTHub.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign Contributor role on Azure IoT for ADR principal"
-
-        Write-Host "Assigning IoT Hub Registry Contributor role on Azure IoT for ADR principal"
-        az role assignment create --assignee "$($AzureAdrNamespace.identity.principalId)" --role "IoT Hub Registry Contributor" --scope "$($AzureIoTHub.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign IoT Hub Registry Contributor role on Azure IoT for ADR principal"
-        
-        if ($NoDps -eq $false) {
-            Write-Host "Creating Device Provisioning Service with ADR integration ($DpsName)"
-            $AzureDps = Invoke-WithRetry -Step "Create Device Provisioning Service with ADR integration" `
-                -RetryOnPattern $AdrPermissionPropagationPattern -Command {
-                az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" `
-                    --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" --only-show-errors | ConvertFrom-Json
-            }
-        }
+        # Created through ARM so it comes up with a system-assigned identity and local auth left on,
+        # which is the shape ADR links. S1, not GEN2: a GEN2 hub carries the namespace in its own
+        # properties, which is the retired model.
+        Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)."
+        $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
+        Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
+            location = $AzureLocation
+            sku = @{ name = "S1"; capacity = 1 }
+            identity = @{ type = "SystemAssigned" }
+            properties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
+        } | Out-Null
+        Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
+        $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
     } else {
         Write-Host "Creating Azure IoT Hub ($IotHubName)."
         $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" | ConvertFrom-Json
         Stop-OnError -Step "Create Azure IoT Hub"
+    }
 
-        if ($NoDps -eq $false) {
+    if ($NoDps -eq $false) {
+        if ($EnableCertificateManagement -eq $true) {
+            # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
+            # identity, which is what authenticates it to the ADR namespace. The identity cannot be
+            # added afterwards: DPS rejects a managed-identity PATCH with IH400158. Confined to this
+            # branch so ordinary provisioning keeps the CLI create and does not take a dependency on
+            # a preview api-version it has no use for.
+            Write-Host "Creating Azure Device Provisioning Service ($DpsName, with certificate management support)."
+            $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
+            Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
+                location = $AzureLocation
+                sku = @{ name = "S1"; capacity = 1 }
+                identity = @{ type = "SystemAssigned" }
+                properties = @{}
+            } | Out-Null
+            Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName)" -TimeoutSeconds 1200
+            # Re-read: idScope and the identity's principalId are populated as it provisions.
+            $AzureDps = Invoke-AzRest -Url $DpsUrl
+        } else {
             Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
             $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
             Stop-OnError -Step "Create Device Provisioning Service"
         }
     }
 
-    if ($NoDps -eq $false) {    
-        Write-Host "Linking Azure IoT Hub ($IotHubName) to Azure Device Provisioning service ($DpsName)"
-        az iot dps linked-hub create --dps-name "$DpsName" --resource-group "$ResourceGroup" --hub-name "$IotHubName" | Out-Null
-        Stop-OnError -Step "Link Azure IoT Hub to Azure Device Provisioning service"
+    if ($EnableCertificateManagement -eq $true) {
+        # The namespace, its grants and the link are one unit, retried as one. The link runs as the
+        # namespace identity, and an identity that never becomes usable to it cannot be waited out:
+        # the recovery is to recreate the namespace, which mints a fresh one, and grant against that.
+        for ($Cycle = 1; $Cycle -le $script:AdrLinkMaxCycles; $Cycle++) {
+            $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
+
+            # Contributor is granted in BOTH directions for both resources: the link reads the hub and
+            # the DPS as the namespace identity, and reads the namespace as theirs, and a grant missing
+            # in either direction surfaces only as "the linked resource could not be read". The
+            # namespace also needs it on ITSELF, because the device-create it runs writes its own
+            # resource. On top of those sit the data-plane roles, and Azure Device Registry
+            # Contributor, which is what lets the DPS write enrollments and issue a certificate for a
+            # CSR: it already carries the issueCertificate data action, so no custom role is needed.
+            $AdrNamespaceId = $AzureAdrNamespace.id
+            $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
+            $IotHubPrincipalId = $AzureIoTHub.identity.principalId
+            $DpsPrincipalId = $AzureDps.identity.principalId
+
+            Write-Host "Assigning roles between the ADR namespace, the IoT Hub and the DPS (cycle $Cycle of $($script:AdrLinkMaxCycles))"
+            @(
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureIoTHub.id },
+                @{ Assignee = $IotHubPrincipalId;       Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureDps.id },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:AdrContributorRoleId;        Scope = $AdrNamespaceId },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id }
+            ) | %{
+                az role assignment create --assignee-object-id $_.Assignee --assignee-principal-type ServicePrincipal --role $_.Role --scope $_.Scope --only-show-errors | Out-Null
+                Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
+            }
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($AdrNamespacePrincipalId)" `
+                -Scope "$($AzureIoTHub.id)" `
+                -RoleDefinitionIds @($script:ContributorRoleId, $script:IotHubDataContributorRoleId)
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($AdrNamespacePrincipalId)" `
+                -Scope "$($AzureDps.id)" `
+                -RoleDefinitionIds @($script:ContributorRoleId)
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($DpsPrincipalId)" `
+                -Scope "$($AdrNamespaceId)" `
+                -RoleDefinitionIds @($script:ContributorRoleId, $script:AdrContributorRoleId)
+
+            # Device registration runs as the DPS identity against the hub, so its hub-scope grant
+            # is waited for as well; only the namespace-scope ones were.
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($DpsPrincipalId)" `
+                -Scope "$($AzureIoTHub.id)" `
+                -RoleDefinitionIds @($script:IotHubDataContributorRoleId)
+
+            # Being readable is not the same as being enforced: the providers that check these grants
+            # cache them, so the link is given a head start rather than racing the first attempt
+            # against replication that has visibly only just finished. A recreated namespace starts
+            # replicating from scratch, so the head start grows with the cycle.
+            $HeadStart = 60 * $Cycle
+            Write-Host "Waiting $HeadStart seconds for the new role assignments to take effect."
+            Start-Sleep -Seconds $HeadStart
+
+            try {
+                Connect-AdrNamespace -NamespaceId $AdrNamespaceId -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id -ExpectedPrincipalId $AdrNamespacePrincipalId
+                break
+            }
+            catch {
+                # Recreating is destructive and only helps the one case it exists for: an identity
+                # that never becomes usable to the link. Connect-AdrNamespace already raises
+                # everything else on the spot -- a rejected schema, a resource error, a timeout --
+                # and those are surfaced rather than answered by deleting the namespace.
+                if ($Cycle -ge $script:AdrLinkMaxCycles -or
+                    $_.Exception.Message -notmatch $script:AdrRolePropagationPattern) {
+                    throw
+                }
+                Write-Host "Linking did not succeed ($($_.Exception.Message)); recreating the namespace and retrying."
+                Remove-AdrNamespace -NamespaceId $AdrNamespaceId
+            }
+        }
+
+        # After the link, so that ADR has a hub to sync the issuing CA certificate to.
+        New-AdrCertificateAuthority -NamespaceId $AdrNamespaceId -Location $AzureLocation `
+            -CertificateAuthorityName $AzureAdrCertificateAuthorityName -PolicyName $AzureAdrPolicyName | Out-Null
+
+        Sync-DpsAdrConfiguration -DpsId $AzureDps.id -Location $AzureLocation
+
+        $AzureAdrPolicy = [AdrPolicyReference]::new($AzureAdrNamespaceName, $AzureAdrCertificateAuthorityName, $AzureAdrPolicyName)
+    } else {
+        $AzureAdrPolicy = [AdrPolicyReference]::new() # Incomplete: no policy is referenced below.
+    }
+
+    if ($NoDps -eq $false) {
+        # A DPS linked to an ADR namespace has ADR choosing its provisioning targets, and its own
+        # linked-hub list is read-only from then on -- adding to it fails with IH409313.
+        if ($EnableCertificateManagement -eq $false) {
+            Write-Host "Linking Azure IoT Hub ($IotHubName) to Azure Device Provisioning service ($DpsName)"
+            az iot dps linked-hub create --dps-name "$DpsName" --resource-group "$ResourceGroup" --hub-name "$IotHubName" | Out-Null
+            Stop-OnError -Step "Link Azure IoT Hub to Azure Device Provisioning service"
+        }
 
         # Step was put here to optimize if blocks, since it's common down.
         Write-Host "Creating DPS Root Certificate"
         $DpsRootCertificate = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName
-    }
-
-    if ($EnableCertificateManagement -eq $true) {
-        Write-Host "Syncing ADR credentials ($AzureAdrNamespaceName)."
-        az iot adr ns credential sync --ns "$AzureAdrNamespaceName" --resource-group "$ResourceGroup" --only-show-errors | Out-Null
-        Stop-OnError -Step "Sync ADR credentials"
-    } else {
-        $AzureAdrPolicyName = $null # Used below on enrollment creation.
     }
 
     # Create IoT Hub Devices
@@ -2238,21 +3082,21 @@ function New-AzIotTestEnvironment {
     if ($NoDps -eq $false) {
         for ($i = 0; $i -lt $DpsSymmKeyIndividualEnrollments; $i++) {
             $EnrollmentId = "$DpsSymmKeyEnrollmentIdPrefix-$i"
-            $EnrollmentInfo = Add-DpsSymmetricKeyIndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $EnrollmentInfo = Add-DpsSymmetricKeyIndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy
 
             $TestEnvInfo.Dps.Enrollments.IndividualSymmetricKey += $EnrollmentInfo
         }
 
         for ($i = 0; $i -lt $DpsX509IndividualEnrollments; $i++) {
             $EnrollmentId = "$DpsX509EnrollmentIdPrefix-$i"
-            $EnrollmentInfo = Add-DpsX509IndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $EnrollmentInfo = Add-DpsX509IndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy
 
             $TestEnvInfo.Dps.Enrollments.IndividualX509 += $EnrollmentInfo
         }
 
         if ($DpsSymmKeyGroupEnrollmentDevices -gt 0) {
             $EnrollmentId = "$DpsSymmKeyEnrollmentIdPrefix-group"
-            $SKEnrollmentGroupInfo = Add-DpsSymmetricKeyEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $SKEnrollmentGroupInfo = Add-DpsSymmetricKeyEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy
 
             $TestEnvInfo.Dps.Enrollments.GroupSymmetricKey += $SKEnrollmentGroupInfo
 
@@ -2263,7 +3107,7 @@ function New-AzIotTestEnvironment {
 
         if ($DpsX509GroupEnrollmentDevices -gt 0) {
             $EnrollmentId = "$DpsX509EnrollmentIdPrefix-group"
-            $X509EnrollmentGroupInfo = Add-DpsX509EnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName -IssuerCertificate $DpsRootCertificate.ToNativeX509Certificate2() -IssuerPrivateKey $DpsRootCertificate.PrivateKey.ToNativeRsaKey() -IotHubFqdn $IotHubFqdn
+            $X509EnrollmentGroupInfo = Add-DpsX509EnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy -IssuerCertificate $DpsRootCertificate.ToNativeX509Certificate2() -IssuerPrivateKey $DpsRootCertificate.PrivateKey.ToNativeRsaKey() -IotHubFqdn $IotHubFqdn
 
             $TestEnvInfo.Dps.Enrollments.GroupX509 += $X509EnrollmentGroupInfo
 
@@ -2289,15 +3133,11 @@ function New-AzIotTestEnvironment {
         $AzureStorageConnectionString=$(az storage account show-connection-string --name "$StorageAccountName" --resource-group "$ResourceGroup" --query connectionString -o tsv)
         Stop-OnError -Step "Getting Azure Storage account connection string"
 
-        if ($EnableCertificateManagement -eq $true) {
-            Write-Host "Updating Azure IoT Hub file upload settings (certificate management)"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --ns-identity-id "$($AzureAdrNamespace.identity.principalId)" | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings (certificate management)"
-        } else {    
-            Write-Host "Updating Azure IoT Hub file upload settings"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings"
-        }
+        # File upload no longer varies with certificate management: '--ns-identity-id' belonged to the
+        # model where the hub pointed at the namespace through a shared identity.
+        Write-Host "Updating Azure IoT Hub file upload settings"
+        az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 | Out-Null
+        Stop-OnError -Step "Updating Azure IoT Hub file upload settings"
     }
 
     if ($AddContainerRegistry) {
@@ -2324,7 +3164,8 @@ function New-AzIotTestEnvironment {
     # Gathering Test Environment settings.
     $TestEnvInfo.AzureResourceGroup = $ResourceGroup
     $TestEnvInfo.Dps.ResourceGroup = $ResourceGroup
-    $TestEnvInfo.AzureAdrPolicyName = $AzureAdrPolicyName
+    $TestEnvInfo.AdrPolicy = $AzureAdrPolicy
+    $TestEnvInfo.Dps.AdrPolicy = $AzureAdrPolicy
 
     Write-Host "Getting IoT Hub Connection String"
     $TestEnvInfo.IotHub.ConnectionString = $(az iot hub connection-string show -g $ResourceGroup -n $IotHubName --kt primary --pn iothubowner --query connectionString -o tsv)
@@ -2345,7 +3186,9 @@ function New-AzIotTestEnvironment {
         $TestEnvInfo.Dps.DeviceFqdn = $AzureDps.properties.deviceProvisioningHostName
         $TestEnvInfo.Dps.ServiceFqdn = $AzureDps.properties.serviceOperationsHostName
         $TestEnvInfo.Dps.IdScope = $AzureDps.properties.idScope
-        $AzureDps.properties.iotHubs | %{ $TestEnvInfo.Dps.LinkedIotHubs += $_.name }
+        # Not read from the DPS: it is captured before the hub is attached, and a DPS linked to an
+        # ADR namespace does not carry its provisioning targets in its own list at all.
+        $TestEnvInfo.Dps.LinkedIotHubs += $IotHubFqdn
 
         Write-Host "Getting DPS Connection String"
         $TestEnvInfo.Dps.ConnectionString = $(az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv)
@@ -2413,7 +3256,7 @@ function Get-AzIotTestEnvironment {
         Stop-OnError -Step "Set Azure subscription"
     }
 
-    # Required for some az iot commands, e.g. az iot adr ns create.
+    # Required for the IoT Hub and DPS command groups. ADR is reached through ARM directly.
     Install-AzureIotCliExtension
 
     $AzureResourceGroup = az group show --name "$ResourceGroup" | ConvertFrom-Json
@@ -2430,18 +3273,24 @@ function Get-AzIotTestEnvironment {
         $AzureDps = az iot dps show --resource-group "$ResourceGroup" --name "$DpsName" | ConvertFrom-Json
     }
 
-    if ([string]::IsNullOrWhiteSpace($IotHubName)) {
-        if ($AzureDps.properties.iotHubs.Count -eq 0) {
-            throw "Device Provisioning Service ($DpsName) does not have linked IoT hubs"
-        }
-
-        $IotHubName = $($AzureDps.properties.iotHubs[0].name.Split('.')[0])
+    # A DPS linked to an ADR namespace has ADR choosing its provisioning targets, so the hub is
+    # reached through the namespace's messaging endpoints rather than the DPS's own linked-hub list.
+    $AdrNamespaceId = $AzureDps.properties.deviceRegistry.namespaceResourceId
+    if ($null -ne $AdrNamespaceId) {
+        $AdrNamespace = Invoke-AzRest -Url "https://management.azure.com$($AdrNamespaceId)?api-version=$($script:AdrApiVersion)"
+        $LinkedIotHubNames = @($AdrNamespace.properties.messaging.endpoints.PSObject.Properties | %{ $_.Value.resourceId.Split('/')[-1] })
     } else {
-        $DpsLinkedIotHub = $AzureDps.properties.iotHubs | ?{$_.name -imatch "$IotHubName" }
+        $LinkedIotHubNames = @($AzureDps.properties.iotHubs | %{ $_.name.Split('.')[0] })
+    }
 
-        if ($null -eq $DpsLinkedIotHub) {
-            throw "Iot Hub $IotHubName is not linked to $DpsName"
+    if ([string]::IsNullOrWhiteSpace($IotHubName)) {
+        if ($LinkedIotHubNames.Count -eq 0) {
+            throw "Device Provisioning Service ($($AzureDps.name)) does not have linked IoT hubs"
         }
+
+        $IotHubName = $LinkedIotHubNames[0]
+    } elseif ($IotHubName -notin $LinkedIotHubNames) {
+        throw "IoT Hub $IotHubName is not linked to $($AzureDps.name)"
     }
 
     $AzureIoTHub = az iot hub show --resource-group "$ResourceGroup" --name "$IotHubName" | ConvertFrom-Json
@@ -2450,10 +3299,21 @@ function Get-AzIotTestEnvironment {
     $TestEnvInfo.AzureResourceGroup = $AzureResourceGroup.name
     $TestEnvInfo.Dps.ResourceGroup = $AzureResourceGroup.name
 
-    if ($null -ne $AzureIoTHub.properties.deviceRegistry.namespaceResourceId) {
-        $AzureAdrNamespaceName = $AzureIoTHub.properties.deviceRegistry.namespaceResourceId.split("/")[8]
-        $AzureAdrPolicy = az iot adr ns policy list --resource-group "$ResourceGroup" --ns "$AzureAdrNamespaceName" | ConvertFrom-Json
-        $TestEnvInfo.AzureAdrPolicyName = $AzureAdrPolicy.name
+    if ($null -ne $AdrNamespaceId) {
+        # The certificate policy is discovered rather than assumed: it hangs off the issuing CA, and
+        # both names are needed to reference it from an enrollment.
+        $AdrNamespaceName = $AdrNamespaceId.Split('/')[-1]
+        $CertificateAuthorities = Invoke-AzRest -Url "https://management.azure.com$AdrNamespaceId/certificateAuthorities?api-version=$($script:AdrApiVersion)"
+
+        foreach ($CertificateAuthority in $CertificateAuthorities.value) {
+            $Policies = Invoke-AzRest -Url "https://management.azure.com$($CertificateAuthority.id)/certificatePolicies?api-version=$($script:AdrApiVersion)"
+
+            if ($Policies.value.Count -gt 0) {
+                $TestEnvInfo.AdrPolicy = [AdrPolicyReference]::new($AdrNamespaceName, $CertificateAuthority.name, $Policies.value[0].name)
+                $TestEnvInfo.Dps.AdrPolicy = $TestEnvInfo.AdrPolicy
+                break
+            }
+        }
     }
 
     Write-Host "Getting IoT Hub Connection String"
@@ -2503,7 +3363,16 @@ function Get-AzIotTestEnvironment {
     $TestEnvInfo.Dps.DeviceFqdn = $AzureDps.properties.deviceProvisioningHostName
     $TestEnvInfo.Dps.ServiceFqdn = $AzureDps.properties.serviceOperationsHostName
     $TestEnvInfo.Dps.IdScope = $AzureDps.properties.idScope
-    $AzureDps.properties.iotHubs | %{ $TestEnvInfo.Dps.LinkedIotHubs += $_.name }
+    # FQDNs, not the short names used for selection above: this list is what an enrollment's iotHubs
+    # is set from (DpsInfo.AddX509GroupEnrollment reads LinkedIotHubs[0]), and a short name there is
+    # rejected. The ADR endpoints carry ARM resource ids, so the host name is read from the hub.
+    foreach ($Name in $LinkedIotHubNames) {
+        $TestEnvInfo.Dps.LinkedIotHubs += if ($Name -eq $IotHubName) {
+            $AzureIoTHub.properties.hostName
+        } else {
+            az iot hub show --resource-group "$ResourceGroup" --name "$Name" --query properties.hostName -o tsv
+        }
+    }
 
     Write-Host "Getting DPS Connection String"
     $TestEnvInfo.Dps.ConnectionString = $(az iot dps connection-string show -g $ResourceGroup -n $AzureDps.name --kt primary --pn provisioningserviceowner --query connectionString -o tsv)
@@ -2661,7 +3530,9 @@ function New-AzIotCSDKE2ETestConfig {
             $DpsIndividualIndexedLines
             "`$env:PROVISIONING_ROOT_CERT = `"$DpsRootCACertificateBase64`""
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
-            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "`$env:ADR_CERT_MGMT_NAMESPACE_NAME = `"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "`$env:ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "`$env:IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID = `"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "`$env:IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY = `"$SymmKeyGroupPrimaryKey`"" })
             "`$env:AZURE_RESOURCE_GROUP = `"$($TestEnvInfo.AzureResourceGroup)`""
@@ -2690,7 +3561,9 @@ function New-AzIotCSDKE2ETestConfig {
             $DpsIndividualIndexedLines
             "export PROVISIONING_ROOT_CERT=`"$DpsRootCACertificateBase64`""
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
-            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "export ADR_CERT_MGMT_NAMESPACE_NAME=`"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "export ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "export IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID=`"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "export IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY=`"$SymmKeyGroupPrimaryKey`"" })
             "export AZURE_RESOURCE_GROUP=`"$($TestEnvInfo.AzureResourceGroup)`""
@@ -2765,7 +3638,9 @@ function New-AzIotNetSDKE2ETestConfig {
             "`$env:IOT_DPS_INDIVIDUAL_REGISTRATION_ID = `"$DpsRegistrationId`""
             "`$env:PROVISIONING_ROOT_CERT = `"$DpsRootCACertificateBase64`""
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
-            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "`$env:ADR_CERT_MGMT_NAMESPACE_NAME = `"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "`$env:ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "`$env:IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID = `"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "`$env:IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY = `"$SymmKeyGroupPrimaryKey`"" })
             "`$env:AZURE_RESOURCE_GROUP = `"$($TestEnvInfo.AzureResourceGroup)`""
@@ -2785,7 +3660,9 @@ function New-AzIotNetSDKE2ETestConfig {
             "export IOT_DPS_INDIVIDUAL_REGISTRATION_ID=`"$DpsRegistrationId`""
             "export PROVISIONING_ROOT_CERT=`"$DpsRootCACertificateBase64`""
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
-            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "export ADR_CERT_MGMT_NAMESPACE_NAME=`"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "export ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "export IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID=`"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "export IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY=`"$SymmKeyGroupPrimaryKey`"" })
             "export AZURE_RESOURCE_GROUP=`"$($TestEnvInfo.AzureResourceGroup)`""
@@ -2845,7 +3722,9 @@ function New-AzIotPythonSDKE2ETestConfig {
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
             "`$env:PROVISIONING_ROOT_PASSWORD = `"`""
 
-            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "`$env:ADR_CERT_MGMT_NAMESPACE_NAME = `"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "`$env:ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
 
             "`$env:PYTHONUNBUFFERED = `"True`""
 
@@ -2873,7 +3752,9 @@ function New-AzIotPythonSDKE2ETestConfig {
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
             "export PROVISIONING_ROOT_PASSWORD=`"`""
 
-            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "export ADR_CERT_MGMT_NAMESPACE_NAME=`"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "export ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
 
             "export PYTHONUNBUFFERED=`"True`""
 
