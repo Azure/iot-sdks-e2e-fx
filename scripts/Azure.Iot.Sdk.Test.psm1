@@ -1933,6 +1933,10 @@ function Connect-AdrNamespace {
         # null key. Guarded so the reconcile does not fail on one.
         $Tags = @{}
         if ($null -ne $Namespace.tags) { $Namespace.tags.PSObject.Properties | %{ $Tags[$_.Name] = $_.Value } }
+        # The namespace feature tag is re-asserted rather than merely carried over: it selects which
+        # identity the link authorizes against, so a namespace that reached here without it would be
+        # healed into a state the link still cannot use.
+        $script:AdrNamespaceTags.GetEnumerator() | %{ $Tags[$_.Key] = $_.Value }
         $Tags["AdrReconcileUtc"] = (Get-Date).ToUniversalTime().ToString("o")
         Invoke-AzRest -Method PATCH -Url $Url -Body @{ tags = $Tags } | Out-Null
 
