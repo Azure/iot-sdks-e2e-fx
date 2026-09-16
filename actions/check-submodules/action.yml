@@ -1,0 +1,92 @@
+# Checks that every submodule in a repository (and, recursively, in its
+# submodules) is pinned to a consistent commit, and fails the job when two
+# parents disagree about the same dependency.
+#
+# The check itself lives in the Azure.Iot.Sdk.Test module in this repository;
+# this action is only the GitHub Actions face of it. Azure Pipelines consumers
+# call Test-SubmoduleConsistency from the same module directly.
+#
+# Usage:
+#   - uses: actions/checkout@v5
+#     with: { submodules: false }
+#   - uses: Azure/iot-sdks-e2e-fx/actions/check-submodules@<ref>
+name: Check submodule consistency
+description: Fail when a repository's submodules are pinned to conflicting commits.
+
+inputs:
+  path:
+    description: Path of the checked-out repository to inspect.
+    required: false
+    default: ${{ github.workspace }}
+  repo-url:
+    description: >-
+      Repository URL to inspect instead of a local path. Mutually exclusive with `path`;
+      when set, `path` is ignored.
+    required: false
+    default: ''
+  branch:
+    description: Branch to inspect when `repo-url` is used. Defaults to the repository's default branch.
+    required: false
+    default: ''
+  ignore-repos:
+    description: Comma-separated repository names to exclude from the consistency check.
+    required: false
+    default: ''
+  show-tree:
+    description: When 'true', print the full submodule dependency tree.
+    required: false
+    default: 'true'
+  github-token:
+    description: >-
+      Token used for GitHub API calls. The check reads .gitmodules and trees through the API,
+      which is rate-limited to 60 requests/hour unauthenticated -- enough to fail a large tree.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check submodule consistency
+      shell: pwsh
+      env:
+        # Every input is passed as env, never string-interpolated into the
+        # script body, so an input is always data and never code.
+        AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/Azure.Iot.Sdk.Test.psm1
+        AZ_IOT_SUBMODULE_PATH: ${{ inputs.path }}
+        AZ_IOT_SUBMODULE_REPO_URL: ${{ inputs.repo-url }}
+        AZ_IOT_SUBMODULE_BRANCH: ${{ inputs.branch }}
+        AZ_IOT_SUBMODULE_IGNORE: ${{ inputs.ignore-repos }}
+        AZ_IOT_SUBMODULE_SHOW_TREE: ${{ inputs.show-tree }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $VerbosePreference = 'Continue'
+
+        Import-Module $env:AZ_IOT_MODULE
+
+        $CheckArgs = @{}
+        if (-not [string]::IsNullOrWhiteSpace($env:AZ_IOT_SUBMODULE_REPO_URL)) {
+            $CheckArgs['RepoUrl'] = $env:AZ_IOT_SUBMODULE_REPO_URL
+            if (-not [string]::IsNullOrWhiteSpace($env:AZ_IOT_SUBMODULE_BRANCH)) {
+                $CheckArgs['Branch'] = $env:AZ_IOT_SUBMODULE_BRANCH
+            }
+        } elseif (-not [string]::IsNullOrWhiteSpace($env:AZ_IOT_SUBMODULE_PATH)) {
+            $CheckArgs['Path'] = $env:AZ_IOT_SUBMODULE_PATH
+        } else {
+            throw "Either 'path' or 'repo-url' must be provided."
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($env:AZ_IOT_SUBMODULE_IGNORE)) {
+            $CheckArgs['IgnoreRepos'] = @($env:AZ_IOT_SUBMODULE_IGNORE -split ',' |
+                ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        }
+
+        if ($env:AZ_IOT_SUBMODULE_SHOW_TREE -eq 'true') {
+            $CheckArgs['ShowTree'] = $true
+        }
+
+        $result = Test-SubmoduleConsistency @CheckArgs
+        if (-not $result) {
+            Write-Error "Submodule consistency check FAILED. See conflicts above."
+            exit 1
+        }
