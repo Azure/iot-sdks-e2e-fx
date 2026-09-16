@@ -27,7 +27,7 @@ steps:
 
       # The module is the single source of truth for the cleanup logic, so it deletes exactly
       # (and only) the resource groups whose names start with the configured prefix.
-      Import-Module "${{ parameters.frameworkRoot }}/scripts/Azure.Iot.Sdk.Test.psm1" -Force
+      Import-Module "${{ parameters.frameworkRoot }}/scripts/AzIotSdkTest/AzIotSdkTest.psd1" -Force
 
       $prefix = '${{ parameters.resourceGroupPrefix }}'
       if ([string]::IsNullOrWhiteSpace($prefix)) {

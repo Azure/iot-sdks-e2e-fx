@@ -1,0 +1,43 @@
+# Checks the AzIotSdkTest module: parses every part, verifies the load order,
+# imports the module and asserts its exported surface. Provisions nothing and
+# needs no credentials -- the point is to catch a load-order or export mistake
+# here rather than in a consuming repository's provisioning job.
+name: Validate module
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'scripts/**'
+      - 'tests/Validate-Module.ps1'
+      - '.github/workflows/validate-module.yml'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'tests/Validate-Module.ps1'
+      - '.github/workflows/validate-module.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    # Windows too: the Azure Pipelines templates import this module from Windows
+    # PowerShell 5.1 (AzureCLI@2 with scriptType 'ps'), which pwsh on Linux would
+    # not catch.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            shell: pwsh
+          - os: windows-latest
+            shell: powershell
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate module
+        shell: ${{ matrix.shell }}
+        run: ./tests/Validate-Module.ps1
