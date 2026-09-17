@@ -25,3 +25,6 @@ bin/_python/*
 *.class
 *.iml.tmp/
 .tmp/
+
+# Node modules used only by the repo validation scripts
+node_modules/

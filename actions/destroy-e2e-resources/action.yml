@@ -1,0 +1,54 @@
+# Deletes the resource group provisioned by the provision-e2e-resources action.
+#
+# This is the GitHub Actions face of vsts/templates/steps-destroy-azure-resources.yaml.
+# The caller must run `azure/login` BEFORE this step and is responsible for
+# `if: always()` so cleanup runs even on failure.
+name: Destroy e2e Azure resources
+description: Delete the resource group provisioned for an e2e run.
+
+inputs:
+  resource-group:
+    description: Name of the resource group to delete.
+    required: true
+  az-ps-version:
+    description: azPSVersion passed to azure/powershell.
+    required: false
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Delete Azure resources
+      uses: azure/powershell@v3
+      env:
+        # Passed via env, not string-interpolated into the script, so the value
+        # is always data and never code.
+        AZ_IOT_RG_NAME: ${{ inputs.resource-group }}
+      with:
+        azPSVersion: ${{ inputs.az-ps-version }}
+        inlineScript: |
+          $ErrorActionPreference = 'Stop'
+
+          $rg = $env:AZ_IOT_RG_NAME
+          if ([string]::IsNullOrWhiteSpace($rg)) {
+              Write-Host "No resource group name available; nothing to delete."
+          } else {
+              $exists = az group exists --name $rg --only-show-errors
+              if ($LASTEXITCODE -ne 0) {
+                  # Never treat an az failure (expired login, wrong subscription, ...)
+                  # as "the group is not there" -- that would silently leak it.
+                  throw "Could not determine whether resource group $rg exists (az exit code $LASTEXITCODE); refusing to skip deletion."
+              }
+              if ($exists -ne 'true') {
+                  # Expected when the caller passes a DETERMINISTIC name and provisioning
+                  # never got as far as creating the group (e.g. the setup job was
+                  # cancelled early). Not an error.
+                  Write-Host "Resource group $rg does not exist; nothing to delete."
+              } else {
+                  Write-Host "Deleting resource group $rg"
+                  az group delete --name $rg --yes --no-wait
+                  if ($LASTEXITCODE -ne 0) {
+                      throw "Failed to queue deletion of resource group $rg (az exit code $LASTEXITCODE)."
+                  }
+              }
+          }
