@@ -31,6 +31,13 @@ foreach ($Command in Get-Command -Module Azure.Iot.Sdk.Test) {
     $ModuleCommands[$Command.Name] = $Command
 }
 
+# External tools the action scripts invoke, which are present on a GitHub
+# runner but not necessarily here. Everything else must resolve, so a
+# misspelled module cmdlet cannot pass as "some command we do not know".
+$ExternalCommand = @(
+    'az'
+)
+
 $Problems = New-Object System.Collections.Generic.List[string]
 
 function Get-SplatKey {
@@ -117,10 +124,28 @@ foreach ($Path in $ScriptPath) {
 
     $Calls = $Ast.FindAll({ param($Node) $Node -is [System.Management.Automation.Language.CommandAst] }, $true)
 
+    # Functions the script defines for itself, which resolve at runtime but are
+    # in no module.
+    $LocalFunctions = @($Ast.FindAll({
+                param($Node) $Node -is [System.Management.Automation.Language.FunctionDefinitionAst]
+            }, $true) | ForEach-Object { $_.Name })
+
     foreach ($Call in $Calls) {
         $CommandName = $Call.GetCommandName()
         if (-not $CommandName) { continue }
-        if (-not $ModuleCommands.ContainsKey($CommandName)) { continue }
+
+        if (-not $ModuleCommands.ContainsKey($CommandName)) {
+            # Not a module command. Skipping silently here would accept a
+            # MISSPELLED one -- New-AzIotTestEnvironmnt would simply not be
+            # found and the script would be pronounced fine -- so anything that
+            # resolves nowhere is an error.
+            if ($LocalFunctions -contains $CommandName) { continue }
+            if ($ExternalCommand -contains $CommandName) { continue }
+            if (Get-Command -Name $CommandName -ErrorAction SilentlyContinue) { continue }
+
+            $Problems.Add("$Name : '$CommandName' is not a command of Azure.Iot.Sdk.Test, a function defined in this script, or a command available on this machine. If it is an external tool, add it to `$ExternalCommand in tests/Validate-ActionScripts.ps1.")
+            continue
+        }
 
         $Parameters = $ModuleCommands[$CommandName].Parameters
 

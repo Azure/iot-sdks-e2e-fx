@@ -74,9 +74,11 @@ inputs:
   dps-x509-group-enrollment-devices:
     description: >-
       Number of devices for a DPS x509 ENROLLMENT GROUP linked to the provisioned signing CA
-      (New-AzIotTestEnvironment -DpsX509GroupEnrollmentDevices). A value > 0 creates the group
-      whose issuer certificate is emitted as PROVISIONING_ROOT_CERT(_KEY); required for the CSR
-      e2e, where the device presents a leaf signed by that CA and DPS issues its operational cert.
+      (New-AzIotTestEnvironment -DpsX509GroupEnrollmentDevices). A value > 0 creates the group and
+      makes this action emit a bootstrap identity for it as IOT_DPS_GROUP_X509_CERTIFICATE (leaf +
+      issuer CA + root), IOT_DPS_GROUP_X509_KEY and IOT_DPS_GROUP_X509_REGISTRATION_ID; that is
+      what the CSR e2e needs. Note PROVISIONING_ROOT_CERT(_KEY), written by the config cmdlets, is
+      the DPS ROOT CA and NOT the group's issuer, which is an intermediate signed by that root.
     required: false
     default: '0'
   config-cmdlet:
@@ -131,16 +133,34 @@ runs:
           Import-Module $env:AZ_IOT_MODULE
 
           function Get-CountInput([string]$Name, [string]$Value) {
-              if ($Value -notmatch '^\d+$') {
-                  throw "$Name must be a non-negative integer; got '$Value'."
+              # TryParse rather than a regex plus a cast: a digits-only value above
+              # Int32.MaxValue passes '^\d+$' and then fails at the cast with a
+              # generic conversion error that does not name the input.
+              $Parsed = 0
+              if (-not [int]::TryParse($Value, [ref]$Parsed) -or $Parsed -lt 0) {
+                  throw "$Name must be an integer between 0 and $([int]::MaxValue); got '$Value'."
               }
-              return [int]$Value
+              return $Parsed
+          }
+
+          function Get-BooleanInput([string]$Name, [string]$Value) {
+              # Anything other than the exact string 'true' would otherwise be
+              # silently treated as false, so 'enable-file-upload: tru' would
+              # provision without file upload instead of failing.
+              switch ($Value) {
+                  'true' { return $true }
+                  'false' { return $false }
+                  default { throw "$Name must be 'true' or 'false'; got '$Value'." }
+              }
           }
 
           $EnableAdu = $env:AZ_IOT_ENABLE_ADU
           if ($EnableAdu -notin @('None', 'Gen1', 'Gen2')) {
               throw "enable-adu must be one of None, Gen1, Gen2; got '$EnableAdu'."
           }
+
+          $EnableCertificateManagement = Get-BooleanInput 'enable-certificate-management' $env:AZ_IOT_ENABLE_CERT_MGMT
+          $EnableFileUpload = Get-BooleanInput 'enable-file-upload' $env:AZ_IOT_ENABLE_FILE_UPLOAD
 
           $ConfigTarget = $env:AZ_IOT_CONFIG_TARGET
           if ($ConfigTarget -notin @('powershell', 'bash')) {
@@ -162,6 +182,25 @@ runs:
               throw "config-cmdlet '$ConfigCmdletName' did not resolve to exactly one cmdlet exported by Azure.Iot.Sdk.Test (matched $($ConfigCmdletMatches.Count))."
           }
           $ConfigCmdlet = $ConfigCmdletMatches[0]
+
+          # Being exported by the module is not enough: it must be a CONFIG
+          # RENDERER. Without this, a name such as New-AzureResourceGroupName
+          # passes here, Azure resources are provisioned, and only then does the
+          # call below fail on its parameters.
+          #
+          # Matched by unique prefix, exactly as PowerShell's binder does, so a
+          # renderer declaring -TargetEnvironment still satisfies -Target.
+          $RequiredConfigParameters = @('TestEnvInfo', 'Target', 'OutFile')
+          $MissingConfigParameters = @(
+              $RequiredConfigParameters | Where-Object {
+                  $Required = $_
+                  $Candidates = @($ConfigCmdlet.Parameters.Keys | Where-Object { $_ -like "$Required*" })
+                  -not (($Candidates -contains $Required) -or ($Candidates.Count -eq 1))
+              }
+          )
+          if ($MissingConfigParameters.Count -gt 0) {
+              throw "config-cmdlet '$ConfigCmdletName' is not a test-config renderer: it has no -$($MissingConfigParameters -join ', -') parameter."
+          }
 
           $OutFile = $env:AZ_IOT_OUT_FILE
           if ([string]::IsNullOrWhiteSpace($OutFile)) {
@@ -215,8 +254,8 @@ runs:
               }
               $NewEnvArgs['EnableADU'] = $EnableAdu
           }
-          if ($env:AZ_IOT_ENABLE_CERT_MGMT -eq 'true') { $NewEnvArgs['EnableCertificateManagement'] = $true }
-          if ($env:AZ_IOT_ENABLE_FILE_UPLOAD -eq 'true') { $NewEnvArgs['EnableFileUpload'] = $true }
+          if ($EnableCertificateManagement) { $NewEnvArgs['EnableCertificateManagement'] = $true }
+          if ($EnableFileUpload) { $NewEnvArgs['EnableFileUpload'] = $true }
 
           $TestEnvInfo = New-AzIotTestEnvironment @NewEnvArgs
 
@@ -229,7 +268,7 @@ runs:
           # file-notification endpoint stays silent and an e2e test can only verify
           # the device half of an upload. Turn it on here (the shared framework does
           # not expose a switch for it).
-          if ($env:AZ_IOT_ENABLE_FILE_UPLOAD -eq 'true') {
+          if ($EnableFileUpload) {
               $HostNamePair = ($TestEnvInfo.IotHub.ConnectionString -split ';' `
                   | Where-Object { $_ -like 'HostName=*' } | Select-Object -First 1)
               if ([string]::IsNullOrWhiteSpace($HostNamePair)) {
