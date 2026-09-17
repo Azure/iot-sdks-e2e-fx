@@ -33,6 +33,60 @@ foreach ($Command in Get-Command -Module Azure.Iot.Sdk.Test) {
 
 $Problems = New-Object System.Collections.Generic.List[string]
 
+function Get-SplatKey {
+    <#
+    .SYNOPSIS
+    Parameter names a splatted hashtable variable can carry, as far as they can
+    be determined statically.
+
+    .DESCRIPTION
+    Collects keys from every literal hashtable assigned to the variable
+    (`$Args = @{ Foo = 1 }`) and from every literal index assignment
+    (`$Args['Bar'] = 2`). Keys built dynamically cannot be resolved and are
+    simply not reported -- this narrows the blind spot rather than closing it.
+    #>
+    param(
+        [System.Management.Automation.Language.Ast]$Ast,
+        [string]$VariableName
+    )
+
+    $Keys = New-Object System.Collections.Generic.List[string]
+
+    $Assignments = $Ast.FindAll({
+            param($Node) $Node -is [System.Management.Automation.Language.AssignmentStatementAst]
+        }, $true)
+
+    foreach ($Assignment in $Assignments) {
+        $Left = $Assignment.Left
+
+        # $Args = @{ ... }
+        if ($Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+            $Left.VariablePath.UserPath -eq $VariableName) {
+
+            foreach ($Hashtable in $Assignment.Right.FindAll({
+                        param($Node) $Node -is [System.Management.Automation.Language.HashtableAst]
+                    }, $true)) {
+                foreach ($Pair in $Hashtable.KeyValuePairs) {
+                    if ($Pair.Item1 -is [System.Management.Automation.Language.StringConstantExpressionAst]) {
+                        $Keys.Add($Pair.Item1.Value)
+                    }
+                }
+            }
+        }
+
+        # $Args['Key'] = ...
+        if ($Left -is [System.Management.Automation.Language.IndexExpressionAst] -and
+            $Left.Target -is [System.Management.Automation.Language.VariableExpressionAst] -and
+            $Left.Target.VariablePath.UserPath -eq $VariableName -and
+            $Left.Index -is [System.Management.Automation.Language.StringConstantExpressionAst]) {
+
+            $Keys.Add($Left.Index.Value)
+        }
+    }
+
+    return $Keys | Select-Object -Unique
+}
+
 foreach ($Path in $ScriptPath) {
     $Name = Split-Path -Leaf $Path
 
@@ -46,6 +100,20 @@ foreach ($Path in $ScriptPath) {
         }
         continue
     }
+
+    # Escape hatch for a parameter whose presence the script checks ITSELF at
+    # runtime, which static analysis cannot see:
+    #
+    #   # validate-actions: allow-parameter EnableADU
+    #
+    # Deliberately per-name and greppable, so it cannot silently disable the
+    # check for anything else.
+    $Allowed = @($Tokens |
+            Where-Object { $_.Kind -eq 'Comment' } |
+            ForEach-Object {
+                $Match = [regex]::Match($_.Text, 'validate-actions:\s*allow-parameter\s+(?<name>[A-Za-z0-9_]+)')
+                if ($Match.Success) { $Match.Groups['name'].Value }
+            })
 
     $Calls = $Ast.FindAll({ param($Node) $Node -is [System.Management.Automation.Language.CommandAst] }, $true)
 
@@ -66,6 +134,22 @@ foreach ($Path in $ScriptPath) {
                 $Problems.Add("$Name : $CommandName has no parameter -$ParameterName")
             } elseif ($Matched.Count -gt 1 -and $Matched -notcontains $ParameterName) {
                 $Problems.Add("$Name : -$ParameterName is ambiguous for $CommandName ($($Matched -join ', '))")
+            }
+        }
+
+        # Splatted arguments (@Args) carry their parameter names as hashtable
+        # keys, so checking only CommandParameterAst would leave a call that
+        # passes everything by splat completely unchecked -- which is how these
+        # actions call New-AzIotTestEnvironment.
+        foreach ($Element in $Call.CommandElements) {
+            if ($Element -isnot [System.Management.Automation.Language.VariableExpressionAst]) { continue }
+            if (-not $Element.Splatted) { continue }
+
+            foreach ($Key in (Get-SplatKey -Ast $Ast -VariableName $Element.VariablePath.UserPath)) {
+                if ($Allowed -contains $Key) { continue }
+                if (-not $Parameters.ContainsKey($Key)) {
+                    $Problems.Add("$Name : $CommandName has no parameter -$Key (splatted via @$($Element.VariablePath.UserPath))")
+                }
             }
         }
     }

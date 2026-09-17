@@ -149,10 +149,19 @@ runs:
 
           # Resolve to a FUNCTION exported by this module, so config-cmdlet can
           # never name an arbitrary command on the agent.
-          $ConfigCmdlet = Get-Command -Name $env:AZ_IOT_CONFIG_CMDLET -CommandType Function -ErrorAction SilentlyContinue
-          if ((-not $ConfigCmdlet) -or ($ConfigCmdlet.ModuleName -ne 'Azure.Iot.Sdk.Test')) {
-              throw "config-cmdlet '$($env:AZ_IOT_CONFIG_CMDLET)' is not a cmdlet exported by Azure.Iot.Sdk.Test."
+          #
+          # -Name is a WILDCARD pattern, so 'New-AzIot*' would return every
+          # matching function; filter on an exact name and require exactly one
+          # result, or `& $ConfigCmdlet` would be handed an array.
+          $ConfigCmdletName = $env:AZ_IOT_CONFIG_CMDLET
+          $ConfigCmdletMatches = @(
+              Get-Command -Name $ConfigCmdletName -CommandType Function -ErrorAction SilentlyContinue |
+                  Where-Object { $_.Name -eq $ConfigCmdletName -and $_.ModuleName -eq 'Azure.Iot.Sdk.Test' }
+          )
+          if ($ConfigCmdletMatches.Count -ne 1) {
+              throw "config-cmdlet '$ConfigCmdletName' did not resolve to exactly one cmdlet exported by Azure.Iot.Sdk.Test (matched $($ConfigCmdletMatches.Count))."
           }
+          $ConfigCmdlet = $ConfigCmdletMatches[0]
 
           $OutFile = $env:AZ_IOT_OUT_FILE
           if ([string]::IsNullOrWhiteSpace($OutFile)) {
@@ -196,6 +205,10 @@ runs:
           # the module exposes it. Passing it unconditionally turns "this module has
           # no ADU support" into an opaque parameter-binding failure at provisioning
           # time, for callers that never wanted ADU.
+          #
+          # validate-actions: allow-parameter EnableADU
+          # (checked at runtime immediately below, because the parameter is absent
+          # from the module on master and present on the ADU branch)
           if ($EnableAdu -ne 'None') {
               if (-not (Get-Command New-AzIotTestEnvironment).Parameters.ContainsKey('EnableADU')) {
                   throw "enable-adu is '$EnableAdu' but this build of Azure.Iot.Sdk.Test has no -EnableADU parameter."
