@@ -227,6 +227,11 @@ function Invoke-WithRetry {
     Script block to run. Runs in its defining scope, so it can use the caller's
     variables normally.
 
+    .PARAMETER StopOnPattern
+    Regular expression matched against the same captured output. When it matches, the failure is
+    treated as permanent even if -RetryOnPattern also matches, and no further attempt is made. Use
+    it where one error code covers both a transient and a permanent condition.
+
     .PARAMETER RetryOnPattern
     Regex matched against stderr. Only matching failures are retried.
 
@@ -245,6 +250,7 @@ function Invoke-WithRetry {
         [Parameter(Mandatory = $true)][string]$Step,
         [Parameter(Mandatory = $true)][scriptblock]$Command,
         [Parameter(Mandatory = $true)][string]$RetryOnPattern,
+        [string]$StopOnPattern,
         [int]$MaxAttempts = 4,
         [int]$InitialDelaySeconds = 30,
         # Throw on final failure instead of ending the run. Needed by callers that recover from the
@@ -289,6 +295,13 @@ function Invoke-WithRetry {
 
             $IsLastAttempt = ($Attempt -ge $MaxAttempts)
             $IsRetryable = ($null -ne $StdErr) -and ($StdErr -match $RetryOnPattern)
+            # A service can reuse one error code for both a transient condition and a permanent one.
+            # Where it does, -StopOnPattern tells the permanent case apart and wins over the retry
+            # pattern, so a failure that cannot succeed is reported at once instead of after the
+            # whole backoff ladder.
+            if ($IsRetryable -and -not [string]::IsNullOrEmpty($StopOnPattern) -and ($StdErr -match $StopOnPattern)) {
+                $IsRetryable = $false
+            }
 
             if ($IsLastAttempt -or -not $IsRetryable) {
                 if ($null -ne $Caught) {
@@ -2193,6 +2206,9 @@ function Set-DpsEnrollment {
 
     Both are retried. Any other failure is a real error and is surfaced immediately.
 
+    DPS also returns 400004 for an api-version it does not support, which no amount of waiting
+    fixes, so that case is excluded from the retry and fails on the first attempt.
+
     .PARAMETER Collection
     'enrollmentGroups' for a group enrollment, 'enrollments' for an individual one.
     #>
@@ -2215,7 +2231,8 @@ function Set-DpsEnrollment {
     )
 
     return Invoke-WithRetry -Step "Create DPS enrollment ($EnrollmentId)" `
-        -RetryOnPattern '403000|400004' -MaxAttempts 8 -InitialDelaySeconds 15 -Command {
+        -RetryOnPattern '403000|400004' -StopOnPattern 'Unsupported API version' `
+        -MaxAttempts 8 -InitialDelaySeconds 15 -Command {
         $BodyFile = New-TempFile
         try {
             Set-FileContent -Path $BodyFile -Content ($Body | ConvertTo-Json -Compress -Depth 10)
