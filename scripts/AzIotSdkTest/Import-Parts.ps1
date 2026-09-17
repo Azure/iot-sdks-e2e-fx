@@ -20,7 +20,7 @@ $ModuleParts = @(
     'AzureCommon.ps1'        # az CLI extension, retries, role assignments, resource groups
     'Conversion.ps1'         # Hashtable/PSObject conversion helpers
     'Crypto.ps1'             # Keys, CSRs, certificates, PEM
-    'Models.ps1'             # Classes describing an provisioned test environment
+    'Models.ps1'             # Classes describing a provisioned test environment
     'Dps.ps1'                # DPS enrollment helpers
     'ResourceGroups.ps1'     # Resource group naming and leftover cleanup
     'Provisioning.ps1'       # New-/Get-AzIotTestEnvironment

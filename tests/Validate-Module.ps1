@@ -132,6 +132,9 @@ $ShimExports = Get-ExportedNames -Path $ShimPath
 foreach ($Name in @($ExpectedExports | Where-Object { $ShimExports -notcontains $_ })) {
     $Problems.Add("The scripts/Azure.Iot.Sdk.Test.psm1 shim no longer yields '$Name'.")
 }
+foreach ($Name in @($ShimExports | Where-Object { $ExpectedExports -notcontains $_ })) {
+    $Problems.Add("The scripts/Azure.Iot.Sdk.Test.psm1 shim yields '$Name', which is not in the expected contract; the shim and the module must expose the same command set.")
+}
 
 if ($Problems.Count -gt 0) {
     foreach ($Problem in $Problems) { Write-Error -Message $Problem -ErrorAction Continue }
