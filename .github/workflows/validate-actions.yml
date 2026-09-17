@@ -1,0 +1,43 @@
+# Contract checks for the composite actions under actions/. No Azure
+# credentials and no deployment: the actions are consumed by other
+# repositories, so the point is to catch a broken contract here rather than in
+# someone else's pipeline.
+name: Validate actions
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'actions/**'
+      - 'scripts/Azure.Iot.Sdk.Test.psm1'
+      - 'tests/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'actions/**'
+      - 'scripts/Azure.Iot.Sdk.Test.psm1'
+      - 'tests/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate action contracts
+        run: |
+          npm install --no-save js-yaml@4
+          node tests/validate-actions.mjs
+
+      - name: Lint workflows
+        run: |
+          curl -sSL -o actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz
+          tar -xzf actionlint.tar.gz actionlint
+          # Workflow files only: actionlint parses composite action.yml as a
+          # workflow and reports its 'runs'/'inputs' keys as errors.
+          ./actionlint -no-color .github/workflows/*.yml
