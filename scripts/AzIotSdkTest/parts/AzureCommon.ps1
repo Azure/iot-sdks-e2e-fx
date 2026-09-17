@@ -15,9 +15,8 @@ function Install-AzureIotCliExtension {
         Stop-OnError -Step "Install Azure IoT extension"
     }
 
-    # What actually ended up installed. When a provisioning command goes missing
-    # ("'adr' is misspelled or not recognized"), this is the first thing worth
-    # seeing in the log.
+    # What actually ended up installed. When a provisioning command goes missing,
+    # this is the first thing worth seeing in the log.
     #
     # Capture the table and re-emit it with Write-Host rather than letting the
     # native command write straight to the pipeline. A bare `az` call puts its
@@ -66,6 +65,11 @@ function Invoke-WithRetry {
     Script block to run. Runs in its defining scope, so it can use the caller's
     variables normally.
 
+    .PARAMETER StopOnPattern
+    Regular expression matched against the same captured output. When it matches, the failure is
+    treated as permanent even if -RetryOnPattern also matches, and no further attempt is made. Use
+    it where one error code covers both a transient and a permanent condition.
+
     .PARAMETER RetryOnPattern
     Regex matched against stderr. Only matching failures are retried.
 
@@ -84,8 +88,12 @@ function Invoke-WithRetry {
         [Parameter(Mandatory = $true)][string]$Step,
         [Parameter(Mandatory = $true)][scriptblock]$Command,
         [Parameter(Mandatory = $true)][string]$RetryOnPattern,
+        [string]$StopOnPattern,
         [int]$MaxAttempts = 4,
-        [int]$InitialDelaySeconds = 30
+        [int]$InitialDelaySeconds = 30,
+        # Throw on final failure instead of ending the run. Needed by callers that recover from the
+        # failure themselves; without it Stop-OnError exits the host and their catch never runs.
+        [switch]$ThrowOnFailure
     )
 
     $Delay = $InitialDelaySeconds
@@ -125,6 +133,13 @@ function Invoke-WithRetry {
 
             $IsLastAttempt = ($Attempt -ge $MaxAttempts)
             $IsRetryable = ($null -ne $StdErr) -and ($StdErr -match $RetryOnPattern)
+            # A service can reuse one error code for both a transient condition and a permanent one.
+            # Where it does, -StopOnPattern tells the permanent case apart and wins over the retry
+            # pattern, so a failure that cannot succeed is reported at once instead of after the
+            # whole backoff ladder.
+            if ($IsRetryable -and -not [string]::IsNullOrEmpty($StopOnPattern) -and ($StdErr -match $StopOnPattern)) {
+                $IsRetryable = $false
+            }
 
             if ($IsLastAttempt -or -not $IsRetryable) {
                 if ($null -ne $Caught) {
@@ -133,6 +148,12 @@ function Invoke-WithRetry {
                 # Hand the command's own exit code to Stop-OnError so the failure
                 # is reported exactly like a non-retrying call site.
                 $global:LASTEXITCODE = if ($ExitCode -ne 0) { $ExitCode } else { 1 }
+                if ($ThrowOnFailure) {
+                    # The error text goes in the exception, not just the log. A caller that recovers
+                    # from a failure has to recognise WHICH failure it was, and the step name and an
+                    # exit code do not say; the reason is only in what the command wrote to stderr.
+                    throw "ERROR: `"$Step`" failed (exit code $LASTEXITCODE): $(($StdErr, $Caught | ?{ $_ }) -join ' ')".Trim()
+                }
                 Stop-OnError -Step $Step
                 return $null
             }
@@ -231,6 +252,137 @@ function Wait-AzRoleAssignment {
 
         Write-Host "Waiting for $($Missing.Count) role assignment(s) to become visible; polling again in $PollIntervalSeconds seconds."
         Start-Sleep -Seconds $PollIntervalSeconds
+    }
+}
+
+function Invoke-AzRest {
+    <#
+    .SYNOPSIS
+    Calls an ARM endpoint with `az rest`, passing the body as a file, and returns parsed JSON.
+
+    .DESCRIPTION
+    `az rest --body` only reliably carries JSON when it is handed a file: under the AzureCLI@2
+    task an inline body is re-quoted by the shell and arrives malformed. Every ARM call in this
+    module therefore writes a temp file first, and this collapses that boilerplate into one place.
+
+    .PARAMETER Method
+    HTTP method. Defaults to GET, which takes no body.
+
+    .PARAMETER Url
+    Fully-qualified ARM URL, including the api-version query parameter.
+
+    .PARAMETER Body
+    Request payload as a hashtable. Serialized to JSON; omit for GET.
+
+    .PARAMETER AllowFailure
+    Return $null instead of stopping when the call fails. Used for existence and state probes, where
+    a failure is an answer rather than an error; stderr is suppressed in that case only, so that
+    callers wrapping this in Invoke-WithRetry can still see -- and match on -- a real error.
+    #>
+    param(
+        [string]$Method = "GET",
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Hashtable]$Body = $null,
+        [switch]$AllowFailure
+    )
+
+    if ($Url -notmatch 'api-version=[^&\s]+') {
+        throw "URL is missing an api-version: $Url"
+    }
+
+    $BodyFile = $null
+    try {
+        # The token audience is stated rather than left to be derived from the URL: the CLI only
+        # infers it for the hosts in `az cloud show`, so a regional ARM host gets no Authorization
+        # header at all and the call comes back as an authentication failure.
+        $Arguments = @("rest", "--method", $Method, "--url", $Url,
+                       "--resource", "https://management.azure.com/", "--only-show-errors")
+
+        if ($null -ne $Body) {
+            $BodyFile = New-TempFile
+            Set-FileContent -Path $BodyFile -Content ($Body | ConvertTo-Json -Compress -Depth 10)
+            $Arguments += @("--body", "@$BodyFile")
+        }
+
+        if ($AllowFailure) {
+            $Response = az @Arguments 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $global:LASTEXITCODE = 0
+                return $null
+            }
+        } else {
+            $Response = az @Arguments
+            if ($LASTEXITCODE -ne 0) {
+                # Throws rather than exits, so a call wrapped in Invoke-WithRetry can be retried;
+                # an unhandled throw still fails the run for every other caller.
+                Stop-OnError -Step "$Method $Url" -Throw
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Response)) {
+            return $null
+        }
+
+        return $Response | ConvertFrom-Json
+    }
+    finally {
+        if ($null -ne $BodyFile) {
+            Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Wait-AzProvisioningState {
+    <#
+    .SYNOPSIS
+    Polls an ARM resource until its provisioningState is terminal, and throws unless it succeeded.
+
+    .DESCRIPTION
+    The ADR resources created here (namespace, certificate authorities, certificate policy) are
+    provisioned asynchronously: the PUT returns immediately and the outcome only shows up in
+    provisioningState. Creating a child before its parent is Succeeded fails, so each create waits.
+
+    .PARAMETER Url
+    ARM URL of the resource, including api-version.
+
+    .PARAMETER Step
+    Human-readable name of the resource, used in progress and error messages.
+
+    .PARAMETER TimeoutSeconds
+    How long to wait for a terminal state before giving up.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$Step,
+        [int]$TimeoutSeconds = 600
+    )
+
+    $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+    while ($true) {
+        # A failed read is deliberately not fatal: these resources are polled for minutes, and a
+        # transient ARM or CLI failure along the way says nothing about the provisioning itself.
+        # The state is simply unknown for this attempt, and the deadline still applies.
+        $Resource = Invoke-AzRest -Url $Url -AllowFailure
+        $State = if ($null -ne $Resource) { $Resource.properties.provisioningState } else { $null }
+
+        if ($State -eq "Succeeded") {
+            return
+        }
+
+        if ($State -eq "Failed" -or $State -eq "Canceled") {
+            # The resource is included because provisioningState alone does not say why: an
+            # asynchronous failure records its reason on the resource, and without it the only
+            # thing to go on is the word 'Failed'.
+            throw "$Step reached provisioningState '$State'. Resource: $($Resource | ConvertTo-Json -Depth 10 -Compress)"
+        }
+
+        if ((Get-Date) -ge $Deadline) {
+            throw "$Step did not reach a terminal provisioningState within $TimeoutSeconds seconds (last state: '$State')."
+        }
+
+        Write-Host "Waiting for $Step (provisioningState=$State)."
+        Start-Sleep -Seconds 10
     }
 }
 

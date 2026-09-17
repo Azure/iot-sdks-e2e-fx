@@ -48,7 +48,8 @@ function New-AzIotTestEnvironment {
     .PARAMETER NoDps
     Specifies whether to skip creating a Device Provisioning Service. Default is false.
     .PARAMETER EnableCertificateManagement
-    Specifies whether to enable certificate management in IoT Hub and DPS using Azure Device Registration (ADR). Default is false.
+    Specifies whether to enable certificate management for IoT Hub and DPS using Azure Device Registry (ADR). Default is false.
+    Creates an ADR namespace, links the IoT Hub and DPS to it, and creates the certificate authority chain devices are issued certificates from. Requires a DPS, so it cannot be combined with -NoDps.
 
     .OUTPUTS
     A custom object containing information about the created Azure resources and devices, including connection strings, certificate paths, and enrollment details.
@@ -91,6 +92,12 @@ function New-AzIotTestEnvironment {
         [switch]$AddContainerRegistry
     )
 
+    # Argument checks come before anything that touches Azure, so a bad invocation cannot leave a
+    # resource group behind.
+    if ($EnableCertificateManagement -eq $true -and $NoDps -eq $true) {
+        throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
+    }
+
     $IotHubFqdn = "$($IotHubName).$($IotHubDomainName)"
 
     # Login to Azure if not already
@@ -107,7 +114,6 @@ function New-AzIotTestEnvironment {
     }
 
     $AzureAccount = az account show | ConvertFrom-Json
-    $IsAzureAccountServicePrincipal = $AzureAccount.user.type -eq "servicePrincipal"
 
     # Subscription id...
     if ([string]::IsNullOrWhiteSpace($AzureSubscriptionId)) {
@@ -118,7 +124,7 @@ function New-AzIotTestEnvironment {
         Stop-OnError -Step "Set Azure subscription"
     }
 
-    # Required for some az iot commands, e.g. az iot adr ns create.
+    # Required for the IoT Hub and DPS command groups. ADR is reached through ARM directly.
     Install-AzureIotCliExtension
 
     # Add default Azure resource group tags 
@@ -177,110 +183,165 @@ function New-AzIotTestEnvironment {
     # $AzureKeyVault = az keyvault create --name "$KeyVaultName" --resource-group "$ResourceGroup" --location "$AzureLocation" 2>$null | ConvertFrom-Json
     # Stop-OnError -Step "Create Azure Key Vault"
 
+    # Certificate management provisions the same three resources as the reference E2E harness for
+    # this feature does, in the same shape: a plain S1 hub and a plain DPS, each with its own
+    # system-assigned identity, and an ADR namespace they are both attached to afterwards through the
+    # namespace's own endpoints. Nothing is pointed at anything else as it is created, which is what
+    # the retired public-preview model did.
     if ($EnableCertificateManagement -eq $true) {
-        $AzureIotHubAppId = "89d10474-74af-4874-99a7-c23c2f643083" # Azure IoT Hub application ID (same for all tenants)
-        $AzureIotHubObjectId = "0aab4033-4ad9-4b0b-9934-542334eceffb" # Manually obtained...
-
-        $ResourceGroupScope = "/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup"
-        Write-Host "Creating Azure role assignment for certificate management (scope=$ResourceGroupScope)"
-        if ($IsAzureAccountServicePrincipal) {
-            az role assignment create --assignee-object-id $AzureIotHubObjectId --assignee-principal-type ServicePrincipal --role Contributor --scope "$ResourceGroupScope" --only-show-errors | Out-Null
-        } else {
-            az role assignment create --assignee $AzureIotHubAppId --role Contributor --scope "$ResourceGroupScope" --only-show-errors | Out-Null
-        }
-        Stop-OnError -Step "Create Azure role assignment for certificate management"
-
-        $CertMgmtUserIdentity = "$($ResourceGroup)cmuid"
-        Write-Host "Creating User-Assigned Managed Identity (UAMI) ($CertMgmtUserIdentity)"
-        $AzureCertMgmtIdentity = az identity create --name "$CertMgmtUserIdentity" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
-        Stop-OnError -Step "Create User-Assigned Managed Identity (UAMI)"
-
         $AzureAdrNamespaceName = "azure-adr-ns"
         $AzureAdrPolicyName = "azure-adr-policy"
-        Write-Host "Creating ADR Namespace (ns=$AzureAdrNamespaceName; policy=$AzureAdrPolicyName)"
-        $AzureAdrNamespace = az iot adr ns create --name "$AzureAdrNamespaceName" --enable-certificate-management --resource-group "$ResourceGroup" --location "$AzureLocation" --policy-name "$AzureAdrPolicyName" | ConvertFrom-Json
-        Stop-OnError -Step "Create ADR Namespace"    
+        $AzureAdrCertificateAuthorityName = "default"
 
-        # Azure Device Registry Contributor: namespaces/read,
-        # namespaces/devices/*, namespaces/credentials/policies/read.
-        $AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
-        # Azure Device Registry Onboarding: namespaces/write,
-        # namespaces/credentials/*.
-        $AdrOnboardingRoleId = "547f7f0a-69c0-4807-bd9e-0321dfb66a84"
-
-        Write-Host "Assigning ADR custom role to UAMI ($AdrContributorRoleId)"
-        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "$AdrContributorRoleId" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign ADR custom role 1 to UAMI"
-
-        Write-Host "Assigning ADR custom role to UAMI ($AdrOnboardingRoleId)"
-        az role assignment create --assignee "$($AzureCertMgmtIdentity.principalId)" --role "$AdrOnboardingRoleId" --scope "$($AzureAdrNamespace.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign ADR custom role 2 to UAMI"
-
-        # IoT Hub and DPS validate this UAMI's DeviceRegistry permissions while
-        # they are being created. The role assignments above were made seconds
-        # ago and the enforcing providers may not observe them yet, so wait for
-        # the assignments to be readable and then tolerate an access-denied
-        # answer for a few attempts. Without this the create fails with
-        # IH400913 "does not have the required DeviceRegistry permissions",
-        # which is purely a propagation artifact.
-        Wait-AzRoleAssignment `
-            -PrincipalId "$($AzureCertMgmtIdentity.principalId)" `
-            -Scope "$($AzureAdrNamespace.id)" `
-            -RoleDefinitionIds @($AdrContributorRoleId, $AdrOnboardingRoleId)
-
-        $AdrPermissionPropagationPattern = '400913|does not have the required DeviceRegistry permissions'
-
-        Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)"
-        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub (with certificate management support)" `
-            -RetryOnPattern $AdrPermissionPropagationPattern -Command {
-            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku GEN2 `
-                --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" | ConvertFrom-Json
-        }
-
-        Write-Host "Assigning Contributor role on Azure IoT for ADR principal"
-        az role assignment create --assignee "$($AzureAdrNamespace.identity.principalId)" --role "Contributor" --scope "$($AzureIoTHub.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign Contributor role on Azure IoT for ADR principal"
-
-        Write-Host "Assigning IoT Hub Registry Contributor role on Azure IoT for ADR principal"
-        az role assignment create --assignee "$($AzureAdrNamespace.identity.principalId)" --role "IoT Hub Registry Contributor" --scope "$($AzureIoTHub.id)" --only-show-errors | Out-Null
-        Stop-OnError -Step "Assign IoT Hub Registry Contributor role on Azure IoT for ADR principal"
-        
-        if ($NoDps -eq $false) {
-            Write-Host "Creating Device Provisioning Service with ADR integration ($DpsName)"
-            $AzureDps = Invoke-WithRetry -Step "Create Device Provisioning Service with ADR integration" `
-                -RetryOnPattern $AdrPermissionPropagationPattern -Command {
-                az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" `
-                    --mi-user-assigned "$($AzureCertMgmtIdentity.id)" --ns-resource-id "$($AzureAdrNamespace.id)" --ns-identity-id "$($AzureCertMgmtIdentity.id)" --only-show-errors | ConvertFrom-Json
-            }
-        }
+        # Created through ARM so it comes up with a system-assigned identity and local auth left on,
+        # which is the shape ADR links. S1, not GEN2: a GEN2 hub carries the namespace in its own
+        # properties, which is the retired model.
+        Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)."
+        $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
+        Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
+            location = $AzureLocation
+            sku = @{ name = "S1"; capacity = 1 }
+            identity = @{ type = "SystemAssigned" }
+            properties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
+        } | Out-Null
+        Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
+        $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
     } else {
         Write-Host "Creating Azure IoT Hub ($IotHubName)."
         $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" | ConvertFrom-Json
         Stop-OnError -Step "Create Azure IoT Hub"
+    }
 
-        if ($NoDps -eq $false) {
+    if ($NoDps -eq $false) {
+        if ($EnableCertificateManagement -eq $true) {
+            # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
+            # identity, which is what authenticates it to the ADR namespace. The identity cannot be
+            # added afterwards: DPS rejects a managed-identity PATCH with IH400158. Confined to this
+            # branch so ordinary provisioning keeps the CLI create and does not take a dependency on
+            # a preview api-version it has no use for.
+            Write-Host "Creating Azure Device Provisioning Service ($DpsName, with certificate management support)."
+            $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
+            Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
+                location = $AzureLocation
+                sku = @{ name = "S1"; capacity = 1 }
+                identity = @{ type = "SystemAssigned" }
+                properties = @{}
+            } | Out-Null
+            Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName)" -TimeoutSeconds 1200
+            # Re-read: idScope and the identity's principalId are populated as it provisions.
+            $AzureDps = Invoke-AzRest -Url $DpsUrl
+        } else {
             Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
             $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
             Stop-OnError -Step "Create Device Provisioning Service"
         }
     }
 
-    if ($NoDps -eq $false) {    
-        Write-Host "Linking Azure IoT Hub ($IotHubName) to Azure Device Provisioning service ($DpsName)"
-        az iot dps linked-hub create --dps-name "$DpsName" --resource-group "$ResourceGroup" --hub-name "$IotHubName" | Out-Null
-        Stop-OnError -Step "Link Azure IoT Hub to Azure Device Provisioning service"
+    if ($EnableCertificateManagement -eq $true) {
+        # The namespace, its grants and the link are one unit, retried as one. The link runs as the
+        # namespace identity, and an identity that never becomes usable to it cannot be waited out:
+        # the recovery is to recreate the namespace, which mints a fresh one, and grant against that.
+        for ($Cycle = 1; $Cycle -le $script:AdrLinkMaxCycles; $Cycle++) {
+            $AzureAdrNamespace = New-AdrNamespace -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -NamespaceName $AzureAdrNamespaceName -Location $AzureLocation
+
+            # Contributor is granted in BOTH directions for both resources: the link reads the hub and
+            # the DPS as the namespace identity, and reads the namespace as theirs, and a grant missing
+            # in either direction surfaces only as "the linked resource could not be read". The
+            # namespace also needs it on ITSELF, because the device-create it runs writes its own
+            # resource. On top of those sit the data-plane roles, and Azure Device Registry
+            # Contributor, which is what lets the DPS write enrollments and issue a certificate for a
+            # CSR: it already carries the issueCertificate data action, so no custom role is needed.
+            $AdrNamespaceId = $AzureAdrNamespace.id
+            $AdrNamespacePrincipalId = $AzureAdrNamespace.identity.principalId
+            $IotHubPrincipalId = $AzureIoTHub.identity.principalId
+            $DpsPrincipalId = $AzureDps.identity.principalId
+
+            Write-Host "Assigning roles between the ADR namespace, the IoT Hub and the DPS (cycle $Cycle of $($script:AdrLinkMaxCycles))"
+            @(
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureIoTHub.id },
+                @{ Assignee = $IotHubPrincipalId;       Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AzureDps.id },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:ContributorRoleId;           Scope = $AdrNamespaceId },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:AdrContributorRoleId;        Scope = $AdrNamespaceId },
+                @{ Assignee = $DpsPrincipalId;          Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id },
+                @{ Assignee = $AdrNamespacePrincipalId; Role = $script:IotHubDataContributorRoleId; Scope = $AzureIoTHub.id }
+            ) | %{
+                az role assignment create --assignee-object-id $_.Assignee --assignee-principal-type ServicePrincipal --role $_.Role --scope $_.Scope --only-show-errors | Out-Null
+                Stop-OnError -Step "Assign role $($_.Role) on $($_.Scope)"
+            }
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($AdrNamespacePrincipalId)" `
+                -Scope "$($AzureIoTHub.id)" `
+                -RoleDefinitionIds @($script:ContributorRoleId, $script:IotHubDataContributorRoleId)
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($AdrNamespacePrincipalId)" `
+                -Scope "$($AzureDps.id)" `
+                -RoleDefinitionIds @($script:ContributorRoleId)
+
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($DpsPrincipalId)" `
+                -Scope "$($AdrNamespaceId)" `
+                -RoleDefinitionIds @($script:ContributorRoleId, $script:AdrContributorRoleId)
+
+            # Device registration runs as the DPS identity against the hub, so its hub-scope grant
+            # is waited for as well; only the namespace-scope ones were.
+            Wait-AzRoleAssignment `
+                -PrincipalId "$($DpsPrincipalId)" `
+                -Scope "$($AzureIoTHub.id)" `
+                -RoleDefinitionIds @($script:IotHubDataContributorRoleId)
+
+            # Being readable is not the same as being enforced: the providers that check these grants
+            # cache them, so the link is given a head start rather than racing the first attempt
+            # against replication that has visibly only just finished. A recreated namespace starts
+            # replicating from scratch, so the head start grows with the cycle.
+            $HeadStart = 60 * $Cycle
+            Write-Host "Waiting $HeadStart seconds for the new role assignments to take effect."
+            Start-Sleep -Seconds $HeadStart
+
+            try {
+                Connect-AdrNamespace -NamespaceId $AdrNamespaceId -Location $AzureLocation -IotHubId $AzureIoTHub.id -DpsId $AzureDps.id -ExpectedPrincipalId $AdrNamespacePrincipalId
+                break
+            }
+            catch {
+                # Recreating is destructive and only helps the one case it exists for: an identity
+                # that never becomes usable to the link. Connect-AdrNamespace already raises
+                # everything else on the spot -- a rejected schema, a resource error, a timeout --
+                # and those are surfaced rather than answered by deleting the namespace.
+                if ($Cycle -ge $script:AdrLinkMaxCycles -or
+                    $_.Exception.Message -notmatch $script:AdrRolePropagationPattern) {
+                    throw
+                }
+                Write-Host "Linking did not succeed ($($_.Exception.Message)); recreating the namespace and retrying."
+                Remove-AdrNamespace -NamespaceId $AdrNamespaceId
+            }
+        }
+
+        # After the link, so that ADR has a hub to sync the issuing CA certificate to.
+        New-AdrCertificateAuthority -NamespaceId $AdrNamespaceId -Location $AzureLocation `
+            -CertificateAuthorityName $AzureAdrCertificateAuthorityName -PolicyName $AzureAdrPolicyName | Out-Null
+
+        Sync-DpsAdrConfiguration -DpsId $AzureDps.id -Location $AzureLocation
+
+        $AzureAdrPolicy = [AdrPolicyReference]::new($AzureAdrNamespaceName, $AzureAdrCertificateAuthorityName, $AzureAdrPolicyName)
+    } else {
+        $AzureAdrPolicy = [AdrPolicyReference]::new() # Incomplete: no policy is referenced below.
+    }
+
+    if ($NoDps -eq $false) {
+        # A DPS linked to an ADR namespace has ADR choosing its provisioning targets, and its own
+        # linked-hub list is read-only from then on -- adding to it fails with IH409313.
+        if ($EnableCertificateManagement -eq $false) {
+            Write-Host "Linking Azure IoT Hub ($IotHubName) to Azure Device Provisioning service ($DpsName)"
+            az iot dps linked-hub create --dps-name "$DpsName" --resource-group "$ResourceGroup" --hub-name "$IotHubName" | Out-Null
+            Stop-OnError -Step "Link Azure IoT Hub to Azure Device Provisioning service"
+        }
 
         # Step was put here to optimize if blocks, since it's common down.
         Write-Host "Creating DPS Root Certificate"
         $DpsRootCertificate = Add-DpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName
-    }
-
-    if ($EnableCertificateManagement -eq $true) {
-        Write-Host "Syncing ADR credentials ($AzureAdrNamespaceName)."
-        az iot adr ns credential sync --ns "$AzureAdrNamespaceName" --resource-group "$ResourceGroup" --only-show-errors | Out-Null
-        Stop-OnError -Step "Sync ADR credentials"
-    } else {
-        $AzureAdrPolicyName = $null # Used below on enrollment creation.
     }
 
     # Create IoT Hub Devices
@@ -343,21 +404,21 @@ function New-AzIotTestEnvironment {
     if ($NoDps -eq $false) {
         for ($i = 0; $i -lt $DpsSymmKeyIndividualEnrollments; $i++) {
             $EnrollmentId = "$DpsSymmKeyEnrollmentIdPrefix-$i"
-            $EnrollmentInfo = Add-DpsSymmetricKeyIndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $EnrollmentInfo = Add-DpsSymmetricKeyIndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy
 
             $TestEnvInfo.Dps.Enrollments.IndividualSymmetricKey += $EnrollmentInfo
         }
 
         for ($i = 0; $i -lt $DpsX509IndividualEnrollments; $i++) {
             $EnrollmentId = "$DpsX509EnrollmentIdPrefix-$i"
-            $EnrollmentInfo = Add-DpsX509IndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $EnrollmentInfo = Add-DpsX509IndividualEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy
 
             $TestEnvInfo.Dps.Enrollments.IndividualX509 += $EnrollmentInfo
         }
 
         if ($DpsSymmKeyGroupEnrollmentDevices -gt 0) {
             $EnrollmentId = "$DpsSymmKeyEnrollmentIdPrefix-group"
-            $SKEnrollmentGroupInfo = Add-DpsSymmetricKeyEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName
+            $SKEnrollmentGroupInfo = Add-DpsSymmetricKeyEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy
 
             $TestEnvInfo.Dps.Enrollments.GroupSymmetricKey += $SKEnrollmentGroupInfo
 
@@ -368,7 +429,7 @@ function New-AzIotTestEnvironment {
 
         if ($DpsX509GroupEnrollmentDevices -gt 0) {
             $EnrollmentId = "$DpsX509EnrollmentIdPrefix-group"
-            $X509EnrollmentGroupInfo = Add-DpsX509EnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicyName $AzureAdrPolicyName -IssuerCertificate $DpsRootCertificate.ToNativeX509Certificate2() -IssuerPrivateKey $DpsRootCertificate.PrivateKey.ToNativeRsaKey() -IotHubFqdn $IotHubFqdn
+            $X509EnrollmentGroupInfo = Add-DpsX509EnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentId $EnrollmentId -AdrPolicy $AzureAdrPolicy -IssuerCertificate $DpsRootCertificate.ToNativeX509Certificate2() -IssuerPrivateKey $DpsRootCertificate.PrivateKey.ToNativeRsaKey() -IotHubFqdn $IotHubFqdn
 
             $TestEnvInfo.Dps.Enrollments.GroupX509 += $X509EnrollmentGroupInfo
 
@@ -394,15 +455,11 @@ function New-AzIotTestEnvironment {
         $AzureStorageConnectionString=$(az storage account show-connection-string --name "$StorageAccountName" --resource-group "$ResourceGroup" --query connectionString -o tsv)
         Stop-OnError -Step "Getting Azure Storage account connection string"
 
-        if ($EnableCertificateManagement -eq $true) {
-            Write-Host "Updating Azure IoT Hub file upload settings (certificate management)"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --ns-identity-id "$($AzureAdrNamespace.identity.principalId)" | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings (certificate management)"
-        } else {    
-            Write-Host "Updating Azure IoT Hub file upload settings"
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 | Out-Null
-            Stop-OnError -Step "Updating Azure IoT Hub file upload settings"
-        }
+        # File upload no longer varies with certificate management: '--ns-identity-id' belonged to the
+        # model where the hub pointed at the namespace through a shared identity.
+        Write-Host "Updating Azure IoT Hub file upload settings"
+        az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 | Out-Null
+        Stop-OnError -Step "Updating Azure IoT Hub file upload settings"
     }
 
     if ($AddContainerRegistry) {
@@ -429,7 +486,8 @@ function New-AzIotTestEnvironment {
     # Gathering Test Environment settings.
     $TestEnvInfo.AzureResourceGroup = $ResourceGroup
     $TestEnvInfo.Dps.ResourceGroup = $ResourceGroup
-    $TestEnvInfo.AzureAdrPolicyName = $AzureAdrPolicyName
+    $TestEnvInfo.AdrPolicy = $AzureAdrPolicy
+    $TestEnvInfo.Dps.AdrPolicy = $AzureAdrPolicy
 
     Write-Host "Getting IoT Hub Connection String"
     $TestEnvInfo.IotHub.ConnectionString = $(az iot hub connection-string show -g $ResourceGroup -n $IotHubName --kt primary --pn iothubowner --query connectionString -o tsv)
@@ -450,7 +508,9 @@ function New-AzIotTestEnvironment {
         $TestEnvInfo.Dps.DeviceFqdn = $AzureDps.properties.deviceProvisioningHostName
         $TestEnvInfo.Dps.ServiceFqdn = $AzureDps.properties.serviceOperationsHostName
         $TestEnvInfo.Dps.IdScope = $AzureDps.properties.idScope
-        $AzureDps.properties.iotHubs | %{ $TestEnvInfo.Dps.LinkedIotHubs += $_.name }
+        # Not read from the DPS: it is captured before the hub is attached, and a DPS linked to an
+        # ADR namespace does not carry its provisioning targets in its own list at all.
+        $TestEnvInfo.Dps.LinkedIotHubs += $IotHubFqdn
 
         Write-Host "Getting DPS Connection String"
         $TestEnvInfo.Dps.ConnectionString = $(az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv)
@@ -518,7 +578,7 @@ function Get-AzIotTestEnvironment {
         Stop-OnError -Step "Set Azure subscription"
     }
 
-    # Required for some az iot commands, e.g. az iot adr ns create.
+    # Required for the IoT Hub and DPS command groups. ADR is reached through ARM directly.
     Install-AzureIotCliExtension
 
     $AzureResourceGroup = az group show --name "$ResourceGroup" | ConvertFrom-Json
@@ -535,18 +595,24 @@ function Get-AzIotTestEnvironment {
         $AzureDps = az iot dps show --resource-group "$ResourceGroup" --name "$DpsName" | ConvertFrom-Json
     }
 
-    if ([string]::IsNullOrWhiteSpace($IotHubName)) {
-        if ($AzureDps.properties.iotHubs.Count -eq 0) {
-            throw "Device Provisioning Service ($DpsName) does not have linked IoT hubs"
-        }
-
-        $IotHubName = $($AzureDps.properties.iotHubs[0].name.Split('.')[0])
+    # A DPS linked to an ADR namespace has ADR choosing its provisioning targets, so the hub is
+    # reached through the namespace's messaging endpoints rather than the DPS's own linked-hub list.
+    $AdrNamespaceId = $AzureDps.properties.deviceRegistry.namespaceResourceId
+    if ($null -ne $AdrNamespaceId) {
+        $AdrNamespace = Invoke-AzRest -Url "https://management.azure.com$($AdrNamespaceId)?api-version=$($script:AdrApiVersion)"
+        $LinkedIotHubNames = @($AdrNamespace.properties.messaging.endpoints.PSObject.Properties | %{ $_.Value.resourceId.Split('/')[-1] })
     } else {
-        $DpsLinkedIotHub = $AzureDps.properties.iotHubs | ?{$_.name -imatch "$IotHubName" }
+        $LinkedIotHubNames = @($AzureDps.properties.iotHubs | %{ $_.name.Split('.')[0] })
+    }
 
-        if ($null -eq $DpsLinkedIotHub) {
-            throw "Iot Hub $IotHubName is not linked to $DpsName"
+    if ([string]::IsNullOrWhiteSpace($IotHubName)) {
+        if ($LinkedIotHubNames.Count -eq 0) {
+            throw "Device Provisioning Service ($($AzureDps.name)) does not have linked IoT hubs"
         }
+
+        $IotHubName = $LinkedIotHubNames[0]
+    } elseif ($IotHubName -notin $LinkedIotHubNames) {
+        throw "IoT Hub $IotHubName is not linked to $($AzureDps.name)"
     }
 
     $AzureIoTHub = az iot hub show --resource-group "$ResourceGroup" --name "$IotHubName" | ConvertFrom-Json
@@ -555,10 +621,21 @@ function Get-AzIotTestEnvironment {
     $TestEnvInfo.AzureResourceGroup = $AzureResourceGroup.name
     $TestEnvInfo.Dps.ResourceGroup = $AzureResourceGroup.name
 
-    if ($null -ne $AzureIoTHub.properties.deviceRegistry.namespaceResourceId) {
-        $AzureAdrNamespaceName = $AzureIoTHub.properties.deviceRegistry.namespaceResourceId.split("/")[8]
-        $AzureAdrPolicy = az iot adr ns policy list --resource-group "$ResourceGroup" --ns "$AzureAdrNamespaceName" | ConvertFrom-Json
-        $TestEnvInfo.AzureAdrPolicyName = $AzureAdrPolicy.name
+    if ($null -ne $AdrNamespaceId) {
+        # The certificate policy is discovered rather than assumed: it hangs off the issuing CA, and
+        # both names are needed to reference it from an enrollment.
+        $AdrNamespaceName = $AdrNamespaceId.Split('/')[-1]
+        $CertificateAuthorities = Invoke-AzRest -Url "https://management.azure.com$AdrNamespaceId/certificateAuthorities?api-version=$($script:AdrApiVersion)"
+
+        foreach ($CertificateAuthority in $CertificateAuthorities.value) {
+            $Policies = Invoke-AzRest -Url "https://management.azure.com$($CertificateAuthority.id)/certificatePolicies?api-version=$($script:AdrApiVersion)"
+
+            if ($Policies.value.Count -gt 0) {
+                $TestEnvInfo.AdrPolicy = [AdrPolicyReference]::new($AdrNamespaceName, $CertificateAuthority.name, $Policies.value[0].name)
+                $TestEnvInfo.Dps.AdrPolicy = $TestEnvInfo.AdrPolicy
+                break
+            }
+        }
     }
 
     Write-Host "Getting IoT Hub Connection String"
@@ -608,7 +685,16 @@ function Get-AzIotTestEnvironment {
     $TestEnvInfo.Dps.DeviceFqdn = $AzureDps.properties.deviceProvisioningHostName
     $TestEnvInfo.Dps.ServiceFqdn = $AzureDps.properties.serviceOperationsHostName
     $TestEnvInfo.Dps.IdScope = $AzureDps.properties.idScope
-    $AzureDps.properties.iotHubs | %{ $TestEnvInfo.Dps.LinkedIotHubs += $_.name }
+    # FQDNs, not the short names used for selection above: this list is what an enrollment's iotHubs
+    # is set from (DpsInfo.AddX509GroupEnrollment reads LinkedIotHubs[0]), and a short name there is
+    # rejected. The ADR endpoints carry ARM resource ids, so the host name is read from the hub.
+    foreach ($Name in $LinkedIotHubNames) {
+        $TestEnvInfo.Dps.LinkedIotHubs += if ($Name -eq $IotHubName) {
+            $AzureIoTHub.properties.hostName
+        } else {
+            az iot hub show --resource-group "$ResourceGroup" --name "$Name" --query properties.hostName -o tsv
+        }
+    }
 
     Write-Host "Getting DPS Connection String"
     $TestEnvInfo.Dps.ConnectionString = $(az iot dps connection-string show -g $ResourceGroup -n $AzureDps.name --kt primary --pn provisioningserviceowner --query connectionString -o tsv)

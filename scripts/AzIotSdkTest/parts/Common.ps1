@@ -126,16 +126,14 @@ function Stop-OnError {
 
 # The azure-iot CLI extension version this repo provisions with.
 #
-# Provisioning needs the `az iot adr` command group, which ships only in the
-# preview builds. 0.30.0 final dropped it, and because a final release outranks
-# its own pre-releases, `--allow-preview` started resolving to 0.30.0 instead
-# of 0.30.0b2 -- so the command group disappeared with no change on our side and
-# every provisioning run began failing with:
+# ADR no longer needs it: the namespace, the certificate authorities and the link
+# are created through ARM directly (see New-AdrCertificateAuthority), so the
+# `az iot adr` command group -- which models the retired public-preview object
+# model and has no command for the one that replaced it -- is not used here.
 #
-#   ERROR: 'adr' is misspelled or not recognized by the system.
-#
-# Pinning is what makes this reproducible: `--allow-preview` selects whatever
-# happens to be newest, which is not a version this repo ever tested against.
+# The pin stays for the OTHER reasons below, which still hold: this module reads
+# `az iot hub connection-string show` for the service-side clients, and pinning
+# is what makes the version reproducible rather than whatever is newest.
 #
 # Installed from the release wheel rather than by name, because 0.30.0b2 was
 # pulled from the Azure CLI extension index and `--version` no longer resolves

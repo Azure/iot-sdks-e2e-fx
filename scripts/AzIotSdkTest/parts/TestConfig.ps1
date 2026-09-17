@@ -86,7 +86,9 @@ function New-AzIotCSDKE2ETestConfig {
             $DpsIndividualIndexedLines
             "`$env:PROVISIONING_ROOT_CERT = `"$DpsRootCACertificateBase64`""
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
-            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "`$env:ADR_CERT_MGMT_NAMESPACE_NAME = `"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "`$env:ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "`$env:IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID = `"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "`$env:IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY = `"$SymmKeyGroupPrimaryKey`"" })
             "`$env:AZURE_RESOURCE_GROUP = `"$($TestEnvInfo.AzureResourceGroup)`""
@@ -115,7 +117,9 @@ function New-AzIotCSDKE2ETestConfig {
             $DpsIndividualIndexedLines
             "export PROVISIONING_ROOT_CERT=`"$DpsRootCACertificateBase64`""
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
-            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "export ADR_CERT_MGMT_NAMESPACE_NAME=`"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "export ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "export IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID=`"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "export IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY=`"$SymmKeyGroupPrimaryKey`"" })
             "export AZURE_RESOURCE_GROUP=`"$($TestEnvInfo.AzureResourceGroup)`""
@@ -190,7 +194,9 @@ function New-AzIotNetSDKE2ETestConfig {
             "`$env:IOT_DPS_INDIVIDUAL_REGISTRATION_ID = `"$DpsRegistrationId`""
             "`$env:PROVISIONING_ROOT_CERT = `"$DpsRootCACertificateBase64`""
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
-            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "`$env:ADR_CERT_MGMT_NAMESPACE_NAME = `"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "`$env:ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "`$env:IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID = `"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "`$env:IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY = `"$SymmKeyGroupPrimaryKey`"" })
             "`$env:AZURE_RESOURCE_GROUP = `"$($TestEnvInfo.AzureResourceGroup)`""
@@ -210,7 +216,9 @@ function New-AzIotNetSDKE2ETestConfig {
             "export IOT_DPS_INDIVIDUAL_REGISTRATION_ID=`"$DpsRegistrationId`""
             "export PROVISIONING_ROOT_CERT=`"$DpsRootCACertificateBase64`""
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
-            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "export ADR_CERT_MGMT_NAMESPACE_NAME=`"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "export ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
             $(if ($SymmKeyGroupEnrollmentId) { "export IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID=`"$SymmKeyGroupEnrollmentId`"" })
             $(if ($SymmKeyGroupPrimaryKey) { "export IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY=`"$SymmKeyGroupPrimaryKey`"" })
             "export AZURE_RESOURCE_GROUP=`"$($TestEnvInfo.AzureResourceGroup)`""
@@ -270,7 +278,9 @@ function New-AzIotPythonSDKE2ETestConfig {
             "`$env:PROVISIONING_ROOT_CERT_KEY = `"$DpsRootCAPrivateKeyBase64`""
             "`$env:PROVISIONING_ROOT_PASSWORD = `"`""
 
-            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "`$env:ADR_CERT_MGMT_NAMESPACE_NAME = `"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "`$env:ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "`$env:ADR_CERT_MGMT_POLICY_NAME = `"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
 
             "`$env:PYTHONUNBUFFERED = `"True`""
 
@@ -298,7 +308,9 @@ function New-AzIotPythonSDKE2ETestConfig {
             "export PROVISIONING_ROOT_CERT_KEY=`"$DpsRootCAPrivateKeyBase64`""
             "export PROVISIONING_ROOT_PASSWORD=`"`""
 
-            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AzureAdrPolicyName)`""
+            "export ADR_CERT_MGMT_NAMESPACE_NAME=`"$($TestEnvInfo.AdrPolicy.NamespaceName)`""
+            "export ADR_CERT_MGMT_CERTIFICATE_AUTHORITY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificateAuthorityName)`""
+            "export ADR_CERT_MGMT_POLICY_NAME=`"$($TestEnvInfo.AdrPolicy.CertificatePolicyName)`""
 
             "export PYTHONUNBUFFERED=`"True`""
 

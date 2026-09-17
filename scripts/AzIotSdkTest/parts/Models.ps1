@@ -366,6 +366,49 @@ class DpsEnrollmentsSet {
      }
 }
 
+class AdrPolicyReference {
+    <#
+    Identifies the ADR certificate policy an enrollment issues device certificates from.
+
+    Public preview identified it with a single name ('credentialPolicyName'). It is now addressed by
+    the three names below, which enrollments must carry together -- a partial reference is not a
+    weaker reference, it is an invalid one -- so IsComplete() gates every use of it.
+    #>
+    [string]$NamespaceName = $null
+    [string]$CertificateAuthorityName = $null
+    [string]$CertificatePolicyName = $null
+
+    AdrPolicyReference() { }
+
+    AdrPolicyReference([string]$NamespaceName, [string]$CertificateAuthorityName, [string]$CertificatePolicyName) {
+        $this.NamespaceName = $NamespaceName
+        $this.CertificateAuthorityName = $CertificateAuthorityName
+        $this.CertificatePolicyName = $CertificatePolicyName
+    }
+
+    [bool]IsComplete() {
+        return -not (
+            [string]::IsNullOrWhiteSpace($this.NamespaceName) -or
+            [string]::IsNullOrWhiteSpace($this.CertificateAuthorityName) -or
+            [string]::IsNullOrWhiteSpace($this.CertificatePolicyName)
+        )
+    }
+
+    [hashtable]ToHashtable() {
+        return [ordered]@{
+            NamespaceName = $this.NamespaceName
+            CertificateAuthorityName = $this.CertificateAuthorityName
+            CertificatePolicyName = $this.CertificatePolicyName
+        }
+    }
+
+    static [AdrPolicyReference]FromHashtable([hashtable]$Hashtable) {
+        if ($null -eq $Hashtable) { return [AdrPolicyReference]::new() }
+        return [AdrPolicyReference]::new($Hashtable.NamespaceName, $Hashtable.CertificateAuthorityName, $Hashtable.CertificatePolicyName)
+    }
+}
+
+
 class DpsInfo {
     [string]$ResourceGroup = $null
     [string]$DeviceFqdn = $null
@@ -375,6 +418,10 @@ class DpsInfo {
     [X509CertificateInfo[]]$RootCaCertificates = @()
     [DpsEnrollmentsSet]$Enrollments = [DpsEnrollmentsSet]::new()
     [string[]]$LinkedIotHubs = @()
+    # Always present, never null: an environment without certificate management simply carries an
+    # incomplete reference. Callers gate on IsComplete(), and the generated test configuration reads
+    # the three names directly.
+    [AdrPolicyReference]$AdrPolicy = [AdrPolicyReference]::new()
 
     DpsInfo() { }
 
@@ -397,7 +444,7 @@ class DpsInfo {
         [string]$IotHubFqdn,
         [System.Security.Cryptography.X509Certificates.X509Certificate2]$IssuerCertificate,
         [System.Security.Cryptography.RSA]$IssuerPrivateKey,
-        [string]$AzureAdrPolicyName,
+        [AdrPolicyReference]$AdrPolicyReference,
         [timespan]$CertificateExpiration,
         [bool]$UseAdrPolicy
     ) {
@@ -420,8 +467,8 @@ class DpsInfo {
             throw "Both IssuerCertificate and IssuerPrivateKey must be provided together"
         }
 
-        if ([string]::IsNullOrWhiteSpace($AzureAdrPolicyName) -and $UseAdrPolicy) {
-            $AzureAdrPolicyName = $this.AzureAdrPolicyName
+        if ($null -eq $AdrPolicyReference -and $UseAdrPolicy) {
+            $AdrPolicyReference = $this.AdrPolicy
         }
 
         if ($null -eq $CertificateExpiration) {
@@ -430,7 +477,7 @@ class DpsInfo {
             $CertificateExpiration = $DefaultCertificateExpiration
         }
 
-        $GroupX509Enrollment = Add-DpsX509EnrollmentGroup -ResourceGroup $this.ResourceGroup -DpsName $this.GetName() -EnrollmentId $EnrollmentId -IssuerCertificate $IssuerCertificate -IssuerPrivateKey $IssuerPrivateKey -IotHubFqdn $IotHubFqdn -AdrPolicyName $AzureAdrPolicyName -CertificateExpiration $CertificateExpiration
+        $GroupX509Enrollment = Add-DpsX509EnrollmentGroup -ResourceGroup $this.ResourceGroup -DpsName $this.GetName() -EnrollmentId $EnrollmentId -IssuerCertificate $IssuerCertificate -IssuerPrivateKey $IssuerPrivateKey -IotHubFqdn $IotHubFqdn -AdrPolicy $AdrPolicyReference -CertificateExpiration $CertificateExpiration
         $this.Enrollments.GroupX509 += [DpsX509EnrollmentGroupInfo]::new($GroupX509Enrollment.Id, $GroupX509Enrollment.PrimaryCertificate)
         return $GroupX509Enrollment
      }
@@ -445,6 +492,7 @@ class DpsInfo {
             RootCaCertificates = Convert-CollectionToHashtable -Collection $this.RootCaCertificates
             Enrollments =  ConvertTo-Hashtable -Object $this.Enrollments
             LinkedIotHubs = $this.LinkedIotHubs
+            AdrPolicy = $this.AdrPolicy.ToHashtable()
         }
      }
 
@@ -458,6 +506,7 @@ class DpsInfo {
         if ($null -ne $Hashtable.RootCaCertificates) { $DpsInfo.RootCaCertificates = @($Hashtable.RootCaCertificates | ?{ $null -ne $_ } | %{ [X509CertificateInfo]::FromHashtable($_) }) }
         $DpsInfo.Enrollments = [DpsEnrollmentsSet]::FromHashtable($Hashtable.Enrollments)
         $DpsInfo.LinkedIotHubs = $Hashtable.LinkedIotHubs
+        $DpsInfo.AdrPolicy = [AdrPolicyReference]::FromHashtable($Hashtable.AdrPolicy)
         return $DpsInfo
     }
 }
@@ -568,7 +617,10 @@ class TestEnvironmentInfo {
 
     [ContainerRegistryInfo[]]$ContainerRegistry = @()
 
-    [string]$AzureAdrPolicyName = $null
+    # Always present, never null: an environment without certificate management simply carries an
+    # incomplete reference. Callers gate on IsComplete(), and the generated test configuration reads
+    # the three names directly.
+    [AdrPolicyReference]$AdrPolicy = [AdrPolicyReference]::new()
 
     [hashtable]ToHashtable() {
         return [ordered]@{
@@ -576,14 +628,14 @@ class TestEnvironmentInfo {
             IotHub = ConvertTo-Hashtable -Object $this.IotHub
             Dps = ConvertTo-Hashtable -Object $this.Dps
             # TODO: add container registry
-            AzureAdrPolicyName = $this.AzureAdrPolicyName
+            AdrPolicy = $this.AdrPolicy.ToHashtable()
         }
     }
 
     static [TestEnvironmentInfo]FromHashtable([hashtable]$Hashtable) {
         $TestEnvironmentInfo = [TestEnvironmentInfo]::new()
         $TestEnvironmentInfo.AzureResourceGroup = $Hashtable.AzureResourceGroup
-        $TestEnvironmentInfo.AzureAdrPolicyName = $Hashtable.AzureAdrPolicyName
+        $TestEnvironmentInfo.AdrPolicy = [AdrPolicyReference]::FromHashtable($Hashtable.AdrPolicy)
         $TestEnvironmentInfo.IotHub = [IotHubInfo]::FromHashtable($Hashtable.IotHub)
         $TestEnvironmentInfo.Dps = [DpsInfo]::FromHashtable($Hashtable.Dps)
         # TODO: add container registry
