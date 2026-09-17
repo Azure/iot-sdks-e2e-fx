@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 Parses PowerShell extracted from the composite actions and checks it against the
-Azure.Iot.Sdk.Test module.
+AzIotSdkTest module.
 
 .DESCRIPTION
 Two failure modes are caught here, both of which otherwise only show up when a
@@ -23,11 +23,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$ModulePath = Join-Path $PSScriptRoot '../scripts/Azure.Iot.Sdk.Test.psm1'
+$ModulePath = Join-Path $PSScriptRoot '../scripts/AzIotSdkTest/AzIotSdkTest.psd1'
 Import-Module $ModulePath -Force
 
 $ModuleCommands = @{}
-foreach ($Command in Get-Command -Module Azure.Iot.Sdk.Test) {
+foreach ($Command in Get-Command -Module AzIotSdkTest) {
     $ModuleCommands[$Command.Name] = $Command
 }
 
@@ -143,7 +143,7 @@ foreach ($Path in $ScriptPath) {
             if ($ExternalCommand -contains $CommandName) { continue }
             if (Get-Command -Name $CommandName -ErrorAction SilentlyContinue) { continue }
 
-            $Problems.Add("$Name : '$CommandName' is not a command of Azure.Iot.Sdk.Test, a function defined in this script, or a command available on this machine. If it is an external tool, add it to `$ExternalCommand in tests/Validate-ActionScripts.ps1.")
+            $Problems.Add("$Name : '$CommandName' is not a command of AzIotSdkTest, a function defined in this script, or a command available on this machine. If it is an external tool, add it to `$ExternalCommand in tests/Validate-ActionScripts.ps1.")
             continue
         }
 
@@ -185,4 +185,4 @@ if ($Problems.Count -gt 0) {
     exit 1
 }
 
-Write-Host "OK: $($ScriptPath.Count) embedded script(s) parsed and checked against Azure.Iot.Sdk.Test."
+Write-Host "OK: $($ScriptPath.Count) embedded script(s) parsed and checked against AzIotSdkTest."

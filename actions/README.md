@@ -1,7 +1,7 @@
 > [!NOTE]
 > These actions are the GitHub Actions face of the Azure Pipelines step
 > templates in [`vsts/templates/`](../vsts/templates). Both call the same
-> `Azure.Iot.Sdk.Test` module in [`scripts/`](../scripts). Keep the logic in the
+> `AzIotSdkTest` module in [`scripts/AzIotSdkTest/`](../scripts/AzIotSdkTest). Keep the logic in the
 > module; keep these files thin.
 
 # Composite actions
@@ -20,7 +20,7 @@ from its own checkout:
 
 ```yaml
 env:
-  AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/Azure.Iot.Sdk.Test.psm1
+  AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/AzIotSdkTest/AzIotSdkTest.psd1
 ```
 
 Two consequences worth stating:
@@ -81,7 +81,7 @@ jobs:
 * **Every declared input is used, and every used input is declared.** GitHub
   silently ignores an unknown key passed in `with:`, so drift here is invisible
   at runtime; the same test fails the build on it.
-* **Calls into `Azure.Iot.Sdk.Test` are checked against the module.** The test
+* **Calls into `AzIotSdkTest` are checked against the module.** The test
   parses each inline script and verifies the cmdlets and parameters exist.
 
 Run the checks locally:

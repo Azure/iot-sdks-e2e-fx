@@ -2,7 +2,7 @@
 # submodules) is pinned to a consistent commit, and fails the job when two
 # parents disagree about the same dependency.
 #
-# The check itself lives in the Azure.Iot.Sdk.Test module in this repository;
+# The check itself lives in the AzIotSdkTest module in this repository;
 # this action is only the GitHub Actions face of it. Azure Pipelines consumers
 # call Test-SubmoduleConsistency from the same module directly.
 #
@@ -51,7 +51,7 @@ runs:
       env:
         # Every input is passed as env, never string-interpolated into the
         # script body, so an input is always data and never code.
-        AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/Azure.Iot.Sdk.Test.psm1
+        AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/AzIotSdkTest/AzIotSdkTest.psd1
         AZ_IOT_SUBMODULE_PATH: ${{ inputs.path }}
         AZ_IOT_SUBMODULE_REPO_URL: ${{ inputs.repo-url }}
         AZ_IOT_SUBMODULE_BRANCH: ${{ inputs.branch }}

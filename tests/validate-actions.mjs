@@ -12,7 +12,7 @@
 //   3. no ${{ ... }} expression appears inside a script body: inputs reach the
 //      script through env only, so an input is always data and never code
 //   4. the module path each action imports exists in this repository
-//   5. the embedded PowerShell parses, and every Azure.Iot.Sdk.Test cmdlet it
+//   5. the embedded PowerShell parses, and every AzIotSdkTest cmdlet it
 //      calls exists with the parameters it passes (delegated to
 //      tests/Validate-ActionScripts.ps1)
 //

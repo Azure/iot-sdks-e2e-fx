@@ -9,13 +9,13 @@ on:
     branches: [master]
     paths:
       - 'actions/**'
-      - 'scripts/Azure.Iot.Sdk.Test.psm1'
+      - 'scripts/**'
       - 'tests/**'
       - '.github/workflows/**'
   pull_request:
     paths:
       - 'actions/**'
-      - 'scripts/Azure.Iot.Sdk.Test.psm1'
+      - 'scripts/**'
       - 'tests/**'
       - '.github/workflows/**'
   workflow_dispatch:

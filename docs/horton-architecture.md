@@ -90,7 +90,7 @@ Per-language gates (e.g. `gate-c.yaml`) delegate the build & test jobs to templa
 
 The `setup` stage runs `steps-create-azure-resources.yaml`, which:
 
-1. Imports `Azure.Iot.Sdk.Test.psm1` from `scripts/` in this repo (shared test infrastructure module, includes `New-AzIotHortonTestConfig`)
+1. Imports the `AzIotSdkTest` module from `scripts/AzIotSdkTest/` in this repo (shared test infrastructure module, includes `New-AzIotHortonTestConfig`)
 2. Calls `New-AzIotTestEnvironment` via Azure CLI to create an IoT Hub and ACR in a new resource group
 3. Calls `New-AzIotHortonTestConfig` to generate `set_horton_env_vars.sh` with all connection strings
 4. Publishes the `test_config` artifact
@@ -435,7 +435,7 @@ Key REST endpoints exposed by each wrapper:
 | `bin/deploy/utilities.py` | Docker + shell helper functions |
 | `horton_helpers/src/horton_settings.py` | Settings management (JSON + env vars) |
 | `docker_images/{lang}/Dockerfile` | 2-phase Dockerfile per SDK language |
-| `scripts/Azure.Iot.Sdk.Test.psm1` | Shared test infra module; provides `New-AzIotHortonTestConfig` to generate `set_horton_env_vars.sh` from Azure resources |
+| `scripts/AzIotSdkTest/` | Shared test infra module; provides `New-AzIotHortonTestConfig` to generate `set_horton_env_vars.sh` from Azure resources |
 | `test-runner/conftest.py` | pytest configuration + settings loading |
 | `test-runner/fixtures.py` | pytest fixtures for REST client adapters (with retry logic) |
 | `test-runner/connections.py` | Client connection management |
