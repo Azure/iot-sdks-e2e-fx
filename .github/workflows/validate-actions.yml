@@ -11,13 +11,13 @@ on:
       - 'actions/**'
       - 'scripts/Azure.Iot.Sdk.Test.psm1'
       - 'tests/**'
-      - '.github/workflows/validate-actions.yml'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'actions/**'
       - 'scripts/Azure.Iot.Sdk.Test.psm1'
       - 'tests/**'
-      - '.github/workflows/validate-actions.yml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
@@ -33,3 +33,11 @@ jobs:
         run: |
           npm install --no-save js-yaml@4
           node tests/validate-actions.mjs
+
+      - name: Lint workflows
+        run: |
+          curl -sSL -o actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz
+          tar -xzf actionlint.tar.gz actionlint
+          # Workflow files only: actionlint parses composite action.yml as a
+          # workflow and reports its 'runs'/'inputs' keys as errors.
+          ./actionlint -no-color .github/workflows/*.yml
