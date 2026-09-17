@@ -52,17 +52,25 @@ try {
 $StagingRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("AzIotSdkTest-" + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $StagingRoot -Force | Out-Null
 
-$ZipPath = Join-Path $StagingRoot 'package.zip'
-$ZipUri = "https://github.com/Azure/iot-sdks-e2e-fx/archive/$Ref.zip"
+try {
+    $ZipPath = Join-Path $StagingRoot 'package.zip'
+    $ZipUri = "https://github.com/Azure/iot-sdks-e2e-fx/archive/$Ref.zip"
 
-Invoke-WebRequest -Uri $ZipUri -OutFile $ZipPath -UseBasicParsing
-Expand-Archive -Path $ZipPath -DestinationPath $StagingRoot -Force
+    Invoke-WebRequest -Uri $ZipUri -OutFile $ZipPath -UseBasicParsing
+    Expand-Archive -Path $ZipPath -DestinationPath $StagingRoot -Force
 
-$Downloaded = Get-ChildItem -Path $StagingRoot -Recurse -Filter 'Import-Parts.ps1' |
-    Select-Object -First 1
+    $Downloaded = Get-ChildItem -Path $StagingRoot -Recurse -Filter 'Import-Parts.ps1' |
+        Select-Object -First 1
 
-if (-not $Downloaded) {
-    throw "iot-sdks-e2e-fx@$Ref does not contain scripts/AzIotSdkTest/Import-Parts.ps1."
+    if (-not $Downloaded) {
+        throw "iot-sdks-e2e-fx@$Ref does not contain scripts/AzIotSdkTest/Import-Parts.ps1."
+    }
+
+    # Dot-sourcing reads and parses the files now, so nothing under $StagingRoot
+    # is needed once this returns and the directory can go.
+    . $Downloaded.FullName
+} finally {
+    # Build agents are often persistent, and a failed download would otherwise
+    # leave a partial copy behind on every run.
+    Remove-Item -Path $StagingRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
-
-. $Downloaded.FullName
