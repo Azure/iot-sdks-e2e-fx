@@ -29,15 +29,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            shell: pwsh
-          - os: windows-latest
-            shell: powershell
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
 
-      - name: Validate module
-        shell: ${{ matrix.shell }}
+      # Two steps rather than `shell: ${{ matrix.shell }}`: `shell` is evaluated
+      # before the matrix context exists, so an expression there is a workflow
+      # file error rather than a job failure.
+      - name: Validate module (PowerShell Core)
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: ./tests/Validate-Module.ps1
+
+      - name: Validate module (Windows PowerShell 5.1)
+        if: runner.os == 'Windows'
+        shell: powershell
         run: ./tests/Validate-Module.ps1
