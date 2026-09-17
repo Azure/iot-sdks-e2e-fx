@@ -1644,7 +1644,13 @@ $script:AdrNamespaceTags = @{ useMiSdk = "true" }
 #
 # Overridable from the environment so a cloud or region where one of these versions is not registered
 # can be unblocked without a code change.
-$script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-02-preview" }
+# The namespace/link api-version. 2026-11-02-preview links only where the subscription is already
+# enabled for it; 2026-11-01-preview links on both subscriptions this suite has been run against,
+# including one where every 2026-11-02-preview attempt failed LinkableResourceNotReady. The prime
+# and the link must stay on ONE version: the namespace projects a different SystemAssigned
+# principalId per api-version, so granting the role at one and linking at another authorizes an
+# identity the link never uses.
+$script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else { "2026-11-01-preview" }
 $script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
 $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
 $script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-06-01-preview" }
