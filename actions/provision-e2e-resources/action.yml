@@ -3,7 +3,7 @@
 #
 # This is the GitHub Actions face of the same work that
 # vsts/templates/steps-create-azure-resources.yaml does for Azure Pipelines.
-# Both call the SAME Azure.Iot.Sdk.Test module; neither downloads it, because
+# Both call the SAME AzIotSdkTest module; neither downloads it, because
 # the runner already checked this repository out to run the action, so the
 # module is guaranteed to be the commit this action was pinned to.
 #
@@ -112,7 +112,7 @@ runs:
       env:
         # EVERY input is passed as env, never string-interpolated into the
         # script body, so an input is always data and never code.
-        AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/Azure.Iot.Sdk.Test.psm1
+        AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/AzIotSdkTest/AzIotSdkTest.psd1
         AZ_IOT_RG_NAME: ${{ inputs.rg-name }}
         AZ_IOT_RG_PREFIX: ${{ inputs.rg-prefix }}
         AZ_IOT_LOCATION: ${{ inputs.azure-location }}
@@ -176,10 +176,10 @@ runs:
           $ConfigCmdletName = $env:AZ_IOT_CONFIG_CMDLET
           $ConfigCmdletMatches = @(
               Get-Command -Name $ConfigCmdletName -CommandType Function -ErrorAction SilentlyContinue |
-                  Where-Object { $_.Name -eq $ConfigCmdletName -and $_.ModuleName -eq 'Azure.Iot.Sdk.Test' }
+                  Where-Object { $_.Name -eq $ConfigCmdletName -and $_.ModuleName -eq 'AzIotSdkTest' }
           )
           if ($ConfigCmdletMatches.Count -ne 1) {
-              throw "config-cmdlet '$ConfigCmdletName' did not resolve to exactly one cmdlet exported by Azure.Iot.Sdk.Test (matched $($ConfigCmdletMatches.Count))."
+              throw "config-cmdlet '$ConfigCmdletName' did not resolve to exactly one cmdlet exported by AzIotSdkTest (matched $($ConfigCmdletMatches.Count))."
           }
           $ConfigCmdlet = $ConfigCmdletMatches[0]
 
@@ -250,7 +250,7 @@ runs:
           # from the module on master and present on the ADU branch)
           if ($EnableAdu -ne 'None') {
               if (-not (Get-Command New-AzIotTestEnvironment).Parameters.ContainsKey('EnableADU')) {
-                  throw "enable-adu is '$EnableAdu' but this build of Azure.Iot.Sdk.Test has no -EnableADU parameter."
+                  throw "enable-adu is '$EnableAdu' but this build of AzIotSdkTest has no -EnableADU parameter."
               }
               $NewEnvArgs['EnableADU'] = $EnableAdu
           }
