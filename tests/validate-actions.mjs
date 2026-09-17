@@ -30,7 +30,15 @@ const actionsRoot = join(repoRoot, 'actions');
 const failures = [];
 const fail = (action, message) => failures.push(`${action}: ${message}`);
 
-const expressions = (text) => [...String(text).matchAll(/\$\{\{([^}]*)\}\}/g)].map((m) => m[1].trim());
+// Non-greedy up to the first '}}', so an expression containing braces -- say
+// ${{ format('{0}', inputs.x) }} -- is still matched. A [^}]* body would stop
+// at the '}' of '{0}' and match nothing at all.
+const expressions = (text) => [...String(text).matchAll(/\$\{\{([\s\S]*?)\}\}/g)].map((m) => m[1].trim());
+
+// Expression OPENERS. The invariant for a script body is simply that it
+// contains none, so count openers rather than trusting any expression grammar:
+// a body whose expression this file cannot parse must fail, not pass.
+const expressionOpeners = (text) => (String(text).match(/\$\{\{/g) ?? []).length;
 
 // Every step body the action runs, with the key that carried it.
 const scriptBodies = (step) => {
@@ -78,8 +86,10 @@ for (const name of actionDirs) {
   const referenced = new Set();
 
   for (const expr of expressions(text)) {
-    const m = /^inputs\.([A-Za-z0-9_-]+)/.exec(expr);
-    if (m) {
+    // Anywhere in the expression, not just at its start: an input used inside a
+    // call -- ${{ format('{0}', inputs.x) }} -- is still a reference, and
+    // missing it would wrongly report the input as declared-but-unused.
+    for (const m of expr.matchAll(/\binputs\.([A-Za-z0-9_-]+)/g)) {
       referenced.add(m[1]);
       if (!declared.has(m[1])) fail(name, `references undeclared input '${m[1]}'`);
     }
@@ -93,9 +103,13 @@ for (const name of actionDirs) {
 
   for (const [index, step] of (doc.runs?.steps ?? []).entries()) {
     for (const [key, body] of scriptBodies(step)) {
-      const inlined = expressions(body);
-      if (inlined.length > 0) {
-        fail(name, `step ${index} (${key}) interpolates ${inlined.map((e) => `\${{ ${e} }}`).join(', ')} into the script body; pass it through env: instead`);
+      const openers = expressionOpeners(body);
+      if (openers > 0) {
+        const inlined = expressions(body);
+        const detail = inlined.length > 0
+          ? inlined.map((e) => `\${{ ${e} }}`).join(', ')
+          : `${openers} expression opener(s)`;
+        fail(name, `step ${index} (${key}) interpolates ${detail} into the script body; pass it through env: instead`);
       }
       if (key === 'run' && !step.shell) {
         fail(name, `step ${index} has 'run' without 'shell' (composite steps require an explicit shell)`);
@@ -105,7 +119,7 @@ for (const name of actionDirs) {
 
     for (const [envName, envValue] of Object.entries(step.env ?? {})) {
       if (!/MODULE$/.test(envName)) continue;
-      const relative = String(envValue).replace(/\$\{\{[^}]*\}\}\/?/, '');
+      const relative = String(envValue).replace(/\$\{\{[\s\S]*?\}\}\/?/, '');
       const modulePath = join(actionsRoot, name, relative);
       if (!existsSync(modulePath)) {
         fail(name, `${envName} points at '${relative}', which does not exist in this repository`);
