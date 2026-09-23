@@ -1,5 +1,5 @@
 parameters:
-  azure_location: 'centraluseuap'
+  azure_location: 'eastus2euap'
 
 steps:
 - template: steps-ensure-e2e-fx-repo.yaml
