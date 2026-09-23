@@ -230,10 +230,20 @@ function Connect-AdrNamespace {
         # Endpoint linkingState is the source of truth: the namespace itself can read Succeeded while
         # an endpoint is still InProgress, and a failed endpoint is where the reason is recorded.
         $Deadline = (Get-Date).AddSeconds($LinkTimeoutSeconds)
+        $Reads = 0
+        $ReadFailures = 0
         while ($true) {
             # As in Wait-AzProvisioningState, a failed read during a poll that runs for minutes is
             # transient and says nothing about the link, so it costs an attempt rather than the run.
             $Namespace = Invoke-AzRest -Url $Url -AllowFailure
+            $Reads++
+            # A read that fails returns $null, and every property access below then yields nothing,
+            # so a namespace that cannot be READ looks exactly like one whose link has not started.
+            # Counted and reported, because the two call for opposite responses and the difference
+            # is otherwise invisible for the whole of the timeout.
+            if ($null -eq $Namespace) {
+                $ReadFailures++
+            }
             # Each group is read separately and nulls are dropped: an ABSENT group still yields one
             # entry when enumerated, so a missing DPS endpoint would otherwise be counted as though
             # it were present and reported as an unnamed endpoint with no state.
@@ -271,10 +281,20 @@ function Connect-AdrNamespace {
             }
 
             if ((Get-Date) -ge $Deadline) {
-                throw "ADR namespace link did not complete within $LinkTimeoutSeconds seconds (endpoint states: $($States -join ', '))."
+                # A namespace that never read at all is a DIFFERENT failure from a link that
+                # stalled, and the endpoint states cannot tell them apart because both render as
+                # nothing. Said explicitly, because the two call for opposite responses.
+                $Unreadable = if ($Reads -gt 0 -and $ReadFailures -eq $Reads) {
+                    " The namespace could not be read on any of the $Reads attempts, so this is a failure to READ the namespace, not a link that stalled."
+                } elseif ($ReadFailures) {
+                    " $ReadFailures of $Reads namespace reads failed."
+                } else {
+                    ""
+                }
+                throw "ADR namespace link did not complete within $LinkTimeoutSeconds seconds (endpoint states: $($States -join ', ')).$Unreadable"
             }
 
-            Write-Host "Waiting for ADR namespace link (endpoint states: $($States -join ', '))."
+            Write-Host "Waiting for ADR namespace link (endpoint states: $($States -join ', '))$(if ($ReadFailures) { " [$ReadFailures of $Reads namespace reads failed]" })."
             Start-Sleep -Seconds 15
         }
 
