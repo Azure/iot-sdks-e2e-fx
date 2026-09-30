@@ -43,7 +43,8 @@ $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady
 # so it is retried rather than failing the run.
 # Matched on the words ARM uses, not on bare status numbers: a correlation id or a resource name
 # can contain '503' and a false match would keep retrying a real error.
-$script:ArmTransientPattern = 'Service ?Unavailable|Gateway ?Timeout|Too ?Many ?Requests|InternalServerError|ServerTimeout|ServerBusy'
+# GatewayAuthenticationFailed is a 500 from the ARM-to-RP gateway, not a caller auth failure.
+$script:ArmTransientPattern = 'Service ?Unavailable|Gateway ?Timeout|Bad ?Gateway|Too ?Many ?Requests|Internal ?Server ?Error|ServerTimeout|ServerBusy|GatewayAuthenticationFailed'
 $script:AdrLinkMaxAttempts = 12
 # Whole-namespace recovery cycles: recreate and re-grant if the in-place link retries are exhausted.
 $script:AdrLinkMaxCycles = 2
@@ -218,12 +219,25 @@ function Connect-AdrNamespace {
     }
 
     for ($Attempt = 1; $Attempt -le $script:AdrLinkMaxAttempts; $Attempt++) {
+        # A failed endpoint can leave the namespace in a non-terminal state (Accepted) for a while,
+        # and ARM rejects any write until it settles (409 ResourceProvisioningInProgress).
+        if ($Attempt -gt 1) {
+            $SettleDeadline = (Get-Date).AddSeconds(300)
+            while ($true) {
+                $State = (Invoke-AzRest -Url $Url -AllowFailure).properties.provisioningState
+                # An unreadable namespace is not waited on; the 409 retry below covers a busy one.
+                if ($null -eq $State -or $State -in @("Succeeded", "Failed", "Canceled") -or (Get-Date) -ge $SettleDeadline) { break }
+                Write-Host "Waiting for the ADR namespace to settle before re-submitting the link (provisioningState=$State)."
+                Start-Sleep -Seconds 15
+            }
+        }
+
         Write-Host "Linking IoT Hub and DPS to ADR namespace (attempt $Attempt of $($script:AdrLinkMaxAttempts))"
         # Retries a link REJECTED outright; an accepted link that later fails is handled below.
         # Throws rather than exiting: a rejected link is recoverable by the cycle around this, and
         # Stop-OnError would otherwise end the run before the catch could see it.
         Invoke-WithRetry -Step "Link IoT Hub and DPS to ADR namespace" -ThrowOnFailure `
-            -RetryOnPattern "$($script:AdrRolePropagationPattern)|$($script:ArmTransientPattern)" -MaxAttempts 3 -Command {
+            -RetryOnPattern "$($script:AdrRolePropagationPattern)|$($script:ArmTransientPattern)|ResourceProvisioningInProgress" -MaxAttempts 3 -Command {
             Invoke-AzRest -Method PUT -Url $Url -Body $LinkBody
         } | Out-Null
 
