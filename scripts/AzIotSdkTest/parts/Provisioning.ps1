@@ -198,11 +198,14 @@ function New-AzIotTestEnvironment {
         # properties, which is the retired model.
         Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)."
         $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
-        Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
-            location = $AzureLocation
-            sku = @{ name = "S1"; capacity = 1 }
-            identity = @{ type = "SystemAssigned" }
-            properties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
+        # A create PUT is idempotent, so a transient ARM failure is retried rather than ending the run.
+        Invoke-WithRetry -Step "Create IoT Hub ($IotHubName)" -RetryOnPattern $script:ArmTransientPattern -Command {
+            Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
+                location = $AzureLocation
+                sku = @{ name = "S1"; capacity = 1 }
+                identity = @{ type = "SystemAssigned" }
+                properties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
+            }
         } | Out-Null
         Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
         $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
@@ -221,11 +224,13 @@ function New-AzIotTestEnvironment {
             # a preview api-version it has no use for.
             Write-Host "Creating Azure Device Provisioning Service ($DpsName, with certificate management support)."
             $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
-            Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
-                location = $AzureLocation
-                sku = @{ name = "S1"; capacity = 1 }
-                identity = @{ type = "SystemAssigned" }
-                properties = @{}
+            Invoke-WithRetry -Step "Create Device Provisioning Service ($DpsName)" -RetryOnPattern $script:ArmTransientPattern -Command {
+                Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
+                    location = $AzureLocation
+                    sku = @{ name = "S1"; capacity = 1 }
+                    identity = @{ type = "SystemAssigned" }
+                    properties = @{}
+                }
             } | Out-Null
             Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName)" -TimeoutSeconds 1200
             # Re-read: idScope and the identity's principalId are populated as it provisions.
