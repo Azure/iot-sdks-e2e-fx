@@ -45,6 +45,9 @@ $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady
 # can contain '503' and a false match would keep retrying a real error.
 # GatewayAuthenticationFailed is a 500 from the ARM-to-RP gateway, not a caller auth failure.
 $script:ArmTransientPattern = 'Service ?Unavailable|Gateway ?Timeout|Bad ?Gateway|Too ?Many ?Requests|Internal ?Server ?Error|ServerTimeout|ServerBusy|GatewayAuthenticationFailed'
+# A hub or DPS created with a system-assigned identity can be rejected while that identity's
+# credentials are still being issued (IH400097 "Unable to fetch credentials"). Re-PUTting succeeds.
+$script:IdentityTransientPattern = 'IH400097|Unable to fetch credentials'
 $script:AdrLinkMaxAttempts = 12
 # Whole-namespace recovery cycles: recreate and re-grant if the in-place link retries are exhausted.
 $script:AdrLinkMaxCycles = 2

@@ -30,7 +30,7 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $ModulePath = Join-Path $RepoRoot 'scripts/AzIotSdkTest/AzIotSdkTest.psd1'
 $ActionPath = Join-Path $RepoRoot 'actions/provision-e2e-resources/action.yml'
-$global:FakeStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=stoaccfake;AccountKey=RkFLRQ==;EndpointSuffix=core.windows.net'
+$global:FakeStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=stoaccstub;AccountKey=RkFLRQ==;EndpointSuffix=core.windows.net'
 
 function Get-ActionInlineScript {
     param([string]$Path)
@@ -91,6 +91,12 @@ if ($RunScenario) {
                     return '{"attestation":{"symmetricKey":{"primaryKey":"a","secondaryKey":"b"}}}'
                 }
                 $Key = Get-StubKey $Url
+                if ($Method -eq 'PUT' -and $global:StubState.DpsIdentityFailures -gt 0 -and $Key -like '*/provisioningservices/*') {
+                    $global:StubState.DpsIdentityFailures--
+                    Write-Error -ErrorAction Continue 'Bad Request({"code":400097,"message":"Unable to fetch credentials for <identity>. errorcode: IH400097."})'
+                    $global:LASTEXITCODE = 1
+                    return
+                }
                 if ($Method -eq 'PUT') {
                     $Resource = $Body | ConvertFrom-Json
                     $Resource | Add-Member -Force id ([uri]$Url).AbsolutePath
@@ -103,7 +109,8 @@ if ($RunScenario) {
                     return ($Resource | ConvertTo-Json -Depth 20)
                 }
                 if ($global:StubState.Resources.ContainsKey($Key)) {
-                    return ($global:StubState.Resources[$Key] | ConvertTo-Json -Depth 20)
+                    # The hub returns storage connection strings with the key masked.
+                    return (($global:StubState.Resources[$Key] | ConvertTo-Json -Depth 20) -replace 'AccountKey=[^;"]*', 'AccountKey=****')
                 }
                 return '{"properties":{"provisioningState":"Succeeded"}}'
             }
@@ -162,8 +169,11 @@ if ($RunScenario) {
             Add-Content -Path $global:StubState.Log -Value '{"argv":["<Connect-AdrNamespace>"]}'
             $Hub = $global:StubState.Resources[(Get-StubHubKey)]
             $Hub.properties | Add-Member -Force deviceRegistry ([pscustomobject]@{ namespaceResourceId = $NamespaceId })
-            if ($global:StubState.LinkDropsFileUpload) {
-                $Hub.properties.PSObject.Properties.Remove('storageEndpoints')
+            $Default = $Hub.properties.storageEndpoints.'$default'
+            switch ($global:StubState.LinkChange) {
+                'drops-file-upload' { $Hub.properties.PSObject.Properties.Remove('storageEndpoints') }
+                'changes-sas-ttl' { $Default.sasTtlAsIso8601 = 'PT2H' }
+                'changes-storage-account' { $Default.connectionString = $Default.connectionString -replace 'AccountName=[^;]+', 'AccountName=other' }
             }
         }
     }
@@ -174,7 +184,8 @@ if ($RunScenario) {
     $env:AZ_IOT_LOCATION = 'eastus2euap'
     $env:AZ_IOT_ENABLE_ADU = 'None'
     $env:AZ_IOT_ENABLE_CERT_MGMT = if ($RunScenario -like 'cert-mgmt*') { 'true' } else { 'false' }
-    $global:StubState.LinkDropsFileUpload = ($RunScenario -eq 'cert-mgmt-link-drops-file-upload')
+    $global:StubState.LinkChange = if ($RunScenario -like 'cert-mgmt-link-*') { $RunScenario -replace '^cert-mgmt-link-', '' } else { $null }
+    $global:StubState.DpsIdentityFailures = if ($RunScenario -eq 'cert-mgmt-dps-identity-transient') { 1 } else { 0 }
     $env:AZ_IOT_ENABLE_FILE_UPLOAD = 'true'
     $env:AZ_IOT_HUB_X509_DEVICES = '1'
     $env:AZ_IOT_DPS_INDIVIDUAL = '1'
@@ -236,7 +247,7 @@ function Assert-FileUploadState($Run) {
 try {
     # Certificate management + file upload: no `az iot hub update` may run once the hub is linked.
     $Run = Invoke-Scenario 'cert-mgmt'
-    Assert ($Run.ExitCode -eq 0) "cert-mgmt: provisioning exited $($Run.ExitCode): $(($Run.Output -split "`n" | Select-String 'ERROR' | Select-Object -First 3) -join ' | ')"
+    Assert ($Run.ExitCode -eq 0) "cert-mgmt: provisioning exited $($Run.ExitCode): $(($Run.Output -split "`n" | Select-String 'ERROR|Exception|\| [A-Z]' | Select-Object -First 4) -join ' | ')"
     $HubPut = Find-Call $Run { param($j, $c) $j -match '^rest --method PUT .*/IotHubs/stubhub\?' }
     $Link = Find-Call $Run { param($j) $j -eq '<Connect-AdrNamespace>' }
     $Storage = Find-Call $Run { param($j) $j -match '^storage account create' }
@@ -257,9 +268,16 @@ try {
     Assert ($LastReadBack -gt $Link) "cert-mgmt: the hub's file upload settings must be read back after the ADR link."
     Assert-FileUploadState $Run
 
-    # A link that drops the settings must fail provisioning rather than pass it silently.
-    $Run = Invoke-Scenario 'cert-mgmt-link-drops-file-upload'
-    Assert ($Run.ExitCode -ne 0 -and $Run.Output -match 'lost its file upload settings') "cert-mgmt-link-drops-file-upload: provisioning should fail on the read-back (exit $($Run.ExitCode))."
+    # A link that drops or changes the settings must fail provisioning rather than pass it silently.
+    foreach ($Change in 'drops-file-upload', 'changes-sas-ttl', 'changes-storage-account') {
+        $Run = Invoke-Scenario "cert-mgmt-link-$Change"
+        Assert ($Run.ExitCode -ne 0 -and $Run.Output -match 'lost its file upload settings') "cert-mgmt-link-$($Change): provisioning should fail on the read-back (exit $($Run.ExitCode))."
+    }
+
+    # A DPS create rejected while its identity is being issued is retried.
+    $Run = Invoke-Scenario 'cert-mgmt-dps-identity-transient'
+    $DpsPuts = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^rest --method PUT .*/provisioningServices/stubdps\?' }).Count
+    Assert ($Run.ExitCode -eq 0 -and $DpsPuts -eq 2) "cert-mgmt-dps-identity-transient: expected success after 2 DPS PUTs (exit $($Run.ExitCode), $DpsPuts PUTs)."
 
     # No certificate management: the CLI calls stay exactly as they were.
     $Run = Invoke-Scenario 'no-cert-mgmt'

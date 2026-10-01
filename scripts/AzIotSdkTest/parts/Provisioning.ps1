@@ -217,7 +217,7 @@ function New-AzIotTestEnvironment {
         Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)."
         $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
         # A create PUT is idempotent, so a transient ARM failure is retried rather than ending the run.
-        Invoke-WithRetry -Step "Create IoT Hub ($IotHubName)" -RetryOnPattern $script:ArmTransientPattern -Command {
+        Invoke-WithRetry -Step "Create IoT Hub ($IotHubName)" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)" -Command {
             Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
                 location = $AzureLocation
                 sku = @{ name = "S1"; capacity = 1 }
@@ -242,7 +242,7 @@ function New-AzIotTestEnvironment {
             # a preview api-version it has no use for.
             Write-Host "Creating Azure Device Provisioning Service ($DpsName, with certificate management support)."
             $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
-            Invoke-WithRetry -Step "Create Device Provisioning Service ($DpsName)" -RetryOnPattern $script:ArmTransientPattern -Command {
+            Invoke-WithRetry -Step "Create Device Provisioning Service ($DpsName)" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)" -Command {
                 Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
                     location = $AzureLocation
                     sku = @{ name = "S1"; capacity = 1 }
@@ -468,9 +468,14 @@ function New-AzIotTestEnvironment {
         # here rather than as a silent file-upload e2e failure.
         Write-Host "Checking Azure IoT Hub file upload settings"
         $AzureIoTHubAfterLink = Invoke-AzRest -Url $IotHubUrl
-        if ($AzureIoTHubAfterLink.properties.storageEndpoints.'$default'.containerName -ne $AzureStorageContainerName -or
+        $DefaultStorage = $AzureIoTHubAfterLink.properties.storageEndpoints.'$default'
+        # The account name, not the whole connection string: the hub returns the key masked.
+        $LinkedStorageAccount = if ("$($DefaultStorage.connectionString)" -match '(?:^|;)AccountName=([^;]+)') { $Matches[1] } else { $null }
+        if ($LinkedStorageAccount -ne $StorageAccountName -or
+            $DefaultStorage.containerName -ne $AzureStorageContainerName -or
+            $DefaultStorage.sasTtlAsIso8601 -ne "PT1H" -or
             $AzureIoTHubAfterLink.properties.enableFileUploadNotifications -ne $true) {
-            throw "IoT Hub ($IotHubName) lost its file upload settings after the ADR link (container '$($AzureIoTHubAfterLink.properties.storageEndpoints.'$default'.containerName)', notifications '$($AzureIoTHubAfterLink.properties.enableFileUploadNotifications)')."
+            throw "IoT Hub ($IotHubName) lost its file upload settings after the ADR link (account '$LinkedStorageAccount', container '$($DefaultStorage.containerName)', SAS TTL '$($DefaultStorage.sasTtlAsIso8601)', notifications '$($AzureIoTHubAfterLink.properties.enableFileUploadNotifications)')."
         }
     } elseif ($EnableFileUpload -eq $true) {
         $AzureStorageConnectionString = New-FileUploadStorage -ResourceGroup $ResourceGroup -Location $AzureLocation `
