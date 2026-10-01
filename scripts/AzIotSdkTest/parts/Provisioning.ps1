@@ -45,6 +45,7 @@ function New-AzIotTestEnvironment {
     Specifies the number of x509 CA devices to create in IoT Hub. Default is 0.
     .PARAMETER EnableFileUpload
     Specifies whether to enable file upload in IoT Hub. Default is false.
+    With -EnableCertificateManagement, file upload notifications are enabled too.
     .PARAMETER NoDps
     Specifies whether to skip creating a Device Provisioning Service. Default is false.
     .PARAMETER EnableCertificateManagement
@@ -177,6 +178,7 @@ function New-AzIotTestEnvironment {
     }
 
     $TestEnvInfo = [TestEnvironmentInfo]::new()
+    $AzureStorageContainerName = "iothubuploads"
 
     # TODO: create Storage Account (required for IoT Hub file upload, if enabled) and add to $TestEnvInfo
     # Write-Host "Creating Azure Key Vault ($KeyVaultName)"
@@ -196,15 +198,31 @@ function New-AzIotTestEnvironment {
         # Created through ARM so it comes up with a system-assigned identity and local auth left on,
         # which is the shape ADR links. S1, not GEN2: a GEN2 hub carries the namespace in its own
         # properties, which is the retired model.
+        $IotHubProperties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
+
+        # File upload is set here, at creation, because nothing can set it once ADR links the hub:
+        # the link puts properties.deviceRegistry on the hub, and 'az iot hub update' then refuses
+        # any non-GEN2 hub ("ADR properties are only supported for Generation2 IoT Hub SKUs").
+        if ($EnableFileUpload -eq $true) {
+            $AzureStorageConnectionString = New-FileUploadStorage -ResourceGroup $ResourceGroup -Location $AzureLocation `
+                -StorageAccountName $StorageAccountName -ContainerName $AzureStorageContainerName
+            $IotHubProperties["storageEndpoints"] = @{ '$default' = @{
+                connectionString = $AzureStorageConnectionString
+                containerName = $AzureStorageContainerName
+                sasTtlAsIso8601 = "PT1H"
+            } }
+            $IotHubProperties["enableFileUploadNotifications"] = $true
+        }
+
         Write-Host "Creating Azure IoT Hub ($IotHubName, with certificate management support)."
         $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
         # A create PUT is idempotent, so a transient ARM failure is retried rather than ending the run.
-        Invoke-WithRetry -Step "Create IoT Hub ($IotHubName)" -RetryOnPattern $script:ArmTransientPattern -Command {
+        Invoke-WithRetry -Step "Create IoT Hub ($IotHubName)" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)" -Command {
             Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
                 location = $AzureLocation
                 sku = @{ name = "S1"; capacity = 1 }
                 identity = @{ type = "SystemAssigned" }
-                properties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
+                properties = $IotHubProperties
             }
         } | Out-Null
         Wait-AzProvisioningState -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -TimeoutSeconds 1200
@@ -224,7 +242,7 @@ function New-AzIotTestEnvironment {
             # a preview api-version it has no use for.
             Write-Host "Creating Azure Device Provisioning Service ($DpsName, with certificate management support)."
             $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
-            Invoke-WithRetry -Step "Create Device Provisioning Service ($DpsName)" -RetryOnPattern $script:ArmTransientPattern -Command {
+            Invoke-WithRetry -Step "Create Device Provisioning Service ($DpsName)" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)" -Command {
                 Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
                     location = $AzureLocation
                     sku = @{ name = "S1"; capacity = 1 }
@@ -445,23 +463,24 @@ function New-AzIotTestEnvironment {
     }
 
     # File Upload
-    if ($EnableFileUpload -eq $true) {
-        Write-Host "Creating Azure Storage account ($StorageAccountName)"
-        az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku Standard_LRS --kind StorageV2 | Out-Null
-        Stop-OnError -Step "Creating Azure Storage account"
+    if ($EnableFileUpload -eq $true -and $EnableCertificateManagement -eq $true) {
+        # Set when the hub was created. Read back after the ADR link, so a link that dropped it fails
+        # here rather than as a silent file-upload e2e failure.
+        Write-Host "Checking Azure IoT Hub file upload settings"
+        $AzureIoTHubAfterLink = Invoke-AzRest -Url $IotHubUrl
+        $DefaultStorage = $AzureIoTHubAfterLink.properties.storageEndpoints.'$default'
+        # The account name, not the whole connection string: the hub returns the key masked.
+        $LinkedStorageAccount = if ("$($DefaultStorage.connectionString)" -match '(?:^|;)AccountName=([^;]+)') { $Matches[1] } else { $null }
+        if ($LinkedStorageAccount -ne $StorageAccountName -or
+            $DefaultStorage.containerName -ne $AzureStorageContainerName -or
+            $DefaultStorage.sasTtlAsIso8601 -ne "PT1H" -or
+            $AzureIoTHubAfterLink.properties.enableFileUploadNotifications -ne $true) {
+            throw "IoT Hub ($IotHubName) lost its file upload settings after the ADR link (account '$LinkedStorageAccount', container '$($DefaultStorage.containerName)', SAS TTL '$($DefaultStorage.sasTtlAsIso8601)', notifications '$($AzureIoTHubAfterLink.properties.enableFileUploadNotifications)')."
+        }
+    } elseif ($EnableFileUpload -eq $true) {
+        $AzureStorageConnectionString = New-FileUploadStorage -ResourceGroup $ResourceGroup -Location $AzureLocation `
+            -StorageAccountName $StorageAccountName -ContainerName $AzureStorageContainerName
 
-        $AzureStorageContainerName = "iothubuploads"
-
-        Write-Host "Creating Azure Storage container ($AzureStorageContainerName on $StorageAccountName)"
-        az storage container create --name $AzureStorageContainerName --account-name "$StorageAccountName" --only-show-errors | Out-Null
-        Stop-OnError -Step "Creating Azure Storage container"
-
-        Write-Host "Getting Azure Storage account connection string"
-        $AzureStorageConnectionString=$(az storage account show-connection-string --name "$StorageAccountName" --resource-group "$ResourceGroup" --query connectionString -o tsv)
-        Stop-OnError -Step "Getting Azure Storage account connection string"
-
-        # File upload no longer varies with certificate management: '--ns-identity-id' belonged to the
-        # model where the hub pointed at the namespace through a shared identity.
         Write-Host "Updating Azure IoT Hub file upload settings"
         az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 | Out-Null
         Stop-OnError -Step "Updating Azure IoT Hub file upload settings"
@@ -525,6 +544,34 @@ function New-AzIotTestEnvironment {
     }
 
     return $TestEnvInfo
+}
+
+function New-FileUploadStorage {
+    <#
+    .SYNOPSIS
+    Creates the storage account and container IoT Hub file upload uses, and returns the account's
+    connection string.
+    #>
+    param(
+        [string]$ResourceGroup,
+        [string]$Location,
+        [string]$StorageAccountName,
+        [string]$ContainerName
+    )
+
+    Write-Host "Creating Azure Storage account ($StorageAccountName)"
+    az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$Location" --sku Standard_LRS --kind StorageV2 | Out-Null
+    Stop-OnError -Step "Creating Azure Storage account"
+
+    Write-Host "Creating Azure Storage container ($ContainerName on $StorageAccountName)"
+    az storage container create --name $ContainerName --account-name "$StorageAccountName" --only-show-errors | Out-Null
+    Stop-OnError -Step "Creating Azure Storage container"
+
+    Write-Host "Getting Azure Storage account connection string"
+    $ConnectionString = $(az storage account show-connection-string --name "$StorageAccountName" --resource-group "$ResourceGroup" --query connectionString -o tsv)
+    Stop-OnError -Step "Getting Azure Storage account connection string"
+
+    return $ConnectionString
 }
 
 function Get-AzIotTestEnvironment {

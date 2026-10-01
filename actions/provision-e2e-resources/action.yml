@@ -60,7 +60,8 @@ inputs:
     description: >-
       When 'true', pass -EnableFileUpload to New-AzIotTestEnvironment so an Azure Storage account
       is created and associated with the IoT Hub for file upload (required by the file-upload
-      e2e), and turn on the hub's file-upload NOTIFICATIONS.
+      e2e), and turn on the hub's file-upload NOTIFICATIONS. With certificate management, both
+      are set when the hub is created, before it is linked to ADR.
     required: false
     default: 'false'
   iothub-x509-thumbprint-devices:
@@ -267,8 +268,11 @@ runs:
           # notification and then publishes nothing, so the service-side
           # file-notification endpoint stays silent and an e2e test can only verify
           # the device half of an upload. Turn it on here (the shared framework does
-          # not expose a switch for it).
-          if ($EnableFileUpload) {
+          # not expose a switch for it). With certificate management the module sets
+          # it when creating the hub instead: once ADR links the hub, 'az iot hub
+          # update' refuses it ("ADR properties are only supported for Generation2
+          # IoT Hub SKUs").
+          if ($EnableFileUpload -and -not $EnableCertificateManagement) {
               $HostNamePair = ($TestEnvInfo.IotHub.ConnectionString -split ';' `
                   | Where-Object { $_ -like 'HostName=*' } | Select-Object -First 1)
               if ([string]::IsNullOrWhiteSpace($HostNamePair)) {
