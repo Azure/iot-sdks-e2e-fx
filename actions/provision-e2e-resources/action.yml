@@ -82,6 +82,14 @@ inputs:
       the DPS ROOT CA and NOT the group's issuer, which is an intermediate signed by that root.
     required: false
     default: '0'
+  dps-symmkey-group-enrollment-devices:
+    description: >-
+      Number of devices for a DPS symmetric-key ENROLLMENT GROUP
+      (New-AzIotTestEnvironment -DpsSymmKeyGroupEnrollmentDevices). A value > 0 creates the group,
+      linked to the signing CA when certificate management is enabled; the C config cmdlet then
+      emits IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID and IOT_DPS_SYMM_KEY_GROUP_PRIMARY_KEY.
+    required: false
+    default: '0'
   config-cmdlet:
     description: Cmdlet that renders the per-pipeline test config (e.g. New-AzIotCSDKE2ETestConfig).
     required: false
@@ -123,6 +131,7 @@ runs:
         AZ_IOT_HUB_X509_DEVICES: ${{ inputs.iothub-x509-thumbprint-devices }}
         AZ_IOT_DPS_INDIVIDUAL: ${{ inputs.dps-x509-individual-enrollments }}
         AZ_IOT_DPS_GROUP_DEVICES: ${{ inputs.dps-x509-group-enrollment-devices }}
+        AZ_IOT_DPS_SK_GROUP_DEVICES: ${{ inputs.dps-symmkey-group-enrollment-devices }}
         AZ_IOT_CONFIG_CMDLET: ${{ inputs.config-cmdlet }}
         AZ_IOT_CONFIG_TARGET: ${{ inputs.config-target }}
         AZ_IOT_OUT_FILE: ${{ inputs.out-file }}
@@ -240,6 +249,7 @@ runs:
               IotHubX509ThumbprintDevices   = Get-CountInput 'iothub-x509-thumbprint-devices' $env:AZ_IOT_HUB_X509_DEVICES
               DpsX509IndividualEnrollments  = Get-CountInput 'dps-x509-individual-enrollments' $env:AZ_IOT_DPS_INDIVIDUAL
               DpsX509GroupEnrollmentDevices = Get-CountInput 'dps-x509-group-enrollment-devices' $env:AZ_IOT_DPS_GROUP_DEVICES
+              DpsSymmKeyGroupEnrollmentDevices = Get-CountInput 'dps-symmkey-group-enrollment-devices' $env:AZ_IOT_DPS_SK_GROUP_DEVICES
           }
           # Only pass -EnableADU when ADU was actually asked for: not every build of
           # the module exposes it. Passing it unconditionally turns "this module has
