@@ -190,6 +190,7 @@ if ($RunScenario) {
     $env:AZ_IOT_HUB_X509_DEVICES = '1'
     $env:AZ_IOT_DPS_INDIVIDUAL = '1'
     $env:AZ_IOT_DPS_GROUP_DEVICES = '0'
+    $env:AZ_IOT_DPS_SK_GROUP_DEVICES = '0'
     $env:AZ_IOT_CONFIG_CMDLET = 'New-AzIotCSDKE2ETestConfig'
     $env:AZ_IOT_CONFIG_TARGET = 'bash'
     $env:AZ_IOT_OUT_FILE = Join-Path $StateDir "$RunScenario-config.sh"
