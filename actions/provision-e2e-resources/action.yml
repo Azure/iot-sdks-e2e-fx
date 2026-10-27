@@ -117,7 +117,7 @@ runs:
   steps:
     - name: Provision resources
       id: provision
-      uses: azure/powershell@v3
+      uses: azure/powershell@f5b8adcfff1904872c7b98d4012d4914d74b1a82 # v3.0.0
       env:
         # EVERY input is passed as env, never string-interpolated into the
         # script body, so an input is always data and never code.
