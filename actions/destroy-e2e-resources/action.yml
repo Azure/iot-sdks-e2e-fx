@@ -19,7 +19,7 @@ runs:
   using: composite
   steps:
     - name: Delete Azure resources
-      uses: azure/powershell@v3
+      uses: azure/powershell@f5b8adcfff1904872c7b98d4012d4914d74b1a82 # v3.0.0
       env:
         # Passed via env, not string-interpolated into the script, so the value
         # is always data and never code.

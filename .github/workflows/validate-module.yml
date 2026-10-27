@@ -32,7 +32,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # Two steps rather than `shell: ${{ matrix.shell }}`: `shell` is evaluated
       # before the matrix context exists, so an expression there is a workflow
