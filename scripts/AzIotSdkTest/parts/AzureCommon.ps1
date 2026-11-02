@@ -56,14 +56,17 @@ function Invoke-WithRetry {
     reasons: merged native stderr raises NativeCommandError under
     `$ErrorActionPreference = 'Stop'` (which the azure/powershell task sets),
     and merging would concatenate CLI preview/extension notices into the JSON
-    the block is piping to ConvertFrom-Json.
+    the block is piping to ConvertFrom-Json. Windows PowerShell 5.1 still throws
+    on ANY redirected native stderr under 'Stop', so `az` calls in the block
+    must pass --only-show-errors, or a warning fails an attempt that succeeded.
 
     .PARAMETER Step
     Human-readable step name, used in the error message.
 
     .PARAMETER Command
     Script block to run. Runs in its defining scope, so it can use the caller's
-    variables normally.
+    variables normally. Receives the attempt number (1-based) as its first
+    argument, so it can clean up what a failed attempt left behind.
 
     .PARAMETER StopOnPattern
     Regular expression matched against the same captured output. When it matches, the failure is
@@ -106,7 +109,7 @@ function Invoke-WithRetry {
             $global:LASTEXITCODE = 0
 
             try {
-                $Result = & $Command 2>$StdErrFile
+                $Result = & $Command $Attempt 2>$StdErrFile
             } catch {
                 # e.g. ConvertFrom-Json choking on the empty stdout of a failed
                 # command. The real diagnosis is the exit code plus stderr below.
@@ -132,12 +135,15 @@ function Invoke-WithRetry {
             }
 
             $IsLastAttempt = ($Attempt -ge $MaxAttempts)
-            $IsRetryable = ($null -ne $StdErr) -and ($StdErr -match $RetryOnPattern)
+            # Windows PowerShell 5.1 under 'Stop' throws the first native stderr line instead of
+            # writing it to $StdErrFile, so the error text can be in $Caught alone.
+            $FailureText = (@($StdErr, $Caught) | ?{ $_ }) -join "`n"
+            $IsRetryable = $FailureText -match $RetryOnPattern
             # A service can reuse one error code for both a transient condition and a permanent one.
             # Where it does, -StopOnPattern tells the permanent case apart and wins over the retry
             # pattern, so a failure that cannot succeed is reported at once instead of after the
             # whole backoff ladder.
-            if ($IsRetryable -and -not [string]::IsNullOrEmpty($StopOnPattern) -and ($StdErr -match $StopOnPattern)) {
+            if ($IsRetryable -and -not [string]::IsNullOrEmpty($StopOnPattern) -and ($FailureText -match $StopOnPattern)) {
                 $IsRetryable = $false
             }
 

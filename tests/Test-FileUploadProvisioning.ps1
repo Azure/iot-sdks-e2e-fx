@@ -1,7 +1,9 @@
 <#
 .SYNOPSIS
 Drives the provision-e2e-resources action script and New-AzIotTestEnvironment with `az` stubbed, and
-checks how file upload is configured with and without certificate management.
+checks how file upload is configured with and without certificate management, and that a hub or
+DPS create failing server-side (5xx) is retried after its leftover is reused or deleted, while a
+client-side (4xx) failure is not retried.
 
 .DESCRIPTION
 Provisions nothing and needs no credentials. `az` is replaced by a stateful stub that records every
@@ -80,6 +82,34 @@ if ($RunScenario) {
         function Opt([string]$Name) { $i = [array]::IndexOf($Argv, $Name); if ($i -ge 0) { $Argv[$i + 1] } }
 
         switch -Regex ($Joined) {
+            '^iot (hub|dps) create' {
+                # No return when no failure is queued: the create clauses below then answer.
+                $Type = $Matches[1]
+                # Real az warns on stderr here. Windows PowerShell 5.1 turns redirected stderr into a
+                # thrown error under 'Stop', so a create without --only-show-errors would fail there.
+                if ($Argv -notcontains '--only-show-errors') {
+                    throw "WARNING: The behavior of this command has been altered by the following extension: azure-iot"
+                }
+                $Failures = $global:StubState.CreateFailures[$Type]
+                if ($Failures.Count -gt 0) {
+                    $Failure = $Failures[0]
+                    $global:StubState.CreateFailures[$Type] = @($Failures | Select-Object -Skip 1)
+                    if ($Failure.Leaves) {
+                        $global:StubState.Leftovers[$Type][(Opt '--name')] = [pscustomobject]@{
+                            name = (Opt '--name')
+                            properties = [pscustomobject]@{ state = $Failure.Leaves; idScope = '0ne00000000'
+                                deviceProvisioningHostName = 'global.azure-devices-provisioning.net'; serviceOperationsHostName = 'dps.azure-devices-provisioning.net' }
+                        }
+                    }
+                    $global:LASTEXITCODE = 1
+                    # Thrown is how Windows PowerShell 5.1 under 'Stop' delivers redirected stderr.
+                    if ($Failure.Thrown) { throw "ERROR: ($($Failure.Code)) Stub error. errorcode: IH$($Failure.Code)." }
+                    Write-Error -ErrorAction Continue "($($Failure.Code)) Stub error. errorcode: IH$($Failure.Code)."
+                    return
+                }
+            }
+            '^iot (hub|dps) list' { return (ConvertTo-Json -Depth 20 -InputObject @($global:StubState.Leftovers[$Matches[1]].Values)) }
+            '^iot (hub|dps) delete' { $global:StubState.Leftovers[$Matches[1]].Remove((Opt '--name')); return '' }
             '^account show' { return '{"id":"00000000-0000-0000-0000-000000000000","user":{"name":"stub"}}' }
             '^extension list' { if ($Joined -match 'table') { return 'azure-iot 0.30.0b2' } return '[{"name":"azure-iot","version":"0.30.0b2"}]' }
             '^group exists' { return 'false' }
@@ -186,6 +216,19 @@ if ($RunScenario) {
     $env:AZ_IOT_ENABLE_CERT_MGMT = if ($RunScenario -like 'cert-mgmt*') { 'true' } else { 'false' }
     $global:StubState.LinkChange = if ($RunScenario -like 'cert-mgmt-link-*') { $RunScenario -replace '^cert-mgmt-link-', '' } else { $null }
     $global:StubState.DpsIdentityFailures = if ($RunScenario -eq 'cert-mgmt-dps-identity-transient') { 1 } else { 0 }
+    # Queued failures of 'az iot <hub|dps> create': Code is the IoT error code, Leaves the state of the
+    # resource the failed create leaves behind (nothing when unset).
+    $global:StubState.Leftovers = @{ hub = @{}; dps = @{} }
+    $global:StubState.CreateFailures = switch ($RunScenario) {
+        'no-cert-mgmt-dps-server-error' { @{ hub = @(); dps = @(@{ Code = '500019'; Leaves = 'ActivationFailed' }, @{ Code = '500019'; Leaves = 'ActivationFailed' }) } }
+        'no-cert-mgmt-dps-server-error-left-active' { @{ hub = @(); dps = @(@{ Code = '500019'; Leaves = 'Active' }) } }
+        'no-cert-mgmt-dps-server-error-exhausted' { @{ hub = @(); dps = @(@{ Code = '500019' }, @{ Code = '500019' }, @{ Code = '500019' }) } }
+        'no-cert-mgmt-dps-client-error' { @{ hub = @(); dps = @(@{ Code = '400016' }) } }
+        'no-cert-mgmt-dps-client-error-thrown' { @{ hub = @(); dps = @(@{ Code = '400016'; Thrown = $true }) } }
+        'no-cert-mgmt-hub-server-error' { @{ hub = @(@{ Code = '500001'; Leaves = 'ActivationFailed' }); dps = @() } }
+        'no-cert-mgmt-hub-server-error-thrown' { @{ hub = @(@{ Code = '500001'; Thrown = $true }); dps = @() } }
+        default { @{ hub = @(); dps = @() } }
+    }
     $env:AZ_IOT_ENABLE_FILE_UPLOAD = 'true'
     $env:AZ_IOT_HUB_X509_DEVICES = '1'
     $env:AZ_IOT_DPS_INDIVIDUAL = '1'
@@ -292,6 +335,25 @@ try {
     Assert ((Find-Call $Run { param($j) $j -match '^rest .*/IotHubs/' }) -lt 0) "no-cert-mgmt: the hub must not be written through ARM."
     Assert ((Find-Call $Run { param($j) $j -match '^iot hub create' }) -lt (Find-Call $Run { param($j) $j -match '^storage account create' })) "no-cert-mgmt: storage must still be created after the hub."
     Assert-FileUploadState $Run
+
+    # A server-side (5xx) create failure is retried, first reusing an Active leftover or deleting any
+    # other; a client-side (4xx) one fails at once. Calls are listed in order, e.g. 'create list delete'.
+    $RetryCases = @(
+        @{ Name = 'no-cert-mgmt-dps-server-error';             Type = 'dps'; Succeeds = $true;  Calls = 'create list delete create list delete create' }
+        @{ Name = 'no-cert-mgmt-dps-server-error-left-active'; Type = 'dps'; Succeeds = $true;  Calls = 'create list' }
+        @{ Name = 'no-cert-mgmt-dps-server-error-exhausted';   Type = 'dps'; Succeeds = $false; Calls = 'create list create list create' }
+        @{ Name = 'no-cert-mgmt-dps-client-error';             Type = 'dps'; Succeeds = $false; Calls = 'create' }
+        @{ Name = 'no-cert-mgmt-dps-client-error-thrown';      Type = 'dps'; Succeeds = $false; Calls = 'create' }
+        @{ Name = 'no-cert-mgmt-hub-server-error';             Type = 'hub'; Succeeds = $true;  Calls = 'create list delete create' }
+        @{ Name = 'no-cert-mgmt-hub-server-error-thrown';      Type = 'hub'; Succeeds = $true;  Calls = 'create list create' }
+    )
+    foreach ($Case in $RetryCases) {
+        $Run = Invoke-Scenario $Case.Name
+        $Calls = @($Run.Calls | %{ $_.argv -join ' ' } | ?{ $_ -match "^iot $($Case.Type) (create|list|delete) " } | %{ $_.Split(' ')[2] }) -join ' '
+        Assert ($Calls -eq $Case.Calls) "$($Case.Name): 'az iot $($Case.Type)' calls are '$Calls', expected '$($Case.Calls)'."
+        Assert (($Run.ExitCode -eq 0) -eq $Case.Succeeds) "$($Case.Name): provisioning exited $($Run.ExitCode)."
+        if ($Case.Succeeds) { Assert-FileUploadState $Run }
+    }
 }
 finally {
     Remove-Item -Recurse -Force -Path $StateDir -ErrorAction SilentlyContinue
