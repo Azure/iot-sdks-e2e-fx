@@ -229,8 +229,14 @@ function New-AzIotTestEnvironment {
         $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
     } else {
         Write-Host "Creating Azure IoT Hub ($IotHubName)."
-        $AzureIoTHub = az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" | ConvertFrom-Json
-        Stop-OnError -Step "Create Azure IoT Hub"
+        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub" -RetryOnPattern $script:IotServerErrorPattern -MaxAttempts 3 -Command {
+            param($Attempt)
+            if ($Attempt -gt 1) {
+                $Existing = Resolve-AzIotResourceAfterFailedCreate -Type hub -Name $IotHubName -ResourceGroup $ResourceGroup
+                if ($null -ne $Existing) { return $Existing }
+            }
+            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" | ConvertFrom-Json
+        }
     }
 
     if ($NoDps -eq $false) {
@@ -255,8 +261,14 @@ function New-AzIotTestEnvironment {
             $AzureDps = Invoke-AzRest -Url $DpsUrl
         } else {
             Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
-            $AzureDps = az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
-            Stop-OnError -Step "Create Device Provisioning Service"
+            $AzureDps = Invoke-WithRetry -Step "Create Device Provisioning Service" -RetryOnPattern $script:IotServerErrorPattern -MaxAttempts 3 -Command {
+                param($Attempt)
+                if ($Attempt -gt 1) {
+                    $Existing = Resolve-AzIotResourceAfterFailedCreate -Type dps -Name $DpsName -ResourceGroup $ResourceGroup
+                    if ($null -ne $Existing) { return $Existing }
+                }
+                az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
+            }
         }
     }
 
@@ -572,6 +584,44 @@ function New-FileUploadStorage {
     Stop-OnError -Step "Getting Azure Storage account connection string"
 
     return $ConnectionString
+}
+
+function Resolve-AzIotResourceAfterFailedCreate {
+    <#
+    .SYNOPSIS
+    Before retrying a failed 'az iot hub create' or 'az iot dps create', returns the resource if the
+    failed attempt still left it Active, or deletes what it left otherwise.
+
+    .DESCRIPTION
+    A create that fails server-side (e.g. IH500019) can leave the resource behind, and the CLI's
+    name-availability check would then refuse the retry. Returns $null when nothing is left to reuse.
+    Throws if listing or deleting fails, so the caller's retry policy judges that error instead.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet('hub', 'dps')][string]$Type,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$ResourceGroup
+    )
+
+    # Parenthesized so Windows PowerShell 5.1, whose ConvertFrom-Json emits an array as one object, enumerates it.
+    $Existing = (az iot $Type list --resource-group "$ResourceGroup" --only-show-errors | ConvertFrom-Json) | ?{ $_.name -eq $Name } | Select-Object -First 1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not list 'az iot $Type' resources in $ResourceGroup."
+    }
+    if ($null -eq $Existing) {
+        return $null
+    }
+    if ($Existing.properties.state -eq 'Active') {
+        Write-Host "Reusing $Type $Name, which the failed attempt left Active."
+        return $Existing
+    }
+
+    Write-Host "Deleting $Type $Name, which the failed attempt left in state '$($Existing.properties.state)'."
+    az iot $Type delete --name "$Name" --resource-group "$ResourceGroup" --only-show-errors | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not delete $Type $Name."
+    }
+    return $null
 }
 
 function Get-AzIotTestEnvironment {

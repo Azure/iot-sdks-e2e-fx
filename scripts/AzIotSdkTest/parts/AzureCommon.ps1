@@ -63,7 +63,8 @@ function Invoke-WithRetry {
 
     .PARAMETER Command
     Script block to run. Runs in its defining scope, so it can use the caller's
-    variables normally.
+    variables normally. Receives the attempt number (1-based) as its first
+    argument, so it can clean up what a failed attempt left behind.
 
     .PARAMETER StopOnPattern
     Regular expression matched against the same captured output. When it matches, the failure is
@@ -106,7 +107,7 @@ function Invoke-WithRetry {
             $global:LASTEXITCODE = 0
 
             try {
-                $Result = & $Command 2>$StdErrFile
+                $Result = & $Command $Attempt 2>$StdErrFile
             } catch {
                 # e.g. ConvertFrom-Json choking on the empty stdout of a failed
                 # command. The real diagnosis is the exit code plus stderr below.

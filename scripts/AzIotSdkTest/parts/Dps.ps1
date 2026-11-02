@@ -44,7 +44,11 @@ $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady
 # Matched on the words ARM uses, not on bare status numbers: a correlation id or a resource name
 # can contain '503' and a false match would keep retrying a real error.
 # GatewayAuthenticationFailed is a 500 from the ARM-to-RP gateway, not a caller auth failure.
-$script:ArmTransientPattern = 'Service ?Unavailable|Gateway ?Timeout|Bad ?Gateway|Too ?Many ?Requests|Internal ?Server ?Error|ServerTimeout|ServerBusy|GatewayAuthenticationFailed'
+$script:ArmServerErrorPattern = 'Service ?Unavailable|Gateway ?Timeout|Bad ?Gateway|Internal ?Server ?Error|ServerTimeout|ServerBusy|GatewayAuthenticationFailed'
+$script:ArmTransientPattern = "$($script:ArmServerErrorPattern)|Too ?Many ?Requests"
+# Server-side (5xx) failures only, for IoT Hub and DPS: they name theirs IH5xxxxx, e.g.
+# "(500019) Internal Error ... errorcode: IH500019" from 'az iot dps create'.
+$script:IotServerErrorPattern = "\bIH5\d{5}\b|$($script:ArmServerErrorPattern)"
 # A hub or DPS created with a system-assigned identity can be rejected while that identity's
 # credentials are still being issued (IH400097 "Unable to fetch credentials"). Re-PUTting succeeds.
 $script:IdentityTransientPattern = 'IH400097|Unable to fetch credentials'
