@@ -235,7 +235,7 @@ function New-AzIotTestEnvironment {
                 $Existing = Resolve-AzIotResourceAfterFailedCreate -Type hub -Name $IotHubName -ResourceGroup $ResourceGroup
                 if ($null -ne $Existing) { return $Existing }
             }
-            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" | ConvertFrom-Json
+            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" --only-show-errors | ConvertFrom-Json
         }
     }
 
@@ -267,7 +267,7 @@ function New-AzIotTestEnvironment {
                     $Existing = Resolve-AzIotResourceAfterFailedCreate -Type dps -Name $DpsName -ResourceGroup $ResourceGroup
                     if ($null -ne $Existing) { return $Existing }
                 }
-                az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" | ConvertFrom-Json
+                az iot dps create --name "$DpsName" --resource-group "$ResourceGroup" --location "$AzureLocation" --only-show-errors | ConvertFrom-Json
             }
         }
     }

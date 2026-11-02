@@ -85,6 +85,11 @@ if ($RunScenario) {
             '^iot (hub|dps) create' {
                 # No return when no failure is queued: the create clauses below then answer.
                 $Type = $Matches[1]
+                # Real az warns on stderr here. Windows PowerShell 5.1 turns redirected stderr into a
+                # thrown error under 'Stop', so a create without --only-show-errors would fail there.
+                if ($Argv -notcontains '--only-show-errors') {
+                    throw "WARNING: The behavior of this command has been altered by the following extension: azure-iot"
+                }
                 $Failures = $global:StubState.CreateFailures[$Type]
                 if ($Failures.Count -gt 0) {
                     $Failure = $Failures[0]
@@ -96,8 +101,10 @@ if ($RunScenario) {
                                 deviceProvisioningHostName = 'global.azure-devices-provisioning.net'; serviceOperationsHostName = 'dps.azure-devices-provisioning.net' }
                         }
                     }
-                    Write-Error -ErrorAction Continue "($($Failure.Code)) Stub error. errorcode: IH$($Failure.Code)."
                     $global:LASTEXITCODE = 1
+                    # Thrown is how Windows PowerShell 5.1 under 'Stop' delivers redirected stderr.
+                    if ($Failure.Thrown) { throw "ERROR: ($($Failure.Code)) Stub error. errorcode: IH$($Failure.Code)." }
+                    Write-Error -ErrorAction Continue "($($Failure.Code)) Stub error. errorcode: IH$($Failure.Code)."
                     return
                 }
             }
@@ -217,7 +224,9 @@ if ($RunScenario) {
         'no-cert-mgmt-dps-server-error-left-active' { @{ hub = @(); dps = @(@{ Code = '500019'; Leaves = 'Active' }) } }
         'no-cert-mgmt-dps-server-error-exhausted' { @{ hub = @(); dps = @(@{ Code = '500019' }, @{ Code = '500019' }, @{ Code = '500019' }) } }
         'no-cert-mgmt-dps-client-error' { @{ hub = @(); dps = @(@{ Code = '400016' }) } }
+        'no-cert-mgmt-dps-client-error-thrown' { @{ hub = @(); dps = @(@{ Code = '400016'; Thrown = $true }) } }
         'no-cert-mgmt-hub-server-error' { @{ hub = @(@{ Code = '500001'; Leaves = 'ActivationFailed' }); dps = @() } }
+        'no-cert-mgmt-hub-server-error-thrown' { @{ hub = @(@{ Code = '500001'; Thrown = $true }); dps = @() } }
         default { @{ hub = @(); dps = @() } }
     }
     $env:AZ_IOT_ENABLE_FILE_UPLOAD = 'true'
@@ -334,7 +343,9 @@ try {
         @{ Name = 'no-cert-mgmt-dps-server-error-left-active'; Type = 'dps'; Succeeds = $true;  Calls = 'create list' }
         @{ Name = 'no-cert-mgmt-dps-server-error-exhausted';   Type = 'dps'; Succeeds = $false; Calls = 'create list create list create' }
         @{ Name = 'no-cert-mgmt-dps-client-error';             Type = 'dps'; Succeeds = $false; Calls = 'create' }
+        @{ Name = 'no-cert-mgmt-dps-client-error-thrown';      Type = 'dps'; Succeeds = $false; Calls = 'create' }
         @{ Name = 'no-cert-mgmt-hub-server-error';             Type = 'hub'; Succeeds = $true;  Calls = 'create list delete create' }
+        @{ Name = 'no-cert-mgmt-hub-server-error-thrown';      Type = 'hub'; Succeeds = $true;  Calls = 'create list create' }
     )
     foreach ($Case in $RetryCases) {
         $Run = Invoke-Scenario $Case.Name
