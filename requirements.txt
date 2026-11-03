@@ -1,7 +1,7 @@
 azure-eventhub>=5.11.0
 azure.storage.blob
-azure.iot.hub
-six # azure.iot.hub imports six without declaring it; python-dateutil 4 no longer pulls it in
+azure-iot-hub @ git+https://github.com/Azure/azure-iot-hub-python.git@e7e4bb4467a22c59e5ab18a8f2ba7721e3c40b9d
+six # imported directly by the test-runner adapters
 certifi
 colorama
 docker; sys_platform != 'win32' # we don't use it on Windows.  Exclude it to avoid CVE-2021-32559
@@ -18,5 +18,6 @@ python_dateutil
 requests
 setuptools
 urllib3
+uamqp>=1.2.14,<2.0.0 # used directly by the AMQP and Event Hub adapters
 PyYAML
 inflection==0.5.0

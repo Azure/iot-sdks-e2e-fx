@@ -8,6 +8,20 @@ The first time you run this framework, you will want to follow these documents:
 1. [Set up a VM to run tests under Linux](https://github.com/Azure/iot-sdks-e2e-fx/wiki/usage-linux-test-vm-setup)
 2. [Run a simple test to verify your installation](https://github.com/Azure/iot-sdks-e2e-fx/wiki/usage-running-your-first-test-suite)
 
+### Service SDK dependency
+
+The framework installs `azure-iot-hub` from a pinned Git revision in
+[requirements.txt](./requirements.txt). This revision uses Azure Core HTTP
+exceptions and a pure-Python AMQP transport. Horton still declares `six` and
+`uamqp` separately because its test-runner adapters use them directly.
+
+The service SDK compatibility tests run locally without Docker or Azure resources:
+
+```bash
+python -m pip install -r requirements.txt -e horton_helpers
+PYTHONPATH=test-runner python -m pytest tests/test_iothub_service_sdk.py
+```
+
 
 # [Wiki](https://github.com/Azure/iot-sdks-e2e-fx/wiki)
 

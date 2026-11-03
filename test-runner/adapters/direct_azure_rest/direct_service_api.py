@@ -5,10 +5,10 @@ import time
 from ..abstract_iothub_apis import AbstractServiceApi
 from ..decorators import emulate_async
 from azure.iot.hub import IoTHubRegistryManager, models
-from msrest.exceptions import HttpOperationError
+from azure.core.exceptions import HttpResponseError
 
 
-_TRANSIENT_ERROR_MARKERS = ("Not Found", "Service Unavailable")
+_TRANSIENT_HTTP_STATUS_CODES = (404, 503)
 
 
 def _retry_on_transient(fn, retries=3, delay=2):
@@ -26,9 +26,11 @@ def _retry_on_transient(fn, retries=3, delay=2):
     for attempt in range(retries):
         try:
             return fn()
-        except HttpOperationError as e:
-            msg = str(e)
-            if any(m in msg for m in _TRANSIENT_ERROR_MARKERS) and attempt < retries - 1:
+        except HttpResponseError as e:
+            if (
+                e.status_code in _TRANSIENT_HTTP_STATUS_CODES
+                and attempt < retries - 1
+            ):
                 time.sleep(delay)
             else:
                 raise
