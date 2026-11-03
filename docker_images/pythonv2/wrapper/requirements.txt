@@ -1,9 +1,7 @@
 connexion<3.0
 Werkzeug>=2.1.1,<3.0
 python_dateutil
-six # imported by swagger_server; python-dateutil 4 no longer pulls it in
 setuptools>=65.0.0
 PyYAML
 urllib3
-
 

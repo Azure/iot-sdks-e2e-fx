@@ -1,12 +1,10 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-import six
 import abc
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ServiceConnectDisconnect(object):
+class ServiceConnectDisconnect(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def connect(self, connection_string):
         pass
@@ -16,8 +14,7 @@ class ServiceConnectDisconnect(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Connect(object):
+class Connect(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def connect(self, transport, connection_string, ca_certificate):
         pass
@@ -53,15 +50,13 @@ class Connect(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class DeviceConnect(object):
+class DeviceConnect(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_from_symmetric_key(self, transport, device_id, hostname, symmetric_key):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ModuleConnect(object):
+class ModuleConnect(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def connect_from_environment(self, transport):
         pass
@@ -77,8 +72,7 @@ class ModuleConnect(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Twin(object):
+class Twin(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def enable_twin(self):
         pass
@@ -96,8 +90,7 @@ class Twin(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class HandleMethods(object):
+class HandleMethods(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def enable_methods(self):
         pass
@@ -109,15 +102,13 @@ class HandleMethods(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Telemetry(object):
+class Telemetry(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def send_event(self, body):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class InputsAndOutputs(object):
+class InputsAndOutputs(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def enable_input_messages(self):
         pass
@@ -131,8 +122,7 @@ class InputsAndOutputs(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class InvokeMethods(object):
+class InvokeMethods(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def call_module_method(self, device_id, module_id, method_invoke_parameters):
         pass
@@ -142,8 +132,7 @@ class InvokeMethods(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ConnectionStatus(object):
+class ConnectionStatus(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_connection_status(self):
         pass
@@ -153,8 +142,7 @@ class ConnectionStatus(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class C2d(object):
+class C2d(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def enable_c2d(self):
         pass
@@ -164,8 +152,7 @@ class C2d(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ServiceSideOfTwin(object):
+class ServiceSideOfTwin(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_module_twin(self, device_id, module_id):
         pass
@@ -183,8 +170,7 @@ class ServiceSideOfTwin(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BlobUpload(object):
+class BlobUpload(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_storage_info_for_blob(self, blob_name):
         pass
@@ -196,7 +182,6 @@ class BlobUpload(object):
         pass
 
 
-@six.add_metaclass(abc.ABCMeta)
 class AbstractModuleApi(
     Connect,
     ModuleConnect,
@@ -210,7 +195,6 @@ class AbstractModuleApi(
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
 class AbstractDeviceApi(
     Connect,
     DeviceConnect,
@@ -224,12 +208,10 @@ class AbstractDeviceApi(
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
 class AbstractRegistryApi(ServiceConnectDisconnect, ServiceSideOfTwin):
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
 class AbstractServiceApi(ServiceConnectDisconnect, InvokeMethods):
     @abc.abstractmethod
     def send_c2d(self, device_id, message):

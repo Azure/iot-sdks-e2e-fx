@@ -1,12 +1,10 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-import six
 import abc
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractSystemControlApi:
+class AbstractSystemControlApi(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def set_network_destination(self, ip, transport):
         pass
