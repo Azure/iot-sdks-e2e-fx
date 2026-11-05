@@ -12,35 +12,12 @@ from azure.iot.hub.models import (
 
 from azure.core.exceptions import (
     HttpResponseError,
+    ResourceNotFoundError,
     ServiceRequestError,
     ServiceResponseError,
 )
 import connection_string
 import time
-
-
-def _add_service_detail(e):
-    """Fold the service's own explanation into an HttpResponseError message.
-
-    An error message can contain only the HTTP status, so a rejected
-    request surfaces as nothing more than "Operation returned an invalid
-    status code 'Bad Request'".  IoT Hub does say what was wrong, but only in
-    the response body, which never reaches the log -- leaving a failed build
-    with no way to tell a malformed device id from a hub that is out of quota.
-
-    The exception is modified in place rather than replaced: try_delete_device
-    and friends catch HttpResponseError to ignore "not found", so changing the
-    type here would stop those from working.  Callers that swallow the error
-    still print nothing.
-    """
-    body = e.response.text() if e.response is not None else ""
-    body = body.strip() if body else ""
-    if not body:
-        return
-    detail = "{} -- service said: {}".format(str(e), body)
-    e.args = (detail,) + tuple(e.args[1:])
-    if hasattr(e, "message"):
-        e.message = detail
 
 
 def _retry_transient(fn, retries=5, initial_delay=2):
@@ -81,7 +58,6 @@ def _retry_transient(fn, retries=5, initial_delay=2):
                 time.sleep(delay)
                 delay = min(delay * 2, 30)
                 continue
-            _add_service_detail(e)
             raise
     if last_error:
         raise last_error
@@ -153,7 +129,7 @@ class IoTHubServiceHelper:
                 lambda: self.registry_manager.get_device(device_id)
             )
             print("using existing device")
-        except HttpResponseError:
+        except ResourceNotFoundError:
             device = Device(device_id=device_id)
 
         if is_edge:
@@ -188,7 +164,7 @@ class IoTHubServiceHelper:
                 lambda: self.registry_manager.get_module(device_id, module_id)
             )
             print("using existing device module")
-        except HttpResponseError:
+        except ResourceNotFoundError:
             module = Module(device_id=device_id, module_id=module_id)
 
         module = _retry_transient(
