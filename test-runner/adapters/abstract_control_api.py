@@ -1,12 +1,10 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
-import six
 import abc
 
 
-@six.add_metaclass(abc.ABCMeta)
-class AbstractControlApi:
+class AbstractControlApi(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def log_message_sync(self, message):
         pass

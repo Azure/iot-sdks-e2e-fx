@@ -1,5 +1,4 @@
 import connexion
-import six
 
 from swagger_server.models.certificate import Certificate  # noqa: E501
 from swagger_server.models.connect_response import ConnectResponse  # noqa: E501

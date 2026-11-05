@@ -1,10 +1,11 @@
 azure-eventhub>=5.11.0
 azure.storage.blob
-azure.iot.hub
-six # azure.iot.hub imports six without declaring it; python-dateutil 4 no longer pulls it in
+# Pin until the new azure-iot-hub major version is officially released.
+azure-iot-hub @ git+https://github.com/Azure/azure-iot-hub-python.git@e7e4bb4467a22c59e5ab18a8f2ba7721e3c40b9d
 certifi
 colorama
 docker; sys_platform != 'win32' # we don't use it on Windows.  Exclude it to avoid CVE-2021-32559
+isodate # imported by pinned azure-iot-hub but missing from its install_requires
 junitparser
 msrest
 oauthlib>=3.2.2 # >= 3.2.2 because of CVE-2022-36087. If MSRest gets an update that increments the oauthlib dependency version up to at least 3.2.2, then this line can be deleted
@@ -18,5 +19,6 @@ python_dateutil
 requests
 setuptools
 urllib3
+uamqp>=1.6.11,<2.0.0 # used directly by the AMQP and Event Hub adapters
 PyYAML
 inflection==0.5.0

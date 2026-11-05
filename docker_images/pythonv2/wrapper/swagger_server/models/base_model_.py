@@ -1,7 +1,5 @@
 import pprint
 
-import six
-
 from swagger_server import util
 
 
@@ -26,7 +24,7 @@ class Model(object):
         """
         result = {}
 
-        for attr, _ in six.iteritems(self.swagger_types):
+        for attr, _ in self.swagger_types.items():
             value = getattr(self, attr)
             if isinstance(value, list):
                 result[attr] = list(map(

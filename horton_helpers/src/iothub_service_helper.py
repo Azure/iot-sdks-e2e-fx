@@ -10,68 +10,45 @@ from azure.iot.hub.models import (
     ConfigurationContent,
 )
 
-from msrest.exceptions import HttpOperationError, ClientRequestError
+from azure.core.exceptions import (
+    HttpResponseError,
+    ResourceNotFoundError,
+    ServiceRequestError,
+    ServiceResponseError,
+)
 import connection_string
 import time
-
-
-def _add_service_detail(e):
-    """Fold the service's own explanation into an HttpOperationError message.
-
-    msrest builds its message from the HTTP status alone, so a rejected
-    request surfaces as nothing more than "Operation returned an invalid
-    status code 'Bad Request'".  IoT Hub does say what was wrong, but only in
-    the response body, which never reaches the log -- leaving a failed build
-    with no way to tell a malformed device id from a hub that is out of quota.
-
-    The exception is modified in place rather than replaced: try_delete_device
-    and friends catch HttpOperationError to ignore "not found", so changing the
-    type here would stop those from working.  Callers that swallow the error
-    still print nothing.
-    """
-    body = getattr(getattr(e, "response", None), "text", None)
-    body = body.strip() if body else ""
-    if not body:
-        return
-    detail = "{} -- service said: {}".format(str(e), body)
-    e.args = (detail,) + tuple(e.args[1:])
-    if hasattr(e, "message"):
-        e.message = detail
 
 
 def _retry_transient(fn, retries=5, initial_delay=2):
     """Retry an IoT Hub service call on transient errors.
 
     IoT Hub occasionally returns 503 Service Unavailable or closes
-    connections under load.  msrest/urllib3 bubble these up as
-    ClientRequestError ("too many 503 error responses") after
-    exhausting their internal retries, and HttpOperationError with a
-    5xx status for individual 5xx responses.  Wrap deploy-time calls
-    with exponential backoff so a transient hiccup doesn't fail the
-    whole pipeline job.
+    connections under load. Azure Core raises ServiceRequestError or
+    ServiceResponseError for transport failures and HttpResponseError
+    for HTTP errors. Wrap deploy-time calls with exponential backoff so
+    a transient hiccup doesn't fail the whole pipeline job.
     """
     delay = initial_delay
     last_error = None
     for attempt in range(retries):
         try:
             return fn()
-        except ClientRequestError as e:
+        except (ServiceRequestError, ServiceResponseError) as e:
             last_error = e
-            msg = str(e)
-            if "503" in msg or "502" in msg or "500" in msg or "Connection" in msg:
-                if attempt < retries - 1:
-                    print(
-                        "IoT Hub transient error (attempt {}/{}): {}. Retrying in {}s...".format(
-                            attempt + 1, retries, msg[:160], delay
-                        )
+            if attempt < retries - 1:
+                print(
+                    "IoT Hub transient error (attempt {}/{}): {}. Retrying in {}s...".format(
+                        attempt + 1, retries, str(e)[:160], delay
                     )
-                    time.sleep(delay)
-                    delay = min(delay * 2, 30)
-                    continue
+                )
+                time.sleep(delay)
+                delay = min(delay * 2, 30)
+                continue
             raise
-        except HttpOperationError as e:
+        except HttpResponseError as e:
             last_error = e
-            status = getattr(getattr(e, "response", None), "status_code", None)
+            status = e.status_code
             if status in (500, 502, 503, 504) and attempt < retries - 1:
                 print(
                     "IoT Hub transient {} (attempt {}/{}). Retrying in {}s...".format(
@@ -81,7 +58,6 @@ def _retry_transient(fn, retries=5, initial_delay=2):
                 time.sleep(delay)
                 delay = min(delay * 2, 30)
                 continue
-            _add_service_detail(e)
             raise
     if last_error:
         raise last_error
@@ -153,7 +129,7 @@ class IoTHubServiceHelper:
                 lambda: self.registry_manager.get_device(device_id)
             )
             print("using existing device")
-        except HttpOperationError:
+        except ResourceNotFoundError:
             device = Device(device_id=device_id)
 
         if is_edge:
@@ -188,7 +164,7 @@ class IoTHubServiceHelper:
                 lambda: self.registry_manager.get_module(device_id, module_id)
             )
             print("using existing device module")
-        except HttpOperationError:
+        except ResourceNotFoundError:
             module = Module(device_id=device_id, module_id=module_id)
 
         module = _retry_transient(
@@ -202,7 +178,7 @@ class IoTHubServiceHelper:
         try:
             _retry_transient(lambda: self.registry_manager.delete_device(device_id))
             return True
-        except (HttpOperationError, ClientRequestError):
+        except (HttpResponseError, ServiceRequestError, ServiceResponseError):
             return False
 
     def try_delete_module(self, device_id, module_id):
@@ -211,5 +187,5 @@ class IoTHubServiceHelper:
                 lambda: self.registry_manager.delete_module(device_id, module_id)
             )
             return True
-        except (HttpOperationError, ClientRequestError):
+        except (HttpResponseError, ServiceRequestError, ServiceResponseError):
             return False

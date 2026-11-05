@@ -5,30 +5,30 @@ import time
 from ..abstract_iothub_apis import AbstractServiceApi
 from ..decorators import emulate_async
 from azure.iot.hub import IoTHubRegistryManager, models
-from msrest.exceptions import HttpOperationError
+from azure.core.exceptions import HttpResponseError
 
 
-_TRANSIENT_ERROR_MARKERS = ("Not Found", "Service Unavailable")
+_TRANSIENT_HTTP_STATUS_CODES = (404,)
 
 
 def _retry_on_transient(fn, retries=3, delay=2):
     """Retry a service method invocation on transient IoT Hub errors.
 
-    Retries on:
-    - 404 Not Found: in EdgeHub scenarios IoT Hub may return 404 if
-      EdgeHub hasn't established a cloud proxy yet (scope cache
-      propagation delay).
-    - 503 Service Unavailable: transient throttling / regional service
-      blip; retry typically succeeds on next attempt.
+    In EdgeHub scenarios IoT Hub may return 404 if EdgeHub hasn't
+    established a cloud proxy yet (scope cache propagation delay).
 
-    Keep retries short to avoid exceeding the receiver-side timeout.
+    Azure Core already retries transient server errors. Only retry 404
+    here to avoid multiplying requests and exceeding the receiver-side
+    timeout.
     """
     for attempt in range(retries):
         try:
             return fn()
-        except HttpOperationError as e:
-            msg = str(e)
-            if any(m in msg for m in _TRANSIENT_ERROR_MARKERS) and attempt < retries - 1:
+        except HttpResponseError as e:
+            if (
+                e.status_code in _TRANSIENT_HTTP_STATUS_CODES
+                and attempt < retries - 1
+            ):
                 time.sleep(delay)
             else:
                 raise
