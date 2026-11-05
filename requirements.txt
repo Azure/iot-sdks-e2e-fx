@@ -5,7 +5,7 @@ azure-iot-hub @ git+https://github.com/Azure/azure-iot-hub-python.git@e7e4bb4467
 certifi
 colorama
 docker; sys_platform != 'win32' # we don't use it on Windows.  Exclude it to avoid CVE-2021-32559
-isodate
+isodate # imported by pinned azure-iot-hub but missing from its install_requires
 junitparser
 msrest
 oauthlib>=3.2.2 # >= 3.2.2 because of CVE-2022-36087. If MSRest gets an update that increments the oauthlib dependency version up to at least 3.2.2, then this line can be deleted
