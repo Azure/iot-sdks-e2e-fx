@@ -2,22 +2,29 @@ FROM mcr.microsoft.com/mirror/docker/library/ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update \
-  && apt install --fix-missing --no-install-recommends   -y \
-    build-essential \
-    cmake \
-    curl \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    uuid-dev \
-    pkg-config \
-    git \
-    gdbserver \
-    openssh-server \
-    ca-certificates \
-    python3 \
-    python3-pip \
-    iptables \
+# Retry apt: Ubuntu mirrors can fail transiently (connection errors, or indexes
+# listing packages whose files are not yet published, which return 404).
+RUN for attempt in 1 2 3 4 5; do \
+      apt update \
+      && apt install --fix-missing --no-install-recommends   -y \
+        build-essential \
+        cmake \
+        curl \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        uuid-dev \
+        pkg-config \
+        git \
+        gdbserver \
+        openssh-server \
+        ca-certificates \
+        python3 \
+        python3-pip \
+        iptables \
+      && break; \
+      if [ "$attempt" -eq 5 ]; then exit 1; fi; \
+      echo "apt failed (attempt $attempt), retrying in $((attempt * 60))s"; sleep $((attempt * 60)); \
+    done \
   &&  rm -rf /var/lib/apt/lists/*
 
 RUN git config --global user.email "you@example.com" \
