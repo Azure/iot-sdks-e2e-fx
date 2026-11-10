@@ -76,8 +76,9 @@ inputs:
     description: >-
       Number of devices for a DPS x509 ENROLLMENT GROUP linked to the provisioned signing CA
       (New-AzIotTestEnvironment -DpsX509GroupEnrollmentDevices). A value > 0 creates the group and
-      makes this action emit a bootstrap identity for it as IOT_DPS_GROUP_X509_CERTIFICATE (leaf +
-      issuer CA + root), IOT_DPS_GROUP_X509_KEY and IOT_DPS_GROUP_X509_REGISTRATION_ID; that is
+      makes this action emit one bootstrap identity per device as IOT_DPS_GROUP_X509_CERTIFICATE_<i> (leaf +
+      issuer CA + root), IOT_DPS_GROUP_X509_KEY_<i> and IOT_DPS_GROUP_X509_REGISTRATION_ID_<i>, and device 0
+      also without the _<i> suffix; that is
       what the CSR e2e needs. Note PROVISIONING_ROOT_CERT(_KEY), written by the config cmdlets, is
       the DPS ROOT CA and NOT the group's issuer, which is an intermediate signed by that root.
     required: false
@@ -307,26 +308,33 @@ runs:
           # Guarded on GroupX509 presence -> no-op for callers without a group.
           if ($TestEnvInfo.Dps.Enrollments.GroupX509.Count -gt 0) {
               $group = $TestEnvInfo.Dps.Enrollments.GroupX509[0]
-              # Reuse a device identity minted during provisioning; mint one only if
+              # Reuse the device identities minted during provisioning; mint one only if
               # the group has none (both paths produce a leaf signed by the issuer CA).
-              if ($group.Identities.Count -gt 0) {
-                  $identity = $group.Identities[0]
-              } else {
-                  $identity = $group.AddIdentity("csr-bootstrap-$(Get-Random -Minimum 100000 -Maximum 999999)", [timespan]::FromDays(2))
+              $identities = @($group.Identities)
+              if ($identities.Count -eq 0) {
+                  $identities = @($group.AddIdentity("csr-bootstrap-$(Get-Random -Minimum 100000 -Maximum 999999)", [timespan]::FromDays(2)))
               }
-              $regId = $identity.Id
-              $chainPem = $identity.Certificate.ToPem() + "`n" + $group.Certificate.ToPem() + "`n" + $TestEnvInfo.Dps.RootCaCertificates[0].ToPem()
-              $keyPem = $identity.Certificate.PrivateKey.ToRsaPkcs1Pem()
-              $certB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($chainPem))
-              $keyB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($keyPem))
-              if ($ConfigTarget -eq 'powershell') {
-                  Add-Content -Path $OutFile -Value "`$env:IOT_DPS_GROUP_X509_CERTIFICATE = `"$certB64`""
-                  Add-Content -Path $OutFile -Value "`$env:IOT_DPS_GROUP_X509_KEY = `"$keyB64`""
-                  Add-Content -Path $OutFile -Value "`$env:IOT_DPS_GROUP_X509_REGISTRATION_ID = `"$regId`""
-              } else {
-                  Add-Content -Path $OutFile -Value "export IOT_DPS_GROUP_X509_CERTIFICATE=`"$certB64`""
-                  Add-Content -Path $OutFile -Value "export IOT_DPS_GROUP_X509_KEY=`"$keyB64`""
-                  Add-Content -Path $OutFile -Value "export IOT_DPS_GROUP_X509_REGISTRATION_ID=`"$regId`""
+              # Each identity as IOT_DPS_GROUP_X509_*_<i>, so parallel jobs can each take their own;
+              # identity 0 also without the suffix, as before.
+              for ($i = 0; $i -lt $identities.Count; $i++) {
+                  $identity = $identities[$i]
+                  $chainPem = $identity.Certificate.ToPem() + "`n" + $group.Certificate.ToPem() + "`n" + $TestEnvInfo.Dps.RootCaCertificates[0].ToPem()
+                  $keyPem = $identity.Certificate.PrivateKey.ToRsaPkcs1Pem()
+                  $values = [ordered]@{
+                      IOT_DPS_GROUP_X509_CERTIFICATE     = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($chainPem))
+                      IOT_DPS_GROUP_X509_KEY             = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($keyPem))
+                      IOT_DPS_GROUP_X509_REGISTRATION_ID = $identity.Id
+                  }
+                  $suffixes = @("_$i") + @(if ($i -eq 0) { '' })
+                  foreach ($suffix in $suffixes) {
+                      foreach ($name in $values.Keys) {
+                          if ($ConfigTarget -eq 'powershell') {
+                              Add-Content -Path $OutFile -Value "`$env:$name$suffix = `"$($values[$name])`""
+                          } else {
+                              Add-Content -Path $OutFile -Value "export $name$suffix=`"$($values[$name])`""
+                          }
+                      }
+                  }
+                  Write-Host "Emitted X.509 group bootstrap identity $i`: $($identity.Id)"
               }
-              Write-Host "Emitted X.509 group bootstrap identity: $regId"
           }
