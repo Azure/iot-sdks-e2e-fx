@@ -286,6 +286,8 @@ function Assert-FileUploadState($Run) {
     Assert ($Default.connectionString -eq $FakeStorageConnectionString) "$($Run.Name): hub storage connection string not set."
     Assert ($Default.sasTtlAsIso8601 -eq 'PT1H') "$($Run.Name): hub sasTtlAsIso8601 is '$($Default.sasTtlAsIso8601)'."
     Assert ($Run.Hub.properties.enableFileUploadNotifications -eq $true) "$($Run.Name): hub enableFileUploadNotifications is not true."
+    $Storage = Find-Call $Run { param($j) $j -match '^storage account create .*--allow-blob-public-access false' }
+    Assert ($Storage -ge 0) "$($Run.Name): 'az storage account create' must pass --allow-blob-public-access false."
 }
 
 try {

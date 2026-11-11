@@ -572,7 +572,9 @@ function New-FileUploadStorage {
     )
 
     Write-Host "Creating Azure Storage account ($StorageAccountName)"
-    az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$Location" --sku Standard_LRS --kind StorageV2 | Out-Null
+    # --allow-blob-public-access is explicit: when omitted the CLI leaves the property out of the
+    # request, and a policy requiring it to be set then denies the account (RequestDisallowedByPolicy).
+    az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$Location" --sku Standard_LRS --kind StorageV2 --allow-blob-public-access false | Out-Null
     Stop-OnError -Step "Creating Azure Storage account"
 
     Write-Host "Creating Azure Storage container ($ContainerName on $StorageAccountName)"
