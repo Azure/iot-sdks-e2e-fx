@@ -1651,7 +1651,7 @@ function New-AzIotTestEnvironment {
     # File Upload
     if ($EnableFileUpload -eq $true) {
         Write-Host "Creating Azure Storage account ($StorageAccountName)"
-        az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku Standard_LRS --kind StorageV2 | Out-Null
+        az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$AzureLocation" --sku Standard_LRS --kind StorageV2 --allow-blob-public-access false | Out-Null
         Stop-OnError -Step "Creating Azure Storage account"
 
         $AzureStorageContainerName = "iothubuploads"
