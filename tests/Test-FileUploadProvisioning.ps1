@@ -154,6 +154,12 @@ if ($RunScenario) {
                 return ($global:StubState.Resources[$Key] | ConvertTo-Json -Depth 20)
             }
             '^iot hub update' {
+                if ((Opt '--fc') -and $global:StubState.HubUpdateThrottles -gt 0) {
+                    $global:StubState.HubUpdateThrottles--
+                    Write-Error -ErrorAction Continue "Operation returned an invalid status 'Too Many Requests'"
+                    $global:LASTEXITCODE = 1
+                    return
+                }
                 # The azure-iot extension's update: GET, then refuse any non-GEN2 hub carrying ADR properties.
                 $Hub = $global:StubState.Resources[(Get-StubHubKey)]
                 if ($Hub.properties.deviceRegistry.namespaceResourceId -and $Hub.sku.name -ne 'GEN2') {
@@ -216,6 +222,7 @@ if ($RunScenario) {
     $env:AZ_IOT_ENABLE_CERT_MGMT = if ($RunScenario -like 'cert-mgmt*') { 'true' } else { 'false' }
     $global:StubState.LinkChange = if ($RunScenario -like 'cert-mgmt-link-*') { $RunScenario -replace '^cert-mgmt-link-', '' } else { $null }
     $global:StubState.DpsIdentityFailures = if ($RunScenario -eq 'cert-mgmt-dps-identity-transient') { 1 } else { 0 }
+    $global:StubState.HubUpdateThrottles = if ($RunScenario -eq 'no-cert-mgmt-hub-update-throttled') { 1 } else { 0 }
     # Queued failures of 'az iot <hub|dps> create': Code is the IoT error code, Leaves the state of the
     # resource the failed create leaves behind (nothing when unset).
     $global:StubState.Leftovers = @{ hub = @{}; dps = @{} }
@@ -330,12 +337,18 @@ try {
     Assert ($Run.ExitCode -eq 0) "no-cert-mgmt: provisioning exited $($Run.ExitCode)."
     $Updates = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^iot hub update' } | %{ $_.argv -join ' ' })
     $Expected = @(
-        "iot hub update --name stubhub --resource-group StubRg --fcs $FakeStorageConnectionString --fc iothubuploads --fileupload-sas-ttl 1",
+        "iot hub update --name stubhub --resource-group StubRg --fcs $FakeStorageConnectionString --fc iothubuploads --fileupload-sas-ttl 1 --only-show-errors",
         'iot hub update --name stubhub --resource-group StubRg --fileupload-notifications true --only-show-errors'
     )
     Assert (($Updates -join "`n") -ceq ($Expected -join "`n")) "no-cert-mgmt: 'az iot hub update' calls differ:`n  got:      $($Updates -join "`n            ")`n  expected: $($Expected -join "`n            ")"
     Assert ((Find-Call $Run { param($j) $j -match '^rest .*/IotHubs/' }) -lt 0) "no-cert-mgmt: the hub must not be written through ARM."
     Assert ((Find-Call $Run { param($j) $j -match '^iot hub create' }) -lt (Find-Call $Run { param($j) $j -match '^storage account create' })) "no-cert-mgmt: storage must still be created after the hub."
+    Assert-FileUploadState $Run
+
+    # A throttled (429) file upload update is retried.
+    $Run = Invoke-Scenario 'no-cert-mgmt-hub-update-throttled'
+    $FileUploadUpdates = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^iot hub update .*--fc ' }).Count
+    Assert ($Run.ExitCode -eq 0 -and $FileUploadUpdates -eq 2) "no-cert-mgmt-hub-update-throttled: expected success after 2 file upload updates (exit $($Run.ExitCode), $FileUploadUpdates updates)."
     Assert-FileUploadState $Run
 
     # A server-side (5xx) create failure is retried, first reusing an Active leftover or deleting any

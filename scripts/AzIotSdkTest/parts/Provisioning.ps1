@@ -494,8 +494,10 @@ function New-AzIotTestEnvironment {
             -StorageAccountName $StorageAccountName -ContainerName $AzureStorageContainerName
 
         Write-Host "Updating Azure IoT Hub file upload settings"
-        az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 | Out-Null
-        Stop-OnError -Step "Updating Azure IoT Hub file upload settings"
+        # Throttled (429) while other runs create hubs in the same subscription; retry with backoff.
+        Invoke-WithRetry -Step "Updating Azure IoT Hub file upload settings" -RetryOnPattern $script:ArmTransientPattern -Command {
+            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --only-show-errors | Out-Null
+        } | Out-Null
     }
 
     if ($AddContainerRegistry) {
