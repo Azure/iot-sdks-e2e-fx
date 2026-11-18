@@ -561,7 +561,9 @@ class IotHubDeviceSet {
 }
 
 class IotHubInfo {
+    # With local auth disabled, only its HostName is usable; service calls need Entra ID.
     [string]$ConnectionString = $null
+    [bool]$LocalAuthDisabled = $false
     [EventHubInfo]$EventHub = [EventHubInfo]::new()
     [IotHubDeviceSet]$Devices = [IotHubDeviceSet]::new()
 
@@ -570,6 +572,7 @@ class IotHubInfo {
     [hashtable]ToHashtable() {
         return [ordered]@{
             ConnectionString = $this.ConnectionString
+            LocalAuthDisabled = $this.LocalAuthDisabled
             EventHub = ConvertTo-Hashtable -Object $this.EventHub
             Devices = ConvertTo-Hashtable -Object $this.Devices
         }
@@ -578,6 +581,7 @@ class IotHubInfo {
     static [IotHubInfo]FromHashtable([hashtable]$Hashtable) {
         $IotHubInfo = [IotHubInfo]::new()
         $IotHubInfo.ConnectionString = $Hashtable.ConnectionString
+        $IotHubInfo.LocalAuthDisabled = [bool]$Hashtable.LocalAuthDisabled
         $IotHubInfo.EventHub = [EventHubInfo]::FromHashtable($Hashtable.EventHub)
         $IotHubInfo.Devices = [IotHubDeviceSet]::FromHashtable($Hashtable.Devices)
         return $IotHubInfo

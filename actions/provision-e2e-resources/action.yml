@@ -56,6 +56,15 @@ inputs:
       issue an operational certificate in response to a device CSR (required by the CSR e2e).
     required: false
     default: 'false'
+  disable-local-auth:
+    description: >-
+      When 'true', pass -DisableLocalAuth to New-AzIotTestEnvironment so the IoT Hub only takes
+      Microsoft Entra ID on its service APIs: the signed-in principal is granted IoT Hub Data
+      Contributor on it and DPS links to it with its own identity. Device SAS and X.509 keep
+      working, as does the built-in Event Hub connection string; the IoT Hub connection string
+      in the test config is then usable for its HostName only.
+    required: false
+    default: 'false'
   enable-file-upload:
     description: >-
       When 'true', pass -EnableFileUpload to New-AzIotTestEnvironment so an Azure Storage account
@@ -129,6 +138,7 @@ runs:
         AZ_IOT_ENABLE_ADU: ${{ inputs.enable-adu }}
         AZ_IOT_ENABLE_CERT_MGMT: ${{ inputs.enable-certificate-management }}
         AZ_IOT_ENABLE_FILE_UPLOAD: ${{ inputs.enable-file-upload }}
+        AZ_IOT_DISABLE_LOCAL_AUTH: ${{ inputs.disable-local-auth }}
         AZ_IOT_HUB_X509_DEVICES: ${{ inputs.iothub-x509-thumbprint-devices }}
         AZ_IOT_DPS_INDIVIDUAL: ${{ inputs.dps-x509-individual-enrollments }}
         AZ_IOT_DPS_GROUP_DEVICES: ${{ inputs.dps-x509-group-enrollment-devices }}
@@ -172,6 +182,7 @@ runs:
 
           $EnableCertificateManagement = Get-BooleanInput 'enable-certificate-management' $env:AZ_IOT_ENABLE_CERT_MGMT
           $EnableFileUpload = Get-BooleanInput 'enable-file-upload' $env:AZ_IOT_ENABLE_FILE_UPLOAD
+          $DisableLocalAuth = Get-BooleanInput 'disable-local-auth' $env:AZ_IOT_DISABLE_LOCAL_AUTH
 
           $ConfigTarget = $env:AZ_IOT_CONFIG_TARGET
           if ($ConfigTarget -notin @('powershell', 'bash')) {
@@ -268,6 +279,7 @@ runs:
           }
           if ($EnableCertificateManagement) { $NewEnvArgs['EnableCertificateManagement'] = $true }
           if ($EnableFileUpload) { $NewEnvArgs['EnableFileUpload'] = $true }
+          if ($DisableLocalAuth) { $NewEnvArgs['DisableLocalAuth'] = $true }
 
           $TestEnvInfo = New-AzIotTestEnvironment @NewEnvArgs
 

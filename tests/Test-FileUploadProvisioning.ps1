@@ -3,7 +3,8 @@
 Drives the provision-e2e-resources action script and New-AzIotTestEnvironment with `az` stubbed, and
 checks how file upload is configured with and without certificate management, and that a hub or
 DPS create failing server-side (5xx) is retried after its leftover is reused or deleted, while a
-client-side (4xx) failure is not retried.
+client-side (4xx) failure is not retried. Also checks that -DisableLocalAuth creates the hub without
+local auth and moves its DPS link and device management to Entra ID.
 
 .DESCRIPTION
 Provisions nothing and needs no credentials. `az` is replaced by a stateful stub that records every
@@ -110,7 +111,8 @@ if ($RunScenario) {
             }
             '^iot (hub|dps) list' { return (ConvertTo-Json -Depth 20 -InputObject @($global:StubState.Leftovers[$Matches[1]].Values)) }
             '^iot (hub|dps) delete' { $global:StubState.Leftovers[$Matches[1]].Remove((Opt '--name')); return '' }
-            '^account show' { return '{"id":"00000000-0000-0000-0000-000000000000","user":{"name":"stub"}}' }
+            '^account show' { return '{"id":"00000000-0000-0000-0000-000000000000","user":{"name":"stub","type":"servicePrincipal"}}' }
+            '^account get-access-token' { return "e30.$([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('{"oid":"caller-oid"}')).TrimEnd('=')).sig" }
             '^extension list' { if ($Joined -match 'table') { return 'azure-iot 0.30.0b2' } return '[{"name":"azure-iot","version":"0.30.0b2"}]' }
             '^group exists' { return 'false' }
             '^rest ' {
@@ -149,7 +151,7 @@ if ($RunScenario) {
                 $Key = "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/$((Opt '--resource-group').ToLowerInvariant())/providers/microsoft.devices/iothubs/$($Name.ToLowerInvariant())"
                 $global:StubState.Resources[$Key] = [pscustomobject]@{
                     id = $Key; sku = [pscustomobject]@{ name = 'S1' }
-                    properties = [pscustomobject]@{ eventHubEndpoints = [pscustomobject]@{ events = [pscustomobject]@{ path = 'hub'; partitionCount = 4 } } }
+                    properties = [pscustomobject]@{ hostName = "$Name.azure-devices.net"; eventHubEndpoints = [pscustomobject]@{ events = [pscustomobject]@{ path = 'hub'; partitionCount = 4 } } }
                 }
                 return ($global:StubState.Resources[$Key] | ConvertTo-Json -Depth 20)
             }
@@ -252,6 +254,7 @@ if ($RunScenario) {
         default { @{ hub = @(); dps = @() } }
     }
     $env:AZ_IOT_ENABLE_FILE_UPLOAD = 'true'
+    $env:AZ_IOT_DISABLE_LOCAL_AUTH = if ($RunScenario -like '*-disable-local-auth') { 'true' } else { 'false' }
     $env:AZ_IOT_HUB_X509_DEVICES = '1'
     $env:AZ_IOT_DPS_INDIVIDUAL = '1'
     $env:AZ_IOT_DPS_GROUP_DEVICES = '0'
@@ -359,6 +362,32 @@ try {
     Assert ((Find-Call $Run { param($j) $j -match '^rest .*/IotHubs/' }) -lt 0) "no-cert-mgmt: the hub must not be written through ARM."
     Assert ((Find-Call $Run { param($j) $j -match '^iot hub create' }) -lt (Find-Call $Run { param($j) $j -match '^storage account create' })) "no-cert-mgmt: storage must still be created after the hub."
     Assert-FileUploadState $Run
+    Assert ((Find-Call $Run { param($j) $j -match '--disable-local-auth|--auth-type|--authentication-type|^role assignment' }) -lt 0) "no-cert-mgmt: local auth must stay on by default."
+
+    # Local auth disabled: the hub takes Entra ID only, so the DPS links with its own identity and
+    # device management signs in as the caller, after the caller is granted the data-plane role.
+    $Run = Invoke-Scenario 'no-cert-mgmt-disable-local-auth'
+    Assert ($Run.ExitCode -eq 0) "no-cert-mgmt-disable-local-auth: provisioning exited $($Run.ExitCode): $(($Run.Output -split "`n" | Select-String 'ERROR|Exception' | Select-Object -First 4) -join ' | ')"
+    Assert ((Find-Call $Run { param($j) $j -match '^iot hub create .*--disable-local-auth true' }) -ge 0) "no-cert-mgmt-disable-local-auth: 'az iot hub create' must pass --disable-local-auth true."
+    $DpsPut = Find-Call $Run { param($j) $j -match '^rest --method PUT .*/provisioningServices/stubdps\?' }
+    Assert ($DpsPut -ge 0 -and ($Run.Calls[$DpsPut].body | ConvertFrom-Json).identity.type -eq 'SystemAssigned') "no-cert-mgmt-disable-local-auth: the DPS must be created with a system-assigned identity."
+    $CallerGrant = Find-Call $Run { param($j) $j -match "^role assignment create --assignee-object-id caller-oid --assignee-principal-type ServicePrincipal --role 4fc6c259-987e-4a07-842e-c321cc9d413f --scope /subscriptions/.*/iothubs/stubhub " }
+    $DpsGrant = Find-Call $Run { param($j) $j -match '^role assignment create .*--role 4fc6c259-987e-4a07-842e-c321cc9d413f --scope /subscriptions/.*/iothubs/stubhub ' -and $j -notmatch 'caller-oid' }
+    $Link = Find-Call $Run { param($j, $c) $j -match '^rest --method PUT .*/provisioningServices/stubdps\?' -and @(($c.body | ConvertFrom-Json).properties.iotHubs | Where-Object { $_.authenticationType -eq 'SystemAssigned' -and $_.hostName -eq 'stubhub.azure-devices.net' -and -not $_.connectionString }).Count -gt 0 }
+    $FirstDevice = Find-Call $Run { param($j) $j -match '^iot hub device-identity create' }
+    Assert ($CallerGrant -ge 0 -and $FirstDevice -gt $CallerGrant) "no-cert-mgmt-disable-local-auth: the caller's IoT Hub Data Contributor grant ($CallerGrant) must precede device creation ($FirstDevice)."
+    Assert ($DpsGrant -ge 0 -and $Link -gt $DpsGrant) "no-cert-mgmt-disable-local-auth: the DPS identity's grant ($DpsGrant) must precede an identity-based link ($Link)."
+    Assert ((Find-Call $Run { param($j) $j -match '^iot dps linked-hub' }) -lt 0) "no-cert-mgmt-disable-local-auth: the link must go through ARM (the pinned azure-iot extension has no --authentication-type)."
+    Assert ((Find-Call $Run { param($j) $j -match '^iot hub device-identity' -and $j -notmatch '--auth-type login' }) -lt 0) "no-cert-mgmt-disable-local-auth: every 'az iot hub device-identity' call must pass --auth-type login."
+    Assert-FileUploadState $Run
+
+    $Run = Invoke-Scenario 'cert-mgmt-disable-local-auth'
+    Assert ($Run.ExitCode -eq 0) "cert-mgmt-disable-local-auth: provisioning exited $($Run.ExitCode)."
+    $HubPut = Find-Call $Run { param($j) $j -match '^rest --method PUT .*/IotHubs/stubhub\?' }
+    Assert ($HubPut -ge 0 -and ($Run.Calls[$HubPut].body | ConvertFrom-Json).properties.disableLocalAuth -eq $true) "cert-mgmt-disable-local-auth: the hub PUT must set disableLocalAuth true."
+    Assert ((Find-Call $Run { param($j) $j -match '^iot hub device-identity' -and $j -notmatch '--auth-type login' }) -lt 0) "cert-mgmt-disable-local-auth: every 'az iot hub device-identity' call must pass --auth-type login."
+    Assert ((Find-Call $Run { param($j) $j -match '^iot dps linked-hub' }) -lt 0) "cert-mgmt-disable-local-auth: ADR links the hub, not the DPS."
+    Assert-FileUploadState $Run
 
     # A throttled (429) or internal-error file upload update, and a storage account create that finds
     # the account busy, are retried.
@@ -400,4 +429,4 @@ if ($Problems.Count -gt 0) {
     $Problems | %{ Write-Host "FAIL: $_" }
     exit 1
 }
-Write-Host "OK: file upload with and without certificate management."
+Write-Host "OK: file upload with and without certificate management or local auth."

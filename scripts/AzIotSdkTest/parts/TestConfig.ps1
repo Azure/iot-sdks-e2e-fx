@@ -480,6 +480,7 @@ function New-AzIotuAmqpE2ETestConfig {
     $HostName = $HostNamePair -replace '^HostName=', ''
     $IotHubName = $HostName.Split('.')[0]
     $ResourceGroup = $TestEnvInfo.AzureResourceGroup
+    $IotHubAuthArgs = @(if ($TestEnvInfo.IotHub.LocalAuthDisabled) { '--auth-type', 'login' })
 
     # Reuse a previously-provisioned device with the requested id if present;
     # otherwise create one and store it on TestEnvInfo so subsequent callers
@@ -487,11 +488,11 @@ function New-AzIotuAmqpE2ETestConfig {
     $Device = $TestEnvInfo.IotHub.Devices.SymmetricKey | Where-Object { $_.Id -eq $DeviceId } | Select-Object -First 1
     if ($null -eq $Device) {
         Write-Host "Creating Azure IoT Hub symmetric-key device ($DeviceId)"
-        $IotHubDeviceInfo = az iot hub device-identity create --resource-group $ResourceGroup --hub-name $IotHubName --device-id $DeviceId | ConvertFrom-Json
+        $IotHubDeviceInfo = az iot hub device-identity create --resource-group $ResourceGroup --hub-name $IotHubName --device-id $DeviceId @IotHubAuthArgs | ConvertFrom-Json
         Stop-OnError -Step "Create Azure IoT Hub symmetric-key device ($DeviceId)"
-        $PrimaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $DeviceId --kt primary | ConvertFrom-Json
+        $PrimaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $DeviceId --kt primary @IotHubAuthArgs | ConvertFrom-Json
         Stop-OnError -Step "Get Azure IoT Hub device primary connection-string ($DeviceId)"
-        $SecondaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $DeviceId --kt secondary | ConvertFrom-Json
+        $SecondaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $DeviceId --kt secondary @IotHubAuthArgs | ConvertFrom-Json
         Stop-OnError -Step "Get Azure IoT Hub device secondary connection-string ($DeviceId)"
 
         $Device = [IotHubSymmetricKeyIdentityInfo]::new(

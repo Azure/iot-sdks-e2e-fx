@@ -52,6 +52,8 @@ $script:IotServerErrorPattern = "\bIH5\d{5}\b|$($script:ArmServerErrorPattern)"
 # A hub or DPS created with a system-assigned identity can be rejected while that identity's
 # credentials are still being issued (IH400097 "Unable to fetch credentials"). Re-PUTting succeeds.
 $script:IdentityTransientPattern = 'IH400097|Unable to fetch credentials'
+# A data-plane call refused until a fresh IoT Hub Data Contributor grant reaches the hub.
+$script:DataPlaneAccessDeniedPattern = 'Unauthorized|Forbidden|AuthorizationFailed|IH401\d{3}|IH403\d{3}'
 $script:AdrLinkMaxAttempts = 12
 # Whole-namespace recovery cycles: recreate and re-grant if the in-place link retries are exhausted.
 $script:AdrLinkMaxCycles = 2

@@ -51,6 +51,9 @@ function New-AzIotTestEnvironment {
     .PARAMETER EnableCertificateManagement
     Specifies whether to enable certificate management for IoT Hub and DPS using Azure Device Registry (ADR). Default is false.
     Creates an ADR namespace, links the IoT Hub and DPS to it, and creates the certificate authority chain devices are issued certificates from. Requires a DPS, so it cannot be combined with -NoDps.
+    .PARAMETER DisableLocalAuth
+    Creates the IoT Hub with local (shared access policy) authentication disabled, so its service APIs accept only Microsoft Entra ID. Default is false.
+    Device and module SAS and X.509 keep working. The signed-in principal is granted IoT Hub Data Contributor on the hub, the DPS gets a system-assigned identity and links to the hub with it, and hub data-plane calls use '--auth-type login'. The IoT Hub connection string stays in the output for its HostName only; the built-in Event Hub connection string keeps working.
 
     .OUTPUTS
     A custom object containing information about the created Azure resources and devices, including connection strings, certificate paths, and enrollment details.
@@ -90,6 +93,7 @@ function New-AzIotTestEnvironment {
         [switch]$EnableFileUpload,
         [switch]$NoDps,
         [switch]$EnableCertificateManagement,
+        [switch]$DisableLocalAuth,
         [switch]$AddContainerRegistry
     )
 
@@ -100,6 +104,9 @@ function New-AzIotTestEnvironment {
     }
 
     $IotHubFqdn = "$($IotHubName).$($IotHubDomainName)"
+    $DisableLocalAuthArgs = @(if ($DisableLocalAuth) { '--disable-local-auth', 'true' })
+    # A hub without local auth takes only Entra ID on its data plane.
+    $IotHubAuthArgs = @(if ($DisableLocalAuth) { '--auth-type', 'login' })
 
     # Login to Azure if not already
     $null = & az account show 2>$null
@@ -195,10 +202,10 @@ function New-AzIotTestEnvironment {
         $AzureAdrPolicyName = "azure-adr-policy"
         $AzureAdrCertificateAuthorityName = "default"
 
-        # Created through ARM so it comes up with a system-assigned identity and local auth left on,
-        # which is the shape ADR links. S1, not GEN2: a GEN2 hub carries the namespace in its own
-        # properties, which is the retired model.
-        $IotHubProperties = @{ disableLocalAuth = $false; minTlsVersion = "1.2" }
+        # Created through ARM so it comes up with a system-assigned identity, which is the shape ADR
+        # links. S1, not GEN2: a GEN2 hub carries the namespace in its own properties, which is the
+        # retired model.
+        $IotHubProperties = @{ disableLocalAuth = [bool]$DisableLocalAuth; minTlsVersion = "1.2" }
 
         # File upload is set here, at creation, because nothing can set it once ADR links the hub:
         # the link puts properties.deviceRegistry on the hub, and 'az iot hub update' then refuses
@@ -235,18 +242,22 @@ function New-AzIotTestEnvironment {
                 $Existing = Resolve-AzIotResourceAfterFailedCreate -Type hub -Name $IotHubName -ResourceGroup $ResourceGroup
                 if ($null -ne $Existing) { return $Existing }
             }
-            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" --only-show-errors | ConvertFrom-Json
+            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" @DisableLocalAuthArgs --only-show-errors | ConvertFrom-Json
         }
     }
 
+    if ($DisableLocalAuth -eq $true) {
+        Grant-IotHubDataContributorToSignedInPrincipal -AzureAccount $AzureAccount -IotHubId $AzureIoTHub.id -IotHubName $IotHubName -ResourceGroup $ResourceGroup
+    }
+
     if ($NoDps -eq $false) {
-        if ($EnableCertificateManagement -eq $true) {
+        if ($EnableCertificateManagement -eq $true -or $DisableLocalAuth -eq $true) {
             # Created through ARM rather than 'az iot dps create' so it comes up WITH a system-assigned
-            # identity, which is what authenticates it to the ADR namespace. The identity cannot be
-            # added afterwards: DPS rejects a managed-identity PATCH with IH400158. Confined to this
-            # branch so ordinary provisioning keeps the CLI create and does not take a dependency on
-            # a preview api-version it has no use for.
-            Write-Host "Creating Azure Device Provisioning Service ($DpsName, with certificate management support)."
+            # identity, which is what authenticates it to the ADR namespace, or to a hub without local
+            # auth. The identity cannot be added afterwards: DPS rejects a managed-identity PATCH with
+            # IH400158. Confined to these cases so ordinary provisioning keeps the CLI create and does
+            # not take a dependency on a preview api-version it has no use for.
+            Write-Host "Creating Azure Device Provisioning Service ($DpsName, with a system-assigned identity)."
             $DpsUrl = "$(Get-DpsArmHost -Location $AzureLocation)/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$($DpsName)?api-version=$($script:DpsControlPlaneApiVersion)"
             Invoke-WithRetry -Step "Create Device Provisioning Service ($DpsName)" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)" -Command {
                 Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
@@ -368,7 +379,38 @@ function New-AzIotTestEnvironment {
     if ($NoDps -eq $false) {
         # A DPS linked to an ADR namespace has ADR choosing its provisioning targets, and its own
         # linked-hub list is read-only from then on -- adding to it fails with IH409313.
-        if ($EnableCertificateManagement -eq $false) {
+        if ($EnableCertificateManagement -eq $false -and $DisableLocalAuth -eq $true) {
+            # Without local auth the hub rejects the key a default link stores, so the DPS registers
+            # devices as its own identity instead.
+            Write-Host "Linking Azure IoT Hub ($IotHubName) to Azure Device Provisioning service ($DpsName) with the DPS identity"
+            az role assignment create --assignee-object-id $AzureDps.identity.principalId --assignee-principal-type ServicePrincipal --role $script:IotHubDataContributorRoleId --scope $AzureIoTHub.id --only-show-errors | Out-Null
+            Stop-OnError -Step "Assign IoT Hub Data Contributor on $IotHubName to the DPS identity"
+            Wait-AzRoleAssignment -PrincipalId "$($AzureDps.identity.principalId)" -Scope "$($AzureIoTHub.id)" -RoleDefinitionIds @($script:IotHubDataContributorRoleId)
+            # Through ARM: 'az iot dps linked-hub create --authentication-type' needs azure-iot 0.31.0b1+,
+            # newer than the pinned extension (see Common.ps1). DPS has no PATCH for this, so the
+            # create body is PUT again with the link.
+            Invoke-WithRetry -Step "Link Azure IoT Hub to Azure Device Provisioning service" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:DataPlaneAccessDeniedPattern)" -Command {
+                Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
+                    location = $AzureLocation
+                    sku = @{ name = "S1"; capacity = 1 }
+                    identity = @{ type = "SystemAssigned" }
+                    properties = @{
+                        iotHubs = @(@{
+                            hostName = $AzureIoTHub.properties.hostName
+                            location = $AzureLocation
+                            authenticationType = "SystemAssigned"
+                            applyAllocationPolicy = $true
+                            allocationWeight = 1
+                        })
+                    }
+                } | Out-Null
+                Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName) link to $IotHubName"
+            } | Out-Null
+            $LinkedHub = @((Invoke-AzRest -Url $DpsUrl).properties.iotHubs) | Where-Object { $_.authenticationType -eq "SystemAssigned" }
+            if ($null -eq $LinkedHub) {
+                throw "Device Provisioning Service $DpsName does not list $IotHubName as linked with its identity."
+            }
+        } elseif ($EnableCertificateManagement -eq $false) {
             Write-Host "Linking Azure IoT Hub ($IotHubName) to Azure Device Provisioning service ($DpsName)"
             az iot dps linked-hub create --dps-name "$DpsName" --resource-group "$ResourceGroup" --hub-name "$IotHubName" | Out-Null
             Stop-OnError -Step "Link Azure IoT Hub to Azure Device Provisioning service"
@@ -384,11 +426,11 @@ function New-AzIotTestEnvironment {
         $IotHubDeviceId = "sk-$(New-GuidString -NoDashes)"
 
         Write-Host "Creating Azure IoT Hub symmetric-key device ($IotHubDeviceId)"
-        $IotHubDeviceInfo = az iot hub device-identity create --resource-group $ResourceGroup --hub-name $IotHubName --device-id $IotHubDeviceId | ConvertFrom-Json
+        $IotHubDeviceInfo = az iot hub device-identity create --resource-group $ResourceGroup --hub-name $IotHubName --device-id $IotHubDeviceId @IotHubAuthArgs | ConvertFrom-Json
         Stop-OnError -Step "Create Azure IoT Hub symmetric-key device ($IotHubDeviceId)"
-        $PrimaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $IotHubDeviceId --kt primary | ConvertFrom-Json
+        $PrimaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $IotHubDeviceId --kt primary @IotHubAuthArgs | ConvertFrom-Json
         Stop-OnError -Step "Get Azure IoT Hub device primary connection-string ($IotHubDeviceId)"
-        $SecondaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $IotHubDeviceId --kt secondary | ConvertFrom-Json
+        $SecondaryConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $IotHubDeviceId --kt secondary @IotHubAuthArgs | ConvertFrom-Json
         Stop-OnError -Step "Get Azure IoT Hub device secondary connection-string ($IotHubDeviceId)"
 
         $DeviceIdentity = [IotHubSymmetricKeyIdentityInfo]::new(
@@ -411,11 +453,11 @@ function New-AzIotTestEnvironment {
         $IotHubDeviceSecondaryCertificate = New-Certificate -Subject $CertificateSubjectName -Key $IotHubDevicePrivateKey
 
         Write-Host "Creating Azure IoT Hub x509 thumbprint device ($IotHubDeviceId)"
-        $IotHubDeviceInfo = az iot hub device-identity create --resource-group $ResourceGroup --hub-name $IotHubName --device-id $IotHubDeviceId `
+        $IotHubDeviceInfo = az iot hub device-identity create --resource-group $ResourceGroup --hub-name $IotHubName --device-id $IotHubDeviceId @IotHubAuthArgs `
             --am x509_thumbprint --ptp $IotHubDevicePrimaryCertificate.Thumbprint --stp $IotHubDeviceSecondaryCertificate.Thumbprint | ConvertFrom-Json
         Stop-OnError -Step "Create Azure IoT Hub x509 thumbprint device ($IotHubDeviceId)"
 
-        $ConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $IotHubDeviceId | ConvertFrom-Json
+        $ConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $IotHubDeviceId @IotHubAuthArgs | ConvertFrom-Json
         Stop-OnError -Step "Get Azure IoT Hub device connection-string ($IotHubDeviceId)"
 
         $DeviceIdentity = [IotHubX509IdentityInfo]::new(
@@ -527,6 +569,7 @@ function New-AzIotTestEnvironment {
     $TestEnvInfo.Dps.ResourceGroup = $ResourceGroup
     $TestEnvInfo.AdrPolicy = $AzureAdrPolicy
     $TestEnvInfo.Dps.AdrPolicy = $AzureAdrPolicy
+    $TestEnvInfo.IotHub.LocalAuthDisabled = [bool]$DisableLocalAuth
 
     Write-Host "Getting IoT Hub Connection String"
     $TestEnvInfo.IotHub.ConnectionString = $(az iot hub connection-string show -g $ResourceGroup -n $IotHubName --kt primary --pn iothubowner --query connectionString -o tsv)
@@ -632,6 +675,40 @@ function Resolve-AzIotResourceAfterFailedCreate {
     return $null
 }
 
+function Grant-IotHubDataContributorToSignedInPrincipal {
+    <#
+    .SYNOPSIS
+    Grants the signed-in Azure CLI principal IoT Hub Data Contributor on a hub, and returns once
+    the hub's data plane accepts it.
+
+    .DESCRIPTION
+    Needed to manage devices on a hub created with local auth disabled. The principal's object id is
+    read from its ARM access token, so no Microsoft Graph permission is needed.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$AzureAccount,
+        [Parameter(Mandatory = $true)][string]$IotHubId,
+        [Parameter(Mandatory = $true)][string]$IotHubName,
+        [Parameter(Mandatory = $true)][string]$ResourceGroup
+    )
+
+    $AccessToken = az account get-access-token --query accessToken -o tsv --only-show-errors
+    Stop-OnError -Step "Get the signed-in principal's access token"
+    $Payload = $AccessToken.Split('.')[1].Replace('-', '+').Replace('_', '/')
+    $Payload = $Payload.PadRight($Payload.Length + (4 - $Payload.Length % 4) % 4, '=')
+    $PrincipalId = ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)) | ConvertFrom-Json).oid
+    $PrincipalType = if ($AzureAccount.user.type -eq 'user') { 'User' } else { 'ServicePrincipal' }
+
+    Write-Host "Assigning IoT Hub Data Contributor on $IotHubName to the signed-in $PrincipalType ($PrincipalId)"
+    az role assignment create --assignee-object-id $PrincipalId --assignee-principal-type $PrincipalType --role $script:IotHubDataContributorRoleId --scope $IotHubId --only-show-errors | Out-Null
+    Stop-OnError -Step "Assign IoT Hub Data Contributor on $IotHubName to the signed-in principal"
+    Wait-AzRoleAssignment -PrincipalId $PrincipalId -Scope $IotHubId -RoleDefinitionIds @($script:IotHubDataContributorRoleId)
+
+    Invoke-WithRetry -Step "Reach the $IotHubName data plane with Entra ID" -RetryOnPattern $script:DataPlaneAccessDeniedPattern -MaxAttempts 6 -InitialDelaySeconds 20 -Command {
+        az iot hub device-identity list --hub-name "$IotHubName" --resource-group "$ResourceGroup" --auth-type login --top 1 --only-show-errors | Out-Null
+    } | Out-Null
+}
+
 function Get-AzIotTestEnvironment {
     <#
     .SYNOPSIS
@@ -726,6 +803,8 @@ function Get-AzIotTestEnvironment {
     }
 
     $AzureIoTHub = az iot hub show --resource-group "$ResourceGroup" --name "$IotHubName" | ConvertFrom-Json
+    $TestEnvInfo.IotHub.LocalAuthDisabled = [bool]$AzureIoTHub.properties.disableLocalAuth
+    $IotHubAuthArgs = @(if ($TestEnvInfo.IotHub.LocalAuthDisabled) { '--auth-type', 'login' })
 
     # Gathering Test Environment settings.
     $TestEnvInfo.AzureResourceGroup = $AzureResourceGroup.name
@@ -764,7 +843,7 @@ function Get-AzIotTestEnvironment {
     Stop-OnError -Step "Get IoT Hub's Event Hub Consumer Groups"
 
     Write-Host "Retrieving IoT Hub's Device Identities"
-    $IotHubDevices = az iot hub device-identity list --hub-name $IotHubName --resource-group $ResourceGroup | ConvertFrom-Json
+    $IotHubDevices = az iot hub device-identity list --hub-name $IotHubName --resource-group $ResourceGroup @IotHubAuthArgs | ConvertFrom-Json
     Stop-OnError -Step "Retrieve IoT Hub's Device Identities"
 
     foreach ($Device in $IotHubDevices) {
@@ -773,13 +852,13 @@ function Get-AzIotTestEnvironment {
                 $Device.deviceId,
                 $Device.authentication.symmetricKey.primaryKey,
                 $Device.authentication.symmetricKey.secondaryKey,
-                $(az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $Device.deviceId --kt primary --query connectionString -o tsv),
-                $(az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $Device.deviceId --kt secondary --query connectionString -o tsv)
+                $(az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $Device.deviceId --kt primary @IotHubAuthArgs --query connectionString -o tsv),
+                $(az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $Device.deviceId --kt secondary @IotHubAuthArgs --query connectionString -o tsv)
             )
 
             $TestEnvInfo.IotHub.Devices.SymmetricKey += $DeviceIdentity
         } elseif ($Device.authentication.type -eq "x509_thumbprint") {
-            $ConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $Device.deviceId | ConvertFrom-Json
+            $ConnectionString = az iot hub device-identity connection-string show --resource-group $ResourceGroup --hub-name $IotHubName -d $Device.deviceId @IotHubAuthArgs | ConvertFrom-Json
 
             $DeviceIdentity = [IotHubX509IdentityInfo]::new(
                 $Device.deviceId,
