@@ -154,10 +154,12 @@ if ($RunScenario) {
                 return ($global:StubState.Resources[$Key] | ConvertTo-Json -Depth 20)
             }
             '^iot hub update' {
-                if ((Opt '--fc') -and $global:StubState.HubUpdateThrottles -gt 0) {
-                    $global:StubState.HubUpdateThrottles--
-                    Write-Error -ErrorAction Continue "Operation returned an invalid status 'Too Many Requests'"
+                if ((Opt '--fc') -and $global:StubState.HubUpdateFailures.Count -gt 0) {
+                    $Failure = $global:StubState.HubUpdateFailures[0]
+                    $global:StubState.HubUpdateFailures = @($global:StubState.HubUpdateFailures | Select-Object -Skip 1)
                     $global:LASTEXITCODE = 1
+                    if ($Failure.Thrown) { throw $Failure.Message }
+                    Write-Error -ErrorAction Continue $Failure.Message
                     return
                 }
                 # The azure-iot extension's update: GET, then refuse any non-GEN2 hub carrying ADR properties.
@@ -184,6 +186,14 @@ if ($RunScenario) {
             '^iot dps connection-string show' { return 'HostName=dps.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=RkFLRQ==' }
             '^iot dps certificate show' { return 'etag' }
             '^iot dps certificate generate-verification-code' { return '{"properties":{"verificationCode":"code"}}' }
+            '^storage account create' {
+                if ($global:StubState.StorageCreateFailures -gt 0) {
+                    $global:StubState.StorageCreateFailures--
+                    Write-Error -ErrorAction Continue '(StorageAccountOperationInProgress) An operation is currently performing on this storage account that requires exclusive access.'
+                    $global:LASTEXITCODE = 1
+                }
+                return ''
+            }
             '^storage account show-connection-string' { return $global:FakeStorageConnectionString }
             default { return '' }
         }
@@ -222,7 +232,12 @@ if ($RunScenario) {
     $env:AZ_IOT_ENABLE_CERT_MGMT = if ($RunScenario -like 'cert-mgmt*') { 'true' } else { 'false' }
     $global:StubState.LinkChange = if ($RunScenario -like 'cert-mgmt-link-*') { $RunScenario -replace '^cert-mgmt-link-', '' } else { $null }
     $global:StubState.DpsIdentityFailures = if ($RunScenario -eq 'cert-mgmt-dps-identity-transient') { 1 } else { 0 }
-    $global:StubState.HubUpdateThrottles = if ($RunScenario -eq 'no-cert-mgmt-hub-update-throttled') { 1 } else { 0 }
+    # Queued failures of the file upload 'az iot hub update'; Thrown as under Windows PowerShell 5.1.
+    $global:StubState.HubUpdateFailures = @(switch ($RunScenario) {
+        'no-cert-mgmt-hub-update-throttled' { @(@{ Message = "Operation returned an invalid status 'Too Many Requests'" }) }
+        'no-cert-mgmt-hub-update-internal-error' { @(@{ Message = 'ERROR: (IotHubUpdateFailed) An internal error occurred while updating IotHub'; Thrown = $true }) }
+    })
+    $global:StubState.StorageCreateFailures = if ($RunScenario -eq 'no-cert-mgmt-storage-operation-in-progress') { 1 } else { 0 }
     # Queued failures of 'az iot <hub|dps> create': Code is the IoT error code, Leaves the state of the
     # resource the failed create leaves behind (nothing when unset).
     $global:StubState.Leftovers = @{ hub = @{}; dps = @{} }
@@ -345,11 +360,18 @@ try {
     Assert ((Find-Call $Run { param($j) $j -match '^iot hub create' }) -lt (Find-Call $Run { param($j) $j -match '^storage account create' })) "no-cert-mgmt: storage must still be created after the hub."
     Assert-FileUploadState $Run
 
-    # A throttled (429) file upload update is retried.
-    $Run = Invoke-Scenario 'no-cert-mgmt-hub-update-throttled'
-    $FileUploadUpdates = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^iot hub update .*--fc ' }).Count
-    Assert ($Run.ExitCode -eq 0 -and $FileUploadUpdates -eq 2) "no-cert-mgmt-hub-update-throttled: expected success after 2 file upload updates (exit $($Run.ExitCode), $FileUploadUpdates updates)."
-    Assert-FileUploadState $Run
+    # A throttled (429) or internal-error file upload update, and a storage account create that finds
+    # the account busy, are retried.
+    foreach ($Case in @(
+        @{ Name = 'no-cert-mgmt-hub-update-throttled'; Call = '^iot hub update .*--fc ' },
+        @{ Name = 'no-cert-mgmt-hub-update-internal-error'; Call = '^iot hub update .*--fc ' },
+        @{ Name = 'no-cert-mgmt-storage-operation-in-progress'; Call = '^storage account create ' }
+    )) {
+        $Run = Invoke-Scenario $Case.Name
+        $Attempts = @($Run.Calls | ?{ ($_.argv -join ' ') -match $Case.Call }).Count
+        Assert ($Run.ExitCode -eq 0 -and $Attempts -eq 2) "$($Case.Name): expected success after 2 attempts (exit $($Run.ExitCode), $Attempts attempts)."
+        Assert-FileUploadState $Run
+    }
 
     # A server-side (5xx) create failure is retried, first reusing an Active leftover or deleting any
     # other; a client-side (4xx) one fails at once. Calls are listed in order, e.g. 'create list delete'.
