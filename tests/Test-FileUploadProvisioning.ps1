@@ -32,7 +32,10 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $ModulePath = Join-Path $RepoRoot 'scripts/AzIotSdkTest/AzIotSdkTest.psd1'
 $ActionPath = Join-Path $RepoRoot 'actions/provision-e2e-resources/action.yml'
-$global:FakeStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=stoaccstub;AccountKey=RkFLRQ==;EndpointSuffix=core.windows.net'
+$global:FakeStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=stoaccstub;EndpointSuffix=core.windows.net'
+$global:FakeStorageAccountId = '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/StubRg/providers/Microsoft.Storage/storageAccounts/stoaccstub'
+$global:FakeIdentityId = '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/StubRg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/stubhub-fileupload'
+$global:StorageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 
 function Get-ActionInlineScript {
     param([string]$Path)
@@ -149,6 +152,7 @@ if ($RunScenario) {
                 $Key = "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/$((Opt '--resource-group').ToLowerInvariant())/providers/microsoft.devices/iothubs/$($Name.ToLowerInvariant())"
                 $global:StubState.Resources[$Key] = [pscustomobject]@{
                     id = $Key; sku = [pscustomobject]@{ name = 'S1' }
+                    identity = [pscustomobject]@{ userAssignedIdentity = (Opt '--mi-user-assigned') }
                     properties = [pscustomobject]@{ eventHubEndpoints = [pscustomobject]@{ events = [pscustomobject]@{ path = 'hub'; partitionCount = 4 } } }
                 }
                 return ($global:StubState.Resources[$Key] | ConvertTo-Json -Depth 20)
@@ -171,7 +175,8 @@ if ($RunScenario) {
                 }
                 if (Opt '--fc') {
                     $Hub.properties | Add-Member -Force storageEndpoints ([pscustomobject]@{ '$default' = [pscustomobject]@{
-                        connectionString = (Opt '--fcs'); containerName = (Opt '--fc'); sasTtlAsIso8601 = "PT$(Opt '--fileupload-sas-ttl')H" } })
+                        connectionString = (Opt '--fcs'); containerName = (Opt '--fc'); sasTtlAsIso8601 = "PT$(Opt '--fileupload-sas-ttl')H"
+                        authenticationType = (Opt '--fsa'); identity = [pscustomobject]@{ userAssignedIdentity = (Opt '--fsi') } } })
                 }
                 if ((Opt '--fileupload-notifications') -eq 'true') {
                     $Hub.properties | Add-Member -Force enableFileUploadNotifications $true
@@ -191,10 +196,11 @@ if ($RunScenario) {
                     $global:StubState.StorageCreateFailures--
                     Write-Error -ErrorAction Continue '(StorageAccountOperationInProgress) An operation is currently performing on this storage account that requires exclusive access.'
                     $global:LASTEXITCODE = 1
+                    return ''
                 }
-                return ''
+                return 'https://stoaccstub.blob.core.windows.net/'
             }
-            '^storage account show-connection-string' { return $global:FakeStorageConnectionString }
+            '^identity create' { return (@{ id = $global:FakeIdentityId; principalId = 'fileupload-principal' } | ConvertTo-Json) }
             default { return '' }
         }
     }
@@ -220,6 +226,7 @@ if ($RunScenario) {
                 'drops-file-upload' { $Hub.properties.PSObject.Properties.Remove('storageEndpoints') }
                 'changes-sas-ttl' { $Default.sasTtlAsIso8601 = 'PT2H' }
                 'changes-storage-account' { $Default.connectionString = $Default.connectionString -replace 'AccountName=[^;]+', 'AccountName=other' }
+                'changes-authentication' { $Default.authenticationType = 'keyBased' }
             }
         }
     }
@@ -308,8 +315,15 @@ function Assert-FileUploadState($Run) {
     Assert ($Default.connectionString -eq $FakeStorageConnectionString) "$($Run.Name): hub storage connection string not set."
     Assert ($Default.sasTtlAsIso8601 -eq 'PT1H') "$($Run.Name): hub sasTtlAsIso8601 is '$($Default.sasTtlAsIso8601)'."
     Assert ($Run.Hub.properties.enableFileUploadNotifications -eq $true) "$($Run.Name): hub enableFileUploadNotifications is not true."
-    $Storage = Find-Call $Run { param($j) $j -match '^storage account create .*--allow-blob-public-access false' }
-    Assert ($Storage -ge 0) "$($Run.Name): 'az storage account create' must pass --allow-blob-public-access false."
+    Assert ($Default.authenticationType -eq 'identityBased' -and $Default.identity.userAssignedIdentity -eq $FakeIdentityId) "$($Run.Name): hub file upload must authenticate with the file upload identity (authenticationType '$($Default.authenticationType)', identity '$($Default.identity.userAssignedIdentity)')."
+    $Storage = Find-Call $Run { param($j) $j -match '^storage account create .*--allow-blob-public-access false --allow-shared-key-access false --min-tls-version TLS1_2' }
+    Assert ($Storage -ge 0) "$($Run.Name): 'az storage account create' must pass --allow-blob-public-access false --allow-shared-key-access false --min-tls-version TLS1_2."
+    Assert ((Find-Call $Run { param($j) $j -match '^storage container-rm create --name iothubuploads --storage-account stoaccstub ' }) -ge 0) "$($Run.Name): the container must be created through the management plane."
+    Assert ((Find-Call $Run { param($j) $j -match '^storage (container create|account show-connection-string|account keys)' }) -lt 0) "$($Run.Name): nothing may use or read the storage account key."
+    $Grant = Find-Call $Run { param($j) $j -match "^role assignment create --assignee-object-id fileupload-principal .*--role $StorageBlobDataContributorRoleId --scope $([regex]::Escape($FakeStorageAccountId)) " }
+    Assert ($Grant -ge 0) "$($Run.Name): the file upload identity must be granted Storage Blob Data Contributor on the storage account."
+    $HubCreate = Find-Call $Run { param($j) $j -match '^(iot hub create|rest --method PUT .*/IotHubs/stubhub\?)' }
+    Assert ($Grant -lt $HubCreate) "$($Run.Name): the grant ($Grant) must precede the hub create ($HubCreate)."
 }
 
 try {
@@ -319,16 +333,18 @@ try {
     $HubPut = Find-Call $Run { param($j, $c) $j -match '^rest --method PUT .*/IotHubs/stubhub\?' }
     $Link = Find-Call $Run { param($j) $j -eq '<Connect-AdrNamespace>' }
     $Storage = Find-Call $Run { param($j) $j -match '^storage account create' }
-    $Container = Find-Call $Run { param($j) $j -match '^storage container create' }
+    $Container = Find-Call $Run { param($j) $j -match '^storage container-rm create' }
     Assert ($HubPut -ge 0 -and $Link -gt $HubPut) "cert-mgmt: hub PUT ($HubPut) must precede the ADR link ($Link)."
-    Assert ($Storage -ge 0 -and $Storage -lt $HubPut -and $Container -lt $HubPut) "cert-mgmt: storage account ($Storage) and container ($Container) must be created before the hub PUT ($HubPut)."
+    Assert ($Storage -ge 0 -and $Storage -lt $HubPut -and $Container -ge 0 -and $Container -lt $HubPut) "cert-mgmt: storage account ($Storage) and container ($Container) must be created before the hub PUT ($HubPut)."
     Assert ((Find-Call $Run { param($j) $j -match '^iot hub update' }) -lt 0) "cert-mgmt: 'az iot hub update' must not be called."
     if ($HubPut -ge 0) {
         $Body = $Run.Calls[$HubPut].body | ConvertFrom-Json
         $Default = $Body.properties.storageEndpoints.'$default'
         Assert ($Default.containerName -eq 'iothubuploads' -and $Default.connectionString -eq $FakeStorageConnectionString -and $Default.sasTtlAsIso8601 -eq 'PT1H') "cert-mgmt: hub PUT body lacks storageEndpoints.`$default: $($Run.Calls[$HubPut].body)"
         Assert ($Body.properties.enableFileUploadNotifications -eq $true) "cert-mgmt: hub PUT body lacks enableFileUploadNotifications=true."
-        Assert ($Body.sku.name -eq 'S1' -and $Body.identity.type -eq 'SystemAssigned' -and $Body.properties.disableLocalAuth -eq $false -and $Body.properties.minTlsVersion -eq '1.2') "cert-mgmt: hub PUT body lost its existing settings."
+        Assert ($Default.authenticationType -eq 'identityBased' -and $Default.identity.userAssignedIdentity -eq $FakeIdentityId) "cert-mgmt: hub PUT body lacks identity-based file upload: $($Run.Calls[$HubPut].body)"
+        Assert ($Body.identity.type -eq 'SystemAssigned, UserAssigned' -and $null -ne $Body.identity.userAssignedIdentities.$FakeIdentityId) "cert-mgmt: hub PUT body must keep its system-assigned identity and add the file upload identity."
+        Assert ($Body.sku.name -eq 'S1' -and $Body.properties.disableLocalAuth -eq $false -and $Body.properties.minTlsVersion -eq '1.2') "cert-mgmt: hub PUT body lost its existing settings."
         Assert (($Run.Calls[$HubPut].argv -join ' ') -match 'api-version=2026-06-01-preview') "cert-mgmt: hub PUT not at the module's IoT Hub api-version."
     }
     $LastReadBack = -1
@@ -337,7 +353,7 @@ try {
     Assert-FileUploadState $Run
 
     # A link that drops or changes the settings must fail provisioning rather than pass it silently.
-    foreach ($Change in 'drops-file-upload', 'changes-sas-ttl', 'changes-storage-account') {
+    foreach ($Change in 'drops-file-upload', 'changes-sas-ttl', 'changes-storage-account', 'changes-authentication') {
         $Run = Invoke-Scenario "cert-mgmt-link-$Change"
         Assert ($Run.ExitCode -ne 0 -and $Run.Output -match 'lost its file upload settings') "cert-mgmt-link-$($Change): provisioning should fail on the read-back (exit $($Run.ExitCode))."
     }
@@ -347,17 +363,17 @@ try {
     $DpsPuts = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^rest --method PUT .*/provisioningServices/stubdps\?' }).Count
     Assert ($Run.ExitCode -eq 0 -and $DpsPuts -eq 2) "cert-mgmt-dps-identity-transient: expected success after 2 DPS PUTs (exit $($Run.ExitCode), $DpsPuts PUTs)."
 
-    # No certificate management: the CLI calls stay exactly as they were.
+    # No certificate management: file upload is set by `az iot hub update`, with the file upload identity.
     $Run = Invoke-Scenario 'no-cert-mgmt'
     Assert ($Run.ExitCode -eq 0) "no-cert-mgmt: provisioning exited $($Run.ExitCode)."
     $Updates = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^iot hub update' } | %{ $_.argv -join ' ' })
     $Expected = @(
-        "iot hub update --name stubhub --resource-group StubRg --fcs $FakeStorageConnectionString --fc iothubuploads --fileupload-sas-ttl 1 --only-show-errors",
+        "iot hub update --name stubhub --resource-group StubRg --fcs $FakeStorageConnectionString --fc iothubuploads --fsa identityBased --fsi $FakeIdentityId --fileupload-sas-ttl 1 --only-show-errors",
         'iot hub update --name stubhub --resource-group StubRg --fileupload-notifications true --only-show-errors'
     )
     Assert (($Updates -join "`n") -ceq ($Expected -join "`n")) "no-cert-mgmt: 'az iot hub update' calls differ:`n  got:      $($Updates -join "`n            ")`n  expected: $($Expected -join "`n            ")"
     Assert ((Find-Call $Run { param($j) $j -match '^rest .*/IotHubs/' }) -lt 0) "no-cert-mgmt: the hub must not be written through ARM."
-    Assert ((Find-Call $Run { param($j) $j -match '^iot hub create' }) -lt (Find-Call $Run { param($j) $j -match '^storage account create' })) "no-cert-mgmt: storage must still be created after the hub."
+    Assert ((Find-Call $Run { param($j) $j -match "^iot hub create .*--mi-user-assigned $([regex]::Escape($FakeIdentityId)) " }) -ge 0) "no-cert-mgmt: the hub must be created with the file upload identity."
     Assert-FileUploadState $Run
 
     # A throttled (429) or internal-error file upload update, and a storage account create that finds

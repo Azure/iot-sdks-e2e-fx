@@ -59,7 +59,8 @@ inputs:
   enable-file-upload:
     description: >-
       When 'true', pass -EnableFileUpload to New-AzIotTestEnvironment so an Azure Storage account
-      is created and associated with the IoT Hub for file upload (required by the file-upload
+      (Shared Key disabled, reached by the hub through a managed identity) is created and
+      associated with the IoT Hub for file upload (required by the file-upload
       e2e), and turn on the hub's file-upload NOTIFICATIONS. With certificate management, both
       are set when the hub is created, before it is linked to ADR.
     required: false

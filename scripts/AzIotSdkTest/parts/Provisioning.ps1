@@ -45,6 +45,8 @@ function New-AzIotTestEnvironment {
     Specifies the number of x509 CA devices to create in IoT Hub. Default is 0.
     .PARAMETER EnableFileUpload
     Specifies whether to enable file upload in IoT Hub. Default is false.
+    The storage account has Shared Key disabled; the hub reaches it through a user-assigned identity
+    granted Storage Blob Data Contributor on it.
     With -EnableCertificateManagement, file upload notifications are enabled too.
     .PARAMETER NoDps
     Specifies whether to skip creating a Device Provisioning Service. Default is false.
@@ -180,7 +182,12 @@ function New-AzIotTestEnvironment {
     $TestEnvInfo = [TestEnvironmentInfo]::new()
     $AzureStorageContainerName = "iothubuploads"
 
-    # TODO: create Storage Account (required for IoT Hub file upload, if enabled) and add to $TestEnvInfo
+    # Before the hub, because the hub is created with the identity file upload reaches storage with.
+    if ($EnableFileUpload -eq $true) {
+        $FileUploadStorage = New-FileUploadStorage -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup -Location $AzureLocation `
+            -StorageAccountName $StorageAccountName -ContainerName $AzureStorageContainerName -IdentityName "$IotHubName-fileupload"
+    }
+
     # Write-Host "Creating Azure Key Vault ($KeyVaultName)"
     # $AzureKeyVault = az keyvault create --name "$KeyVaultName" --resource-group "$ResourceGroup" --location "$AzureLocation" 2>$null | ConvertFrom-Json
     # Stop-OnError -Step "Create Azure Key Vault"
@@ -203,13 +210,15 @@ function New-AzIotTestEnvironment {
         # File upload is set here, at creation, because nothing can set it once ADR links the hub:
         # the link puts properties.deviceRegistry on the hub, and 'az iot hub update' then refuses
         # any non-GEN2 hub ("ADR properties are only supported for Generation2 IoT Hub SKUs").
+        $IotHubIdentity = @{ type = "SystemAssigned" }
         if ($EnableFileUpload -eq $true) {
-            $AzureStorageConnectionString = New-FileUploadStorage -ResourceGroup $ResourceGroup -Location $AzureLocation `
-                -StorageAccountName $StorageAccountName -ContainerName $AzureStorageContainerName
+            $IotHubIdentity = @{ type = "SystemAssigned, UserAssigned"; userAssignedIdentities = @{ $FileUploadStorage.IdentityId = @{} } }
             $IotHubProperties["storageEndpoints"] = @{ '$default' = @{
-                connectionString = $AzureStorageConnectionString
+                connectionString = $FileUploadStorage.ConnectionString
                 containerName = $AzureStorageContainerName
                 sasTtlAsIso8601 = "PT1H"
+                authenticationType = "identityBased"
+                identity = @{ userAssignedIdentity = $FileUploadStorage.IdentityId }
             } }
             $IotHubProperties["enableFileUploadNotifications"] = $true
         }
@@ -221,7 +230,7 @@ function New-AzIotTestEnvironment {
             Invoke-AzRest -Method PUT -Url $IotHubUrl -Body @{
                 location = $AzureLocation
                 sku = @{ name = "S1"; capacity = 1 }
-                identity = @{ type = "SystemAssigned" }
+                identity = $IotHubIdentity
                 properties = $IotHubProperties
             }
         } | Out-Null
@@ -229,13 +238,15 @@ function New-AzIotTestEnvironment {
         $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
     } else {
         Write-Host "Creating Azure IoT Hub ($IotHubName)."
-        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub" -RetryOnPattern $script:IotServerErrorPattern -MaxAttempts 3 -Command {
+        $IotHubIdentityArgs = @()
+        if ($EnableFileUpload -eq $true) { $IotHubIdentityArgs = @("--mi-user-assigned", $FileUploadStorage.IdentityId) }
+        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub" -RetryOnPattern "$($script:IotServerErrorPattern)|$($script:IdentityTransientPattern)" -MaxAttempts 3 -Command {
             param($Attempt)
             if ($Attempt -gt 1) {
                 $Existing = Resolve-AzIotResourceAfterFailedCreate -Type hub -Name $IotHubName -ResourceGroup $ResourceGroup
                 if ($null -ne $Existing) { return $Existing }
             }
-            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" --only-show-errors | ConvertFrom-Json
+            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" @IotHubIdentityArgs --only-show-errors | ConvertFrom-Json
         }
     }
 
@@ -481,23 +492,23 @@ function New-AzIotTestEnvironment {
         Write-Host "Checking Azure IoT Hub file upload settings"
         $AzureIoTHubAfterLink = Invoke-AzRest -Url $IotHubUrl
         $DefaultStorage = $AzureIoTHubAfterLink.properties.storageEndpoints.'$default'
-        # The account name, not the whole connection string: the hub returns the key masked.
+        # The account name, not the whole connection string, which the hub may return reformatted.
         $LinkedStorageAccount = if ("$($DefaultStorage.connectionString)" -match '(?:^|;)AccountName=([^;]+)') { $Matches[1] } else { $null }
         if ($LinkedStorageAccount -ne $StorageAccountName -or
             $DefaultStorage.containerName -ne $AzureStorageContainerName -or
             $DefaultStorage.sasTtlAsIso8601 -ne "PT1H" -or
+            $DefaultStorage.authenticationType -ne "identityBased" -or
             $AzureIoTHubAfterLink.properties.enableFileUploadNotifications -ne $true) {
-            throw "IoT Hub ($IotHubName) lost its file upload settings after the ADR link (account '$LinkedStorageAccount', container '$($DefaultStorage.containerName)', SAS TTL '$($DefaultStorage.sasTtlAsIso8601)', notifications '$($AzureIoTHubAfterLink.properties.enableFileUploadNotifications)')."
+            throw "IoT Hub ($IotHubName) lost its file upload settings after the ADR link (account '$LinkedStorageAccount', container '$($DefaultStorage.containerName)', SAS TTL '$($DefaultStorage.sasTtlAsIso8601)', authentication '$($DefaultStorage.authenticationType)', notifications '$($AzureIoTHubAfterLink.properties.enableFileUploadNotifications)')."
         }
     } elseif ($EnableFileUpload -eq $true) {
-        $AzureStorageConnectionString = New-FileUploadStorage -ResourceGroup $ResourceGroup -Location $AzureLocation `
-            -StorageAccountName $StorageAccountName -ContainerName $AzureStorageContainerName
-
         Write-Host "Updating Azure IoT Hub file upload settings"
         # Throttled (429) while other runs create hubs in the same subscription, or failing server-side
-        # with "(IotHubUpdateFailed) An internal error occurred"; retry with backoff.
-        Invoke-WithRetry -Step "Updating Azure IoT Hub file upload settings" -RetryOnPattern "$($script:ArmTransientPattern)|IotHubUpdateFailed\) An internal error" -Command {
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --only-show-errors | Out-Null
+        # with "(IotHubUpdateFailed) An internal error occurred"; retry with backoff. The identity's
+        # storage grant may also not be enforced yet.
+        Invoke-WithRetry -Step "Updating Azure IoT Hub file upload settings" -RetryOnPattern "$($script:ArmTransientPattern)|IotHubUpdateFailed\) An internal error|$($script:IdentityTransientPattern)" -Command {
+            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$($FileUploadStorage.ConnectionString)" --fc $AzureStorageContainerName `
+                --fsa identityBased --fsi "$($FileUploadStorage.IdentityId)" --fileupload-sas-ttl 1 --only-show-errors | Out-Null
         } | Out-Null
     }
 
@@ -564,14 +575,19 @@ function New-AzIotTestEnvironment {
 function New-FileUploadStorage {
     <#
     .SYNOPSIS
-    Creates the storage account and container IoT Hub file upload uses, and returns the account's
-    connection string.
+    Creates the storage account and container IoT Hub file upload uses, with Shared Key disabled, and
+    the user-assigned identity the hub reaches it with, granted Storage Blob Data Contributor on it.
+
+    .OUTPUTS
+    ConnectionString (account and endpoint, no key) and IdentityId (the identity's resource id).
     #>
     param(
+        [string]$SubscriptionId,
         [string]$ResourceGroup,
         [string]$Location,
         [string]$StorageAccountName,
-        [string]$ContainerName
+        [string]$ContainerName,
+        [string]$IdentityName
     )
 
     Write-Host "Creating Azure Storage account ($StorageAccountName)"
@@ -579,19 +595,32 @@ function New-FileUploadStorage {
     # request, and a policy requiring it to be set then denies the account (RequestDisallowedByPolicy).
     # The create can fail with StorageAccountOperationInProgress (409) while the account's own creation
     # is still running; repeating the same create succeeds once it completes.
-    Invoke-WithRetry -Step "Creating Azure Storage account" -RetryOnPattern "$($script:ArmTransientPattern)|StorageAccountOperationInProgress" -Command {
-        az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$Location" --sku Standard_LRS --kind StorageV2 --allow-blob-public-access false --only-show-errors | Out-Null
-    } | Out-Null
+    $BlobEndpoint = Invoke-WithRetry -Step "Creating Azure Storage account" -RetryOnPattern "$($script:ArmTransientPattern)|StorageAccountOperationInProgress" -Command {
+        az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$Location" --sku Standard_LRS --kind StorageV2 `
+            --allow-blob-public-access false --allow-shared-key-access false --min-tls-version TLS1_2 --query primaryEndpoints.blob -o tsv --only-show-errors
+    }
+    $StorageAccountId = "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Storage/storageAccounts/$StorageAccountName"
+    # e.g. https://<account>.blob.core.windows.net/ -> core.windows.net
+    $EndpointSuffix = ([uri]"$BlobEndpoint".Trim()).Host -replace '^[^.]+\.blob\.', ''
 
     Write-Host "Creating Azure Storage container ($ContainerName on $StorageAccountName)"
-    az storage container create --name $ContainerName --account-name "$StorageAccountName" --only-show-errors | Out-Null
+    # Through the management plane: the data plane would need the account key or a data role.
+    az storage container-rm create --name $ContainerName --storage-account "$StorageAccountName" --resource-group "$ResourceGroup" --only-show-errors | Out-Null
     Stop-OnError -Step "Creating Azure Storage container"
 
-    Write-Host "Getting Azure Storage account connection string"
-    $ConnectionString = $(az storage account show-connection-string --name "$StorageAccountName" --resource-group "$ResourceGroup" --query connectionString -o tsv)
-    Stop-OnError -Step "Getting Azure Storage account connection string"
+    Write-Host "Creating file upload identity ($IdentityName)"
+    $Identity = az identity create --name "$IdentityName" --resource-group "$ResourceGroup" --location "$Location" --only-show-errors | ConvertFrom-Json
+    Stop-OnError -Step "Creating file upload identity"
 
-    return $ConnectionString
+    az role assignment create --assignee-object-id $Identity.principalId --assignee-principal-type ServicePrincipal `
+        --role $script:StorageBlobDataContributorRoleId --scope $StorageAccountId --only-show-errors | Out-Null
+    Stop-OnError -Step "Assign role $($script:StorageBlobDataContributorRoleId) on $StorageAccountId"
+    Wait-AzRoleAssignment -PrincipalId "$($Identity.principalId)" -Scope $StorageAccountId -RoleDefinitionIds @($script:StorageBlobDataContributorRoleId)
+
+    return [pscustomobject]@{
+        ConnectionString = "DefaultEndpointsProtocol=https;AccountName=$StorageAccountName;EndpointSuffix=$EndpointSuffix"
+        IdentityId = $Identity.id
+    }
 }
 
 function Resolve-AzIotResourceAfterFailedCreate {

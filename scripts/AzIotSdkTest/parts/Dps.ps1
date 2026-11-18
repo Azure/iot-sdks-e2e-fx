@@ -31,6 +31,8 @@ $script:AdrContributorRoleId = "a5c3590a-3a1a-4cd4-9648-ea0a32b15137"
 $script:IotHubDataContributorRoleId = "4fc6c259-987e-4a07-842e-c321cc9d413f"
 # Contributor.
 $script:ContributorRoleId = "b24988ac-6180-42a0-ab88-20f7382dd24c"
+# Storage Blob Data Contributor: IoT Hub file upload reaches a storage account without Shared Key.
+$script:StorageBlobDataContributorRoleId = "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
 
 # The namespace link saga runs as the namespace's managed identity, whose grants are eventually
 # consistent. Until they replicate, linking fails with one of these -- either outright, or by
