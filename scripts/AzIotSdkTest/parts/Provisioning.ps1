@@ -494,8 +494,9 @@ function New-AzIotTestEnvironment {
             -StorageAccountName $StorageAccountName -ContainerName $AzureStorageContainerName
 
         Write-Host "Updating Azure IoT Hub file upload settings"
-        # Throttled (429) while other runs create hubs in the same subscription; retry with backoff.
-        Invoke-WithRetry -Step "Updating Azure IoT Hub file upload settings" -RetryOnPattern $script:ArmTransientPattern -Command {
+        # Throttled (429) while other runs create hubs in the same subscription, or failing server-side
+        # with "(IotHubUpdateFailed) An internal error occurred"; retry with backoff.
+        Invoke-WithRetry -Step "Updating Azure IoT Hub file upload settings" -RetryOnPattern "$($script:ArmTransientPattern)|IotHubUpdateFailed\) An internal error" -Command {
             az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --only-show-errors | Out-Null
         } | Out-Null
     }
@@ -576,8 +577,11 @@ function New-FileUploadStorage {
     Write-Host "Creating Azure Storage account ($StorageAccountName)"
     # --allow-blob-public-access is explicit: when omitted the CLI leaves the property out of the
     # request, and a policy requiring it to be set then denies the account (RequestDisallowedByPolicy).
-    az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$Location" --sku Standard_LRS --kind StorageV2 --allow-blob-public-access false | Out-Null
-    Stop-OnError -Step "Creating Azure Storage account"
+    # The create can fail with StorageAccountOperationInProgress (409) while the account's own creation
+    # is still running; repeating the same create succeeds once it completes.
+    Invoke-WithRetry -Step "Creating Azure Storage account" -RetryOnPattern "$($script:ArmTransientPattern)|StorageAccountOperationInProgress" -Command {
+        az storage account create --name "$StorageAccountName" --resource-group "$ResourceGroup" --location "$Location" --sku Standard_LRS --kind StorageV2 --allow-blob-public-access false --only-show-errors | Out-Null
+    } | Out-Null
 
     Write-Host "Creating Azure Storage container ($ContainerName on $StorageAccountName)"
     az storage container create --name $ContainerName --account-name "$StorageAccountName" --only-show-errors | Out-Null
