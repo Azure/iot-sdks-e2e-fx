@@ -386,9 +386,30 @@ function New-AzIotTestEnvironment {
             az role assignment create --assignee-object-id $AzureDps.identity.principalId --assignee-principal-type ServicePrincipal --role $script:IotHubDataContributorRoleId --scope $AzureIoTHub.id --only-show-errors | Out-Null
             Stop-OnError -Step "Assign IoT Hub Data Contributor on $IotHubName to the DPS identity"
             Wait-AzRoleAssignment -PrincipalId "$($AzureDps.identity.principalId)" -Scope "$($AzureIoTHub.id)" -RoleDefinitionIds @($script:IotHubDataContributorRoleId)
+            # Through ARM: 'az iot dps linked-hub create --authentication-type' needs azure-iot 0.31.0b1+,
+            # newer than the pinned extension (see Common.ps1). DPS has no PATCH for this, so the
+            # create body is PUT again with the link.
             Invoke-WithRetry -Step "Link Azure IoT Hub to Azure Device Provisioning service" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:DataPlaneAccessDeniedPattern)" -Command {
-                az iot dps linked-hub create --dps-name "$DpsName" --resource-group "$ResourceGroup" --hub-name "$IotHubName" --authentication-type SystemAssigned --only-show-errors | Out-Null
+                Invoke-AzRest -Method PUT -Url $DpsUrl -Body @{
+                    location = $AzureLocation
+                    sku = @{ name = "S1"; capacity = 1 }
+                    identity = @{ type = "SystemAssigned" }
+                    properties = @{
+                        iotHubs = @(@{
+                            hostName = $AzureIoTHub.properties.hostName
+                            location = $AzureLocation
+                            authenticationType = "SystemAssigned"
+                            applyAllocationPolicy = $true
+                            allocationWeight = 1
+                        })
+                    }
+                } | Out-Null
+                Wait-AzProvisioningState -Url $DpsUrl -Step "Device Provisioning Service ($DpsName) link to $IotHubName"
             } | Out-Null
+            $LinkedHub = @((Invoke-AzRest -Url $DpsUrl).properties.iotHubs) | Where-Object { $_.authenticationType -eq "SystemAssigned" }
+            if ($null -eq $LinkedHub) {
+                throw "Device Provisioning Service $DpsName does not list $IotHubName as linked with its identity."
+            }
         } elseif ($EnableCertificateManagement -eq $false) {
             Write-Host "Linking Azure IoT Hub ($IotHubName) to Azure Device Provisioning service ($DpsName)"
             az iot dps linked-hub create --dps-name "$DpsName" --resource-group "$ResourceGroup" --hub-name "$IotHubName" | Out-Null

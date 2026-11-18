@@ -151,7 +151,7 @@ if ($RunScenario) {
                 $Key = "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/$((Opt '--resource-group').ToLowerInvariant())/providers/microsoft.devices/iothubs/$($Name.ToLowerInvariant())"
                 $global:StubState.Resources[$Key] = [pscustomobject]@{
                     id = $Key; sku = [pscustomobject]@{ name = 'S1' }
-                    properties = [pscustomobject]@{ eventHubEndpoints = [pscustomobject]@{ events = [pscustomobject]@{ path = 'hub'; partitionCount = 4 } } }
+                    properties = [pscustomobject]@{ hostName = "$Name.azure-devices.net"; eventHubEndpoints = [pscustomobject]@{ events = [pscustomobject]@{ path = 'hub'; partitionCount = 4 } } }
                 }
                 return ($global:StubState.Resources[$Key] | ConvertTo-Json -Depth 20)
             }
@@ -373,10 +373,11 @@ try {
     Assert ($DpsPut -ge 0 -and ($Run.Calls[$DpsPut].body | ConvertFrom-Json).identity.type -eq 'SystemAssigned') "no-cert-mgmt-disable-local-auth: the DPS must be created with a system-assigned identity."
     $CallerGrant = Find-Call $Run { param($j) $j -match "^role assignment create --assignee-object-id caller-oid --assignee-principal-type ServicePrincipal --role 4fc6c259-987e-4a07-842e-c321cc9d413f --scope /subscriptions/.*/iothubs/stubhub " }
     $DpsGrant = Find-Call $Run { param($j) $j -match '^role assignment create .*--role 4fc6c259-987e-4a07-842e-c321cc9d413f --scope /subscriptions/.*/iothubs/stubhub ' -and $j -notmatch 'caller-oid' }
-    $Link = Find-Call $Run { param($j) $j -match '^iot dps linked-hub create .*--authentication-type SystemAssigned' }
+    $Link = Find-Call $Run { param($j, $c) $j -match '^rest --method PUT .*/provisioningServices/stubdps\?' -and @(($c.body | ConvertFrom-Json).properties.iotHubs | Where-Object { $_.authenticationType -eq 'SystemAssigned' -and $_.hostName -eq 'stubhub.azure-devices.net' -and -not $_.connectionString }).Count -gt 0 }
     $FirstDevice = Find-Call $Run { param($j) $j -match '^iot hub device-identity create' }
     Assert ($CallerGrant -ge 0 -and $FirstDevice -gt $CallerGrant) "no-cert-mgmt-disable-local-auth: the caller's IoT Hub Data Contributor grant ($CallerGrant) must precede device creation ($FirstDevice)."
     Assert ($DpsGrant -ge 0 -and $Link -gt $DpsGrant) "no-cert-mgmt-disable-local-auth: the DPS identity's grant ($DpsGrant) must precede an identity-based link ($Link)."
+    Assert ((Find-Call $Run { param($j) $j -match '^iot dps linked-hub' }) -lt 0) "no-cert-mgmt-disable-local-auth: the link must go through ARM (the pinned azure-iot extension has no --authentication-type)."
     Assert ((Find-Call $Run { param($j) $j -match '^iot hub device-identity' -and $j -notmatch '--auth-type login' }) -lt 0) "no-cert-mgmt-disable-local-auth: every 'az iot hub device-identity' call must pass --auth-type login."
     Assert-FileUploadState $Run
 
