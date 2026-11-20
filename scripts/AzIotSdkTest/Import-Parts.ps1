@@ -27,6 +27,7 @@ $ModuleParts = @(
     'Provisioning.ps1'       # New-/Get-AzIotTestEnvironment
     'ProvisioningMqttv5.ps1' # New-AzIotMqttv5TestEnvironment
     'TestConfig.ps1'         # Per-SDK test config emitters
+    'E2EProvisioning.ps1'    # New-AzIotE2ETestEnvironmentAndConfig, behind the action and ADO template
     'SubmoduleGraph.ps1'     # Test-SubmoduleConsistency and its GitHub helpers
 )
 
@@ -51,4 +52,5 @@ Export-ModuleMember -Function New-AzIotPythonSDKE2ETestConfig
 Export-ModuleMember -Function New-AzIotPythonSdkSampleConfig
 Export-ModuleMember -Function New-AzIotuAmqpE2ETestConfig
 Export-ModuleMember -Function New-AzIotHortonTestConfig
+Export-ModuleMember -Function New-AzIotE2ETestEnvironmentAndConfig
 Export-ModuleMember -Function Test-SubmoduleConsistency

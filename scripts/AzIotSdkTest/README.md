@@ -37,9 +37,11 @@ downloading the module:
 
 * GitHub Actions: `uses: Azure/iot-sdks-e2e-fx/actions/<action>@<tag>`
 * Azure Pipelines: a `repositories` resource plus `- template: ...@e2e_fx`
+  (see [actions/README.md](../../actions/README.md#azure-pipelines))
 
 Both give the runner this repository at a pinned ref, so the module cannot drift
-away from the pipeline that calls it.
+away from the pipeline that calls it. Both end in `New-AzIotE2ETestEnvironmentAndConfig`, which
+provisions an environment and writes its test configuration.
 
 `../Azure.Iot.Sdk.Test.psm1` still works, and is deprecated. It exists for
 pipelines that download that one file from `raw.githubusercontent.com`; when

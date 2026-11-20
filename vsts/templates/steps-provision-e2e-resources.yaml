@@ -1,0 +1,127 @@
+# Provisions the Azure resources for an SDK e2e run and writes its test configuration.
+#
+# The Azure Pipelines face of actions/provision-e2e-resources; both call
+# New-AzIotE2ETestEnvironmentAndConfig, so they provision the same environment.
+#
+# The caller checks this repository out (see frameworkRoot) and pairs this with
+# steps-destroy-e2e-resources.yaml, in a job that runs even when this one fails or is canceled.
+# Use a resource group name the teardown job can compute itself (for example from
+# $(Build.BuildId)): outputs of a canceled job are not available.
+
+parameters:
+  # Azure Resource Manager service connection used to provision.
+  - name: azureSubscription
+    type: string
+  # Resource group to create. Macros such as $(e2eResourceGroup) are expanded at run time.
+  - name: resourceGroupName
+    type: string
+  - name: azureLocation
+    type: string
+    default: EastUS
+  - name: enableAdu
+    type: string
+    default: None
+    values: [None, Gen1, Gen2]
+  - name: enableCertificateManagement
+    type: boolean
+    default: false
+  # Storage, file upload and file upload notifications on the hub.
+  - name: enableFileUpload
+    type: boolean
+    default: false
+  # Sets disableLocalAuth on the hub and DPS; tests then authenticate with Microsoft Entra ID.
+  - name: disableLocalAuth
+    type: boolean
+    default: false
+  # Routes device telemetry to an Event Hub that accepts only Microsoft Entra ID. Needs configCmdlet
+  # New-AzIotCSDKE2ETestConfig, the only renderer that reads that Event Hub.
+  - name: routeTelemetryToEventHub
+    type: boolean
+    default: false
+  # Consumer groups to create on that Event Hub, for example [e2e-0, e2e-1].
+  - name: telemetryEventHubConsumerGroups
+    type: object
+    default: []
+  - name: iothubX509ThumbprintDevices
+    type: number
+    default: 1
+  - name: dpsX509IndividualEnrollments
+    type: number
+    default: 1
+  - name: dpsX509GroupEnrollmentDevices
+    type: number
+    default: 0
+  - name: dpsSymmKeyGroupEnrollmentDevices
+    type: number
+    default: 0
+  # Module cmdlet that renders the test configuration.
+  - name: configCmdlet
+    type: string
+    default: New-AzIotCSDKE2ETestConfig
+  - name: configTarget
+    type: string
+    default: powershell
+    values: [powershell, bash]
+  # Path of the test configuration script to write. It holds secrets: keep it out of artifacts
+  # unless encrypted.
+  - name: outFile
+    type: string
+  # Checkout of this repository. With more than one checkout step, Azure Pipelines places each
+  # repository under $(Build.SourcesDirectory)/<name> unless the checkout sets a path.
+  - name: frameworkRoot
+    type: string
+    default: $(Build.SourcesDirectory)
+  - name: displayName
+    type: string
+    default: Provision e2e Azure resources
+
+steps:
+- task: AzureCLI@2
+  displayName: ${{ parameters.displayName }}
+  inputs:
+    azureSubscription: ${{ parameters.azureSubscription }}
+    scriptType: pscore
+    scriptLocation: inlineScript
+    visibleAzLogin: false
+    inlineScript: |
+      $ErrorActionPreference = 'Stop'
+
+      Import-Module (Join-Path $env:AZ_IOT_FRAMEWORK_ROOT 'scripts/AzIotSdkTest/AzIotSdkTest.psd1')
+
+      $Arguments = @{
+          ResourceGroup                    = $env:AZ_IOT_RG_NAME
+          AzureLocation                    = $env:AZ_IOT_LOCATION
+          EnableADU                        = $env:AZ_IOT_ENABLE_ADU
+          EnableCertificateManagement      = $env:AZ_IOT_ENABLE_CERT_MGMT -eq 'True'
+          EnableFileUpload                 = $env:AZ_IOT_ENABLE_FILE_UPLOAD -eq 'True'
+          DisableLocalAuth                 = $env:AZ_IOT_DISABLE_LOCAL_AUTH -eq 'True'
+          RouteTelemetryToEventHub         = $env:AZ_IOT_ROUTE_TELEMETRY -eq 'True'
+          TelemetryEventHubConsumerGroups  = @("$env:AZ_IOT_TELEMETRY_CONSUMER_GROUPS".Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+          IotHubX509ThumbprintDevices      = $env:AZ_IOT_HUB_X509_DEVICES
+          DpsX509IndividualEnrollments     = $env:AZ_IOT_DPS_INDIVIDUAL
+          DpsX509GroupEnrollmentDevices    = $env:AZ_IOT_DPS_GROUP_DEVICES
+          DpsSymmKeyGroupEnrollmentDevices = $env:AZ_IOT_DPS_SK_GROUP_DEVICES
+          ConfigCmdlet                     = $env:AZ_IOT_CONFIG_CMDLET
+          ConfigTarget                     = $env:AZ_IOT_CONFIG_TARGET
+          OutFile                          = $env:AZ_IOT_OUT_FILE
+      }
+
+      New-AzIotE2ETestEnvironmentAndConfig @Arguments | Out-Null
+  # Every parameter is passed as env, never expanded into the script, so a value is always data.
+  env:
+    AZ_IOT_FRAMEWORK_ROOT: ${{ parameters.frameworkRoot }}
+    AZ_IOT_RG_NAME: ${{ parameters.resourceGroupName }}
+    AZ_IOT_LOCATION: ${{ parameters.azureLocation }}
+    AZ_IOT_ENABLE_ADU: ${{ parameters.enableAdu }}
+    AZ_IOT_ENABLE_CERT_MGMT: ${{ parameters.enableCertificateManagement }}
+    AZ_IOT_ENABLE_FILE_UPLOAD: ${{ parameters.enableFileUpload }}
+    AZ_IOT_DISABLE_LOCAL_AUTH: ${{ parameters.disableLocalAuth }}
+    AZ_IOT_ROUTE_TELEMETRY: ${{ parameters.routeTelemetryToEventHub }}
+    AZ_IOT_TELEMETRY_CONSUMER_GROUPS: ${{ join(',', parameters.telemetryEventHubConsumerGroups) }}
+    AZ_IOT_HUB_X509_DEVICES: ${{ parameters.iothubX509ThumbprintDevices }}
+    AZ_IOT_DPS_INDIVIDUAL: ${{ parameters.dpsX509IndividualEnrollments }}
+    AZ_IOT_DPS_GROUP_DEVICES: ${{ parameters.dpsX509GroupEnrollmentDevices }}
+    AZ_IOT_DPS_SK_GROUP_DEVICES: ${{ parameters.dpsSymmKeyGroupEnrollmentDevices }}
+    AZ_IOT_CONFIG_CMDLET: ${{ parameters.configCmdlet }}
+    AZ_IOT_CONFIG_TARGET: ${{ parameters.configTarget }}
+    AZ_IOT_OUT_FILE: ${{ parameters.outFile }}

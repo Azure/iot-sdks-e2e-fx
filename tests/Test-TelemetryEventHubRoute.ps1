@@ -209,6 +209,16 @@ foreach ($DisableLocalAuth in $false, $true) {
     Assert ((Count-Calls '^eventhubs eventhub consumer-group create --name e2e-0') -eq 1) "$($Name): consumer group e2e-0 not created."
 }
 
+# A renderer that would point tests at the built-in endpoint is refused before anything is provisioned.
+foreach ($Renderer in 'New-AzIotPythonSDKE2ETestConfig', 'New-AzIotuAmqpE2ETestConfig', 'New-AzIotHortonTestConfig') {
+    Reset-Stub
+    $Failed = $false
+    try {
+        New-AzIotE2ETestEnvironmentAndConfig -ResourceGroup StubRg -RouteTelemetryToEventHub -ConfigCmdlet $Renderer -OutFile (Join-Path ([IO.Path]::GetTempPath()) 'unused.ps1') | Out-Null
+    } catch { $Failed = $_.Exception.Message -match 'does not read the telemetry Event Hub' }
+    Assert ($Failed -and $Stub.Calls.Count -eq 0) "renderer-check: $Renderer with -RouteTelemetryToEventHub should fail before any az call."
+}
+
 # The test environment round-trips through JSON, and the C config reads the routed Event Hub. Run
 # in the module's scope, where its classes are visible.
 $OutDir = Join-Path ([IO.Path]::GetTempPath()) "telemetry-test-$([guid]::NewGuid().ToString('N'))"

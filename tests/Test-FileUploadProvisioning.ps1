@@ -33,6 +33,7 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $ModulePath = Join-Path $RepoRoot 'scripts/AzIotSdkTest/AzIotSdkTest.psd1'
 $ActionPath = Join-Path $RepoRoot 'actions/provision-e2e-resources/action.yml'
+$AdoTemplatePath = Join-Path $RepoRoot 'vsts/templates/steps-provision-e2e-resources.yaml'
 $global:FakeStorageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=stoaccstub;AccountKey=RkFLRQ==;EndpointSuffix=core.windows.net'
 
 function Get-ActionInlineScript {
@@ -255,6 +256,8 @@ if ($RunScenario) {
     }
     $env:AZ_IOT_ENABLE_FILE_UPLOAD = 'true'
     $env:AZ_IOT_DISABLE_LOCAL_AUTH = if ($RunScenario -like '*-disable-local-auth') { 'true' } else { 'false' }
+    $env:AZ_IOT_ROUTE_TELEMETRY = 'false'
+    $env:AZ_IOT_TELEMETRY_CONSUMER_GROUPS = ''
     $env:AZ_IOT_HUB_X509_DEVICES = '1'
     $env:AZ_IOT_DPS_INDIVIDUAL = '1'
     $env:AZ_IOT_DPS_GROUP_DEVICES = '0'
@@ -265,12 +268,42 @@ if ($RunScenario) {
     $env:GITHUB_OUTPUT = Join-Path $StateDir "$RunScenario-output.txt"
 
     # Fixed resource names keep transcripts comparable across module versions.
-    $Script = Get-ActionInlineScript -Path $ActionPath
-    $Call = 'New-AzIotTestEnvironment @NewEnvArgs'
-    if ([regex]::Matches($Script, [regex]::Escape($Call)).Count -ne 1) { throw "Expected exactly one '$Call' in the action script." }
-    $Script = $Script.Replace($Call, "$Call -IotHubName stubhub -DpsName stubdps -StorageAccountName stoaccstub")
+    # The wrapper keeps the original's parameters, so switches passed as -Name:$Value still bind.
+    & $Module {
+        $script:ProvisionTestEnvironment = (Get-Command New-AzIotTestEnvironment).ScriptBlock
+        $ParamBlock = $script:ProvisionTestEnvironment.Ast.Body.ParamBlock.Extent.Text
+        $Names = '$PSBoundParameters.IotHubName = "stubhub"; $PSBoundParameters.DpsName = "stubdps"; $PSBoundParameters.StorageAccountName = "stoaccstub"'
+        Set-Item -Path function:script:New-AzIotTestEnvironment -Value ([scriptblock]::Create("$ParamBlock`n$Names`n& `$script:ProvisionTestEnvironment @PSBoundParameters"))
+    }
 
-    . ([scriptblock]::Create($Script))
+    $ScriptPath = $ActionPath
+    if ($RunScenario -eq 'ado-template') {
+        # As Azure Pipelines renders the template's env: booleans as True/False, the consumer group
+        # list joined with commas.
+        $ScriptPath = $AdoTemplatePath
+        $env:AZ_IOT_FRAMEWORK_ROOT = $RepoRoot
+        $env:AZ_IOT_ENABLE_CERT_MGMT = 'False'
+        $env:AZ_IOT_ENABLE_FILE_UPLOAD = 'True'
+        $env:AZ_IOT_DISABLE_LOCAL_AUTH = 'True'
+        $env:AZ_IOT_ROUTE_TELEMETRY = 'True'
+        $env:AZ_IOT_TELEMETRY_CONSUMER_GROUPS = 'e2e-0,e2e-1'
+        $env:AZ_IOT_HUB_X509_DEVICES = '2'
+        $env:AZ_IOT_DPS_SK_GROUP_DEVICES = '1'
+        $env:AZ_IOT_CONFIG_TARGET = 'powershell'
+        $env:AZ_IOT_OUT_FILE = Join-Path $StateDir "$RunScenario-config.ps1"
+        Remove-Item Env:GITHUB_OUTPUT
+        # The route itself is covered by Test-TelemetryEventHubRoute.ps1.
+        & $Module {
+            function script:Add-AzIotEventHubTelemetryRoute {
+                param($ResourceGroup, $IotHubName, $Location, $ConsumerGroups, [switch]$KeepBuiltInEndpointRoute)
+                $Call = "<Add-AzIotEventHubTelemetryRoute $($ConsumerGroups -join ',') KeepBuiltInEndpointRoute=$KeepBuiltInEndpointRoute>"
+                Add-Content -Path $global:StubState.Log -Value (@{ argv = @($Call) } | ConvertTo-Json -Compress)
+                [TelemetryEventHubInfo]::FromHashtable(@{ FullyQualifiedNamespace = 'ns.servicebus.windows.net'; Name = 'telemetry'; PartitionCount = 4; ConsumerGroups = $ConsumerGroups; ReadableAfterUnixSeconds = 1 })
+            }
+        }
+    }
+
+    . ([scriptblock]::Create((Get-ActionInlineScript -Path $ScriptPath)))
 
     $Hub = $global:StubState.Resources[(Get-StubHubKey)]
     Set-Content -Path (Join-Path $StateDir "$RunScenario-hub.json") -Value ($Hub | ConvertTo-Json -Depth 20)
@@ -355,8 +388,7 @@ try {
     Assert ($Run.ExitCode -eq 0) "no-cert-mgmt: provisioning exited $($Run.ExitCode)."
     $Updates = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^iot hub update' } | %{ $_.argv -join ' ' })
     $Expected = @(
-        "iot hub update --name stubhub --resource-group StubRg --fcs $FakeStorageConnectionString --fc iothubuploads --fileupload-sas-ttl 1 --only-show-errors",
-        'iot hub update --name stubhub --resource-group StubRg --fileupload-notifications true --only-show-errors'
+        "iot hub update --name stubhub --resource-group StubRg --fcs $FakeStorageConnectionString --fc iothubuploads --fileupload-sas-ttl 1 --fileupload-notifications true --only-show-errors"
     )
     Assert (($Updates -join "`n") -ceq ($Expected -join "`n")) "no-cert-mgmt: 'az iot hub update' calls differ:`n  got:      $($Updates -join "`n            ")`n  expected: $($Expected -join "`n            ")"
     Assert ((Find-Call $Run { param($j) $j -match '^rest .*/IotHubs/' }) -lt 0) "no-cert-mgmt: the hub must not be written through ARM."
@@ -387,6 +419,18 @@ try {
     Assert ($HubPut -ge 0 -and ($Run.Calls[$HubPut].body | ConvertFrom-Json).properties.disableLocalAuth -eq $true) "cert-mgmt-disable-local-auth: the hub PUT must set disableLocalAuth true."
     Assert ((Find-Call $Run { param($j) $j -match '^iot hub device-identity' -and $j -notmatch '--auth-type login' }) -lt 0) "cert-mgmt-disable-local-auth: every 'az iot hub device-identity' call must pass --auth-type login."
     Assert ((Find-Call $Run { param($j) $j -match '^iot dps linked-hub' }) -lt 0) "cert-mgmt-disable-local-auth: ADR links the hub, not the DPS."
+    Assert-FileUploadState $Run
+
+    # The Azure Pipelines template passes the same arguments as the action.
+    $Run = Invoke-Scenario 'ado-template'
+    Assert ($Run.ExitCode -eq 0) "ado-template: provisioning exited $($Run.ExitCode): $(($Run.Output -split "`n" | Select-String 'ERROR|Exception|\| [A-Z]' | Select-Object -First 4) -join ' | ')"
+    Assert ((Find-Call $Run { param($j) $j -match '^iot hub create .*--disable-local-auth true' }) -ge 0) "ado-template: disableLocalAuth was not passed."
+    Assert ((Find-Call $Run { param($j) $j -ceq '<Add-AzIotEventHubTelemetryRoute e2e-0,e2e-1 KeepBuiltInEndpointRoute=False>' }) -ge 0) "ado-template: the telemetry route was not added with consumer groups e2e-0 and e2e-1."
+    $X509Devices = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^iot hub device-identity create .*--am x509_thumbprint' }).Count
+    Assert ($X509Devices -eq 2) "ado-template: created $X509Devices X.509 thumbprint devices, expected 2."
+    $ConfigPath = Join-Path $StateDir 'ado-template-config.ps1'
+    $Config = if (Test-Path $ConfigPath) { Get-Content -Raw $ConfigPath } else { '' }
+    Assert ($Config -match '(?m)^\$env:IOTHUB_EVENTHUB_READABLE_AFTER_UNIX_SECONDS = "1"' -and $Config -match '(?m)^\$env:IOT_DPS_SYMM_KEY_GROUP_ENROLLMENT_ID = ') "ado-template: the PowerShell test configuration lacks the Event Hub or symmetric key group values."
     Assert-FileUploadState $Run
 
     # A throttled (429) or internal-error file upload update, and a storage account create that finds

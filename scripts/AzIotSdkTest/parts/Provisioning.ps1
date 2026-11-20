@@ -44,8 +44,7 @@ function New-AzIotTestEnvironment {
     .PARAMETER IotHubX509CADevices
     Specifies the number of x509 CA devices to create in IoT Hub. Default is 0.
     .PARAMETER EnableFileUpload
-    Specifies whether to enable file upload in IoT Hub. Default is false.
-    With -EnableCertificateManagement, file upload notifications are enabled too.
+    Specifies whether to enable file upload in IoT Hub, file upload notifications included. Default is false.
     .PARAMETER NoDps
     Specifies whether to skip creating a Device Provisioning Service. Default is false.
     .PARAMETER EnableCertificateManagement
@@ -373,7 +372,7 @@ function New-AzIotTestEnvironment {
         # Throttled (429) while other runs create hubs in the same subscription, or failing server-side
         # with "(IotHubUpdateFailed) An internal error occurred"; retry with backoff.
         Invoke-WithRetry -Step "Updating Azure IoT Hub file upload settings" -RetryOnPattern "$($script:ArmTransientPattern)|IotHubUpdateFailed\) An internal error" -Command {
-            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --only-show-errors | Out-Null
+            az iot hub update --name "$IotHubName" --resource-group "$ResourceGroup" --fcs "$AzureStorageConnectionString" --fc $AzureStorageContainerName --fileupload-sas-ttl 1 --fileupload-notifications true --only-show-errors | Out-Null
         } | Out-Null
     }
 

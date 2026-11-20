@@ -1,7 +1,7 @@
-# Contract checks for the composite actions under actions/. No Azure
-# credentials and no deployment: the actions are consumed by other
-# repositories, so the point is to catch a broken contract here rather than in
-# someone else's pipeline.
+# Contract checks for the composite actions under actions/ and the Azure
+# Pipelines templates other repositories consume. No Azure credentials and no
+# deployment: both are consumed by other repositories, so the point is to catch
+# a broken contract here rather than in someone else's pipeline.
 name: Validate actions
 
 on:
@@ -11,12 +11,14 @@ on:
       - 'actions/**'
       - 'scripts/**'
       - 'tests/**'
+      - 'vsts/templates/**'
       - '.github/workflows/**'
   pull_request:
     paths:
       - 'actions/**'
       - 'scripts/**'
       - 'tests/**'
+      - 'vsts/templates/**'
       - '.github/workflows/**'
   workflow_dispatch:
 

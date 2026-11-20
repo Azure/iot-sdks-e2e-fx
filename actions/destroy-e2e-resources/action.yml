@@ -1,6 +1,6 @@
 # Deletes the resource group provisioned by the provision-e2e-resources action.
 #
-# This is the GitHub Actions face of vsts/templates/steps-destroy-azure-resources.yaml.
+# This is the GitHub Actions face of vsts/templates/steps-destroy-e2e-resources.yaml.
 # The caller must run `azure/login` BEFORE this step and is responsible for
 # `if: always()` so cleanup runs even on failure.
 name: Destroy e2e Azure resources
