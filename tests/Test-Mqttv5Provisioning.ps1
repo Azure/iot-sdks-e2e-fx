@@ -42,15 +42,19 @@ $Module = Get-Module AzIotSdkTest
 function global:Get-StubKey([string]$Url) { ([uri]$Url).AbsolutePath.ToLowerInvariant().TrimEnd('/') }
 function global:Get-StubHubKey { @($global:Stub.Resources.Keys | ?{ $_ -like '*/microsoft.devices/iothubs/*' -and $_ -notlike '*/consumergroups/*' })[0] }
 
-function global:Reset-Stub([switch]$LinkDropsTopicGroups) {
+function global:Reset-Stub([switch]$LinkDropsTopicGroups, [switch]$ConcurrentHubChange) {
     $global:Stub = @{
         Calls = New-Object System.Collections.Generic.List[object]
         Resources = @{}
         RoleAssignments = @()
         EventHubs = @()
         LinkDropsTopicGroups = [bool]$LinkDropsTopicGroups
+        ConcurrentHubChange = [bool]$ConcurrentHubChange
+        ETagCounter = 0
     }
 }
+
+function global:New-StubETag { $global:Stub.ETagCounter++; "`"stub-$($global:Stub.ETagCounter)`"" }
 
 function global:az {
     $Argv = @($args | %{ "$_" })
@@ -60,7 +64,12 @@ function global:az {
     if ($BodyIndex -ge 0 -and $Argv[$BodyIndex + 1].StartsWith('@')) {
         $Body = Get-Content -Raw -Path $Argv[$BodyIndex + 1].Substring(1)
     }
-    $global:Stub.Calls.Add([pscustomobject]@{ Line = $Joined; Body = $Body })
+    $IfMatch = $null
+    $HeadersIndex = [array]::IndexOf($Argv, '--headers')
+    if ($HeadersIndex -ge 0) {
+        $IfMatch = (Get-Content -Raw -Path $Argv[$HeadersIndex + 1].Substring(1) | ConvertFrom-Json).'If-Match'
+    }
+    $global:Stub.Calls.Add([pscustomobject]@{ Line = $Joined; Body = $Body; IfMatch = $IfMatch })
     $global:LASTEXITCODE = 0
     function Opt([string]$Name) { $i = [array]::IndexOf($Argv, $Name); if ($i -ge 0) { $Argv[$i + 1] } }
 
@@ -77,6 +86,18 @@ function global:az {
                 return '{"value":[{"keyName":"service","primaryKey":"U0VSVklDRQ=="},{"keyName":"iothubowner","primaryKey":"T1dORVI="}]}'
             }
             if ($Method -eq 'PUT') {
+                $Stored = $global:Stub.Resources[$Key]
+                if ($IfMatch -and $Stored -and $global:Stub.ConcurrentHubChange) {
+                    # Someone else writes the hub between this caller's read and write, once.
+                    $global:Stub.ConcurrentHubChange = $false
+                    $Stored | Add-Member -Force tags ([pscustomobject]@{ concurrent = 'kept' })
+                    $Stored | Add-Member -Force etag (New-StubETag)
+                }
+                if ($IfMatch -and $Stored -and $Stored.etag -ne $IfMatch) {
+                    Write-Error -ErrorAction Continue "(PreconditionFailed) The ETag '$IfMatch' does not match '$($Stored.etag)'."
+                    $global:LASTEXITCODE = 1
+                    return
+                }
                 $Resource = $Body | ConvertFrom-Json
                 $Resource | Add-Member -Force id ([uri]$Url).AbsolutePath
                 if ($null -eq $Resource.properties) { $Resource | Add-Member -Force properties ([pscustomobject]@{}) }
@@ -88,6 +109,7 @@ function global:az {
                 }
                 if ($Key -like '*/iothubs/*' -and $Key -notlike '*/consumergroups/*') {
                     # An MQTT v5 hub reports no hostName, and separate service and device host names.
+                    $Resource | Add-Member -Force etag (New-StubETag)
                     $Resource.properties | Add-Member -Force state 'Active'
                     $Resource.properties | Add-Member -Force hostName ''
                     $Resource.properties | Add-Member -Force serviceHostName 'stubhub.service.azure-devices.net'
@@ -172,6 +194,8 @@ if ($AfterLink.Count -eq 2) {
     Assert ((@($TelemetryHub.properties.routing.routes | %{ $_.name }) -join ',') -eq 'builtin-events,telemetry') "full: routes after the telemetry PUT are '$(@($TelemetryHub.properties.routing.routes | %{ $_.name }) -join ',')'."
     Assert ($TelemetryHub.properties.connectionProfile -eq 'MqttV5' -and $null -eq $TelemetryHub.identity.principalId -and $TelemetryHub.identity.type -eq 'SystemAssigned') "full: telemetry PUT must keep the hub's settings and send the identity by type only."
 }
+Assert (@($AfterLink | ?{ $Stub.Calls[$_].IfMatch -notlike '"stub-*"' }).Count -eq 0) "full: every hub update must send If-Match with the ETag it read."
+Assert ($null -eq $Stub.Calls[$HubPuts[0]].IfMatch) "full: the hub create must not send If-Match."
 $Hub = $Stub.Resources[(Get-StubHubKey)]
 Assert ((@($Hub.properties.mqttV5Settings.topicGroups | %{ $_.topicGroupId }) -join ',') -eq 'e2e' -and (@($Hub.properties.routing.routes | %{ $_.name }) -join ',') -eq 'builtin-events,telemetry') "full: final hub lost its topic group or routes."
 
@@ -184,6 +208,15 @@ Assert ($Info.Dps.IdScope -eq '0ne00000000' -and $Info.Dps.ServiceFqdn -eq 'stub
 Assert ($Info.AdrPolicy.NamespaceName -eq 'azure-adr-ns' -and $Info.AzureResourceGroup -eq 'StubRg') "full: ADR policy or resource group not returned."
 $RoundTrip = & $Module { param($Json) [TestEnvironmentInfo]::FromJson($Json) } $Info.ToJson()
 Assert ($RoundTrip.IotHub.ConnectionProfile -eq 'MqttV5' -and $RoundTrip.IotHub.ServiceFqdn -eq $Info.IotHub.ServiceFqdn -and $RoundTrip.IotHub.DeviceFqdn -eq $Info.IotHub.DeviceFqdn) "full: the MQTT v5 hub fields do not survive a JSON round trip."
+
+# A concurrent hub change between read and write fails the write with 412; the retry reads it and keeps it.
+Reset-Stub -LinkDropsTopicGroups -ConcurrentHubChange
+$Info = New-AzIotMqttv5TestEnvironment @EnvArgs
+$Link = @(Find-Calls '^<Connect-AdrNamespace>')
+$AfterLink = @(Find-Calls $HubPutPattern | ?{ $_ -gt $Link[0] })
+$Hub = $Stub.Resources[(Get-StubHubKey)]
+Assert ($AfterLink.Count -eq 2 -and $Stub.Calls[$AfterLink[0]].IfMatch -ne $Stub.Calls[$AfterLink[1]].IfMatch) "concurrent: expected a rejected write and a retry with the new ETag, got $($AfterLink.Count) PUTs."
+Assert ($Hub.tags.concurrent -eq 'kept' -and (@($Hub.properties.mqttV5Settings.topicGroups | %{ $_.topicGroupId }) -join ',') -eq 'e2e') "concurrent: the retry must keep the concurrent change and restore the topic group."
 
 # Defaults: local auth on, no telemetry Event Hub, and a link that keeps the topic groups needs no extra write.
 Reset-Stub
@@ -199,6 +232,7 @@ Assert (-not $Info.IotHub.LocalAuthDisabled -and (@($Info.IotHub.EventHub.Consum
 # Invalid arguments fail before anything is called.
 foreach ($Case in @(
     @{ Name = 'template-variable'; Args = @{ TopicTemplates = @('e2e/{moduleId}/#') }; Error = 'not allowed' },
+    @{ Name = 'template-variable-case'; Args = @{ TopicTemplates = @('e2e/{DeviceId}/#') }; Error = 'not allowed' },
     @{ Name = 'template-reserved'; Args = @{ TopicTemplates = @('ih/x') }; Error = 'not allowed' },
     @{ Name = 'template-wildcard'; Args = @{ TopicTemplates = @('#') }; Error = 'not allowed' },
     @{ Name = 'telemetry-groups'; Args = @{ TelemetryEventHubConsumerGroups = @('t-0') }; Error = 'requires -RouteTelemetryToEventHub' }

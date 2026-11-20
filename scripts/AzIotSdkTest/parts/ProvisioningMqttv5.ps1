@@ -81,7 +81,7 @@ function New-AzIotMqttv5TestEnvironment {
     }
     foreach ($TopicTemplate in $TopicTemplates) {
         if ([string]::IsNullOrWhiteSpace($TopicTemplate) -or ($TopicTemplate -split '/')[0] -in 'ih', '+', '#' -or
-            $TopicTemplate -match '\{(?!deviceId\})[^}]*\}') {
+            $TopicTemplate -cmatch '\{(?!deviceId\})[^}]*\}') {
             throw "Topic template '$TopicTemplate' is not allowed: it is empty, starts with 'ih', '+' or '#', or uses a variable other than {deviceId}."
         }
     }

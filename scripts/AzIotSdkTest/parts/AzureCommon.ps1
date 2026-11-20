@@ -347,6 +347,9 @@ function Invoke-AzRest {
     .PARAMETER Body
     Request payload as a hashtable. Serialized to JSON; omit for GET.
 
+    .PARAMETER Headers
+    Extra request headers. Passed as a file for the same quoting reason as the body.
+
     .PARAMETER AllowFailure
     Return $null instead of stopping when the call fails. Used for existence and state probes, where
     a failure is an answer rather than an error; stderr is suppressed in that case only, so that
@@ -356,6 +359,7 @@ function Invoke-AzRest {
         [string]$Method = "GET",
         [Parameter(Mandatory = $true)][string]$Url,
         [Hashtable]$Body = $null,
+        [Hashtable]$Headers = $null,
         [switch]$AllowFailure
     )
 
@@ -364,6 +368,7 @@ function Invoke-AzRest {
     }
 
     $BodyFile = $null
+    $HeadersFile = $null
     try {
         # The token audience is stated rather than left to be derived from the URL: the CLI only
         # infers it for the hosts in `az cloud show`, so a regional ARM host gets no Authorization
@@ -375,6 +380,12 @@ function Invoke-AzRest {
             $BodyFile = New-TempFile
             Set-FileContent -Path $BodyFile -Content ($Body | ConvertTo-Json -Compress -Depth 10)
             $Arguments += @("--body", "@$BodyFile")
+        }
+
+        if ($null -ne $Headers -and $Headers.Count -gt 0) {
+            $HeadersFile = New-TempFile
+            Set-FileContent -Path $HeadersFile -Content ($Headers | ConvertTo-Json -Compress)
+            $Arguments += @("--headers", "@$HeadersFile")
         }
 
         if ($AllowFailure) {
@@ -399,8 +410,10 @@ function Invoke-AzRest {
         return $Response | ConvertFrom-Json
     }
     finally {
-        if ($null -ne $BodyFile) {
-            Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
+        foreach ($File in $BodyFile, $HeadersFile) {
+            if ($null -ne $File) {
+                Remove-Item -Path $File -ErrorAction SilentlyContinue
+            }
         }
     }
 }
@@ -515,8 +528,9 @@ function Update-AzArmResource {
     .DESCRIPTION
     For resources whose properties an older api-version would drop on write (an MQTT v5 IoT Hub's
     connectionProfile and mqttV5Settings, for example, which the az CLI's own update commands do not
-    know): the read and the write both use the api-version in -Url. Each attempt reads afresh, so a
-    retry after a concurrent update applies the edit to what that update left. The identity is sent
+    know): the read and the write both use the api-version in -Url. The write is conditional on the
+    ETag read (If-Match), so a concurrent change fails it with 412 instead of being overwritten; each
+    attempt reads afresh, so the retry applies the edit to what that change left. The identity is sent
     by type, with the user-assigned identities it lists; principal ids are read-only.
 
     .PARAMETER Url
@@ -543,6 +557,7 @@ function Update-AzArmResource {
 
     $Pattern = $script:ArmTransientPattern
     if ($RetryOnPattern) { $Pattern = "$Pattern|$RetryOnPattern" }
+    $Pattern = "$Pattern|PreconditionFailed|Precondition Failed"
 
     Write-Host "Updating: $Step."
     Invoke-WithRetry -Step $Step -RetryOnPattern $Pattern -MaxAttempts $MaxAttempts -InitialDelaySeconds $InitialDelaySeconds -Command {
@@ -560,7 +575,9 @@ function Update-AzArmResource {
                 $Body.identity.userAssignedIdentities = $UserAssigned
             }
         }
-        Invoke-AzRest -Method PUT -Url $Url -Body $Body
+        $Headers = $null
+        if ($Resource.etag) { $Headers = @{ 'If-Match' = $Resource.etag } }
+        Invoke-AzRest -Method PUT -Url $Url -Body $Body -Headers $Headers
     } | Out-Null
     Wait-AzProvisioningState -Url $Url -Step $Step -TimeoutSeconds $TimeoutSeconds -Condition $Condition
     return Invoke-AzRest -Url $Url
