@@ -347,6 +347,9 @@ function Invoke-AzRest {
     .PARAMETER Body
     Request payload as a hashtable. Serialized to JSON; omit for GET.
 
+    .PARAMETER Headers
+    Extra request headers. Passed as a file for the same quoting reason as the body.
+
     .PARAMETER AllowFailure
     Return $null instead of stopping when the call fails. Used for existence and state probes, where
     a failure is an answer rather than an error; stderr is suppressed in that case only, so that
@@ -356,6 +359,7 @@ function Invoke-AzRest {
         [string]$Method = "GET",
         [Parameter(Mandatory = $true)][string]$Url,
         [Hashtable]$Body = $null,
+        [Hashtable]$Headers = $null,
         [switch]$AllowFailure
     )
 
@@ -364,6 +368,7 @@ function Invoke-AzRest {
     }
 
     $BodyFile = $null
+    $HeadersFile = $null
     try {
         # The token audience is stated rather than left to be derived from the URL: the CLI only
         # infers it for the hosts in `az cloud show`, so a regional ARM host gets no Authorization
@@ -375,6 +380,12 @@ function Invoke-AzRest {
             $BodyFile = New-TempFile
             Set-FileContent -Path $BodyFile -Content ($Body | ConvertTo-Json -Compress -Depth 10)
             $Arguments += @("--body", "@$BodyFile")
+        }
+
+        if ($null -ne $Headers -and $Headers.Count -gt 0) {
+            $HeadersFile = New-TempFile
+            Set-FileContent -Path $HeadersFile -Content ($Headers | ConvertTo-Json -Compress)
+            $Arguments += @("--headers", "@$HeadersFile")
         }
 
         if ($AllowFailure) {
@@ -399,8 +410,10 @@ function Invoke-AzRest {
         return $Response | ConvertFrom-Json
     }
     finally {
-        if ($null -ne $BodyFile) {
-            Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
+        foreach ($File in $BodyFile, $HeadersFile) {
+            if ($null -ne $File) {
+                Remove-Item -Path $File -ErrorAction SilentlyContinue
+            }
         }
     }
 }
@@ -423,11 +436,17 @@ function Wait-AzProvisioningState {
 
     .PARAMETER TimeoutSeconds
     How long to wait for a terminal state before giving up.
+
+    .PARAMETER Condition
+    Script block that receives the resource and returns $true once it is ready. Checked only after
+    provisioningState is Succeeded, which some resources reach before they are usable (e.g. an IoT
+    Hub whose properties.state is still Activating) or while still reporting the previous update.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$Step,
-        [int]$TimeoutSeconds = 600
+        [int]$TimeoutSeconds = 600,
+        [scriptblock]$Condition = $null
     )
 
     $Deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -439,7 +458,7 @@ function Wait-AzProvisioningState {
         $Resource = Invoke-AzRest -Url $Url -AllowFailure
         $State = if ($null -ne $Resource) { $Resource.properties.provisioningState } else { $null }
 
-        if ($State -eq "Succeeded") {
+        if ($State -eq "Succeeded" -and ($null -eq $Condition -or (& $Condition $Resource))) {
             return
         }
 
@@ -457,6 +476,112 @@ function Wait-AzProvisioningState {
         Write-Host "Waiting for $Step (provisioningState=$State)."
         Start-Sleep -Seconds 10
     }
+}
+
+function New-AzArmResource {
+    <#
+    .SYNOPSIS
+    Creates (or brings back to the given body) an ARM resource, waits until it is ready, and
+    returns it as read afterwards.
+
+    .DESCRIPTION
+    A create PUT is idempotent, so a transient failure is retried rather than ending the run. The
+    resource is re-read at the end because what callers need (identity principalId, host names, id
+    scope) is only populated as it provisions.
+
+    .PARAMETER Url
+    ARM URL of the resource, including api-version.
+    .PARAMETER Body
+    Resource body.
+    .PARAMETER Step
+    Human-readable name of the resource, used in progress and error messages.
+    .PARAMETER RetryOnPattern
+    Failures to retry besides transient ARM errors and a system-assigned identity still being issued.
+    .PARAMETER Condition
+    See Wait-AzProvisioningState.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][Hashtable]$Body,
+        [Parameter(Mandatory = $true)][string]$Step,
+        [string]$RetryOnPattern = $null,
+        [scriptblock]$Condition = $null,
+        [int]$TimeoutSeconds = 1200
+    )
+
+    $Pattern = "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)"
+    if ($RetryOnPattern) { $Pattern = "$Pattern|$RetryOnPattern" }
+
+    Invoke-WithRetry -Step "Create $Step" -RetryOnPattern $Pattern -Command {
+        Invoke-AzRest -Method PUT -Url $Url -Body $Body
+    } | Out-Null
+    Wait-AzProvisioningState -Url $Url -Step $Step -TimeoutSeconds $TimeoutSeconds -Condition $Condition
+    return Invoke-AzRest -Url $Url
+}
+
+function Update-AzArmResource {
+    <#
+    .SYNOPSIS
+    Changes an ARM resource by reading it, editing it and writing all of it back, then waits until
+    the change shows, and returns the resource as read afterwards.
+
+    .DESCRIPTION
+    For resources whose properties an older api-version would drop on write (an MQTT v5 IoT Hub's
+    connectionProfile and mqttV5Settings, for example, which the az CLI's own update commands do not
+    know): the read and the write both use the api-version in -Url. The write is conditional on the
+    ETag read (If-Match), so a concurrent change fails it with 412 instead of being overwritten; each
+    attempt reads afresh, so the retry applies the edit to what that change left. The identity is sent
+    by type, with the user-assigned identities it lists; principal ids are read-only.
+
+    .PARAMETER Url
+    ARM URL of the resource, including api-version.
+    .PARAMETER Step
+    Human-readable description of the change, used in progress and error messages.
+    .PARAMETER Update
+    Script block that receives the resource as a hashtable and edits it in place. It may throw to
+    refuse the resource as read; the failure is not retried unless it matches -RetryOnPattern.
+    .PARAMETER Condition
+    Script block that receives the resource read back and returns $true once it shows the change.
+    .PARAMETER RetryOnPattern
+    Failures to retry besides transient ARM errors.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$Step,
+        [Parameter(Mandatory = $true)][scriptblock]$Update,
+        [Parameter(Mandatory = $true)][scriptblock]$Condition,
+        [string]$RetryOnPattern = $null,
+        [int]$MaxAttempts = 4,
+        [int]$InitialDelaySeconds = 30,
+        [int]$TimeoutSeconds = 1800
+    )
+
+    $Pattern = $script:ArmTransientPattern
+    if ($RetryOnPattern) { $Pattern = "$Pattern|$RetryOnPattern" }
+    $Pattern = "$Pattern|PreconditionFailed|Precondition Failed"
+
+    Write-Host "Updating: $Step."
+    Invoke-WithRetry -Step $Step -RetryOnPattern $Pattern -MaxAttempts $MaxAttempts -InitialDelaySeconds $InitialDelaySeconds -ThrowOnFailure -Command {
+        $Resource = ConvertFrom-PSObject (Invoke-AzRest -Url $Url)
+        & $Update $Resource
+        $Body = @{ location = $Resource.location; properties = $Resource.properties }
+        foreach ($Name in 'sku', 'tags', 'etag') {
+            if ($null -ne $Resource[$Name]) { $Body[$Name] = $Resource[$Name] }
+        }
+        if ($null -ne $Resource.identity) {
+            $Body.identity = @{ type = $Resource.identity.type }
+            if ($null -ne $Resource.identity.userAssignedIdentities) {
+                $UserAssigned = @{}
+                $Resource.identity.userAssignedIdentities.Keys | %{ $UserAssigned[$_] = @{} }
+                $Body.identity.userAssignedIdentities = $UserAssigned
+            }
+        }
+        $Headers = $null
+        if ($Resource.etag) { $Headers = @{ 'If-Match' = $Resource.etag } }
+        Invoke-AzRest -Method PUT -Url $Url -Body $Body -Headers $Headers
+    } | Out-Null
+    Wait-AzProvisioningState -Url $Url -Step $Step -TimeoutSeconds $TimeoutSeconds -Condition $Condition
+    return Invoke-AzRest -Url $Url
 }
 
 function Merge-ResourceGroupTags {

@@ -603,6 +603,11 @@ class IotHubInfo {
     # With local auth disabled, only its HostName is usable; service calls need Entra ID.
     [string]$ConnectionString = $null
     [bool]$LocalAuthDisabled = $false
+    # MqttV5 for an MQTT v5 hub, whose service and device host names differ; all three are null
+    # otherwise, and the connection string's HostName serves both.
+    [string]$ConnectionProfile = $null
+    [string]$ServiceFqdn = $null
+    [string]$DeviceFqdn = $null
     [EventHubInfo]$EventHub = [EventHubInfo]::new()
     # Null unless device telemetry is routed to an Event Hub of its own.
     [TelemetryEventHubInfo]$TelemetryEventHub = $null
@@ -614,6 +619,9 @@ class IotHubInfo {
         return [ordered]@{
             ConnectionString = $this.ConnectionString
             LocalAuthDisabled = $this.LocalAuthDisabled
+            ConnectionProfile = $this.ConnectionProfile
+            ServiceFqdn = $this.ServiceFqdn
+            DeviceFqdn = $this.DeviceFqdn
             EventHub = ConvertTo-Hashtable -Object $this.EventHub
             TelemetryEventHub = ConvertTo-Hashtable -Object $this.TelemetryEventHub
             Devices = ConvertTo-Hashtable -Object $this.Devices
@@ -624,6 +632,9 @@ class IotHubInfo {
         $IotHubInfo = [IotHubInfo]::new()
         $IotHubInfo.ConnectionString = $Hashtable.ConnectionString
         $IotHubInfo.LocalAuthDisabled = [bool]$Hashtable.LocalAuthDisabled
+        $IotHubInfo.ConnectionProfile = $Hashtable.ConnectionProfile
+        $IotHubInfo.ServiceFqdn = $Hashtable.ServiceFqdn
+        $IotHubInfo.DeviceFqdn = $Hashtable.DeviceFqdn
         $IotHubInfo.EventHub = [EventHubInfo]::FromHashtable($Hashtable.EventHub)
         $IotHubInfo.TelemetryEventHub = [TelemetryEventHubInfo]::FromHashtable($Hashtable.TelemetryEventHub)
         $IotHubInfo.Devices = [IotHubDeviceSet]::FromHashtable($Hashtable.Devices)

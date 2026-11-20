@@ -58,7 +58,9 @@ function ConvertFrom-PSObject {
         }
         return $Hashtable
     } elseif ($Object -is [System.Collections.IEnumerable] -and $Object -isnot [string]) {
-        return @(foreach ($Item in $Object) { ConvertFrom-PSObject $Item })
+        # The comma keeps an array of zero or one items an array: PowerShell would otherwise unroll
+        # it on return, and a resource written back to ARM would get an object, or nothing, instead.
+        return ,@(foreach ($Item in $Object) { ConvertFrom-PSObject $Item })
     } else {
         return $Object
     }
