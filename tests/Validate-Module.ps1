@@ -44,6 +44,7 @@ $ExpectedExports = @(
     'Get-AzureResourceGroupNamePrefix'
     'Invoke-Script'
     'New-AzIotCSDKE2ETestConfig'
+    'New-AzIotE2ETestEnvironmentAndConfig'
     'New-AzIotHortonTestConfig'
     'New-AzIotMqttv5TestEnvironment'
     'New-AzIotNetSDKE2ETestConfig'

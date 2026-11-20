@@ -8,9 +8,13 @@
 
 | Action | Azure Pipelines equivalent |
 | --- | --- |
-| [`provision-e2e-resources`](provision-e2e-resources) | `vsts/templates/steps-create-azure-resources.yaml` |
-| [`destroy-e2e-resources`](destroy-e2e-resources) | `vsts/templates/steps-destroy-azure-resources.yaml` |
+| [`provision-e2e-resources`](provision-e2e-resources) | [`vsts/templates/steps-provision-e2e-resources.yaml`](../vsts/templates/steps-provision-e2e-resources.yaml) |
+| [`destroy-e2e-resources`](destroy-e2e-resources) | [`vsts/templates/steps-destroy-e2e-resources.yaml`](../vsts/templates/steps-destroy-e2e-resources.yaml) |
 | [`check-submodules`](check-submodules) | `Test-SubmoduleConsistency`, called directly |
+
+`provision-e2e-resources` and its template both call `New-AzIotE2ETestEnvironmentAndConfig`, so
+they take the same settings and provision the same environment. Horton's own pipelines use
+`steps-create-azure-resources.yaml` and `steps-destroy-azure-resources.yaml`, which are separate.
 
 ## Why an action rather than downloading the module
 
@@ -72,12 +76,61 @@ jobs:
 `azure/login` must run in the **caller**: a composite action cannot read
 `secrets`.
 
+### Azure Pipelines
+
+```yaml
+resources:
+  repositories:
+    - repository: e2e_fx
+      type: github
+      name: Azure/iot-sdks-e2e-fx
+      ref: refs/tags/v1.3.0
+      endpoint: <GitHub service connection>
+
+variables:
+  # Deterministic, so teardown needs neither the setup job's outputs nor a checkout.
+  e2eResourceGroup: MyE2E-$(Build.BuildId)
+
+jobs:
+  - job: setup
+    steps:
+      - checkout: self
+      - checkout: e2e_fx
+        path: e2e-fx
+      - template: vsts/templates/steps-provision-e2e-resources.yaml@e2e_fx
+        parameters:
+          azureSubscription: <Azure Resource Manager service connection>
+          resourceGroupName: $(e2eResourceGroup)
+          enableFileUpload: true
+          disableLocalAuth: true
+          routeTelemetryToEventHub: true
+          telemetryEventHubConsumerGroups: [e2e-0, e2e-1]
+          outFile: $(Agent.TempDirectory)/test-config/set_test_env_vars.ps1
+          frameworkRoot: $(Agent.BuildDirectory)/e2e-fx
+
+  # ... test jobs ...
+
+  - job: teardown
+    dependsOn: [setup]
+    condition: and(always(), ne(dependencies.setup.result, 'Skipped'))
+    steps:
+      - checkout: none
+      - template: vsts/templates/steps-destroy-e2e-resources.yaml@e2e_fx
+        parameters:
+          azureSubscription: <Azure Resource Manager service connection>
+          resourceGroupName: $(e2eResourceGroup)
+```
+
+The template runs `AzureCLI@2` with `scriptType: pscore`. The test configuration holds secrets:
+encrypt it before publishing it as an artifact.
+
 ## Conventions these actions follow
 
 * **Inputs reach the script through `env:`, never through `${{ }}`
   interpolation into the script body.** An input is data; interpolation would
   make it code. `tests/validate-actions.mjs` fails the build on any expression
-  found inside a script body.
+  found inside a script body. The same rules hold for the parameters of the two
+  Azure Pipelines templates above.
 * **Every declared input is used, and every used input is declared.** GitHub
   silently ignores an unknown key passed in `with:`, so drift here is invisible
   at runtime; the same test fails the build on it.

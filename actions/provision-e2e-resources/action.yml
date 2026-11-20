@@ -1,11 +1,11 @@
 # Provisions a fresh Azure resource group + IoT Hub / DPS / devices (optionally
 # Device Update) and writes a test-config script for the consumer.
 #
-# This is the GitHub Actions face of the same work that
-# vsts/templates/steps-create-azure-resources.yaml does for Azure Pipelines.
-# Both call the SAME AzIotSdkTest module; neither downloads it, because
-# the runner already checked this repository out to run the action, so the
-# module is guaranteed to be the commit this action was pinned to.
+# This is the GitHub Actions face of
+# vsts/templates/steps-provision-e2e-resources.yaml: both call the SAME
+# AzIotSdkTest function, New-AzIotE2ETestEnvironmentAndConfig. The action does
+# not download the module: the runner already checked this repository out to
+# run the action, so the module is the commit this action was pinned to.
 #
 # The caller must run `azure/login` BEFORE this step.
 #
@@ -73,6 +73,20 @@ inputs:
       are set when the hub is created, before it is linked to ADR.
     required: false
     default: 'false'
+  route-telemetry-to-event-hub:
+    description: >-
+      When 'true', pass -RouteTelemetryToEventHub to New-AzIotTestEnvironment so device telemetry
+      is routed to an Event Hub with local authentication disabled, read with a Microsoft Entra
+      token. That is how tests read telemetry when disable-local-auth is 'true': the built-in
+      Event Hub-compatible endpoint takes only shared access keys.
+    required: false
+    default: 'false'
+  telemetry-event-hub-consumer-groups:
+    description: >-
+      Comma-separated consumer groups to create on that Event Hub besides $Default, e.g. one per
+      parallel test job (e2e-0,e2e-1). Requires route-telemetry-to-event-hub.
+    required: false
+    default: ''
   iothub-x509-thumbprint-devices:
     description: Number of x509-thumbprint IoT Hub devices to create.
     required: false
@@ -139,6 +153,8 @@ runs:
         AZ_IOT_ENABLE_CERT_MGMT: ${{ inputs.enable-certificate-management }}
         AZ_IOT_ENABLE_FILE_UPLOAD: ${{ inputs.enable-file-upload }}
         AZ_IOT_DISABLE_LOCAL_AUTH: ${{ inputs.disable-local-auth }}
+        AZ_IOT_ROUTE_TELEMETRY: ${{ inputs.route-telemetry-to-event-hub }}
+        AZ_IOT_TELEMETRY_CONSUMER_GROUPS: ${{ inputs.telemetry-event-hub-consumer-groups }}
         AZ_IOT_HUB_X509_DEVICES: ${{ inputs.iothub-x509-thumbprint-devices }}
         AZ_IOT_DPS_INDIVIDUAL: ${{ inputs.dps-x509-individual-enrollments }}
         AZ_IOT_DPS_GROUP_DEVICES: ${{ inputs.dps-x509-group-enrollment-devices }}
@@ -175,76 +191,39 @@ runs:
               }
           }
 
-          $EnableAdu = $env:AZ_IOT_ENABLE_ADU
-          if ($EnableAdu -notin @('None', 'Gen1', 'Gen2')) {
-              throw "enable-adu must be one of None, Gen1, Gen2; got '$EnableAdu'."
-          }
+          $ConsumerGroups = @("$env:AZ_IOT_TELEMETRY_CONSUMER_GROUPS".Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 
-          $EnableCertificateManagement = Get-BooleanInput 'enable-certificate-management' $env:AZ_IOT_ENABLE_CERT_MGMT
-          $EnableFileUpload = Get-BooleanInput 'enable-file-upload' $env:AZ_IOT_ENABLE_FILE_UPLOAD
-          $DisableLocalAuth = Get-BooleanInput 'disable-local-auth' $env:AZ_IOT_DISABLE_LOCAL_AUTH
-
-          $ConfigTarget = $env:AZ_IOT_CONFIG_TARGET
-          if ($ConfigTarget -notin @('powershell', 'bash')) {
-              throw "config-target must be 'powershell' or 'bash'; got '$ConfigTarget'."
-          }
-
-          # Resolve to a FUNCTION exported by this module, so config-cmdlet can
-          # never name an arbitrary command on the agent.
-          #
-          # -Name is a WILDCARD pattern, so 'New-AzIot*' would return every
-          # matching function; filter on an exact name and require exactly one
-          # result, or `& $ConfigCmdlet` would be handed an array.
-          $ConfigCmdletName = $env:AZ_IOT_CONFIG_CMDLET
-          $ConfigCmdletMatches = @(
-              Get-Command -Name $ConfigCmdletName -CommandType Function -ErrorAction SilentlyContinue |
-                  Where-Object { $_.Name -eq $ConfigCmdletName -and $_.ModuleName -eq 'AzIotSdkTest' }
-          )
-          if ($ConfigCmdletMatches.Count -ne 1) {
-              throw "config-cmdlet '$ConfigCmdletName' did not resolve to exactly one cmdlet exported by AzIotSdkTest (matched $($ConfigCmdletMatches.Count))."
-          }
-          $ConfigCmdlet = $ConfigCmdletMatches[0]
-
-          # Being exported by the module is not enough: it must be a CONFIG
-          # RENDERER. Without this, a name such as New-AzureResourceGroupName
-          # passes here, Azure resources are provisioned, and only then does the
-          # call below fail on its parameters.
-          #
-          # Matched by unique prefix, exactly as PowerShell's binder does, so a
-          # renderer declaring -TargetEnvironment still satisfies -Target.
-          $RequiredConfigParameters = @('TestEnvInfo', 'Target', 'OutFile')
-          $MissingConfigParameters = @(
-              $RequiredConfigParameters | Where-Object {
-                  $Required = $_
-                  $Candidates = @($ConfigCmdlet.Parameters.Keys | Where-Object { $_ -like "$Required*" })
-                  -not (($Candidates -contains $Required) -or ($Candidates.Count -eq 1))
-              }
-          )
-          if ($MissingConfigParameters.Count -gt 0) {
-              throw "config-cmdlet '$ConfigCmdletName' is not a test-config renderer: it has no -$($MissingConfigParameters -join ', -') parameter."
-          }
-
-          $OutFile = $env:AZ_IOT_OUT_FILE
-          if ([string]::IsNullOrWhiteSpace($OutFile)) {
-              throw "out-file must not be empty."
-          }
-          $OutDir = Split-Path -Parent $OutFile
-          if (-not [string]::IsNullOrWhiteSpace($OutDir)) {
-              New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+          # New-AzIotE2ETestEnvironmentAndConfig checks the rest (enable-adu,
+          # config-cmdlet, config-target, out-file) before anything touches Azure.
+          $Arguments = @{
+              AzureLocation                    = $env:AZ_IOT_LOCATION
+              EnableADU                        = $env:AZ_IOT_ENABLE_ADU
+              EnableCertificateManagement      = Get-BooleanInput 'enable-certificate-management' $env:AZ_IOT_ENABLE_CERT_MGMT
+              EnableFileUpload                 = Get-BooleanInput 'enable-file-upload' $env:AZ_IOT_ENABLE_FILE_UPLOAD
+              DisableLocalAuth                 = Get-BooleanInput 'disable-local-auth' $env:AZ_IOT_DISABLE_LOCAL_AUTH
+              RouteTelemetryToEventHub         = Get-BooleanInput 'route-telemetry-to-event-hub' $env:AZ_IOT_ROUTE_TELEMETRY
+              TelemetryEventHubConsumerGroups  = $ConsumerGroups
+              IotHubX509ThumbprintDevices      = Get-CountInput 'iothub-x509-thumbprint-devices' $env:AZ_IOT_HUB_X509_DEVICES
+              DpsX509IndividualEnrollments     = Get-CountInput 'dps-x509-individual-enrollments' $env:AZ_IOT_DPS_INDIVIDUAL
+              DpsX509GroupEnrollmentDevices    = Get-CountInput 'dps-x509-group-enrollment-devices' $env:AZ_IOT_DPS_GROUP_DEVICES
+              DpsSymmKeyGroupEnrollmentDevices = Get-CountInput 'dps-symmkey-group-enrollment-devices' $env:AZ_IOT_DPS_SK_GROUP_DEVICES
+              ConfigCmdlet                     = $env:AZ_IOT_CONFIG_CMDLET
+              ConfigTarget                     = $env:AZ_IOT_CONFIG_TARGET
+              OutFile                          = $env:AZ_IOT_OUT_FILE
           }
 
           if (-not [string]::IsNullOrWhiteSpace($env:AZ_IOT_RG_NAME)) {
               # Caller-computed (deterministic) name -- it can reproduce this exact
               # name in teardown without depending on this job's outputs.
-              # Azure allows alphanumerics, underscore, parentheses, hyphen and
-              # period, up to 90 characters, but the name may NOT end in a period.
-              # Anchored with \z, not $, so a trailing newline cannot slip through.
+              # Checked here, not only by the function, because it is published
+              # below: Azure allows alphanumerics, underscore, parentheses, hyphen
+              # and period, up to 90 characters, not ending in a period.
               if ($env:AZ_IOT_RG_NAME -notmatch '^[A-Za-z0-9._()-]{0,89}[A-Za-z0-9_()-]\z') {
                   throw "rg-name '$($env:AZ_IOT_RG_NAME)' is not a valid Azure resource group name."
               }
-              $ResourceGroupName = $env:AZ_IOT_RG_NAME
+              $Arguments['ResourceGroup'] = $env:AZ_IOT_RG_NAME
           } elseif (-not [string]::IsNullOrWhiteSpace($env:AZ_IOT_RG_PREFIX)) {
-              $ResourceGroupName = New-AzureResourceGroupName -Prefix $env:AZ_IOT_RG_PREFIX
+              $Arguments['ResourceGroup'] = New-AzureResourceGroupName -Prefix $env:AZ_IOT_RG_PREFIX
           } else {
               throw "Either 'rg-name' or 'rg-prefix' must be provided."
           }
@@ -253,100 +232,6 @@ runs:
           # provisioning below fails part-way through. NOTE: job outputs are NOT
           # propagated when the job is CANCELLED, so this output alone is not a
           # reliable teardown handle -- prefer a deterministic 'rg-name'.
-          "rg=$ResourceGroupName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "rg=$($Arguments['ResourceGroup'])" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-          $NewEnvArgs = @{
-              AzureLocation                 = $env:AZ_IOT_LOCATION
-              ResourceGroup                 = $ResourceGroupName
-              IotHubX509ThumbprintDevices   = Get-CountInput 'iothub-x509-thumbprint-devices' $env:AZ_IOT_HUB_X509_DEVICES
-              DpsX509IndividualEnrollments  = Get-CountInput 'dps-x509-individual-enrollments' $env:AZ_IOT_DPS_INDIVIDUAL
-              DpsX509GroupEnrollmentDevices = Get-CountInput 'dps-x509-group-enrollment-devices' $env:AZ_IOT_DPS_GROUP_DEVICES
-              DpsSymmKeyGroupEnrollmentDevices = Get-CountInput 'dps-symmkey-group-enrollment-devices' $env:AZ_IOT_DPS_SK_GROUP_DEVICES
-          }
-          # Only pass -EnableADU when ADU was actually asked for: not every build of
-          # the module exposes it. Passing it unconditionally turns "this module has
-          # no ADU support" into an opaque parameter-binding failure at provisioning
-          # time, for callers that never wanted ADU.
-          #
-          # validate-actions: allow-parameter EnableADU
-          # (checked at runtime immediately below, because the parameter is absent
-          # from the module on master and present on the ADU branch)
-          if ($EnableAdu -ne 'None') {
-              if (-not (Get-Command New-AzIotTestEnvironment).Parameters.ContainsKey('EnableADU')) {
-                  throw "enable-adu is '$EnableAdu' but this build of AzIotSdkTest has no -EnableADU parameter."
-              }
-              $NewEnvArgs['EnableADU'] = $EnableAdu
-          }
-          if ($EnableCertificateManagement) { $NewEnvArgs['EnableCertificateManagement'] = $true }
-          if ($EnableFileUpload) { $NewEnvArgs['EnableFileUpload'] = $true }
-          if ($DisableLocalAuth) { $NewEnvArgs['DisableLocalAuth'] = $true }
-
-          $TestEnvInfo = New-AzIotTestEnvironment @NewEnvArgs
-
-          & $ConfigCmdlet -TestEnvInfo $TestEnvInfo -Target $ConfigTarget -OutFile $OutFile
-
-          # New-AzIotTestEnvironment -EnableFileUpload attaches the storage account
-          # and container, but leaves the hub's enableFileUploadNotifications at its
-          # default of FALSE. Without it IoT Hub accepts a device's completion
-          # notification and then publishes nothing, so the service-side
-          # file-notification endpoint stays silent and an e2e test can only verify
-          # the device half of an upload. Turn it on here (the shared framework does
-          # not expose a switch for it). With certificate management the module sets
-          # it when creating the hub instead: once ADR links the hub, 'az iot hub
-          # update' refuses it ("ADR properties are only supported for Generation2
-          # IoT Hub SKUs").
-          if ($EnableFileUpload -and -not $EnableCertificateManagement) {
-              $HostNamePair = ($TestEnvInfo.IotHub.ConnectionString -split ';' `
-                  | Where-Object { $_ -like 'HostName=*' } | Select-Object -First 1)
-              if ([string]::IsNullOrWhiteSpace($HostNamePair)) {
-                  throw "Could not parse HostName from the IoT Hub connection string."
-              }
-              $IotHubName = ($HostNamePair -replace '^HostName=', '').Split('.')[0]
-              Write-Host "Enabling IoT Hub file-upload notifications ($IotHubName)"
-              az iot hub update --name $IotHubName --resource-group $ResourceGroupName `
-                  --fileupload-notifications true --only-show-errors | Out-Null
-              if ($LASTEXITCODE -ne 0) {
-                  throw "Failed to enable file-upload notifications on $IotHubName."
-              }
-          }
-
-          # When an X.509 enrollment GROUP was provisioned, the group's issuer is
-          # an INTERMEDIATE CA (created by the framework and signed by the root);
-          # PROVISIONING_ROOT_CERT is NOT that issuer, so a root-signed leaf would
-          # be rejected. Emit a bootstrap device identity under the group (a leaf
-          # signed by the group's issuer CA) as a full chain (leaf + issuer CA +
-          # root) + key + registration id, for consumers driving a CSR flow. The
-          # config cmdlets do not emit group X.509 identities, so do it here.
-          # Guarded on GroupX509 presence -> no-op for callers without a group.
-          if ($TestEnvInfo.Dps.Enrollments.GroupX509.Count -gt 0) {
-              $group = $TestEnvInfo.Dps.Enrollments.GroupX509[0]
-              # Reuse the device identities minted during provisioning; mint one only if
-              # the group has none (both paths produce a leaf signed by the issuer CA).
-              $identities = @($group.Identities)
-              if ($identities.Count -eq 0) {
-                  $identities = @($group.AddIdentity("csr-bootstrap-$(Get-Random -Minimum 100000 -Maximum 999999)", [timespan]::FromDays(2)))
-              }
-              # Each identity as IOT_DPS_GROUP_X509_*_<i>, so parallel jobs can each take their own;
-              # identity 0 also without the suffix, as before.
-              for ($i = 0; $i -lt $identities.Count; $i++) {
-                  $identity = $identities[$i]
-                  $chainPem = $identity.Certificate.ToPem() + "`n" + $group.Certificate.ToPem() + "`n" + $TestEnvInfo.Dps.RootCaCertificates[0].ToPem()
-                  $keyPem = $identity.Certificate.PrivateKey.ToRsaPkcs1Pem()
-                  $values = [ordered]@{
-                      IOT_DPS_GROUP_X509_CERTIFICATE     = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($chainPem))
-                      IOT_DPS_GROUP_X509_KEY             = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($keyPem))
-                      IOT_DPS_GROUP_X509_REGISTRATION_ID = $identity.Id
-                  }
-                  $suffixes = @("_$i") + @(if ($i -eq 0) { '' })
-                  foreach ($suffix in $suffixes) {
-                      foreach ($name in $values.Keys) {
-                          if ($ConfigTarget -eq 'powershell') {
-                              Add-Content -Path $OutFile -Value "`$env:$name$suffix = `"$($values[$name])`""
-                          } else {
-                              Add-Content -Path $OutFile -Value "export $name$suffix=`"$($values[$name])`""
-                          }
-                      }
-                  }
-                  Write-Host "Emitted X.509 group bootstrap identity $i`: $($identity.Id)"
-              }
-          }
+          New-AzIotE2ETestEnvironmentAndConfig @Arguments | Out-Null

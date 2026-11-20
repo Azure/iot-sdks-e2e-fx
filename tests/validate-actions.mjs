@@ -1,4 +1,5 @@
-// Contract checks for the composite actions under actions/.
+// Contract checks for the composite actions under actions/ and for the Azure
+// Pipelines templates other repositories consume (adoTemplates below).
 //
 // These actions are consumed by other repositories, so a mistake here surfaces
 // as a broken pipeline somewhere else. The checks are deliberately cheap and
@@ -16,6 +17,10 @@
 //      calls exists with the parameters it passes (delegated to
 //      tests/Validate-ActionScripts.ps1)
 //
+// The Azure Pipelines templates get checks 2, 3 and 5, with parameters.X in
+// place of inputs.X: Azure Pipelines rejects an unknown parameter, but not one
+// that is declared and then ignored.
+//
 // Usage: node tests/validate-actions.mjs
 import { readFileSync, readdirSync, existsSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
@@ -26,6 +31,11 @@ import { load } from 'js-yaml';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const actionsRoot = join(repoRoot, 'actions');
+const adoTemplatesRoot = join(repoRoot, 'vsts', 'templates');
+
+// Templates written for other repositories. Horton's own templates expand
+// parameters into their scripts and are not checked here.
+const adoTemplates = ['steps-provision-e2e-resources.yaml', 'steps-destroy-e2e-resources.yaml'];
 
 const failures = [];
 const fail = (action, message) => failures.push(`${action}: ${message}`);
@@ -46,6 +56,18 @@ const scriptBodies = (step) => {
   if (typeof step.run === 'string') bodies.push(['run', step.run]);
   if (step.with && typeof step.with.inlineScript === 'string') bodies.push(['with.inlineScript', step.with.inlineScript]);
   return bodies;
+};
+
+// A script body must not expand an expression: values reach it through env.
+const checkNoExpressions = (owner, index, key, body) => {
+  const openers = expressionOpeners(body);
+  if (openers > 0) {
+    const inlined = expressions(body);
+    const detail = inlined.length > 0
+      ? inlined.map((e) => `\${{ ${e} }}`).join(', ')
+      : `${openers} expression opener(s)`;
+    fail(owner, `step ${index} (${key}) interpolates ${detail} into the script body; pass it through env: instead`);
+  }
 };
 
 const actionDirs = existsSync(actionsRoot)
@@ -103,14 +125,7 @@ for (const name of actionDirs) {
 
   for (const [index, step] of (doc.runs?.steps ?? []).entries()) {
     for (const [key, body] of scriptBodies(step)) {
-      const openers = expressionOpeners(body);
-      if (openers > 0) {
-        const inlined = expressions(body);
-        const detail = inlined.length > 0
-          ? inlined.map((e) => `\${{ ${e} }}`).join(', ')
-          : `${openers} expression opener(s)`;
-        fail(name, `step ${index} (${key}) interpolates ${detail} into the script body; pass it through env: instead`);
-      }
+      checkNoExpressions(name, index, key, body);
       if (key === 'run' && !step.shell) {
         fail(name, `step ${index} has 'run' without 'shell' (composite steps require an explicit shell)`);
       }
@@ -124,6 +139,57 @@ for (const name of actionDirs) {
       if (!existsSync(modulePath)) {
         fail(name, `${envName} points at '${relative}', which does not exist in this repository`);
       }
+    }
+  }
+}
+
+for (const template of adoTemplates) {
+  const owner = `vsts/templates/${template}`;
+  const file = join(adoTemplatesRoot, template);
+  if (!existsSync(file)) {
+    fail(owner, 'does not exist');
+    continue;
+  }
+
+  const text = readFileSync(file, 'utf8');
+  let doc;
+  try {
+    doc = load(text);
+  } catch (err) {
+    fail(owner, `is not valid YAML: ${err.message}`);
+    continue;
+  }
+
+  if (!Array.isArray(doc?.parameters) || !Array.isArray(doc?.steps)) {
+    fail(owner, "needs a 'parameters' list and a 'steps' list");
+    continue;
+  }
+
+  const declared = new Set();
+  for (const parameter of doc.parameters) {
+    if (!parameter?.name || !parameter?.type) fail(owner, `parameter ${JSON.stringify(parameter)} needs a name and a type`);
+    else declared.add(parameter.name);
+  }
+
+  const referenced = new Set();
+  for (const expr of expressions(text)) {
+    for (const m of expr.matchAll(/\bparameters\.([A-Za-z0-9_]+)/g)) {
+      referenced.add(m[1]);
+      if (!declared.has(m[1])) fail(owner, `references undeclared parameter '${m[1]}'`);
+    }
+  }
+  for (const parameter of declared) {
+    if (!referenced.has(parameter)) fail(owner, `declares parameter '${parameter}' but never uses it`);
+  }
+
+  for (const [index, step] of doc.steps.entries()) {
+    const body = step?.inputs?.inlineScript;
+    if (typeof body !== 'string') continue;
+    checkNoExpressions(owner, index, 'inputs.inlineScript', body);
+    if (step.inputs.scriptType === 'pscore') {
+      scriptsToParse.push({ action: template, key: 'with.inlineScript', body, shell: 'pwsh' });
+    } else {
+      fail(owner, `step ${index} has scriptType '${step.inputs.scriptType}', expected 'pscore'`);
     }
   }
 }
@@ -159,4 +225,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`OK: ${actionDirs.length} action(s) validated.`);
+console.log(`OK: ${actionDirs.length} action(s) and ${adoTemplates.length} Azure Pipelines template(s) validated.`);

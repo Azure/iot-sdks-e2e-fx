@@ -1,0 +1,50 @@
+# Deletes the resource group created by steps-provision-e2e-resources.yaml.
+#
+# The Azure Pipelines face of actions/destroy-e2e-resources. It needs no checkout, so put it in a
+# job with `checkout: none` that runs even when provisioning or the tests fail or are canceled,
+# for example with condition: and(always(), ne(dependencies.setup.result, 'Skipped')).
+
+parameters:
+  # Azure Resource Manager service connection used to delete.
+  - name: azureSubscription
+    type: string
+  # Resource group to delete; a missing group is not an error.
+  - name: resourceGroupName
+    type: string
+  - name: displayName
+    type: string
+    default: Delete e2e Azure resources
+
+steps:
+- task: AzureCLI@2
+  displayName: ${{ parameters.displayName }}
+  condition: always()
+  inputs:
+    azureSubscription: ${{ parameters.azureSubscription }}
+    scriptType: pscore
+    scriptLocation: inlineScript
+    visibleAzLogin: false
+    inlineScript: |
+      $ErrorActionPreference = 'Stop'
+
+      $rg = $env:AZ_IOT_RG_NAME
+      if ([string]::IsNullOrWhiteSpace($rg)) {
+          throw 'No resource group name given.'
+      }
+      $exists = az group exists --name $rg --only-show-errors
+      if ($LASTEXITCODE -ne 0) {
+          # An az failure (expired login, wrong subscription) must not read as "not there",
+          # which would leak the group.
+          throw "Could not determine whether resource group $rg exists (az exit code $LASTEXITCODE)."
+      }
+      if ($exists -ne 'true') {
+          Write-Host "Resource group $rg does not exist; nothing to delete."
+      } else {
+          Write-Host "Deleting resource group $rg"
+          az group delete --name $rg --yes --no-wait --only-show-errors
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to queue deletion of resource group $rg (az exit code $LASTEXITCODE)."
+          }
+      }
+  env:
+    AZ_IOT_RG_NAME: ${{ parameters.resourceGroupName }}
