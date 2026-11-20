@@ -45,10 +45,13 @@ $script:AdrRolePropagationPattern = 'AdrMiNotAuthorized|LinkableResourceNotReady
 # can contain '503' and a false match would keep retrying a real error.
 # GatewayAuthenticationFailed is a 500 from the ARM-to-RP gateway, not a caller auth failure.
 $script:ArmServerErrorPattern = 'Service ?Unavailable|Gateway ?Timeout|Bad ?Gateway|Internal ?Server ?Error|ServerTimeout|ServerBusy|GatewayAuthenticationFailed'
-$script:ArmTransientPattern = "$($script:ArmServerErrorPattern)|Too ?Many ?Requests"
-# Server-side (5xx) failures only, for IoT Hub and DPS: they name theirs IH5xxxxx, e.g.
+# The CLI's connection to the service can drop before any answer, e.g. "('Connection aborted.',
+# ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host'...))".
+$script:ConnectionErrorPattern = 'Connection aborted|ConnectionResetError|RemoteDisconnected|Connection reset by peer|Read timed out'
+$script:ArmTransientPattern = "$($script:ArmServerErrorPattern)|$($script:ConnectionErrorPattern)|Too ?Many ?Requests"
+# Server-side (5xx) and connection failures for IoT Hub and DPS: they name their 5xx IH5xxxxx, e.g.
 # "(500019) Internal Error ... errorcode: IH500019" from 'az iot dps create'.
-$script:IotServerErrorPattern = "\bIH5\d{5}\b|$($script:ArmServerErrorPattern)"
+$script:IotTransientPattern = "\bIH5\d{5}\b|$($script:ArmServerErrorPattern)|$($script:ConnectionErrorPattern)"
 # A hub or DPS created with a system-assigned identity can be rejected while that identity's
 # credentials are still being issued (IH400097 "Unable to fetch credentials"). Re-PUTting succeeds.
 $script:IdentityTransientPattern = 'IH400097|Unable to fetch credentials'

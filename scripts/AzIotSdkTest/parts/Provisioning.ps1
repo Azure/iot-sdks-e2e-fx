@@ -236,7 +236,7 @@ function New-AzIotTestEnvironment {
         $AzureIoTHub = Invoke-AzRest -Url $IotHubUrl
     } else {
         Write-Host "Creating Azure IoT Hub ($IotHubName)."
-        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub" -RetryOnPattern $script:IotServerErrorPattern -MaxAttempts 3 -Command {
+        $AzureIoTHub = Invoke-WithRetry -Step "Create Azure IoT Hub" -RetryOnPattern $script:IotTransientPattern -MaxAttempts 3 -Command {
             param($Attempt)
             if ($Attempt -gt 1) {
                 $Existing = Resolve-AzIotResourceAfterFailedCreate -Type hub -Name $IotHubName -ResourceGroup $ResourceGroup
@@ -272,7 +272,7 @@ function New-AzIotTestEnvironment {
             $AzureDps = Invoke-AzRest -Url $DpsUrl
         } else {
             Write-Host "Creating Azure Device Provisioning Service ($DpsName)."
-            $AzureDps = Invoke-WithRetry -Step "Create Device Provisioning Service" -RetryOnPattern $script:IotServerErrorPattern -MaxAttempts 3 -Command {
+            $AzureDps = Invoke-WithRetry -Step "Create Device Provisioning Service" -RetryOnPattern $script:IotTransientPattern -MaxAttempts 3 -Command {
                 param($Attempt)
                 if ($Attempt -gt 1) {
                     $Existing = Resolve-AzIotResourceAfterFailedCreate -Type dps -Name $DpsName -ResourceGroup $ResourceGroup
