@@ -198,8 +198,8 @@ function Test-IotHubTopicGroups {
         return $false
     }
     foreach ($Expected in $TopicGroups) {
-        $Group = $Actual | ?{ $_.topicGroupId -eq $Expected.topicGroupId } | Select-Object -First 1
-        if ($null -eq $Group -or (@($Group.topicTemplates) -join "`n") -ne (@($Expected.topicTemplates) -join "`n")) {
+        $Group = $Actual | ?{ $_.topicGroupId -ceq $Expected.topicGroupId } | Select-Object -First 1
+        if ($null -eq $Group -or (@($Group.topicTemplates) -join "`n") -cne (@($Expected.topicTemplates) -join "`n")) {
             return $false
         }
     }

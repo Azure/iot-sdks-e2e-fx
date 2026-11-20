@@ -538,7 +538,8 @@ function Update-AzArmResource {
     .PARAMETER Step
     Human-readable description of the change, used in progress and error messages.
     .PARAMETER Update
-    Script block that receives the resource as a hashtable and edits it in place.
+    Script block that receives the resource as a hashtable and edits it in place. It may throw to
+    refuse the resource as read; the failure is not retried unless it matches -RetryOnPattern.
     .PARAMETER Condition
     Script block that receives the resource read back and returns $true once it shows the change.
     .PARAMETER RetryOnPattern
@@ -560,7 +561,7 @@ function Update-AzArmResource {
     $Pattern = "$Pattern|PreconditionFailed|Precondition Failed"
 
     Write-Host "Updating: $Step."
-    Invoke-WithRetry -Step $Step -RetryOnPattern $Pattern -MaxAttempts $MaxAttempts -InitialDelaySeconds $InitialDelaySeconds -Command {
+    Invoke-WithRetry -Step $Step -RetryOnPattern $Pattern -MaxAttempts $MaxAttempts -InitialDelaySeconds $InitialDelaySeconds -ThrowOnFailure -Command {
         $Resource = ConvertFrom-PSObject (Invoke-AzRest -Url $Url)
         & $Update $Resource
         $Body = @{ location = $Resource.location; properties = $Resource.properties }

@@ -42,14 +42,14 @@ $Module = Get-Module AzIotSdkTest
 function global:Get-StubKey([string]$Url) { ([uri]$Url).AbsolutePath.ToLowerInvariant().TrimEnd('/') }
 function global:Get-StubHubKey { @($global:Stub.Resources.Keys | ?{ $_ -like '*/microsoft.devices/iothubs/*' -and $_ -notlike '*/consumergroups/*' })[0] }
 
-function global:Reset-Stub([switch]$LinkDropsTopicGroups, [switch]$ConcurrentHubChange) {
+function global:Reset-Stub([switch]$LinkDropsTopicGroups, [scriptblock]$ConcurrentHubChange) {
     $global:Stub = @{
         Calls = New-Object System.Collections.Generic.List[object]
         Resources = @{}
         RoleAssignments = @()
         EventHubs = @()
         LinkDropsTopicGroups = [bool]$LinkDropsTopicGroups
-        ConcurrentHubChange = [bool]$ConcurrentHubChange
+        ConcurrentHubChange = $ConcurrentHubChange
         ETagCounter = 0
     }
 }
@@ -89,8 +89,9 @@ function global:az {
                 $Stored = $global:Stub.Resources[$Key]
                 if ($IfMatch -and $Stored -and $global:Stub.ConcurrentHubChange) {
                     # Someone else writes the hub between this caller's read and write, once.
-                    $global:Stub.ConcurrentHubChange = $false
-                    $Stored | Add-Member -Force tags ([pscustomobject]@{ concurrent = 'kept' })
+                    $Change = $global:Stub.ConcurrentHubChange
+                    $global:Stub.ConcurrentHubChange = $null
+                    & $Change $Stored
                     $Stored | Add-Member -Force etag (New-StubETag)
                 }
                 if ($IfMatch -and $Stored -and $Stored.etag -ne $IfMatch) {
@@ -210,13 +211,34 @@ $RoundTrip = & $Module { param($Json) [TestEnvironmentInfo]::FromJson($Json) } $
 Assert ($RoundTrip.IotHub.ConnectionProfile -eq 'MqttV5' -and $RoundTrip.IotHub.ServiceFqdn -eq $Info.IotHub.ServiceFqdn -and $RoundTrip.IotHub.DeviceFqdn -eq $Info.IotHub.DeviceFqdn) "full: the MQTT v5 hub fields do not survive a JSON round trip."
 
 # A concurrent hub change between read and write fails the write with 412; the retry reads it and keeps it.
-Reset-Stub -LinkDropsTopicGroups -ConcurrentHubChange
+Reset-Stub -LinkDropsTopicGroups -ConcurrentHubChange { param($Hub) $Hub | Add-Member -Force tags ([pscustomobject]@{ concurrent = 'kept' }) }
 $Info = New-AzIotMqttv5TestEnvironment @EnvArgs
 $Link = @(Find-Calls '^<Connect-AdrNamespace>')
 $AfterLink = @(Find-Calls $HubPutPattern | ?{ $_ -gt $Link[0] })
 $Hub = $Stub.Resources[(Get-StubHubKey)]
 Assert ($AfterLink.Count -eq 2 -and $Stub.Calls[$AfterLink[0]].IfMatch -ne $Stub.Calls[$AfterLink[1]].IfMatch) "concurrent: expected a rejected write and a retry with the new ETag, got $($AfterLink.Count) PUTs."
 Assert ($Hub.tags.concurrent -eq 'kept' -and (@($Hub.properties.mqttV5Settings.topicGroups | %{ $_.topicGroupId }) -join ',') -eq 'e2e') "concurrent: the retry must keep the concurrent change and restore the topic group."
+
+# A conflicting route written between read and write is found on the fresh read and fails the update.
+Reset-Stub -ConcurrentHubChange {
+    param($Hub)
+    $Hub.properties.routing.routes = @($Hub.properties.routing.routes) + @([pscustomobject]@{
+        name = 'telemetry'; source = 'DeviceMessages'; condition = 'true'; endpointNames = @('elsewhere'); isEnabled = $true })
+}
+$Thrown = $null
+try { New-AzIotMqttv5TestEnvironment @EnvArgs -RouteTelemetryToEventHub | Out-Null } catch { $Thrown = $_.Exception.Message }
+$Hub = $Stub.Resources[(Get-StubHubKey)]
+Assert ("$Thrown" -match "already has a route 'telemetry'") "conflict: expected the update to fail on the conflicting route, got '$Thrown'."
+Assert ((@($Hub.properties.routing.routes | ?{ $_.name -eq 'telemetry' } | %{ @($_.endpointNames) -join ',' }) -join ';') -eq 'elsewhere' -and
+    @($Hub.properties.routing.endpoints.eventHubs | ?{ $_ }).Count -eq 0) "conflict: the other writer's route must be left as it was, and nothing written."
+
+# Topic templates are MQTT topics, so they compare case-sensitively.
+$CaseCheck = & $Module {
+    $Hub = [pscustomobject]@{ properties = [pscustomobject]@{ mqttV5Settings = [pscustomobject]@{ topicGroups = @(
+        [pscustomobject]@{ topicGroupId = 'e2e'; topicTemplates = @('E2E/shared/#') }) } } }
+    Test-IotHubTopicGroups -IotHub $Hub -TopicGroups @(@{ topicGroupId = 'e2e'; topicTemplates = @('e2e/shared/#') })
+}
+Assert ($CaseCheck -eq $false) "topic groups: 'E2E/shared/#' must not match 'e2e/shared/#'."
 
 # Defaults: local auth on, no telemetry Event Hub, and a link that keeps the topic groups needs no extra write.
 Reset-Stub
