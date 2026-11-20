@@ -71,6 +71,11 @@ function Add-AzIotEventHubTelemetryRoute {
         [switch]$KeepBuiltInEndpointRoute
     )
 
+    $BuiltInEndpointRouteName = 'builtin-events'
+    if ($KeepBuiltInEndpointRoute -and $EventHubName -eq $BuiltInEndpointRouteName) {
+        throw "-EventHubName '$BuiltInEndpointRouteName' is the name of the built-in endpoint's route; choose another with -KeepBuiltInEndpointRoute."
+    }
+
     if ([string]::IsNullOrWhiteSpace($Location)) {
         $Location = az group show --name "$ResourceGroup" --query location -o tsv --only-show-errors
         Stop-OnError -Step "Get the location of resource group $ResourceGroup"
@@ -147,7 +152,7 @@ function Add-AzIotEventHubTelemetryRoute {
     # The built-in route first, so its readers never miss telemetry.
     $Routes = @(@{ Name = $EventHubName; Endpoint = $EventHubName })
     if ($KeepBuiltInEndpointRoute) {
-        $Routes = @(@{ Name = 'builtin-events'; Endpoint = 'events' }) + $Routes
+        $Routes = @(@{ Name = $BuiltInEndpointRouteName; Endpoint = 'events' }) + $Routes
     }
     foreach ($Route in $Routes) {
         $ExistingRoute = @($Routing.routes) | ?{ $null -ne $_ -and $_.name -eq $Route.Name } | Select-Object -First 1

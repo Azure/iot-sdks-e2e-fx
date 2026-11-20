@@ -154,6 +154,12 @@ Reset-Stub
 Add-AzIotEventHubTelemetryRoute @Route -KeepBuiltInEndpointRoute | Out-Null
 Assert (($Stub.Routes.name -join ',') -eq 'builtin-events,telemetry') "builtin: routes are '$($Stub.Routes.name -join ',')', expected the built-in route first."
 
+# An Event Hub named like the built-in route is refused before anything is provisioned.
+Reset-Stub
+$Failed = $false
+try { Add-AzIotEventHubTelemetryRoute @Route -EventHubName 'builtin-events' -KeepBuiltInEndpointRoute | Out-Null } catch { $Failed = $_.Exception.Message -match 'built-in endpoint' }
+Assert ($Failed -and $Stub.Calls.Count -eq 0) "builtin-name: should fail before any az call when -EventHubName is 'builtin-events'."
+
 # An endpoint refused until the hub's role applies is retried.
 Reset-Stub
 $Stub.EndpointFailures = 2
