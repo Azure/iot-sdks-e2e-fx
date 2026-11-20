@@ -23,8 +23,10 @@ function Add-AzIotEventHubTelemetryRoute {
     principal and -ReaderServicePrincipalIds read with Microsoft Entra ID (Azure Event Hubs Data
     Receiver).
 
-    Safe to run again on the same hub and namespace: what already exists is kept, and a routing
-    endpoint of the same name that targets another Event Hub fails the call.
+    Safe to run again on the same hub and namespace: what already exists is kept. A routing endpoint
+    of the same name that targets another Event Hub or does not use the hub's system identity fails
+    the call, and so does a route of the same name that does not send all device messages to its
+    endpoint.
 
     .PARAMETER ResourceGroup
     Resource group of the IoT Hub; the namespace is created in it too.
@@ -49,7 +51,8 @@ function Add-AzIotEventHubTelemetryRoute {
     endpoint receives only what a route sends it, so readers of the built-in endpoint need this.
 
     .OUTPUTS
-    [TelemetryEventHubInfo]
+    [TelemetryEventHubInfo]. Its ReadableAfterUnixSeconds is when the newest of the role assignments
+    above applies, so readers granted by an earlier call still wait for it.
 
     .EXAMPLE
     PS> $TestEnvInfo.IotHub.TelemetryEventHub = Add-AzIotEventHubTelemetryRoute -ResourceGroup $Rg -IotHubName $Hub -ConsumerGroups e2e-0, e2e-1
@@ -113,15 +116,13 @@ function Add-AzIotEventHubTelemetryRoute {
     $Grants = @(@{ Id = $IotHubPrincipalId; Type = 'ServicePrincipal'; Role = $script:EventHubsDataSenderRoleId }) +
         @(@{ Id = $SignedInPrincipal.Id; Type = $SignedInPrincipal.Type; Role = $script:EventHubsDataReceiverRoleId }) +
         @($ReaderServicePrincipalIds | ?{ $_ -and $_ -ne $SignedInPrincipal.Id } | %{ @{ Id = $_; Type = 'ServicePrincipal'; Role = $script:EventHubsDataReceiverRoleId } })
-    $NewGrants = 0
-    foreach ($Grant in $Grants) {
-        if (Add-AzRoleAssignmentIfMissing -PrincipalId $Grant.Id -PrincipalType $Grant.Type -RoleDefinitionId $Grant.Role -Scope $EventHub.id) {
-            $NewGrants++
-        }
-    }
     $ReadableAfter = [DateTimeOffset]::UtcNow
-    if ($NewGrants -gt 0) {
-        $ReadableAfter = $ReadableAfter.AddSeconds($script:EventHubsRolePropagationSeconds)
+    foreach ($Grant in $Grants) {
+        $GrantedOn = Add-AzRoleAssignmentIfMissing -PrincipalId $Grant.Id -PrincipalType $Grant.Type -RoleDefinitionId $Grant.Role -Scope $EventHub.id
+        $GrantApplies = $GrantedOn.AddSeconds($script:EventHubsRolePropagationSeconds)
+        if ($GrantApplies -gt $ReadableAfter) {
+            $ReadableAfter = $GrantApplies
+        }
     }
 
     $Routing = az iot hub show --name "$IotHubName" --resource-group "$ResourceGroup" --query properties.routing --only-show-errors | ConvertFrom-Json
@@ -134,8 +135,13 @@ function Add-AzIotEventHubTelemetryRoute {
             az iot hub message-endpoint create eventhub --hub-name "$IotHubName" --resource-group "$ResourceGroup" --endpoint-name "$EventHubName" `
                 --endpoint-uri "$EndpointUri" --entity-path "$EventHubName" --identity '[system]' --only-show-errors | Out-Null
         } | Out-Null
-    } elseif ("$($Endpoint.endpointUri)".TrimEnd('/') -ne $EndpointUri -or $Endpoint.entityPath -ne $EventHubName) {
-        throw "IoT Hub $IotHubName already has an endpoint '$EventHubName' for $($Endpoint.endpointUri)$($Endpoint.entityPath), not $EndpointUri/$EventHubName."
+    } else {
+        # The Data Sender grant above is for the system identity only.
+        $UsesSystemIdentity = $Endpoint.authenticationType -eq 'identityBased' -and [string]::IsNullOrEmpty("$($Endpoint.identity.userAssignedIdentity)")
+        if ("$($Endpoint.endpointUri)".TrimEnd('/') -ne $EndpointUri -or $Endpoint.entityPath -ne $EventHubName -or -not $UsesSystemIdentity) {
+            throw "IoT Hub $IotHubName already has an endpoint '$EventHubName' for $($Endpoint.endpointUri)$($Endpoint.entityPath) " +
+                "(authentication: $($Endpoint.authenticationType) $($Endpoint.identity.userAssignedIdentity)), not $EndpointUri/$EventHubName with its system identity."
+        }
     }
 
     # The built-in route first, so its readers never miss telemetry.
@@ -144,7 +150,14 @@ function Add-AzIotEventHubTelemetryRoute {
         $Routes = @(@{ Name = 'builtin-events'; Endpoint = 'events' }) + $Routes
     }
     foreach ($Route in $Routes) {
-        if (@($Routing.routes) | ?{ $null -ne $_ -and $_.name -eq $Route.Name }) {
+        $ExistingRoute = @($Routing.routes) | ?{ $null -ne $_ -and $_.name -eq $Route.Name } | Select-Object -First 1
+        if ($null -ne $ExistingRoute) {
+            $Condition = "$($ExistingRoute.condition)".Trim()
+            if ($ExistingRoute.source -ne 'DeviceMessages' -or (@($ExistingRoute.endpointNames) -join ',') -ne $Route.Endpoint -or
+                $ExistingRoute.isEnabled -ne $true -or ($Condition -and $Condition -ne 'true')) {
+                throw "IoT Hub $IotHubName already has a route '$($Route.Name)' that does not send all device messages to '$($Route.Endpoint)' " +
+                    "(source $($ExistingRoute.source), endpoints $(@($ExistingRoute.endpointNames) -join ','), enabled $($ExistingRoute.isEnabled), condition '$Condition')."
+            }
             continue
         }
         Write-Host "Routing device messages to $($Route.Endpoint) on $IotHubName"

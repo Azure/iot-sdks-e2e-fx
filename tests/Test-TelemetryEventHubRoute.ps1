@@ -31,10 +31,19 @@ function global:Reset-Stub {
         EventHubs = @()
         ConsumerGroups = @('$Default')
         RoleAssignments = @()
+        RoleAssignmentCreatedOn = @{}
         Endpoints = @()
         Routes = @()
         EndpointFailures = 0
     }
+}
+
+function global:New-StubEndpoint([string]$Uri = 'sb://ehns-stub.servicebus.windows.net/', [string]$AuthenticationType = 'identityBased', $Identity = $null) {
+    [pscustomobject]@{ name = 'telemetry'; endpointUri = $Uri; entityPath = 'telemetry'; authenticationType = $AuthenticationType; identity = $Identity }
+}
+
+function global:New-StubRoute([string]$Name = 'telemetry', [string]$Endpoint = 'telemetry', [bool]$Enabled = $true, [string]$Condition = 'true', [string]$Source = 'DeviceMessages') {
+    [pscustomobject]@{ name = $Name; source = $Source; condition = $Condition; endpointNames = @($Endpoint); isEnabled = $Enabled }
 }
 
 function global:az {
@@ -62,9 +71,15 @@ function global:az {
         '^iot hub identity assign' { return 'hub-principal' }
         '^role assignment list' {
             $Principal = if ((Opt '--query') -match "principalId=='([^']+)'") { $Matches[1] }
-            return "$(@($global:Stub.RoleAssignments | ?{ $_ -eq "$Principal|$(Opt '--role')|$(Opt '--scope')" }).Count)"
+            $Key = "$Principal|$(Opt '--role')|$(Opt '--scope')"
+            return (ConvertTo-Json -InputObject @($global:Stub.RoleAssignments | ?{ $_ -eq $Key } | %{ @{ createdOn = $global:Stub.RoleAssignmentCreatedOn[$_] } }))
         }
-        '^role assignment create' { $global:Stub.RoleAssignments += "$(Opt '--assignee-object-id')|$(Opt '--role')|$(Opt '--scope')"; return '' }
+        '^role assignment create' {
+            $Key = "$(Opt '--assignee-object-id')|$(Opt '--role')|$(Opt '--scope')"
+            $global:Stub.RoleAssignments += $Key
+            $global:Stub.RoleAssignmentCreatedOn[$Key] = [DateTimeOffset]::UtcNow.ToString('o')
+            return ''
+        }
         '^iot hub show' { return (@{ endpoints = @{ eventHubs = @($global:Stub.Endpoints) }; routes = @($global:Stub.Routes) } | ConvertTo-Json -Depth 5) }
         '^iot hub message-endpoint create eventhub' {
             if ($global:Stub.EndpointFailures -gt 0) {
@@ -73,10 +88,10 @@ function global:az {
                 Write-Error -ErrorAction Continue '(400049) Unauthorized: the managed identity could not authenticate to the Event Hub. errorcode: IH400049.'
                 return
             }
-            $global:Stub.Endpoints += [pscustomobject]@{ name = (Opt '--endpoint-name'); endpointUri = (Opt '--endpoint-uri'); entityPath = (Opt '--entity-path') }
+            $global:Stub.Endpoints += New-StubEndpoint -Uri (Opt '--endpoint-uri')
             return ''
         }
-        '^iot hub message-route create' { $global:Stub.Routes += [pscustomobject]@{ name = (Opt '--route-name'); endpointNames = @(Opt '--endpoint-name') }; return '' }
+        '^iot hub message-route create' { $global:Stub.Routes += New-StubRoute -Name (Opt '--route-name') -Endpoint (Opt '--endpoint-name'); return '' }
         '^iot hub create' { return '{"id":"/hub","properties":{"eventHubEndpoints":{"events":{"path":"stubhub","partitionCount":2}}}}' }
         '^iot hub connection-string show' { return 'HostName=stubhub.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=RkFLRQ==' }
         '^iot hub consumer-group list' { return '[{"name":"$Default"}]' }
@@ -112,17 +127,26 @@ Assert ($Info.GetConnectionString() -eq 'Endpoint=sb://ehns-stub.servicebus.wind
 Assert (($Info.ConsumerGroups -join ',') -eq '$Default,e2e-0,e2e-1' -and $Info.PartitionCount -eq 4) "new: returned consumer groups '$($Info.ConsumerGroups -join ',')', partitions $($Info.PartitionCount)."
 Assert ($Info.ReadableAfterUnixSeconds -ge $Started + 300) "new: readers must wait for their new roles to apply."
 
-# Running again changes nothing, and readers need not wait.
+# Running again changes nothing, and readers still wait for the roles granted moments ago.
 $Stub.Calls.Clear()
 $Info = Add-AzIotEventHubTelemetryRoute @Route -ReaderServicePrincipalIds 'ci-principal'
 $Writes = @($Stub.Calls | ?{ $_ -match '^(eventhubs eventhub create|eventhubs eventhub consumer-group create|role assignment create|iot hub message-endpoint create|iot hub message-route create)' })
 Assert ($Writes.Count -eq 0) "rerun: expected no new resources, got: $($Writes -join ' | ')"
-Assert ($Info.ReadableAfterUnixSeconds -le [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) "rerun: readers should not wait when no role was added."
+Assert ($Info.ReadableAfterUnixSeconds -ge $Started + 300) "rerun: readers must still wait for the roles the first run granted."
+
+# Readers need not wait for roles granted long ago, but do when a role's age is unknown.
+foreach ($Key in @($Stub.RoleAssignmentCreatedOn.Keys)) { $Stub.RoleAssignmentCreatedOn[$Key] = [DateTimeOffset]::UtcNow.AddHours(-1).ToString('o') }
+$Info = Add-AzIotEventHubTelemetryRoute @Route -ReaderServicePrincipalIds 'ci-principal'
+Assert ($Info.ReadableAfterUnixSeconds -le [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) "old-roles: readers should not wait for roles granted an hour ago."
+$Stub.RoleAssignmentCreatedOn["ci-principal|$Receiver|/eh/ehns-stub/telemetry"] = $null
+$Started = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+$Info = Add-AzIotEventHubTelemetryRoute @Route -ReaderServicePrincipalIds 'ci-principal'
+Assert ($Info.ReadableAfterUnixSeconds -ge $Started + 300) "unknown-age: readers must wait when a role's creation time is unknown."
 
 # The built-in route is created first when asked for; one already there is kept.
 Reset-Stub
-$Stub.Routes = @([pscustomobject]@{ name = 'telemetry'; endpointNames = @('telemetry') })
-$Stub.Endpoints = @([pscustomobject]@{ name = 'telemetry'; endpointUri = 'sb://ehns-stub.servicebus.windows.net/'; entityPath = 'telemetry' })
+$Stub.Routes = @(New-StubRoute)
+$Stub.Endpoints = @(New-StubEndpoint)
 Add-AzIotEventHubTelemetryRoute @Route -KeepBuiltInEndpointRoute | Out-Null
 Assert ((Find-Call '^iot hub message-route create .*--route-name builtin-events --endpoint-name events') -ge 0) "builtin: route to the built-in endpoint not created."
 Assert ((Count-Calls '^iot hub message-route create') -eq 1) "builtin: the existing telemetry route must be kept."
@@ -136,12 +160,36 @@ $Stub.EndpointFailures = 2
 Add-AzIotEventHubTelemetryRoute @Route | Out-Null
 Assert ((Count-Calls '^iot hub message-endpoint create') -eq 3) "endpoint-retry: expected 3 attempts, got $(Count-Calls '^iot hub message-endpoint create')."
 
-# An endpoint of the same name for another Event Hub is not silently reused.
-Reset-Stub
-$Stub.Endpoints = @([pscustomobject]@{ name = 'telemetry'; endpointUri = 'sb://other.servicebus.windows.net'; entityPath = 'telemetry' })
-$Failed = $false
-try { Add-AzIotEventHubTelemetryRoute @Route | Out-Null } catch { $Failed = $_.Exception.Message -match 'already has an endpoint' }
-Assert $Failed "endpoint-mismatch: should fail on an endpoint that targets another Event Hub."
+# An endpoint of the same name for another Event Hub, or sending with another identity, is not reused.
+$Mismatches = [ordered]@{
+    'another Event Hub' = New-StubEndpoint -Uri 'sb://other.servicebus.windows.net'
+    'a key' = New-StubEndpoint -AuthenticationType 'keyBased'
+    'a user-assigned identity' = New-StubEndpoint -Identity ([pscustomobject]@{ userAssignedIdentity = '/uami' })
+}
+foreach ($Mismatch in $Mismatches.Keys) {
+    Reset-Stub
+    $Stub.Endpoints = @($Mismatches[$Mismatch])
+    $Failed = $false
+    try { Add-AzIotEventHubTelemetryRoute @Route | Out-Null } catch { $Failed = $_.Exception.Message -match 'already has an endpoint' }
+    Assert $Failed "endpoint-mismatch: should fail on an endpoint that uses $Mismatch."
+}
+
+# A route of the same name that does not send all device messages to its endpoint is not reused.
+$Mismatches = [ordered]@{
+    'disabled' = New-StubRoute -Enabled $false
+    'filtered' = New-StubRoute -Condition '$body.level = "critical"'
+    'to another endpoint' = New-StubRoute -Endpoint 'other'
+    'for twin changes' = New-StubRoute -Source 'TwinChangeEvents'
+    'built-in, disabled' = New-StubRoute -Name 'builtin-events' -Endpoint 'events' -Enabled $false
+}
+foreach ($Mismatch in $Mismatches.Keys) {
+    Reset-Stub
+    $Stub.Endpoints = @(New-StubEndpoint)
+    $Stub.Routes = @($Mismatches[$Mismatch])
+    $Failed = $false
+    try { Add-AzIotEventHubTelemetryRoute @Route -KeepBuiltInEndpointRoute | Out-Null } catch { $Failed = $_.Exception.Message -match 'already has a route' }
+    Assert $Failed "route-mismatch: should fail on an existing route that is $Mismatch."
+}
 
 # New-AzIotTestEnvironment keeps the built-in route only while the built-in endpoint is readable.
 foreach ($DisableLocalAuth in $false, $true) {

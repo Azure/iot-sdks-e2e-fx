@@ -206,11 +206,15 @@ function Get-AzSignedInPrincipal {
 function Add-AzRoleAssignmentIfMissing {
     <#
     .SYNOPSIS
-    Assigns a role to a principal at a scope unless it already holds it there, and returns whether
-    an assignment was created.
+    Assigns a role to a principal at a scope unless it already holds it there, and returns when
+    the assignment was created.
 
     .PARAMETER PrincipalType
     User or ServicePrincipal. Given explicitly, so no Microsoft Graph lookup is needed.
+
+    .OUTPUTS
+    [DateTimeOffset] The existing assignment's creation time; now when this call created it or that
+    time is unknown.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$PrincipalId,
@@ -219,17 +223,22 @@ function Add-AzRoleAssignmentIfMissing {
         [Parameter(Mandatory = $true)][string]$Scope
     )
 
-    $Existing = az role assignment list --scope "$Scope" --role "$RoleDefinitionId" --query "[?principalId=='$PrincipalId'] | length(@)" -o tsv --only-show-errors
+    # Parenthesized so Windows PowerShell 5.1, whose ConvertFrom-Json emits an array as one object, enumerates it.
+    $Existing = (az role assignment list --scope "$Scope" --role "$RoleDefinitionId" --query "[?principalId=='$PrincipalId'].{createdOn: createdOn}" `
+        --only-show-errors | ConvertFrom-Json) | Select-Object -First 1
     Stop-OnError -Step "List role $RoleDefinitionId assignments at $Scope"
-    if ([int]$Existing -gt 0) {
-        return $false
+    if ($null -ne $Existing) {
+        if ($Existing.createdOn) {
+            return [DateTimeOffset]$Existing.createdOn
+        }
+        return [DateTimeOffset]::UtcNow
     }
 
     Write-Host "Assigning role $RoleDefinitionId at $Scope to $PrincipalType $PrincipalId"
     Invoke-WithRetry -Step "Assign role $RoleDefinitionId to $PrincipalId" -RetryOnPattern "$($script:ArmTransientPattern)|PrincipalNotFound" -Command {
         az role assignment create --assignee-object-id "$PrincipalId" --assignee-principal-type $PrincipalType --role "$RoleDefinitionId" --scope "$Scope" --only-show-errors | Out-Null
     } | Out-Null
-    return $true
+    return [DateTimeOffset]::UtcNow
 }
 
 function Wait-AzRoleAssignment {
