@@ -45,6 +45,7 @@ $ExpectedExports = @(
     'Invoke-Script'
     'New-AzIotCSDKE2ETestConfig'
     'New-AzIotHortonTestConfig'
+    'New-AzIotMqttv5TestEnvironment'
     'New-AzIotNetSDKE2ETestConfig'
     'New-AzIotPythonSDKE2ETestConfig'
     'New-AzIotPythonSdkSampleConfig'

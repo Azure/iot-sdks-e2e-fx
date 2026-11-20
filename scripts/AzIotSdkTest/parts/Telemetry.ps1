@@ -8,6 +8,8 @@ $script:EventHubsDataReceiverRoleId = "a638d3c7-ab3a-418d-83e6-5f17a39d4fde"
 $script:EventHubsRolePropagationSeconds = 300
 # An identity-based routing endpoint is refused until the hub's Data Sender grant applies.
 $script:RoutingEndpointRolePropagationPattern = 'Unauthorized|Forbidden|AuthorizationFailed|authoriz|permission|IH40[013]\d{3}'
+# The route that sends device telemetry to the hub's built-in endpoint.
+$script:BuiltInEndpointRouteName = 'builtin-events'
 
 function Add-AzIotEventHubTelemetryRoute {
     <#
@@ -49,6 +51,11 @@ function Add-AzIotEventHubTelemetryRoute {
     .PARAMETER KeepBuiltInEndpointRoute
     Also routes device telemetry to the built-in endpoint. Once a hub has any route, the built-in
     endpoint receives only what a route sends it, so readers of the built-in endpoint need this.
+    .PARAMETER IotHubApiVersion
+    Reads and writes the hub through ARM at this api-version instead of with 'az iot hub', which
+    writes the whole hub back at an older one and so drops what that version does not know (an
+    MQTT v5 hub's connectionProfile and mqttV5Settings). The hub must already have a system-assigned
+    identity, and the endpoint and routes are added in one write.
 
     .OUTPUTS
     [TelemetryEventHubInfo]. Its ReadableAfterUnixSeconds is when the newest of the role assignments
@@ -68,10 +75,11 @@ function Add-AzIotEventHubTelemetryRoute {
         [ValidateRange(1, 32)][int]$PartitionCount = 4,
         [string[]]$ConsumerGroups = @(),
         [string[]]$ReaderServicePrincipalIds = @(),
-        [switch]$KeepBuiltInEndpointRoute
+        [switch]$KeepBuiltInEndpointRoute,
+        [string]$IotHubApiVersion = $null
     )
 
-    $BuiltInEndpointRouteName = 'builtin-events'
+    $BuiltInEndpointRouteName = $script:BuiltInEndpointRouteName
     if ($KeepBuiltInEndpointRoute -and $EventHubName -eq $BuiltInEndpointRouteName) {
         throw "-EventHubName '$BuiltInEndpointRouteName' is the name of the built-in endpoint's route; choose another with -KeepBuiltInEndpointRoute."
     }
@@ -112,9 +120,20 @@ function Add-AzIotEventHubTelemetryRoute {
         } | Out-Null
     }
 
-    Write-Host "Assigning a system identity to IoT Hub ($IotHubName)"
-    $IotHubPrincipalId = Invoke-WithRetry -Step "Assign a system identity to $IotHubName" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)" -Command {
-        az iot hub identity assign --name "$IotHubName" --resource-group "$ResourceGroup" --system-assigned --query principalId -o tsv --only-show-errors
+    if ($IotHubApiVersion) {
+        $SubscriptionId = az account show --query id -o tsv --only-show-errors
+        Stop-OnError -Step "Get the Azure subscription id"
+        $IotHubUrl = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$IotHubApiVersion"
+        $IotHub = Invoke-AzRest -Url $IotHubUrl
+        if ("$($IotHub.identity.type)" -notmatch 'SystemAssigned') {
+            throw "IoT Hub $IotHubName has no system-assigned identity, which -IotHubApiVersion requires."
+        }
+        $IotHubPrincipalId = $IotHub.identity.principalId
+    } else {
+        Write-Host "Assigning a system identity to IoT Hub ($IotHubName)"
+        $IotHubPrincipalId = Invoke-WithRetry -Step "Assign a system identity to $IotHubName" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:IdentityTransientPattern)" -Command {
+            az iot hub identity assign --name "$IotHubName" --resource-group "$ResourceGroup" --system-assigned --query principalId -o tsv --only-show-errors
+        }
     }
 
     $SignedInPrincipal = Get-AzSignedInPrincipal
@@ -130,11 +149,21 @@ function Add-AzIotEventHubTelemetryRoute {
         }
     }
 
-    $Routing = az iot hub show --name "$IotHubName" --resource-group "$ResourceGroup" --query properties.routing --only-show-errors | ConvertFrom-Json
-    Stop-OnError -Step "Get the routing of $IotHubName"
+    if ($IotHubApiVersion) {
+        $Routing = $IotHub.properties.routing
+    } else {
+        $Routing = az iot hub show --name "$IotHubName" --resource-group "$ResourceGroup" --query properties.routing --only-show-errors | ConvertFrom-Json
+        Stop-OnError -Step "Get the routing of $IotHubName"
+    }
     $EndpointUri = "sb://$FullyQualifiedNamespace"
     $Endpoint = @($Routing.endpoints.eventHubs) | ?{ $null -ne $_ -and $_.name -eq $EventHubName } | Select-Object -First 1
-    if ($null -eq $Endpoint) {
+    # Added through ARM below, with the routes, when -IotHubApiVersion is given.
+    $NewEndpoint = $null
+    $NewRoutes = @()
+    if ($null -eq $Endpoint -and $IotHubApiVersion) {
+        $NewEndpoint = @{ name = $EventHubName; endpointUri = $EndpointUri; entityPath = $EventHubName
+            authenticationType = 'identityBased'; subscriptionId = $SubscriptionId; resourceGroup = $ResourceGroup }
+    } elseif ($null -eq $Endpoint) {
         Write-Host "Creating routing endpoint ($EventHubName on $IotHubName, system identity)"
         Invoke-WithRetry -Step "Create routing endpoint ($EventHubName)" -RetryOnPattern "$($script:ArmTransientPattern)|$($script:RoutingEndpointRolePropagationPattern)" -MaxAttempts 5 -InitialDelaySeconds 20 -Command {
             az iot hub message-endpoint create eventhub --hub-name "$IotHubName" --resource-group "$ResourceGroup" --endpoint-name "$EventHubName" `
@@ -165,10 +194,36 @@ function Add-AzIotEventHubTelemetryRoute {
             }
             continue
         }
+        if ($IotHubApiVersion) {
+            $NewRoutes += @{ name = $Route.Name; source = 'DeviceMessages'; condition = 'true'; endpointNames = @($Route.Endpoint); isEnabled = $true }
+            continue
+        }
         Write-Host "Routing device messages to $($Route.Endpoint) on $IotHubName"
         Invoke-WithRetry -Step "Create route ($($Route.Name))" -RetryOnPattern $script:ArmTransientPattern -Command {
             az iot hub message-route create --hub-name "$IotHubName" --resource-group "$ResourceGroup" --route-name "$($Route.Name)" `
                 --endpoint-name "$($Route.Endpoint)" --source-type DeviceMessages --enabled true --only-show-errors | Out-Null
+        } | Out-Null
+    }
+
+    if ($null -ne $NewEndpoint -or $NewRoutes.Count -gt 0) {
+        $NewNames = @($NewRoutes | %{ $_.name })
+        Update-AzArmResource -Url $IotHubUrl -Step "Route device messages to $EventHubName on $IotHubName (system identity)" `
+            -RetryOnPattern "$($script:IotTransientPattern)|$($script:RoutingEndpointRolePropagationPattern)" -MaxAttempts 5 -InitialDelaySeconds 20 -Update {
+            param($Hub)
+            if ($null -eq $Hub.properties.routing) { $Hub.properties.routing = [ordered]@{} }
+            $HubRouting = $Hub.properties.routing
+            if ($null -eq $HubRouting.endpoints) { $HubRouting.endpoints = [ordered]@{} }
+            if ($null -ne $NewEndpoint -and -not (@($HubRouting.endpoints.eventHubs) | ?{ $null -ne $_ -and $_.name -eq $EventHubName })) {
+                $HubRouting.endpoints.eventHubs = @(@($HubRouting.endpoints.eventHubs) | ?{ $null -ne $_ }) + @($NewEndpoint)
+            }
+            $Existing = @(@($HubRouting.routes) | ?{ $null -ne $_ } | %{ $_.name })
+            $HubRouting.routes = @(@($HubRouting.routes) | ?{ $null -ne $_ }) + @($NewRoutes | ?{ $Existing -notcontains $_.name })
+        } -Condition {
+            param($Hub)
+            $HubRouting = $Hub.properties.routing
+            $HasEndpoint = $null -eq $NewEndpoint -or @(@($HubRouting.endpoints.eventHubs) | ?{ $null -ne $_ -and $_.name -eq $EventHubName }).Count -gt 0
+            $RouteNames = @(@($HubRouting.routes) | ?{ $null -ne $_ } | %{ $_.name })
+            $Hub.properties.state -eq 'Active' -and $HasEndpoint -and @($NewNames | ?{ $RouteNames -notcontains $_ }).Count -eq 0
         } | Out-Null
     }
 

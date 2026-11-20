@@ -23,6 +23,9 @@ $script:AdrApiVersion = if ($env:ADR_API_VERSION) { $env:ADR_API_VERSION } else 
 $script:DpsControlPlaneApiVersion = if ($env:DPS_CONTROL_PLANE_API_VERSION) { $env:DPS_CONTROL_PLANE_API_VERSION } else { "2026-03-01-preview" }
 $script:DpsEnrollmentApiVersion = if ($env:DPS_ENROLLMENT_API_VERSION) { $env:DPS_ENROLLMENT_API_VERSION } else { "2026-11-01" }
 $script:IotHubApiVersion = if ($env:IOT_HUB_API_VERSION) { $env:IOT_HUB_API_VERSION } else { "2026-06-01-preview" }
+# A version that knows an MQTT v5 hub's connectionProfile and mqttV5Settings; an older one
+# drops them when the hub is written back.
+$script:IotHubMqttv5ApiVersion = if ($env:IOT_HUB_MQTTV5_API_VERSION) { $env:IOT_HUB_MQTTV5_API_VERSION } else { "2026-10-01-preview" }
 
 # Azure Device Registry Contributor: namespaces/read, namespaces/devices/*, and the data actions,
 # including the certificate issuance a CSR needs.

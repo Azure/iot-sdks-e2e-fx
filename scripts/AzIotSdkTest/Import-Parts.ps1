@@ -25,6 +25,7 @@ $ModuleParts = @(
     'ResourceGroups.ps1'     # Resource group naming and leftover cleanup
     'Telemetry.ps1'          # Device telemetry routing to an Entra-only Event Hub
     'Provisioning.ps1'       # New-/Get-AzIotTestEnvironment
+    'ProvisioningMqttv5.ps1' # New-AzIotMqttv5TestEnvironment
     'TestConfig.ps1'         # Per-SDK test config emitters
     'SubmoduleGraph.ps1'     # Test-SubmoduleConsistency and its GitHub helpers
 )
@@ -40,6 +41,7 @@ Export-ModuleMember -Function Get-AzureResourceGroupNamePrefix
 Export-ModuleMember -Function New-AzureResourceGroupName
 Export-ModuleMember -Function Remove-LeftoverAzureResourceGroups
 Export-ModuleMember -Function New-AzIotTestEnvironment
+Export-ModuleMember -Function New-AzIotMqttv5TestEnvironment
 Export-ModuleMember -Function Add-AzIotEventHubTelemetryRoute
 Export-ModuleMember -Function Get-AzIotTestEnvironment
 Export-ModuleMember -Function ConvertFrom-JsonToTestEnvironmentInfo
