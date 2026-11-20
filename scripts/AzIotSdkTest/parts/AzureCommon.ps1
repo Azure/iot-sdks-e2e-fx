@@ -174,6 +174,73 @@ function Invoke-WithRetry {
     }
 }
 
+function Get-AzSignedInPrincipal {
+    <#
+    .SYNOPSIS
+    Returns the object id (Id) and the role-assignment principal type (Type: User or
+    ServicePrincipal) of the signed-in Azure CLI principal.
+
+    .DESCRIPTION
+    The object id is read from the principal's ARM access token, so no Microsoft Graph permission
+    is needed.
+
+    .PARAMETER AzureAccount
+    Output of 'az account show', when the caller already has it.
+    #>
+    param($AzureAccount = $null)
+
+    if ($null -eq $AzureAccount) {
+        $AzureAccount = az account show --only-show-errors | ConvertFrom-Json
+        Stop-OnError -Step "Get the signed-in Azure account"
+    }
+    $AccessToken = az account get-access-token --query accessToken -o tsv --only-show-errors
+    Stop-OnError -Step "Get the signed-in principal's access token"
+    $Payload = $AccessToken.Split('.')[1].Replace('-', '+').Replace('_', '/')
+    $Payload = $Payload.PadRight($Payload.Length + (4 - $Payload.Length % 4) % 4, '=')
+    return [pscustomobject]@{
+        Id = ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)) | ConvertFrom-Json).oid
+        Type = if ($AzureAccount.user.type -eq 'user') { 'User' } else { 'ServicePrincipal' }
+    }
+}
+
+function Add-AzRoleAssignmentIfMissing {
+    <#
+    .SYNOPSIS
+    Assigns a role to a principal at a scope unless it already holds it there, and returns when
+    the assignment was created.
+
+    .PARAMETER PrincipalType
+    User or ServicePrincipal. Given explicitly, so no Microsoft Graph lookup is needed.
+
+    .OUTPUTS
+    [DateTimeOffset] The existing assignment's creation time; now when this call created it or that
+    time is unknown.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$PrincipalId,
+        [Parameter(Mandatory = $true)][ValidateSet('User', 'ServicePrincipal')][string]$PrincipalType,
+        [Parameter(Mandatory = $true)][string]$RoleDefinitionId,
+        [Parameter(Mandatory = $true)][string]$Scope
+    )
+
+    # Parenthesized so Windows PowerShell 5.1, whose ConvertFrom-Json emits an array as one object, enumerates it.
+    $Existing = (az role assignment list --scope "$Scope" --role "$RoleDefinitionId" --query "[?principalId=='$PrincipalId'].{createdOn: createdOn}" `
+        --only-show-errors | ConvertFrom-Json) | Select-Object -First 1
+    Stop-OnError -Step "List role $RoleDefinitionId assignments at $Scope"
+    if ($null -ne $Existing) {
+        if ($Existing.createdOn) {
+            return [DateTimeOffset]$Existing.createdOn
+        }
+        return [DateTimeOffset]::UtcNow
+    }
+
+    Write-Host "Assigning role $RoleDefinitionId at $Scope to $PrincipalType $PrincipalId"
+    Invoke-WithRetry -Step "Assign role $RoleDefinitionId to $PrincipalId" -RetryOnPattern "$($script:ArmTransientPattern)|PrincipalNotFound" -Command {
+        az role assignment create --assignee-object-id "$PrincipalId" --assignee-principal-type $PrincipalType --role "$RoleDefinitionId" --scope "$Scope" --only-show-errors | Out-Null
+    } | Out-Null
+    return [DateTimeOffset]::UtcNow
+}
+
 function Wait-AzRoleAssignment {
     <#
     .SYNOPSIS

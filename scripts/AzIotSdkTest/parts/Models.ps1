@@ -538,6 +538,45 @@ class EventHubInfo {
     }
 }
 
+# An Event Hub the hub routes device telemetry to, read with Microsoft Entra ID only; see
+# Add-AzIotEventHubTelemetryRoute.
+class TelemetryEventHubInfo {
+    [string]$FullyQualifiedNamespace = $null
+    [string]$Name = $null
+    [int]$PartitionCount = 0
+    [array]$ConsumerGroups = @()
+    # Unix time at which its new role assignments are enforced; reads fail before then.
+    [long]$ReadableAfterUnixSeconds = 0
+
+    TelemetryEventHubInfo() { }
+
+    # Holds no key: readers authenticate with a Microsoft Entra token.
+    [string]GetConnectionString() {
+        return "Endpoint=sb://$($this.FullyQualifiedNamespace)/;EntityPath=$($this.Name)"
+    }
+
+    [hashtable]ToHashtable() {
+        return [ordered]@{
+            FullyQualifiedNamespace = $this.FullyQualifiedNamespace
+            Name = $this.Name
+            PartitionCount = $this.PartitionCount
+            ConsumerGroups = $this.ConsumerGroups
+            ReadableAfterUnixSeconds = $this.ReadableAfterUnixSeconds
+        }
+    }
+
+    static [TelemetryEventHubInfo]FromHashtable([hashtable]$Hashtable) {
+        if ($null -eq $Hashtable) { return $null }
+        $TelemetryEventHubInfo = [TelemetryEventHubInfo]::new()
+        $TelemetryEventHubInfo.FullyQualifiedNamespace = $Hashtable.FullyQualifiedNamespace
+        $TelemetryEventHubInfo.Name = $Hashtable.Name
+        $TelemetryEventHubInfo.PartitionCount = $Hashtable.PartitionCount
+        $TelemetryEventHubInfo.ConsumerGroups = $Hashtable.ConsumerGroups
+        $TelemetryEventHubInfo.ReadableAfterUnixSeconds = $Hashtable.ReadableAfterUnixSeconds
+        return $TelemetryEventHubInfo
+    }
+}
+
 class IotHubDeviceSet {
     [IotHubSymmetricKeyIdentityInfo[]]$SymmetricKey = @()
     [IotHubX509IdentityInfo[]]$X509Thumbprint = @()
@@ -565,6 +604,8 @@ class IotHubInfo {
     [string]$ConnectionString = $null
     [bool]$LocalAuthDisabled = $false
     [EventHubInfo]$EventHub = [EventHubInfo]::new()
+    # Null unless device telemetry is routed to an Event Hub of its own.
+    [TelemetryEventHubInfo]$TelemetryEventHub = $null
     [IotHubDeviceSet]$Devices = [IotHubDeviceSet]::new()
 
     IotHubInfo() { }
@@ -574,6 +615,7 @@ class IotHubInfo {
             ConnectionString = $this.ConnectionString
             LocalAuthDisabled = $this.LocalAuthDisabled
             EventHub = ConvertTo-Hashtable -Object $this.EventHub
+            TelemetryEventHub = ConvertTo-Hashtable -Object $this.TelemetryEventHub
             Devices = ConvertTo-Hashtable -Object $this.Devices
         }
     }
@@ -583,6 +625,7 @@ class IotHubInfo {
         $IotHubInfo.ConnectionString = $Hashtable.ConnectionString
         $IotHubInfo.LocalAuthDisabled = [bool]$Hashtable.LocalAuthDisabled
         $IotHubInfo.EventHub = [EventHubInfo]::FromHashtable($Hashtable.EventHub)
+        $IotHubInfo.TelemetryEventHub = [TelemetryEventHubInfo]::FromHashtable($Hashtable.TelemetryEventHub)
         $IotHubInfo.Devices = [IotHubDeviceSet]::FromHashtable($Hashtable.Devices)
         return $IotHubInfo
     }

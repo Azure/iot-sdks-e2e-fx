@@ -63,12 +63,32 @@ function New-AzIotCSDKE2ETestConfig {
         }
     }
 
+    # Device telemetry: the Event Hub it is routed to when there is one (read with a Microsoft Entra
+    # token, so its connection string has no key), else the hub's built-in endpoint.
+    $TelemetryEventHub = $TestEnvInfo.IotHub.TelemetryEventHub
+    if ($null -ne $TelemetryEventHub) {
+        $EventHubConnectionString = $TelemetryEventHub.GetConnectionString()
+        $EventHubName = $TelemetryEventHub.Name
+        $EventHubPartitionCount = $TelemetryEventHub.PartitionCount
+    } else {
+        $EventHubConnectionString = $TestEnvInfo.IotHub.EventHub.ConnectionString
+        $EventHubName = $TestEnvInfo.IotHub.EventHub.CompatibleName
+        $EventHubPartitionCount = $TestEnvInfo.IotHub.EventHub.PartitionCount
+    }
+    $TelemetryEventHubValues = [ordered]@{}
+    if ($null -ne $TelemetryEventHub) {
+        $TelemetryEventHubValues['IOTHUB_EVENTHUB_PARTITION_COUNT'] = $EventHubPartitionCount
+        # Reads fail until the readers' new Event Hubs roles are enforced.
+        $TelemetryEventHubValues['IOTHUB_EVENTHUB_READABLE_AFTER_UNIX_SECONDS'] = $TelemetryEventHub.ReadableAfterUnixSeconds
+    }
+
     if ($Target -eq "powershell") {
         $Lines = @(
             "`$env:IOTHUB_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.ConnectionString)`""
-            "`$env:IOTHUB_EVENTHUB_CONNECTION_STRING = `"$($TestEnvInfo.IotHub.EventHub.ConnectionString)`""
-            "`$env:IOTHUB_EVENTHUB_LISTEN_NAME = `"$($TestEnvInfo.IotHub.EventHub.CompatibleName)`""
-            "`$env:IOTHUB_PARTITION_COUNT = $($TestEnvInfo.IotHub.EventHub.PartitionCount)"
+            "`$env:IOTHUB_EVENTHUB_CONNECTION_STRING = `"$EventHubConnectionString`""
+            "`$env:IOTHUB_EVENTHUB_LISTEN_NAME = `"$EventHubName`""
+            "`$env:IOTHUB_PARTITION_COUNT = $EventHubPartitionCount"
+            $TelemetryEventHubValues.Keys | %{ "`$env:$_ = `"$($TelemetryEventHubValues[$_])`"" }
             "`$env:IOT_DPS_GLOBAL_ENDPOINT = `"$($TestEnvInfo.Dps.DeviceFqdn)`""
             "`$env:IOT_DPS_CONNECTION_STRING = `"$($TestEnvInfo.Dps.ConnectionString)`""
             "`$env:IOT_DPS_ID_SCOPE = `"$($TestEnvInfo.Dps.IdScope)`""
@@ -97,9 +117,10 @@ function New-AzIotCSDKE2ETestConfig {
         $Lines = @(
             "#!/bin/bash"
             "export IOTHUB_CONNECTION_STRING=`"$($TestEnvInfo.IotHub.ConnectionString)`""
-            "export IOTHUB_EVENTHUB_CONNECTION_STRING=`"$($TestEnvInfo.IotHub.EventHub.ConnectionString)`""
-            "export IOTHUB_EVENTHUB_LISTEN_NAME=`"$($TestEnvInfo.IotHub.EventHub.CompatibleName)`""
-            "export IOTHUB_PARTITION_COUNT=$($TestEnvInfo.IotHub.EventHub.PartitionCount)"
+            "export IOTHUB_EVENTHUB_CONNECTION_STRING=`"$EventHubConnectionString`""
+            "export IOTHUB_EVENTHUB_LISTEN_NAME=`"$EventHubName`""
+            "export IOTHUB_PARTITION_COUNT=$EventHubPartitionCount"
+            $TelemetryEventHubValues.Keys | %{ "export $_=`"$($TelemetryEventHubValues[$_])`"" }
             "export IOT_DPS_GLOBAL_ENDPOINT=`"$($TestEnvInfo.Dps.DeviceFqdn)`""
             "export IOT_DPS_CONNECTION_STRING=`"$($TestEnvInfo.Dps.ConnectionString)`""
             "export IOT_DPS_ID_SCOPE=`"$($TestEnvInfo.Dps.IdScope)`""

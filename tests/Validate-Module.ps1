@@ -37,6 +37,7 @@ $PartsRoot = Join-Path $PackageRoot 'parts'
 # The module's public contract. Changing this list changes what other
 # repositories can call, so it is spelled out here rather than derived.
 $ExpectedExports = @(
+    'Add-AzIotEventHubTelemetryRoute'
     'ConvertFrom-JsonToTestEnvironmentInfo'
     'Debug-PSScript'
     'Get-AzIotTestEnvironment'
