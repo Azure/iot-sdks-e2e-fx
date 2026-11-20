@@ -23,7 +23,8 @@ function New-AzIotE2ETestEnvironmentAndConfig {
 
     .PARAMETER RouteTelemetryToEventHub
     Routes device telemetry to an Event Hub with local authentication disabled
-    (Add-AzIotEventHubTelemetryRoute).
+    (Add-AzIotEventHubTelemetryRoute). Only New-AzIotCSDKE2ETestConfig points tests at that Event
+    Hub; with any other ConfigCmdlet this fails before anything touches Azure.
 
     .PARAMETER TelemetryEventHubConsumerGroups
     Consumer groups to create on that Event Hub besides $Default, e.g. one per parallel test job.
@@ -80,6 +81,13 @@ function New-AzIotE2ETestEnvironmentAndConfig {
     })
     if ($MissingParameters.Count -gt 0) {
         throw "Config cmdlet '$ConfigCmdlet' is not a test config renderer: it has no -$($MissingParameters -join ', -') parameter."
+    }
+
+    # The other renderers point tests at the built-in endpoint, which the route bypasses and
+    # -DisableLocalAuth makes unreadable.
+    $TelemetryEventHubRenderers = @('New-AzIotCSDKE2ETestConfig')
+    if ($RouteTelemetryToEventHub -and $TelemetryEventHubRenderers -notcontains $Renderer.Name) {
+        throw "Config cmdlet '$ConfigCmdlet' does not read the telemetry Event Hub; -RouteTelemetryToEventHub needs one of: $($TelemetryEventHubRenderers -join ', ')."
     }
 
     $EnvironmentArguments = @{

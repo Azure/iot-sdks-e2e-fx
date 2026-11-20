@@ -78,7 +78,8 @@ inputs:
       When 'true', pass -RouteTelemetryToEventHub to New-AzIotTestEnvironment so device telemetry
       is routed to an Event Hub with local authentication disabled, read with a Microsoft Entra
       token. That is how tests read telemetry when disable-local-auth is 'true': the built-in
-      Event Hub-compatible endpoint takes only shared access keys.
+      Event Hub-compatible endpoint takes only shared access keys. Needs config-cmdlet
+      New-AzIotCSDKE2ETestConfig, the only renderer that reads that Event Hub.
     required: false
     default: 'false'
   telemetry-event-hub-consumer-groups:

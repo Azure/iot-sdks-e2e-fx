@@ -108,10 +108,14 @@ jobs:
           outFile: $(Agent.TempDirectory)/test-config/set_test_env_vars.ps1
           frameworkRoot: $(Agent.BuildDirectory)/e2e-fx
 
-  # ... test jobs ...
+  - job: test
+    dependsOn: setup
+    steps:
+      - script: echo run the tests
 
   - job: teardown
-    dependsOn: [setup]
+    # Every job that uses the resources, so they are not deleted while tests run.
+    dependsOn: [setup, test]
     condition: and(always(), ne(dependencies.setup.result, 'Skipped'))
     steps:
       - checkout: none

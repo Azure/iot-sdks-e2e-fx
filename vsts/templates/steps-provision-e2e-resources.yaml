@@ -33,7 +33,8 @@ parameters:
   - name: disableLocalAuth
     type: boolean
     default: false
-  # Routes device telemetry to an Event Hub that accepts only Microsoft Entra ID.
+  # Routes device telemetry to an Event Hub that accepts only Microsoft Entra ID. Needs configCmdlet
+  # New-AzIotCSDKE2ETestConfig, the only renderer that reads that Event Hub.
   - name: routeTelemetryToEventHub
     type: boolean
     default: false
