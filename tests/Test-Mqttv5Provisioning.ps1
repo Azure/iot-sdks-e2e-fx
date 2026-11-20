@@ -157,10 +157,18 @@ $HubPutPattern = '^rest --method PUT --url https://management\.azure\.com/subscr
 $DpsPutPattern = '^rest --method PUT --url https://eastus2euap\.management\.azure\.com/.*/provisioningServices/stubdps\?'
 $EnvArgs = @{ ResourceGroup = 'StubRg'; IotHubName = 'stubhub'; DpsName = 'stubdps' }
 $IotHubDataContributor = '4fc6c259-987e-4a07-842e-c321cc9d413f'
+$EventHubsDataReceiver = 'a638d3c7-ab3a-418d-83e6-5f17a39d4fde'
+$ResourceGroupPutPattern = '^rest --method PUT --url \S+/resourcegroups/StubRg\?'
 
-# Everything on: local auth disabled, telemetry to an Event Hub, and a link that drops the topic groups.
+# Everything on: a permanent environment with 2 hub units and a CI principal, local auth disabled,
+# telemetry to an Event Hub, and a link that drops the topic groups.
 Reset-Stub -LinkDropsTopicGroups
-$Info = New-AzIotMqttv5TestEnvironment @EnvArgs -DisableLocalAuth -EventHubConsumerGroups e2e-0 -RouteTelemetryToEventHub -TelemetryEventHubConsumerGroups t-0
+$Info = New-AzIotMqttv5TestEnvironment @EnvArgs -DisableLocalAuth -EventHubConsumerGroups e2e-0 -RouteTelemetryToEventHub -TelemetryEventHubConsumerGroups t-0 `
+    -IotHubUnits 2 -DataPlaneServicePrincipalIds ci-principal -Permanent
+$ResourceGroupPut = @(Find-Calls $ResourceGroupPutPattern)
+Assert ($ResourceGroupPut.Count -eq 1 -and ($Stub.Calls[$ResourceGroupPut[0]].Body | ConvertFrom-Json).tags.AzIotSdkTestPermanent -eq 'true') "full: the resource group must be created tagged AzIotSdkTestPermanent=true."
+Assert ($Stub.RoleAssignments -contains "ci-principal|$IotHubDataContributor|/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/StubRg/providers/Microsoft.Devices/IotHubs/stubhub") "full: the CI principal must be granted IoT Hub Data Contributor on the hub."
+Assert (@($Stub.RoleAssignments | ?{ $_ -like "ci-principal|$EventHubsDataReceiver|/eh/*/telemetry" }).Count -eq 1) "full: the CI principal must be granted Azure Event Hubs Data Receiver on the telemetry Event Hub."
 $HubPuts = Find-Calls $HubPutPattern
 $DpsPut = @(Find-Calls $DpsPutPattern)
 $Link = @(Find-Calls '^<Connect-AdrNamespace>')
@@ -171,6 +179,7 @@ if ($HubPuts.Count -ge 1) {
     $Create = $Stub.Calls[$HubPuts[0]].Body | ConvertFrom-Json
     $Route = @($Create.properties.routing.routes)
     $Group = @($Create.properties.mqttV5Settings.topicGroups)
+    Assert ($Create.sku.capacity -eq 2) "full: hub create body has $($Create.sku.capacity) unit(s), expected 2."
     Assert ($Create.sku.name -eq 'S1' -and $Create.identity.type -eq 'SystemAssigned' -and $Create.location -eq 'eastus2euap') "full: hub create body has sku '$($Create.sku.name)', identity '$($Create.identity.type)', location '$($Create.location)'."
     Assert ($Create.properties.connectionProfile -eq 'MqttV5' -and $Create.properties.disableLocalAuth -eq $true -and $Create.properties.minTlsVersion -eq '1.2') "full: hub create body: $($Stub.Calls[$HubPuts[0]].Body)"
     Assert ($Route.Count -eq 1 -and $Route[0].name -eq 'builtin-events' -and (@($Route[0].endpointNames) -join ',') -eq 'events' -and $Route[0].isEnabled -eq $true -and $Route[0].condition -eq 'true') "full: hub create body must route device messages to the built-in endpoint."
@@ -246,6 +255,8 @@ $Info = New-AzIotMqttv5TestEnvironment @EnvArgs
 $HubPuts = Find-Calls $HubPutPattern
 Assert ($HubPuts.Count -eq 1) "defaults: expected only the hub create PUT, got $($HubPuts.Count)."
 Assert (($Stub.Calls[$HubPuts[0]].Body | ConvertFrom-Json).properties.disableLocalAuth -eq $false) "defaults: local auth must stay enabled."
+Assert (($Stub.Calls[$HubPuts[0]].Body | ConvertFrom-Json).sku.capacity -eq 1) "defaults: the hub must have 1 unit."
+Assert ($null -eq ($Stub.Calls[@(Find-Calls $ResourceGroupPutPattern)[0]].Body | ConvertFrom-Json).tags.AzIotSdkTestPermanent) "defaults: the resource group must not be tagged permanent."
 Assert (@($Stub.RoleAssignments | ?{ $_ -like 'caller-oid|*' }).Count -eq 0) "defaults: the caller must not be granted a data-plane role."
 Assert (@(Find-Calls '^eventhubs ').Count -eq 0 -and $null -eq $Info.IotHub.TelemetryEventHub) "defaults: no telemetry Event Hub expected."
 Assert (@(Find-Calls '^iot hub ').Count -eq 0) "defaults: 'az iot hub' must not be called."
@@ -257,11 +268,14 @@ foreach ($Case in @(
     @{ Name = 'template-variable-case'; Args = @{ TopicTemplates = @('e2e/{DeviceId}/#') }; Error = 'not allowed' },
     @{ Name = 'template-reserved'; Args = @{ TopicTemplates = @('ih/x') }; Error = 'not allowed' },
     @{ Name = 'template-wildcard'; Args = @{ TopicTemplates = @('#') }; Error = 'not allowed' },
-    @{ Name = 'telemetry-groups'; Args = @{ TelemetryEventHubConsumerGroups = @('t-0') }; Error = 'requires -RouteTelemetryToEventHub' }
+    @{ Name = 'telemetry-groups'; Args = @{ TelemetryEventHubConsumerGroups = @('t-0') }; Error = 'requires -RouteTelemetryToEventHub' },
+    @{ Name = 'permanent-prefix'; Args = @{ Permanent = $true; ResourceGroup = 'RG-IOT-SDK-E2E-stub' }; Error = 'does not start with' }
 )) {
     Reset-Stub
     $Thrown = $null
-    try { $CaseArgs = $Case.Args; New-AzIotMqttv5TestEnvironment @EnvArgs @CaseArgs | Out-Null } catch { $Thrown = $_.Exception.Message }
+    $CaseArgs = $EnvArgs.Clone()
+    foreach ($Key in $Case.Args.Keys) { $CaseArgs[$Key] = $Case.Args[$Key] }
+    try { New-AzIotMqttv5TestEnvironment @CaseArgs | Out-Null } catch { $Thrown = $_.Exception.Message }
     Assert ("$Thrown" -match $Case.Error -and $Stub.Calls.Count -eq 0) "$($Case.Name): expected '$($Case.Error)' before any call; got '$Thrown' after $($Stub.Calls.Count) call(s)."
 }
 

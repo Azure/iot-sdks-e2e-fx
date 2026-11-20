@@ -57,6 +57,12 @@ function New-AzIotTestEnvironment {
     Routes device telemetry to an Event Hub of its own, read with Microsoft Entra ID only; see Add-AzIotEventHubTelemetryRoute. The signed-in principal can read it. Without -DisableLocalAuth, telemetry is also still routed to the built-in endpoint. Default is false.
     .PARAMETER TelemetryEventHubConsumerGroups
     Consumer groups to create on that Event Hub besides $Default, e.g. one per parallel test job.
+    .PARAMETER IotHubUnits
+    Number of IoT Hub S1 units. Default is 1. A permanent environment shared by parallel runs may need more.
+    .PARAMETER DataPlaneServicePrincipalIds
+    Object ids of service principals that use this environment with Microsoft Entra ID besides the signed-in one, e.g. the CI service connections of a permanent environment. They are granted IoT Hub Data Contributor on the hub and, with -RouteTelemetryToEventHub, Azure Event Hubs Data Receiver on the telemetry Event Hub.
+    .PARAMETER Permanent
+    Marks the environment as kept between runs: its resource group is tagged 'AzIotSdkTestPermanent=true', which Remove-LeftoverAzureResourceGroups never deletes. Requires a -ResourceGroup whose name does not start with Get-AzureResourceGroupNamePrefix. The resources are still created by this call; to rebuild them, delete the group or use another name.
 
     .OUTPUTS
     A custom object containing information about the created Azure resources and devices, including connection strings, certificate paths, and enrollment details.
@@ -99,6 +105,9 @@ function New-AzIotTestEnvironment {
         [switch]$DisableLocalAuth,
         [switch]$RouteTelemetryToEventHub,
         [string[]]$TelemetryEventHubConsumerGroups = @(),
+        [ValidateRange(1, 200)][int]$IotHubUnits = 1,
+        [string[]]$DataPlaneServicePrincipalIds = @(),
+        [switch]$Permanent,
         [switch]$AddContainerRegistry
     )
 
@@ -117,7 +126,7 @@ function New-AzIotTestEnvironment {
     $IotHubAuthArgs = @(if ($DisableLocalAuth) { '--auth-type', 'login' })
 
     $ResourceGroupContext = Initialize-AzIotTestResourceGroup -AzureLocation $AzureLocation -AzureSubscriptionId $AzureSubscriptionId `
-        -ResourceGroup $ResourceGroup -ResourceGroupTags $ResourceGroupTags
+        -ResourceGroup $ResourceGroup -ResourceGroupTags $ResourceGroupTags -Permanent:$Permanent
     $AzureAccount = $ResourceGroupContext.AzureAccount
     $AzureSubscriptionId = $ResourceGroupContext.SubscriptionId
 
@@ -159,7 +168,7 @@ function New-AzIotTestEnvironment {
         $IotHubUrl = "https://management.azure.com/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$($IotHubName)?api-version=$($script:IotHubApiVersion)"
         $AzureIoTHub = New-AzArmResource -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -Body @{
             location = $AzureLocation
-            sku = @{ name = "S1"; capacity = 1 }
+            sku = @{ name = "S1"; capacity = $IotHubUnits }
             identity = @{ type = "SystemAssigned" }
             properties = $IotHubProperties
         }
@@ -171,13 +180,14 @@ function New-AzIotTestEnvironment {
                 $Existing = Resolve-AzIotResourceAfterFailedCreate -Type hub -Name $IotHubName -ResourceGroup $ResourceGroup
                 if ($null -ne $Existing) { return $Existing }
             }
-            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --mintls "1.2" @DisableLocalAuthArgs --only-show-errors | ConvertFrom-Json
+            az iot hub create --name "$IotHubName" --resource-group "$ResourceGroup" --location "$AzureLocation" --unit $IotHubUnits --mintls "1.2" @DisableLocalAuthArgs --only-show-errors | ConvertFrom-Json
         }
     }
 
     if ($DisableLocalAuth -eq $true) {
         Grant-IotHubDataContributorToSignedInPrincipal -AzureAccount $AzureAccount -IotHubId $AzureIoTHub.id -IotHubName $IotHubName -ResourceGroup $ResourceGroup
     }
+    Grant-IotHubDataContributorToServicePrincipals -IotHubId $AzureIoTHub.id -ServicePrincipalIds $DataPlaneServicePrincipalIds
 
     if ($NoDps -eq $false) {
         if ($EnableCertificateManagement -eq $true -or $DisableLocalAuth -eq $true) {
@@ -399,7 +409,8 @@ function New-AzIotTestEnvironment {
 
     if ($RouteTelemetryToEventHub) {
         $TestEnvInfo.IotHub.TelemetryEventHub = Add-AzIotEventHubTelemetryRoute -ResourceGroup $ResourceGroup -IotHubName $IotHubName `
-            -Location $AzureLocation -ConsumerGroups $TelemetryEventHubConsumerGroups -KeepBuiltInEndpointRoute:(-not $DisableLocalAuth)
+            -Location $AzureLocation -ConsumerGroups $TelemetryEventHubConsumerGroups -ReaderServicePrincipalIds $DataPlaneServicePrincipalIds `
+            -KeepBuiltInEndpointRoute:(-not $DisableLocalAuth)
     }
 
     # Gathering Test Environment settings.
@@ -440,6 +451,9 @@ function Initialize-AzIotTestResourceGroup {
 
     .PARAMETER ResourceGroupTags
     Tags to apply. CreatedBy/CreatedOn (or UpdatedBy/UpdatedOn) and AzDevOpsRunUrl are added to it.
+    .PARAMETER Permanent
+    Tags the group 'AzIotSdkTestPermanent=true', which Remove-LeftoverAzureResourceGroups never
+    deletes, and refuses a name starting with Get-AzureResourceGroupNamePrefix.
 
     .OUTPUTS
     An object with AzureAccount ('az account show') and SubscriptionId.
@@ -448,8 +462,14 @@ function Initialize-AzIotTestResourceGroup {
         [Parameter(Mandatory = $true)][string]$AzureLocation,
         [string]$AzureSubscriptionId = $null,
         [Parameter(Mandatory = $true)][string]$ResourceGroup,
-        [Hashtable]$ResourceGroupTags = $null
+        [Hashtable]$ResourceGroupTags = $null,
+        [switch]$Permanent
     )
+
+    $CleanupPrefix = Get-AzureResourceGroupNamePrefix
+    if ($Permanent -and $ResourceGroup.StartsWith($CleanupPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "A permanent environment needs a resource group name that does not start with '$CleanupPrefix', the prefix of the groups the leftover-resource cleanup deletes; pass -ResourceGroup."
+    }
 
     # Login to Azure if not already
     $null = & az account show 2>$null
@@ -486,6 +506,10 @@ function Initialize-AzIotTestResourceGroup {
     $AzureDevOpsRunUrl = Get-AzureDevOpsRunUrl
     if ($null -ne $AzureDevOpsRunUrl) {
         $ResourceGroupTags.Add("AzDevOpsRunUrl", $AzureDevOpsRunUrl)
+    }
+
+    if ($Permanent) {
+        $ResourceGroupTags[$script:PermanentTagName] = "true"
     }
 
     # Create resource group (if does not exist).
@@ -815,6 +839,23 @@ function Grant-IotHubDataContributorToSignedInPrincipal {
     Invoke-WithRetry -Step "Reach the $IotHubName data plane with Entra ID" -RetryOnPattern $script:DataPlaneAccessDeniedPattern -MaxAttempts 6 -InitialDelaySeconds 20 -Command {
         az iot hub device-identity list --hub-name "$IotHubName" --resource-group "$ResourceGroup" --auth-type login --top 1 --only-show-errors | Out-Null
     } | Out-Null
+}
+
+function Grant-IotHubDataContributorToServicePrincipals {
+    <#
+    .SYNOPSIS
+    Grants service principals, e.g. CI service connections, IoT Hub Data Contributor on a hub,
+    unless they hold it already. Does not wait for the grants to apply.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$IotHubId,
+        [string[]]$ServicePrincipalIds = @()
+    )
+
+    foreach ($ServicePrincipalId in @($ServicePrincipalIds | ?{ $_ } | Select-Object -Unique)) {
+        Add-AzRoleAssignmentIfMissing -PrincipalId $ServicePrincipalId -PrincipalType ServicePrincipal `
+            -RoleDefinitionId $script:IotHubDataContributorRoleId -Scope $IotHubId | Out-Null
+    }
 }
 
 function Get-AzIotTestEnvironment {
