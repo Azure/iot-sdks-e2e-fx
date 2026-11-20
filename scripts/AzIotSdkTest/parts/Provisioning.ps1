@@ -53,7 +53,11 @@ function New-AzIotTestEnvironment {
     Creates an ADR namespace, links the IoT Hub and DPS to it, and creates the certificate authority chain devices are issued certificates from. Requires a DPS, so it cannot be combined with -NoDps.
     .PARAMETER DisableLocalAuth
     Creates the IoT Hub with local (shared access policy) authentication disabled, so its service APIs accept only Microsoft Entra ID. Default is false.
-    Device and module SAS and X.509 keep working. The signed-in principal is granted IoT Hub Data Contributor on the hub, the DPS gets a system-assigned identity and links to the hub with it, and hub data-plane calls use '--auth-type login'. The IoT Hub connection string stays in the output for its HostName only; the built-in Event Hub connection string keeps working.
+    Device and module SAS and X.509 keep working. The signed-in principal is granted IoT Hub Data Contributor on the hub, the DPS gets a system-assigned identity and links to the hub with it, and hub data-plane calls use '--auth-type login'. The IoT Hub connection string stays in the output for its HostName only. The built-in Event Hub-compatible endpoint accepts only shared access keys, which the hub then refuses; use -RouteTelemetryToEventHub to read device telemetry.
+    .PARAMETER RouteTelemetryToEventHub
+    Routes device telemetry to an Event Hub of its own, read with Microsoft Entra ID only; see Add-AzIotEventHubTelemetryRoute. The signed-in principal can read it. Without -DisableLocalAuth, telemetry is also still routed to the built-in endpoint. Default is false.
+    .PARAMETER TelemetryEventHubConsumerGroups
+    Consumer groups to create on that Event Hub besides $Default, e.g. one per parallel test job.
 
     .OUTPUTS
     A custom object containing information about the created Azure resources and devices, including connection strings, certificate paths, and enrollment details.
@@ -94,6 +98,8 @@ function New-AzIotTestEnvironment {
         [switch]$NoDps,
         [switch]$EnableCertificateManagement,
         [switch]$DisableLocalAuth,
+        [switch]$RouteTelemetryToEventHub,
+        [string[]]$TelemetryEventHubConsumerGroups = @(),
         [switch]$AddContainerRegistry
     )
 
@@ -101,6 +107,9 @@ function New-AzIotTestEnvironment {
     # resource group behind.
     if ($EnableCertificateManagement -eq $true -and $NoDps -eq $true) {
         throw "Certificate management requires a Device Provisioning Service; -NoDps and -EnableCertificateManagement are mutually exclusive."
+    }
+    if ($TelemetryEventHubConsumerGroups.Count -gt 0 -and -not $RouteTelemetryToEventHub) {
+        throw "-TelemetryEventHubConsumerGroups requires -RouteTelemetryToEventHub."
     }
 
     $IotHubFqdn = "$($IotHubName).$($IotHubDomainName)"
@@ -564,6 +573,11 @@ function New-AzIotTestEnvironment {
         $TestEnvInfo.ContainerRegistry += $ContainerRegistryInfo
     }
 
+    if ($RouteTelemetryToEventHub) {
+        $TestEnvInfo.IotHub.TelemetryEventHub = Add-AzIotEventHubTelemetryRoute -ResourceGroup $ResourceGroup -IotHubName $IotHubName `
+            -Location $AzureLocation -ConsumerGroups $TelemetryEventHubConsumerGroups -KeepBuiltInEndpointRoute:(-not $DisableLocalAuth)
+    }
+
     # Gathering Test Environment settings.
     $TestEnvInfo.AzureResourceGroup = $ResourceGroup
     $TestEnvInfo.Dps.ResourceGroup = $ResourceGroup
@@ -692,12 +706,9 @@ function Grant-IotHubDataContributorToSignedInPrincipal {
         [Parameter(Mandatory = $true)][string]$ResourceGroup
     )
 
-    $AccessToken = az account get-access-token --query accessToken -o tsv --only-show-errors
-    Stop-OnError -Step "Get the signed-in principal's access token"
-    $Payload = $AccessToken.Split('.')[1].Replace('-', '+').Replace('_', '/')
-    $Payload = $Payload.PadRight($Payload.Length + (4 - $Payload.Length % 4) % 4, '=')
-    $PrincipalId = ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Payload)) | ConvertFrom-Json).oid
-    $PrincipalType = if ($AzureAccount.user.type -eq 'user') { 'User' } else { 'ServicePrincipal' }
+    $SignedInPrincipal = Get-AzSignedInPrincipal -AzureAccount $AzureAccount
+    $PrincipalId = $SignedInPrincipal.Id
+    $PrincipalType = $SignedInPrincipal.Type
 
     Write-Host "Assigning IoT Hub Data Contributor on $IotHubName to the signed-in $PrincipalType ($PrincipalId)"
     az role assignment create --assignee-object-id $PrincipalId --assignee-principal-type $PrincipalType --role $script:IotHubDataContributorRoleId --scope $IotHubId --only-show-errors | Out-Null
