@@ -231,13 +231,7 @@ function New-X509Certificate2FromPem {
     $Base64 = ($Pem -replace "-----BEGIN CERTIFICATE-----", "" -replace "-----END CERTIFICATE-----", "").Trim() -replace "\s+", ""
     $CertBytes = [Convert]::FromBase64String($Base64)
 
-    if ($PSVersionTable.PSVersion.Major -lt 7) {
-        return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($CertBytes)
-    } else {
-        $Cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new()
-        $Cert.ImportFromPem($Pem)
-        return $Cert
-    }
+    return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($CertBytes)
 }
 
 function Export-X509CertificateToPemFile {

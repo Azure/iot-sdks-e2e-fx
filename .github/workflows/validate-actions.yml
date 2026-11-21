@@ -52,6 +52,10 @@ jobs:
         shell: pwsh
         run: ./tests/Test-ResourceGroupCleanup.ps1
 
+      - name: Test shared enrollment groups
+        shell: pwsh
+        run: ./tests/Test-SharedEnrollmentGroups.ps1
+
       - name: Lint workflows
         run: |
           curl -sSL -o actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz

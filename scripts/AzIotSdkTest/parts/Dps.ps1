@@ -526,39 +526,75 @@ function Add-DpsCertificate {
     Write-Host "Running Add-DpsCertificate($DpsCertificateName)"
 
     $PrivateKey = New-RsaPrivateKey
-    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
-    $CertificatePath =  New-TempFile -Extension "pem"
-    $Certificate = New-Certificate -Subject $Subject -Key $PrivateKey -IssuerCert $IssuerCert -IssuerKey $IssuerKey -IsCA $true -Days $Expiration.TotalDays -OutFile $CertificatePath
+    $Certificate = New-Certificate -Subject $Subject -Key $PrivateKey -IssuerCert $IssuerCert -IssuerKey $IssuerKey -IsCA $true -Days $Expiration.TotalDays
 
-    az iot dps certificate create --dps-name $DpsName --resource-group $ResourceGroup --name $DpsCertificateName --path $CertificatePath | Out-Null
-    Stop-OnError -Step "az iot dps certificate create"
-
-    Remove-Item $CertificatePath
-
-    $etag = az iot dps certificate show --dps-name $DpsName --resource-group $ResourceGroup --name $DpsCertificateName --query etag -o tsv
-    Stop-OnError -Step "az iot dps certificate show"
-
-    $DpsVerificationCodeInfo = az iot dps certificate generate-verification-code --dps-name $DpsName --resource-group $ResourceGroup --name $DpsCertificateName --etag $etag | ConvertFrom-Json
-    Stop-OnError -Step "az iot dps certificate generate-verification-code"
-
-    # Create verification cert
-    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
-    $DpsVerificationCertificatePath = New-TempFile -Extension "pem"
-    $DpsVerificationCertificateSubject = "CN=$($DpsVerificationCodeInfo.properties.verificationCode)"
-
-    $DpsVerificationKey = New-RsaPrivateKey
-    New-Certificate -Subject $DpsVerificationCertificateSubject -Key $DpsVerificationKey -IssuerCert $Certificate -IssuerKey $PrivateKey -IsCA $false -Days $Expiration.TotalDays -OutFile $DpsVerificationCertificatePath | Out-Null
-
-    # Verify with DPS
-    $etag = az iot dps certificate show --dps-name $DpsName --resource-group $ResourceGroup --name $DpsCertificateName --query etag -o tsv
-    Stop-OnError -Step "az iot dps certificate show"
-
-    az iot dps certificate verify --dps-name $DpsName --resource-group $ResourceGroup --name $DpsCertificateName --path $DpsVerificationCertificatePath --etag $etag | Out-Null
-    Stop-OnError -Step "az iot dps certificate verify"
-
-    Remove-Item $DpsVerificationCertificatePath
+    Add-VerifiedDpsCertificate -ResourceGroup $ResourceGroup -DpsName $DpsName -Name $DpsCertificateName -Certificate $Certificate -PrivateKey $PrivateKey
 
     return [X509CertificateInfo]::new($PrivateKey, $Certificate)
+}
+
+function Add-VerifiedDpsCertificate {
+    <#
+    .SYNOPSIS
+    Uploads a CA certificate to a DPS as -Name and proves possession of its key, unless the DPS
+    already holds it verified under that name.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$ResourceGroup,
+        [Parameter(Mandatory = $true)][string]$DpsName,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
+        [Parameter(Mandatory = $true)][System.Security.Cryptography.RSA]$PrivateKey
+    )
+
+    # No JMESPath pipe: on Windows az is a batch file, and '|' would have to survive cmd.exe.
+    $Matching = az iot dps certificate list --dps-name $DpsName --resource-group $ResourceGroup --query "value[?name=='$Name']" -o json --only-show-errors | ConvertFrom-Json
+    Stop-OnError -Step "az iot dps certificate list"
+    $Existing = $Matching | Select-Object -First 1
+
+    if ($null -ne $Existing) {
+        if ($Existing.properties.thumbprint -ne $Certificate.Thumbprint) {
+            throw "DPS $DpsName already has a different certificate named '$Name' (thumbprint $($Existing.properties.thumbprint))."
+        }
+        if ($Existing.properties.isVerified) {
+            Write-Host "DPS certificate $Name is already verified."
+            return
+        }
+    } else {
+        # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+        $CertificatePath = New-TempFile -Extension "pem"
+        try {
+            Export-X509CertificateToPemFile -Cert $Certificate -Path $CertificatePath
+            az iot dps certificate create --dps-name $DpsName --resource-group $ResourceGroup --name $Name --path $CertificatePath | Out-Null
+            Stop-OnError -Step "az iot dps certificate create"
+        }
+        finally {
+            Remove-Item -Path $CertificatePath -ErrorAction SilentlyContinue
+        }
+    }
+
+    $etag = az iot dps certificate show --dps-name $DpsName --resource-group $ResourceGroup --name $Name --query etag -o tsv
+    Stop-OnError -Step "az iot dps certificate show"
+
+    $DpsVerificationCodeInfo = az iot dps certificate generate-verification-code --dps-name $DpsName --resource-group $ResourceGroup --name $Name --etag $etag | ConvertFrom-Json
+    Stop-OnError -Step "az iot dps certificate generate-verification-code"
+
+    # Proof of possession: a certificate whose subject is the verification code, signed by the CA.
+    # az iot dps validates certificate files by name: only .pem and .cer are accepted.
+    $DpsVerificationCertificatePath = New-TempFile -Extension "pem"
+    try {
+        $DpsVerificationKey = New-RsaPrivateKey
+        New-Certificate -Subject "CN=$($DpsVerificationCodeInfo.properties.verificationCode)" -Key $DpsVerificationKey -IssuerCert $Certificate -IssuerKey $PrivateKey -IsCA $false -Days 1 -OutFile $DpsVerificationCertificatePath | Out-Null
+
+        $etag = az iot dps certificate show --dps-name $DpsName --resource-group $ResourceGroup --name $Name --query etag -o tsv
+        Stop-OnError -Step "az iot dps certificate show"
+
+        az iot dps certificate verify --dps-name $DpsName --resource-group $ResourceGroup --name $Name --path $DpsVerificationCertificatePath --etag $etag | Out-Null
+        Stop-OnError -Step "az iot dps certificate verify"
+    }
+    finally {
+        Remove-Item -Path $DpsVerificationCertificatePath -ErrorAction SilentlyContinue
+    }
 }
 
 function New-DpsServiceSasToken {
@@ -615,24 +651,20 @@ function Set-DpsEnrollment {
 
     .PARAMETER Collection
     'enrollmentGroups' for a group enrollment, 'enrollments' for an individual one.
+    .PARAMETER Replace
+    The enrollment exists and is replaced whatever its ETag ('If-Match: *').
     #>
     param(
         [string]$ResourceGroup,
         [string]$DpsName,
         [ValidateSet("enrollmentGroups", "enrollments")][string]$Collection,
         [string]$EnrollmentId,
-        [Hashtable]$Body
+        [Hashtable]$Body,
+        [switch]$Replace
     )
 
-    $ConnectionString = az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv
-    Stop-OnError -Step "Get DPS connection string ($DpsName)"
-
-    $ServiceHost = ($ConnectionString.Split(';') | ?{ $_ -like "HostName=*" }).Split('=', 2)[1]
-    $Url = "https://$ServiceHost/$Collection/$([uri]::EscapeDataString($EnrollmentId))?api-version=$($script:DpsEnrollmentApiVersion)"
-    $Headers = @(
-        "Authorization=$(New-DpsServiceSasToken -ConnectionString $ConnectionString)",
-        "Content-Type=application/json"
-    )
+    $Request = Get-DpsEnrollmentRequest -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection $Collection -EnrollmentId $EnrollmentId
+    $Headers = @($Request.Headers) + @("Content-Type=application/json") + @(if ($Replace) { "If-Match=*" })
 
     return Invoke-WithRetry -Step "Create DPS enrollment ($EnrollmentId)" `
         -RetryOnPattern '403000|400004' -StopOnPattern 'Unsupported API version' `
@@ -640,12 +672,66 @@ function Set-DpsEnrollment {
         $BodyFile = New-TempFile
         try {
             Set-FileContent -Path $BodyFile -Content ($Body | ConvertTo-Json -Compress -Depth 10)
-            az rest --method PUT --url $Url --body "@$BodyFile" --headers $Headers `
+            az rest --method PUT --url $Request.Url --body "@$BodyFile" --headers $Headers `
                 --skip-authorization-header --only-show-errors | ConvertFrom-Json
         }
         finally {
             Remove-Item -Path $BodyFile -ErrorAction SilentlyContinue
         }
+    }
+}
+
+function Get-DpsEnrollment {
+    <#
+    .SYNOPSIS
+    Reads a DPS enrollment through the DPS service API; $null when there is none. Retries the
+    errors Set-DpsEnrollment does.
+    #>
+    param(
+        [string]$ResourceGroup,
+        [string]$DpsName,
+        [ValidateSet("enrollmentGroups", "enrollments")][string]$Collection,
+        [string]$EnrollmentId
+    )
+
+    $Request = Get-DpsEnrollmentRequest -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection $Collection -EnrollmentId $EnrollmentId
+
+    try {
+        return Invoke-WithRetry -Step "Read DPS enrollment ($EnrollmentId)" -ThrowOnFailure `
+            -RetryOnPattern '403000|400004' -StopOnPattern 'Unsupported API version' `
+            -MaxAttempts 8 -InitialDelaySeconds 15 -Command {
+            az rest --method GET --url $Request.Url --headers $Request.Headers `
+                --skip-authorization-header --only-show-errors | ConvertFrom-Json
+        }
+    }
+    catch {
+        if ("$_" -match 'Not Found|\b404\d{3}\b') {
+            Write-Host "DPS enrollment $EnrollmentId does not exist yet."
+            return $null
+        }
+        throw
+    }
+}
+
+function Get-DpsEnrollmentRequest {
+    <#
+    .SYNOPSIS
+    URL and SAS authorization header of one enrollment on the DPS service API.
+    #>
+    param(
+        [string]$ResourceGroup,
+        [string]$DpsName,
+        [string]$Collection,
+        [string]$EnrollmentId
+    )
+
+    $ConnectionString = az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv
+    Stop-OnError -Step "Get DPS connection string ($DpsName)"
+
+    $ServiceHost = ($ConnectionString.Split(';') | ?{ $_ -like "HostName=*" }).Split('=', 2)[1]
+    return @{
+        Url = "https://$ServiceHost/$Collection/$([uri]::EscapeDataString($EnrollmentId))?api-version=$($script:DpsEnrollmentApiVersion)"
+        Headers = @("Authorization=$(New-DpsServiceSasToken -ConnectionString $ConnectionString)")
     }
 }
 

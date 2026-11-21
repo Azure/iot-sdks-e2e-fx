@@ -74,6 +74,32 @@ New-AzIotTestEnvironment -ResourceGroup <name> -Permanent -DisableLocalAuth `
 * The functions create resources; they do not update existing ones. To rebuild
   an environment, delete the resource group or use a new name.
 
+### Shared enrollment groups
+
+Test runs on a permanent environment provision devices through enrollment
+groups that already exist on its DPS. `Add-AzIotSharedEnrollmentGroups` creates
+them, or brings existing ones up to date:
+
+```powershell
+# MQTT v3 hub: X.509 and symmetric-key groups, both assigned to the hub.
+$Groups = Add-AzIotSharedEnrollmentGroups -ResourceGroup <rg> -DpsName <dps> `
+    -X509EnrollmentGroupId e2e-shared-x509 -SymmetricKeyEnrollmentGroupId e2e-shared-sas `
+    -IotHubHostName <hub>.azure-devices.net [-GroupCaPem <pem>]
+
+# MQTT v5 hub: X.509 only, default allocation.
+$Groups = Add-AzIotSharedEnrollmentGroups -ResourceGroup <rg> -DpsName <dps> `
+    -X509EnrollmentGroupId e2e-x509 [-GroupCaPem <pem>]
+```
+
+* The X.509 group references a group CA uploaded to the DPS and verified there.
+  Without `-GroupCaPem` a new CA is created and the group moves to it.
+* The DPS does not keep the CA's private key. The function returns the CA with
+  its key and the symmetric keys, and stores them nowhere: publishing them is a
+  separate step. Pass the CA back with `-GroupCaPem` to keep it.
+* An existing symmetric-key group keeps its keys.
+* `-AdrPolicy` adds an ADR certificate policy to both groups, so their devices
+  get certificates issued.
+
 ## Windows PowerShell 5.1
 
 The module must stay 5.1-compatible: `vsts/templates/steps-create-azure-resources.yaml`
