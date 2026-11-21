@@ -181,3 +181,5 @@ if ($Problems.Count -gt 0) {
     exit 1
 }
 Write-Host "OK: shared enrollment groups."
+# The last stubbed az call failed on purpose; its exit code is not the result.
+exit 0
