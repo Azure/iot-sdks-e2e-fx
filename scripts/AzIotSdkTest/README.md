@@ -50,6 +50,30 @@ it downloads the repository (defaulting to `master`, which is what those
 pipelines already get today). Move those callers to a pinned checkout; the shim
 will be removed afterwards.
 
+## Permanent test environments
+
+Pipelines create an environment per run and delete it afterwards. A
+long-lived environment that pull request runs share is created once, by a
+person, with `-Permanent`:
+
+```powershell
+New-AzIotTestEnvironment -ResourceGroup <name> -Permanent -DisableLocalAuth `
+    -IotHubUnits 2 -DataPlaneServicePrincipalIds <ci-principal-object-id>
+```
+
+`New-AzIotMqttv5TestEnvironment` takes the same three parameters.
+
+* The resource group is tagged `AzIotSdkTestPermanent=true`, and
+  `Remove-LeftoverAzureResourceGroups` never deletes or stamps a tagged group,
+  whatever `-Prefix` it runs with.
+* The name must not start with the default cleanup prefix
+  (`rg-iot-sdk-e2e-`), so an untagged copy is not deleted either.
+* `-DataPlaneServicePrincipalIds` grants the CI identities IoT Hub Data
+  Contributor on the hub and, with `-RouteTelemetryToEventHub`, Azure Event Hubs
+  Data Receiver on the telemetry Event Hub.
+* The functions create resources; they do not update existing ones. To rebuild
+  an environment, delete the resource group or use a new name.
+
 ## Windows PowerShell 5.1
 
 The module must stay 5.1-compatible: `vsts/templates/steps-create-azure-resources.yaml`

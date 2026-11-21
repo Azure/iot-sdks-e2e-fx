@@ -49,6 +49,15 @@ function New-AzIotMqttv5TestEnvironment {
     Add-AzIotEventHubTelemetryRoute. Telemetry keeps going to the built-in endpoint too.
     .PARAMETER TelemetryEventHubConsumerGroups
     Consumer groups to create on that Event Hub besides $Default.
+    .PARAMETER IotHubUnits
+    Number of IoT Hub S1 units. Default is 1.
+    .PARAMETER DataPlaneServicePrincipalIds
+    Object ids of service principals that use this environment with Microsoft Entra ID besides the
+    signed-in one, e.g. the CI service connections of a permanent environment. They are granted IoT
+    Hub Data Contributor on the hub and, with -RouteTelemetryToEventHub, Azure Event Hubs Data
+    Receiver on the telemetry Event Hub.
+    .PARAMETER Permanent
+    Marks the environment as kept between runs; see New-AzIotTestEnvironment -Permanent.
 
     .OUTPUTS
     [TestEnvironmentInfo], with IotHub.ConnectionProfile 'MqttV5' and the hub's service and device
@@ -71,7 +80,10 @@ function New-AzIotMqttv5TestEnvironment {
         [string[]]$EventHubConsumerGroups = @(),
         [switch]$DisableLocalAuth,
         [switch]$RouteTelemetryToEventHub,
-        [string[]]$TelemetryEventHubConsumerGroups = @()
+        [string[]]$TelemetryEventHubConsumerGroups = @(),
+        [ValidateRange(1, 200)][int]$IotHubUnits = 1,
+        [string[]]$DataPlaneServicePrincipalIds = @(),
+        [switch]$Permanent
     )
 
     # Argument checks come before anything that touches Azure, so a bad invocation cannot leave a
@@ -87,7 +99,7 @@ function New-AzIotMqttv5TestEnvironment {
     }
 
     $ResourceGroupContext = Initialize-AzIotTestResourceGroup -AzureLocation $AzureLocation -AzureSubscriptionId $AzureSubscriptionId `
-        -ResourceGroup $ResourceGroup -ResourceGroupTags $ResourceGroupTags
+        -ResourceGroup $ResourceGroup -ResourceGroupTags $ResourceGroupTags -Permanent:$Permanent
     $AzureAccount = $ResourceGroupContext.AzureAccount
     $AzureSubscriptionId = $ResourceGroupContext.SubscriptionId
     $ResourceGroupId = "/subscriptions/$AzureSubscriptionId/resourceGroups/$ResourceGroup"
@@ -102,7 +114,7 @@ function New-AzIotMqttv5TestEnvironment {
     Write-Host "Creating Azure IoT Hub ($IotHubName, MQTT v5)."
     $AzureIoTHub = New-AzArmResource -Url $IotHubUrl -Step "IoT Hub ($IotHubName)" -RetryOnPattern $script:IotTransientPattern -Body @{
         location = $AzureLocation
-        sku = @{ name = "S1"; capacity = 1 }
+        sku = @{ name = "S1"; capacity = $IotHubUnits }
         identity = @{ type = "SystemAssigned" }
         properties = @{
             connectionProfile = "MqttV5"
@@ -123,6 +135,7 @@ function New-AzIotMqttv5TestEnvironment {
         Grant-IotHubDataContributorToSignedInPrincipal -AzureAccount $AzureAccount -IotHubId $AzureIoTHub.id -IotHubName $IotHubName `
             -ResourceGroup $ResourceGroup -SkipDataPlaneCheck
     }
+    Grant-IotHubDataContributorToServicePrincipals -IotHubId $AzureIoTHub.id -ServicePrincipalIds $DataPlaneServicePrincipalIds
 
     $AzureAdrPolicy = Connect-AzIotHubAndDpsToAdr -SubscriptionId $AzureSubscriptionId -ResourceGroup $ResourceGroup `
         -Location $AzureLocation -IotHub $AzureIoTHub -Dps $AzureDps
@@ -139,7 +152,8 @@ function New-AzIotMqttv5TestEnvironment {
     $TestEnvInfo = [TestEnvironmentInfo]::new()
     if ($RouteTelemetryToEventHub) {
         $TestEnvInfo.IotHub.TelemetryEventHub = Add-AzIotEventHubTelemetryRoute -ResourceGroup $ResourceGroup -IotHubName $IotHubName `
-            -Location $AzureLocation -ConsumerGroups $TelemetryEventHubConsumerGroups -KeepBuiltInEndpointRoute -IotHubApiVersion $script:IotHubMqttv5ApiVersion
+            -Location $AzureLocation -ConsumerGroups $TelemetryEventHubConsumerGroups -ReaderServicePrincipalIds $DataPlaneServicePrincipalIds `
+            -KeepBuiltInEndpointRoute -IotHubApiVersion $script:IotHubMqttv5ApiVersion
     }
 
     # Last, after every full write of the hub: the ADR link is one, and it can drop the topic groups.

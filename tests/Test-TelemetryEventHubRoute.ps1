@@ -35,6 +35,7 @@ function global:Reset-Stub {
         Endpoints = @()
         Routes = @()
         EndpointFailures = 0
+        ResourceGroupBody = $null
     }
 }
 
@@ -58,7 +59,10 @@ function global:az {
         '^account get-access-token' { return "e30.$([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('{"oid":"caller-oid"}')).TrimEnd('=')).sig" }
         '^group show' { return 'eastus2euap' }
         '^group exists' { return 'false' }
-        '^rest ' { return '{"id":"/subscriptions/0/resourceGroups/StubRg","properties":{"provisioningState":"Succeeded"}}' }
+        '^rest ' {
+            if ((Opt '--method') -eq 'PUT' -and (Opt '--url') -match '/resourcegroups/') { $global:Stub.ResourceGroupBody = Get-Content -Raw -Path (Opt '--body').Substring(1) }
+            return '{"id":"/subscriptions/0/resourceGroups/StubRg","properties":{"provisioningState":"Succeeded"}}'
+        }
         '^eventhubs namespace create' { return "{`"name`":`"$(Opt '--name')`",`"serviceBusEndpoint`":`"https://$(Opt '--name').servicebus.windows.net:443/`"}" }
         '^eventhubs eventhub list' { return (ConvertTo-Json -Depth 5 -InputObject @($global:Stub.EventHubs)) }
         '^eventhubs eventhub create' {
@@ -208,6 +212,22 @@ foreach ($DisableLocalAuth in $false, $true) {
     Assert ($TestEnvInfo.IotHub.TelemetryEventHub.Name -eq 'telemetry') "$($Name): TelemetryEventHub not set."
     Assert ((Count-Calls '^eventhubs eventhub consumer-group create --name e2e-0') -eq 1) "$($Name): consumer group e2e-0 not created."
 }
+
+# A permanent environment: tagged group, hub units, and the CI principal granted on the hub and the Event Hub.
+Reset-Stub
+New-AzIotTestEnvironment -ResourceGroup StubRg -AzureLocation eastus2euap -IotHubName stubhub -NoDps -DisableLocalAuth `
+    -RouteTelemetryToEventHub -IotHubUnits 2 -DataPlaneServicePrincipalIds ci-principal -Permanent | Out-Null
+Assert (($Stub.ResourceGroupBody | ConvertFrom-Json).tags.AzIotSdkTestPermanent -eq 'true') "permanent: the resource group must be created tagged AzIotSdkTestPermanent=true."
+Assert ((Find-Call '^iot hub create .*--unit 2 ') -ge 0) "permanent: the hub must be created with 2 units."
+Assert ($Stub.RoleAssignments -contains 'ci-principal|4fc6c259-987e-4a07-842e-c321cc9d413f|/hub') "permanent: the CI principal must be granted IoT Hub Data Contributor on the hub."
+Assert ($Stub.RoleAssignments -contains "ci-principal|$Receiver|/eh/$($Stub.EventHubs[0].id.Split('/')[2])/telemetry") "permanent: the CI principal must be granted Azure Event Hubs Data Receiver on the telemetry Event Hub."
+Reset-Stub
+New-AzIotTestEnvironment -ResourceGroup StubRg -AzureLocation eastus2euap -IotHubName stubhub -NoDps | Out-Null
+Assert ($null -ne $Stub.ResourceGroupBody -and $null -eq ($Stub.ResourceGroupBody | ConvertFrom-Json).tags.AzIotSdkTestPermanent -and (Find-Call '^iot hub create .*--unit 1 ') -ge 0) "defaults: a group tagged permanent, or a hub with other than 1 unit."
+Reset-Stub
+$Thrown = $null
+try { New-AzIotTestEnvironment -NoDps -Permanent | Out-Null } catch { $Thrown = $_.Exception.Message }
+Assert ("$Thrown" -match 'does not start with' -and $Stub.Calls.Count -eq 0) "permanent: a resource group under the cleanup prefix must be refused before any az call; got '$Thrown'."
 
 # A renderer that would point tests at the built-in endpoint is refused before anything is provisioned.
 foreach ($Renderer in 'New-AzIotPythonSDKE2ETestConfig', 'New-AzIotuAmqpE2ETestConfig', 'New-AzIotHortonTestConfig') {

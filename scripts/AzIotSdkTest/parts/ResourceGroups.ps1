@@ -45,6 +45,9 @@ function New-AzureResourceGroupName {
 # age out and eventually be deleted instead of being skipped on every run forever.
 $script:FirstObservedTagName = "CleanupFirstObservedOn"
 
+# Tag -Permanent puts on a resource group; the cleanup never deletes a group carrying it as 'true'.
+$script:PermanentTagName = "AzIotSdkTestPermanent"
+
 function ConvertTo-UtcDateTime {
     <#
     .SYNOPSIS
@@ -99,6 +102,9 @@ function Remove-LeftoverAzureResourceGroups {
     -UntaggedMinimumAgeHours. A group belonging to a run that is still in flight is therefore never
     deleted on sight; it gets a full grace period first.
 
+    A resource group tagged 'AzIotSdkTestPermanent=true' (see New-AzIotTestEnvironment -Permanent)
+    is never deleted or stamped, whatever its name and age.
+
     Deletions are issued with '--no-wait'; this function returns after queuing them.
 
     .PARAMETER Prefix
@@ -143,7 +149,7 @@ function Remove-LeftoverAzureResourceGroups {
     Write-Host "Minimum age to delete : $MinimumAgeHours hour(s) (delete when created at or before $($Cutoff.ToString('o')))"
     Write-Host "Untagged grace period : $UntaggedMinimumAgeHours hour(s) after this cleanup first observes the group"
 
-    $RawJson = az group list --query "[].{name:name, id:id, createdOn:tags.CreatedOn, firstObservedOn:tags.$($script:FirstObservedTagName), runUrl:tags.AzDevOpsRunUrl}" -o json --only-show-errors
+    $RawJson = az group list --query "[].{name:name, id:id, createdOn:tags.CreatedOn, firstObservedOn:tags.$($script:FirstObservedTagName), permanent:tags.$($script:PermanentTagName), runUrl:tags.AzDevOpsRunUrl}" -o json --only-show-errors
     Stop-OnError -Step "List Azure resource groups" -Throw
 
     $Groups = @($RawJson | ConvertFrom-Json | Where-Object {
@@ -160,6 +166,12 @@ function Remove-LeftoverAzureResourceGroups {
     foreach ($Group in $Groups) {
         $Name = $Group.name
         $CreatedOnValue = $Group.createdOn
+
+        if ("$($Group.permanent)" -eq 'true') {
+            Write-Host "KEEP   $Name : tagged '$($script:PermanentTagName)=true'."
+            $Skipped.Add($Name)
+            continue
+        }
 
         $CreatedOn = ConvertTo-UtcDateTime -Value $CreatedOnValue
 
