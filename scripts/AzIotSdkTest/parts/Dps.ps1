@@ -705,7 +705,8 @@ function Get-DpsEnrollment {
         }
     }
     catch {
-        if ("$_" -match 'Not Found|\b404\d{3}\b') {
+        # The DPS error code, not any 404xxx in the text: the step name holds the enrollment id.
+        if ("$_" -match '"errorCode"\s*:\s*404\d{3}\b') {
             Write-Host "DPS enrollment $EnrollmentId does not exist yet."
             return $null
         }

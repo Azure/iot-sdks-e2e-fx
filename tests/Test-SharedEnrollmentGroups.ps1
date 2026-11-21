@@ -31,6 +31,7 @@ function Reset-Stub {
         Certificates = @{}
         Groups = @{}
         NextKey = 0
+        GetError = $null
     }
 }
 
@@ -73,6 +74,11 @@ function global:az {
         '^rest --method (GET|PUT) --url https://stubdps\.azure-devices-provisioning\.net/enrollmentGroups/([^?]+)\?' {
             $Id = [uri]::UnescapeDataString($Matches[2])
             if ($Matches[1] -eq 'GET') {
+                if ($global:Stub.GetError) {
+                    Write-Error -ErrorAction Continue $global:Stub.GetError
+                    $global:LASTEXITCODE = 1
+                    return
+                }
                 if ($global:Stub.Groups.ContainsKey($Id)) { return ($global:Stub.Groups[$Id] | ConvertTo-Json -Depth 10) }
                 Write-Error -ErrorAction Continue 'ERROR: Not Found({"errorCode":404201,"message":"Enrollment group not found."})'
                 $global:LASTEXITCODE = 1
@@ -156,6 +162,19 @@ $Stub.Certificates[$CaName] = @{ name = $CaName; properties = @{ thumbprint = 'O
 $Thrown = $null
 try { Add-AzIotSharedEnrollmentGroups @Common -X509EnrollmentGroupId e2e-shared-x509 -GroupCaPem $CaPem | Out-Null } catch { $Thrown = $_.Exception.Message }
 Assert ("$Thrown" -match 'different certificate' -and (Find-Calls '^(iot dps certificate (create|verify)|rest)').Count -eq 0) "certificate clash: expected a refusal before any change; got '$Thrown'."
+
+# A failed read is not a missing group, even when the group id looks like a DPS "not found" code.
+Reset-Stub
+$Stub.GetError = 'ERROR: Unauthorized({"errorCode":401002,"message":"Unauthorized."})'
+$Thrown = $null
+try { Add-AzIotSharedEnrollmentGroups @Common -X509EnrollmentGroupId e2e-404201 | Out-Null } catch { $Thrown = $_.Exception.Message }
+Assert ("$Thrown" -match '401002' -and (Find-Calls '^rest --method PUT').Count -eq 0) "read failure: expected the error, not a create; got '$Thrown' and $((Find-Calls '^rest --method PUT').Count) PUT(s)."
+
+# One id for both groups (ids are case-insensitive) is refused before anything is called.
+Reset-Stub
+$Thrown = $null
+try { Add-AzIotSharedEnrollmentGroups @Common -X509EnrollmentGroupId e2e-shared -SymmetricKeyEnrollmentGroupId E2E-Shared | Out-Null } catch { $Thrown = $_.Exception.Message }
+Assert ("$Thrown" -match 'different ids' -and $Stub.Calls.Count -eq 0) "same ids: expected a refusal before any call; got '$Thrown' after $($Stub.Calls.Count) call(s)."
 
 if ($Problems.Count -gt 0) {
     $Problems | %{ Write-Host "FAIL: $_" }

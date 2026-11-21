@@ -63,6 +63,11 @@ function Add-AzIotSharedEnrollmentGroups {
         [ValidateRange(1, 3650)][int]$CaValidityDays = 730
     )
 
+    # Enrollment group ids are case-insensitive; one id would make the second group replace the first.
+    if ($SymmetricKeyEnrollmentGroupId -eq $X509EnrollmentGroupId) {
+        throw "The X.509 and symmetric-key enrollment groups need different ids, not '$X509EnrollmentGroupId'."
+    }
+
     if ([string]::IsNullOrWhiteSpace($GroupCaPem)) {
         $CaKey = New-RsaPrivateKey
         $CaCertificate = New-Certificate -Subject "CN=azure-iot-sdk-$X509EnrollmentGroupId-ca-$([DateTime]::UtcNow.ToString('yyyyMMdd'))" `
