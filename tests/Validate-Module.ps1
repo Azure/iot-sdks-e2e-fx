@@ -54,6 +54,7 @@ $ExpectedExports = @(
     'New-AzIotTestEnvironment'
     'New-AzIotuAmqpE2ETestConfig'
     'New-AzureResourceGroupName'
+    'Remove-AzIotStaleTestDevices'
     'Remove-LeftoverAzureResourceGroups'
     'Set-FileContent'
     'Test-SubmoduleConsistency'

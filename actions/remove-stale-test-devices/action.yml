@@ -1,0 +1,104 @@
+# Deletes the test devices that runs left on a permanent test environment: on its hub, with their
+# registrations on its DPS. See Remove-AzIotStaleTestDevices.
+#
+# This is the GitHub Actions face of vsts/templates/steps-remove-stale-test-devices.yaml. Run it on
+# a schedule, for example nightly. The caller must run `azure/login` BEFORE this step, as an
+# identity with IoT Hub Data Contributor on the hub and a role that reads the hub and lists the DPS
+# keys, such as Contributor.
+#
+# Usage:
+#   - uses: Azure/iot-sdks-e2e-fx/actions/remove-stale-test-devices@<ref>
+#     with:
+#       resource-group: <rg>
+#       iot-hub-name: <hub>
+#       dps-name: <dps>
+#       twin-tags: '{"e2eSuite":"horton"}'
+name: Remove stale test devices
+description: Delete the test devices that runs left on a permanent test environment's hub and DPS.
+
+inputs:
+  resource-group:
+    description: Resource group of the hub and the DPS.
+    required: true
+  iot-hub-name:
+    description: Name of the hub.
+    required: true
+  dps-name:
+    description: DPS whose registrations are deleted too; empty for devices created on the hub.
+    required: false
+    default: ''
+  device-id-pattern:
+    description: Case-sensitive regular expression the device ids must match. Give this, twin-tags or both.
+    required: false
+    default: ''
+  twin-tags:
+    description: JSON object of twin tags the devices must have, all of them, e.g. '{"e2eSuite":"horton"}'.
+    required: false
+    default: '{}'
+  exclude-device-ids:
+    description: Comma-separated device ids never deleted, e.g. the environment's pinned devices.
+    required: false
+    default: ''
+  minimum-age-hours:
+    description: Hours since a device's latest activity before it is deleted.
+    required: false
+    default: '6'
+  what-if:
+    description: "'true' reports what would be deleted, and deletes nothing."
+    required: false
+    default: 'false'
+  az-ps-version:
+    description: azPSVersion passed to azure/powershell.
+    required: false
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Remove stale test devices
+      uses: azure/powershell@f5b8adcfff1904872c7b98d4012d4914d74b1a82 # v3.0.0
+      env:
+        # Every input is passed as env, never string-interpolated into the script, so an input is
+        # always data and never code.
+        AZ_IOT_MODULE: ${{ github.action_path }}/../../scripts/AzIotSdkTest/AzIotSdkTest.psd1
+        AZ_IOT_RG_NAME: ${{ inputs.resource-group }}
+        AZ_IOT_HUB_NAME: ${{ inputs.iot-hub-name }}
+        AZ_IOT_DPS_NAME: ${{ inputs.dps-name }}
+        AZ_IOT_DEVICE_ID_PATTERN: ${{ inputs.device-id-pattern }}
+        AZ_IOT_TWIN_TAGS: ${{ inputs.twin-tags }}
+        AZ_IOT_EXCLUDE_DEVICE_IDS: ${{ inputs.exclude-device-ids }}
+        AZ_IOT_MINIMUM_AGE_HOURS: ${{ inputs.minimum-age-hours }}
+        AZ_IOT_WHAT_IF: ${{ inputs.what-if }}
+      with:
+        azPSVersion: ${{ inputs.az-ps-version }}
+        inlineScript: |
+          $ErrorActionPreference = 'Stop'
+
+          Import-Module $env:AZ_IOT_MODULE
+
+          $MinimumAgeHours = 0
+          if (-not [int]::TryParse($env:AZ_IOT_MINIMUM_AGE_HOURS, [ref]$MinimumAgeHours)) {
+              throw "minimum-age-hours must be an integer; got '$env:AZ_IOT_MINIMUM_AGE_HOURS'."
+          }
+          $WhatIf = switch ($env:AZ_IOT_WHAT_IF) {
+              'true' { $true }
+              'false' { $false }
+              default { throw "what-if must be 'true' or 'false'; got '$env:AZ_IOT_WHAT_IF'." }
+          }
+          $TwinTags = @{}
+          if (-not [string]::IsNullOrWhiteSpace($env:AZ_IOT_TWIN_TAGS)) {
+              ($env:AZ_IOT_TWIN_TAGS | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $TwinTags[$_.Name] = [string]$_.Value }
+          }
+
+          $Arguments = @{
+              ResourceGroup    = $env:AZ_IOT_RG_NAME
+              IotHubName       = $env:AZ_IOT_HUB_NAME
+              DpsName          = $env:AZ_IOT_DPS_NAME
+              DeviceIdPattern  = $env:AZ_IOT_DEVICE_ID_PATTERN
+              TwinTags         = $TwinTags
+              ExcludeDeviceIds = @("$env:AZ_IOT_EXCLUDE_DEVICE_IDS".Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+              MinimumAgeHours  = $MinimumAgeHours
+              WhatIf           = $WhatIf
+          }
+
+          Remove-AzIotStaleTestDevices @Arguments | Format-Table -AutoSize DeviceId, LastActivityUtc, Result | Out-String -Width 300 | Write-Host

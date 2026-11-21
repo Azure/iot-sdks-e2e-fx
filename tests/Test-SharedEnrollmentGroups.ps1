@@ -142,6 +142,18 @@ foreach ($Id in 'e2e-shared-csr-x509', 'e2e-shared-csr-sas') {
     Assert ($Body.namespaceName -eq 'azure-adr-ns' -and $Body.certificateAuthorityName -eq 'default' -and $Body.certificatePolicyName -eq 'azure-adr-policy') "csr: $Id must reference the ADR policy: $($Body | ConvertTo-Json -Compress -Depth 10)"
 }
 
+# Initial twin tags on both groups; a rerun without them keeps them.
+Reset-Stub
+Add-AzIotSharedEnrollmentGroups @Common -X509EnrollmentGroupId e2e-tagged-x509 -SymmetricKeyEnrollmentGroupId e2e-tagged-sas -InitialTwinTags @{ e2eSuite = 'horton' } | Out-Null
+foreach ($Id in 'e2e-tagged-x509', 'e2e-tagged-sas') {
+    Assert ((Find-GroupPut $Id).Body.initialTwin.tags.e2eSuite -eq 'horton') "tags: $Id must give its devices the tag: $((Find-GroupPut $Id).Body | ConvertTo-Json -Compress -Depth 10)"
+}
+$Stub.Calls.Clear()
+Add-AzIotSharedEnrollmentGroups @Common -X509EnrollmentGroupId e2e-tagged-x509 -SymmetricKeyEnrollmentGroupId e2e-tagged-sas | Out-Null
+foreach ($Id in 'e2e-tagged-x509', 'e2e-tagged-sas') {
+    Assert ((Find-GroupPut $Id).Body.initialTwin.tags.e2eSuite -eq 'horton') "tags rerun: $Id must keep the tag: $((Find-GroupPut $Id).Body | ConvertTo-Json -Compress -Depth 10)"
+}
+
 # X.509 only, default allocation: no symmetric-key group and no hub pinned.
 Reset-Stub
 $Mqttv5 = Add-AzIotSharedEnrollmentGroups @Common -X509EnrollmentGroupId e2e-x509

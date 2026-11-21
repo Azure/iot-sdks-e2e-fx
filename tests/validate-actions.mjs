@@ -35,7 +35,7 @@ const adoTemplatesRoot = join(repoRoot, 'vsts', 'templates');
 
 // Templates written for other repositories. Horton's own templates expand
 // parameters into their scripts and are not checked here.
-const adoTemplates = ['steps-provision-e2e-resources.yaml', 'steps-destroy-e2e-resources.yaml'];
+const adoTemplates = ['steps-provision-e2e-resources.yaml', 'steps-destroy-e2e-resources.yaml', 'steps-remove-stale-test-devices.yaml'];
 
 const failures = [];
 const fail = (action, message) => failures.push(`${action}: ${message}`);

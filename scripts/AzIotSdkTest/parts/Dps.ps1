@@ -726,14 +726,37 @@ function Get-DpsEnrollmentRequest {
         [string]$EnrollmentId
     )
 
-    $ConnectionString = az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv
-    Stop-OnError -Step "Get DPS connection string ($DpsName)"
-
-    $ServiceHost = ($ConnectionString.Split(';') | ?{ $_ -like "HostName=*" }).Split('=', 2)[1]
+    $ConnectionString = Get-DpsServiceConnectionString -ResourceGroup $ResourceGroup -DpsName $DpsName
+    $ServiceHost = Get-ConnectionStringHostName -ConnectionString $ConnectionString
     return @{
         Url = "https://$ServiceHost/$Collection/$([uri]::EscapeDataString($EnrollmentId))?api-version=$($script:DpsEnrollmentApiVersion)"
         Headers = @("Authorization=$(New-DpsServiceSasToken -ConnectionString $ConnectionString)")
     }
+}
+
+function Get-DpsServiceConnectionString {
+    <#
+    .SYNOPSIS
+    Primary 'provisioningserviceowner' connection string of a DPS, for its service API.
+    #>
+    param(
+        [string]$ResourceGroup,
+        [string]$DpsName
+    )
+
+    $ConnectionString = az iot dps connection-string show -g $ResourceGroup -n $DpsName --kt primary --pn provisioningserviceowner --query connectionString -o tsv
+    Stop-OnError -Step "Get DPS connection string ($DpsName)"
+    return $ConnectionString
+}
+
+function Get-ConnectionStringHostName {
+    <#
+    .SYNOPSIS
+    The HostName of a connection string.
+    #>
+    param([string]$ConnectionString)
+
+    return ($ConnectionString.Split(';') | ?{ $_ -like "HostName=*" }).Split('=', 2)[1]
 }
 
 function Add-AdrPolicyReference {

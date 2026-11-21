@@ -23,6 +23,7 @@ $ModuleParts = @(
     'Models.ps1'             # Classes describing a provisioned test environment
     'Dps.ps1'                # DPS enrollment helpers
     'SharedEnrollmentGroups.ps1' # Add-AzIotSharedEnrollmentGroups
+    'TestDevices.ps1'        # Remove-AzIotStaleTestDevices
     'ResourceGroups.ps1'     # Resource group naming and leftover cleanup
     'Telemetry.ps1'          # Device telemetry routing to an Entra-only Event Hub
     'Provisioning.ps1'       # New-/Get-AzIotTestEnvironment
@@ -46,6 +47,7 @@ Export-ModuleMember -Function New-AzIotTestEnvironment
 Export-ModuleMember -Function New-AzIotMqttv5TestEnvironment
 Export-ModuleMember -Function Add-AzIotEventHubTelemetryRoute
 Export-ModuleMember -Function Add-AzIotSharedEnrollmentGroups
+Export-ModuleMember -Function Remove-AzIotStaleTestDevices
 Export-ModuleMember -Function Get-AzIotTestEnvironment
 Export-ModuleMember -Function ConvertFrom-JsonToTestEnvironmentInfo
 Export-ModuleMember -Function New-AzIotCSDKE2ETestConfig
