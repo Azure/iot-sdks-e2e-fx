@@ -38,6 +38,7 @@ $PartsRoot = Join-Path $PackageRoot 'parts'
 # repositories can call, so it is spelled out here rather than derived.
 $ExpectedExports = @(
     'Add-AzIotEventHubTelemetryRoute'
+    'Add-AzIotSharedEnrollmentGroups'
     'ConvertFrom-JsonToTestEnvironmentInfo'
     'Debug-PSScript'
     'Get-AzIotTestEnvironment'

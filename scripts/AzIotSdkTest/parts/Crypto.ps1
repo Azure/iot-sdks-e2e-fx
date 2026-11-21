@@ -33,17 +33,16 @@ function Export-RsaPkcs1PrivateKeyPem {
 function New-RsaKeyFromPem {
     param([string]$Pem)
 
-    $rsa = [System.Security.Cryptography.RSA]::Create()
-
     if ($PSVersionTable.PSVersion.Major -lt 7) {
+        # .NET Framework has no RSA.ImportPkcs8PrivateKey; CNG imports PKCS#8 itself.
         $Base64 = ($Pem -replace "-----BEGIN PRIVATE KEY-----", "" -replace "-----END PRIVATE KEY-----", "").Trim() -replace "\s+", ""
         $KeyBytes = [Convert]::FromBase64String($Base64)
-        $bytesRead = 0
-        $rsa.ImportPkcs8PrivateKey($KeyBytes, [ref]$bytesRead)
-    } else {
-        $rsa.ImportFromPem($Pem)
+        $CngKey = [System.Security.Cryptography.CngKey]::Import($KeyBytes, [System.Security.Cryptography.CngKeyBlobFormat]::Pkcs8PrivateBlob)
+        return [System.Security.Cryptography.RSACng]::new($CngKey)
     }
 
+    $rsa = [System.Security.Cryptography.RSA]::Create()
+    $rsa.ImportFromPem($Pem)
     return $rsa
 }
 
@@ -231,13 +230,7 @@ function New-X509Certificate2FromPem {
     $Base64 = ($Pem -replace "-----BEGIN CERTIFICATE-----", "" -replace "-----END CERTIFICATE-----", "").Trim() -replace "\s+", ""
     $CertBytes = [Convert]::FromBase64String($Base64)
 
-    if ($PSVersionTable.PSVersion.Major -lt 7) {
-        return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($CertBytes)
-    } else {
-        $Cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new()
-        $Cert.ImportFromPem($Pem)
-        return $Cert
-    }
+    return [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($CertBytes)
 }
 
 function Export-X509CertificateToPemFile {
