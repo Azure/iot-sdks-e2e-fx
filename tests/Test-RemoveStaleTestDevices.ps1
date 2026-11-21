@@ -46,6 +46,9 @@ function Reset-Stub {
             New-Twin 'other-old' -Activity $Old
         )
         PageSize = 4
+        NetworkErrors = @()
+        TokenRequests = 0
+        TokenLifetimeSeconds = 3600
     }
 }
 
@@ -56,7 +59,10 @@ function global:az {
     $global:LASTEXITCODE = 0
     switch -Regex ($Joined) {
         '^resource show .*--resource-type Microsoft.Devices/IotHubs' { return '{"hostName":"stubhub.azure-devices.net","iotHubDetails":{"gatewayVersion":"V1"}}' }
-        '^account get-access-token --resource https://iothubs.azure.net' { return 'stub-token' }
+        '^account get-access-token --resource https://iothubs.azure.net' {
+            $global:Stub.TokenRequests++
+            return (ConvertTo-Json @{ accessToken = 'stub-token'; expiresOn = [DateTimeOffset]::UtcNow.AddSeconds($global:Stub.TokenLifetimeSeconds).ToUnixTimeSeconds() })
+        }
         '^iot dps connection-string show' { return 'HostName=stubdps.azure-devices-provisioning.net;SharedAccessKeyName=provisioningserviceowner;SharedAccessKey=RkFLRQ==' }
     }
     Write-Error -ErrorAction Continue "unexpected az call: $Joined"
@@ -67,6 +73,7 @@ function global:az {
     function script:Send-ServiceHttpRequest([string]$Method, [string]$Uri, [Hashtable]$Headers, [string]$Content) {
         $Call = @{ Line = "$Method $Uri"; Headers = $Headers.Clone(); Body = $(if ($Content) { ConvertFrom-Json -InputObject $Content }) }
         $global:Stub.Calls.Add($Call)
+        if (@($global:Stub.NetworkErrors | ?{ "$Method $Uri" -match $_ }).Count -gt 0) { return @{ Status = 0; Text = 'stub network error' } }
         switch -Regex ("$Method $Uri") {
             '^POST https://stubhub\.azure-devices\.net/devices/query\?' {
                 $Start = if ($Headers['x-ms-continuation']) { [int]$Headers['x-ms-continuation'] } else { 0 }
@@ -149,6 +156,28 @@ Remove-AzIotStaleTestDevices -ResourceGroup StubRg -IotHubName stubhub -TwinTags
 $Query = (Find-Calls 'devices/query')[0].Body.query
 Assert ($Query -eq "SELECT * FROM devices WHERE tags.e2eSuite = 'horton' AND tags.owner.name = 'o''k'") "tags: unexpected query '$Query'."
 Assert ((Find-Calls 'dps').Count -eq 0) "tags: no DPS must be called without -DpsName."
+
+# A network error, once retries are exhausted, fails its device and the run goes on with the rest.
+Reset-Stub
+$Stub.Twins = @(New-Twin 'ci-1-old' -Activity $Old; New-Twin 'ci-2-twin-only' -TwinUpdate $Old; New-Twin 'ci-3-gone' -Activity $Old)
+$Stub.NetworkErrors = @('^DELETE https://stubdps.*/registrations/ci-1-old\?', '^POST https://stubhub\.azure-devices\.net/devices\?')
+$Thrown = $null
+try { Remove-AzIotStaleTestDevices @Common -Confirm:$false | Out-Null } catch { $Thrown = $_.Exception.Message }
+Assert ("$Thrown" -match '1 stale test device\(s\) could not be deleted: ci-1-old\.') "network: expected a failure naming only ci-1-old; got '$Thrown'."
+Assert ((Find-Calls 'registrations/ci-1-old').Count -eq 6) "network: expected 6 attempts on the DPS, got $((Find-Calls 'registrations/ci-1-old').Count)."
+$Single = Get-Ids (Find-Calls '^DELETE https://stubhub') '/devices/([^?]+)\?'
+Assert ($Single -eq 'ci-2-twin-only,ci-3-gone') "network: after a failed bulk delete, expected single deletes of the rest; got '$Single'."
+
+# A token is renewed before it expires.
+Reset-Stub
+$Stub.TokenLifetimeSeconds = 60
+& $Module { $script:IotHubAccessToken = $null }
+try { Remove-AzIotStaleTestDevices @Common -Confirm:$false | Out-Null } catch { }
+Assert ($Stub.TokenRequests -gt 1) "token: a token about to expire must not be reused; got $($Stub.TokenRequests) request(s)."
+Reset-Stub
+& $Module { $script:IotHubAccessToken = $null }
+try { Remove-AzIotStaleTestDevices @Common -Confirm:$false | Out-Null } catch { }
+Assert ($Stub.TokenRequests -eq 1) "token: a valid token must be reused; got $($Stub.TokenRequests) request(s)."
 
 # Refusals before anything is called.
 foreach ($Case in @(

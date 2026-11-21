@@ -285,13 +285,15 @@ function Remove-IotHubDevices {
 function Get-IotHubAccessToken {
     <#
     .SYNOPSIS
-    A Microsoft Entra ID authorization header for the IoT Hub service API, reused for 30 minutes.
+    A Microsoft Entra ID authorization header for the IoT Hub service API, reused until 3 minutes
+    before it expires (one minute when the CLI does not say).
     #>
     if ($null -eq $script:IotHubAccessToken -or [DateTime]::UtcNow -gt $script:IotHubAccessTokenRenewUtc) {
-        $Token = az account get-access-token --resource https://iothubs.azure.net --query accessToken -o tsv --only-show-errors
+        $Token = az account get-access-token --resource https://iothubs.azure.net --query "{accessToken:accessToken, expiresOn:expires_on}" -o json --only-show-errors | ConvertFrom-Json
         Stop-OnError -Step "Get a Microsoft Entra ID token for IoT Hub"
-        $script:IotHubAccessToken = "Bearer $Token"
-        $script:IotHubAccessTokenRenewUtc = [DateTime]::UtcNow.AddMinutes(30)
+        $script:IotHubAccessToken = "Bearer $($Token.accessToken)"
+        $script:IotHubAccessTokenRenewUtc = if ($Token.expiresOn) { [DateTimeOffset]::FromUnixTimeSeconds([long]$Token.expiresOn).UtcDateTime.AddMinutes(-3) }
+            else { [DateTime]::UtcNow.AddMinutes(1) }
     }
     return $script:IotHubAccessToken
 }
@@ -299,8 +301,9 @@ function Get-IotHubAccessToken {
 function Invoke-ServiceRestRequest {
     <#
     .SYNOPSIS
-    Calls a service API, retrying network errors, 408, 429 and 5xx, and returns Status, Text,
-    Json and Continuation (the x-ms-continuation header). Never throws on an HTTP status.
+    Calls a service API, retrying network errors, 408, 429 and 5xx, and returns Status (0 for a
+    network error), Text, Json and Continuation (the x-ms-continuation header). Never throws on a
+    failed request, so callers can go on with the rest.
 
     .PARAMETER Authorization
     Returns the Authorization header; called for each attempt, so a token can be renewed.
@@ -323,9 +326,6 @@ function Invoke-ServiceRestRequest {
         $Response = Send-ServiceHttpRequest -Method $Method -Uri $Uri -Headers $RequestHeaders -Content $Content
         $Retriable = $Response.Status -eq 0 -or $Response.Status -in 408, 429 -or $Response.Status -ge 500
         if (-not $Retriable -or $Attempt -ge $MaxAttempts) {
-            if ($Response.Status -eq 0) {
-                throw "$Method $($Uri -replace '\?.*') failed: $($Response.Text)"
-            }
             $Json = $null
             if (-not [string]::IsNullOrWhiteSpace($Response.Text)) {
                 try { $Json = ConvertFrom-Json -InputObject $Response.Text } catch { $Json = $null }
