@@ -129,8 +129,11 @@ Remove-AzIotStaleTestDevices -ResourceGroup <rg> -IotHubName <hub> -DpsName <dps
 * The hub and ADR are called with Microsoft Entra ID, so this works with local
   authentication disabled. The DPS is called with its key. Roles: IoT Hub Data
   Contributor on the hub, a role that reads the hub and lists the DPS keys
-  (e.g. Contributor), and Azure Device Registry Contributor on linked ADR
-  namespaces.
+  (e.g. Contributor), and, on linked ADR namespaces,
+  `Microsoft.DeviceRegistry/namespaces/read` and
+  `namespaces/registryDevices/read` and `/delete` (e.g. Azure Device Registry
+  Administrator; Azure Device Registry Contributor does not cover registry
+  devices).
 * ADR namespaces are found in the hub's subscription, through their hub or DPS
   endpoints. ADR is skipped only when `Microsoft.DeviceRegistry` is not
   registered there; any other failure to list them stops the run before any

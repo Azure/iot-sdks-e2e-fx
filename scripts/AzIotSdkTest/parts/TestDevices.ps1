@@ -44,9 +44,10 @@ function Remove-AzIotStaleTestDevices {
     after trying them all.
 
     The hub and ADR are called with Microsoft Entra ID (IoT Hub Data Contributor, or Registry
-    Contributor, on the hub; read on the ADR namespaces and delete on their devices, e.g. Azure
-    Device Registry Contributor), so it works with local authentication disabled. The DPS is called
-    with its 'provisioningserviceowner' key.
+    Contributor, on the hub; Microsoft.DeviceRegistry/namespaces/read and
+    namespaces/registryDevices/read and /delete on the ADR namespaces, e.g. Azure Device Registry
+    Administrator, not Azure Device Registry Contributor), so it works with local authentication
+    disabled. The DPS is called with its 'provisioningserviceowner' key.
 
     .PARAMETER ResourceGroup
     Resource group of the hub and the DPS.

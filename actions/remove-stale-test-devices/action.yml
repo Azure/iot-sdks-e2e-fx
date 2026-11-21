@@ -5,8 +5,9 @@
 # This is the GitHub Actions face of vsts/templates/steps-remove-stale-test-devices.yaml. Run it on
 # a schedule, for example nightly. The caller must run `azure/login` BEFORE this step, as an
 # identity with IoT Hub Data Contributor on the hub, a role that reads the hub and lists the DPS
-# keys, such as Contributor, and, where ADR is linked, Azure Device Registry Contributor on its
-# namespaces.
+# keys, such as Contributor, and, where ADR is linked, read on its namespaces and read and delete on
+# their registryDevices, such as Azure Device Registry Administrator (Azure Device Registry
+# Contributor does not cover registryDevices).
 #
 # Usage:
 #   - uses: Azure/iot-sdks-e2e-fx/actions/remove-stale-test-devices@<ref>

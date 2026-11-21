@@ -4,8 +4,9 @@
 #
 # The Azure Pipelines face of actions/remove-stale-test-devices. Run it on a schedule, for example
 # nightly. The service connection needs IoT Hub Data Contributor on the hub, a role that reads the
-# hub and lists the DPS keys, such as Contributor, and, where ADR is linked, Azure Device Registry
-# Contributor on its namespaces.
+# hub and lists the DPS keys, such as Contributor, and, where ADR is linked, read on its namespaces
+# and read and delete on their registryDevices, such as Azure Device Registry Administrator (Azure
+# Device Registry Contributor does not cover registryDevices).
 
 parameters:
   # Azure Resource Manager service connection used to delete.
