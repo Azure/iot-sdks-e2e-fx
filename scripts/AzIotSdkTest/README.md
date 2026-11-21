@@ -106,7 +106,8 @@ $Groups = Add-AzIotSharedEnrollmentGroups -ResourceGroup <rg> -DpsName <dps> `
 
 Runs that fail or are canceled leave their devices on the environment.
 `Remove-AzIotStaleTestDevices` deletes them from the hub, with their DPS
-registrations. Run it on a schedule:
+registrations and their devices in the ADR namespaces linked to the hub or the
+DPS. Run it on a schedule:
 [`steps-remove-stale-test-devices.yaml`](../../vsts/templates/steps-remove-stale-test-devices.yaml)
 in Azure Pipelines,
 [`remove-stale-test-devices`](../../actions/remove-stale-test-devices) in
@@ -122,10 +123,18 @@ Remove-AzIotStaleTestDevices -ResourceGroup <rg> -IotHubName <hub> -DpsName <dps
   or both. Each repository passes its own, so several can share an environment.
 * A selected device is kept when it is excluded, connected, active within
   `-MinimumAgeHours`, or has no activity time.
-* The hub is called with Microsoft Entra ID, so this works with local
-  authentication disabled. The DPS is called with its key.
-* The DPS registration is deleted first. A device whose registration could not
-  be deleted stays on the hub, for the next run to find, and the cmdlet fails.
+* With `-DeviceIdPattern`, ADR devices matching it whose hub device is gone
+  (a test deleted only that) are deleted too, aged by their ADR change time.
+* The hub and ADR are called with Microsoft Entra ID, so this works with local
+  authentication disabled. The DPS is called with its key. Roles: IoT Hub Data
+  Contributor on the hub, a role that reads the hub and lists the DPS keys
+  (e.g. Contributor), and Azure Device Registry Contributor on linked ADR
+  namespaces.
+* ADR namespaces are found in the hub's subscription, through their hub or DPS
+  endpoints.
+* The DPS registration is deleted first, then the ADR devices, then the hub
+  device. A device whose registration or ADR device could not be deleted stays
+  on the hub, for the next run to find, and the cmdlet fails.
 
 ## Windows PowerShell 5.1
 

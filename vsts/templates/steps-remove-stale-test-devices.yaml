@@ -1,9 +1,11 @@
 # Deletes the test devices that runs left on a permanent test environment: on its hub, with their
-# registrations on its DPS. See Remove-AzIotStaleTestDevices.
+# registrations on its DPS and their devices in the ADR namespaces linked to them. See
+# Remove-AzIotStaleTestDevices.
 #
 # The Azure Pipelines face of actions/remove-stale-test-devices. Run it on a schedule, for example
-# nightly. The service connection needs IoT Hub Data Contributor on the hub, and a role that reads
-# the hub and lists the DPS keys, such as Contributor.
+# nightly. The service connection needs IoT Hub Data Contributor on the hub, a role that reads the
+# hub and lists the DPS keys, such as Contributor, and, where ADR is linked, Azure Device Registry
+# Contributor on its namespaces.
 
 parameters:
   # Azure Resource Manager service connection used to delete.
@@ -74,7 +76,7 @@ steps:
           WhatIf           = $env:AZ_IOT_WHAT_IF -eq 'True'
       }
 
-      Remove-AzIotStaleTestDevices @Arguments | Format-Table -AutoSize DeviceId, LastActivityUtc, Result | Out-String -Width 300 | Write-Host
+      Remove-AzIotStaleTestDevices @Arguments | Format-Table -AutoSize DeviceId, OnHub, LastActivityUtc, Result | Out-String -Width 300 | Write-Host
   # Every parameter is passed as env, never expanded into the script, so a value is always data.
   env:
     AZ_IOT_FRAMEWORK_ROOT: ${{ parameters.frameworkRoot }}
