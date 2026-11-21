@@ -10,6 +10,7 @@ $script:AdrRegistryDeviceApiVersion = if ($env:ADR_REGISTRY_DEVICE_API_VERSION) 
 $script:AdrDeviceDeletePollSeconds = 20
 $script:AdrDeviceDeleteTimeoutSeconds = 900
 $script:ArmEndpoint = "https://management.azure.com"
+$script:ArmProvidersApiVersion = "2021-04-01"
 $script:IotHubEntraResource = "https://iothubs.azure.net"
 
 function Remove-AzIotStaleTestDevices {
@@ -34,7 +35,8 @@ function Remove-AzIotStaleTestDevices {
     Devices registered through an Azure Device Registry (ADR) policy also have an ADR device, in
     the ADR namespace linked to the hub or the DPS; those namespaces are found in the hub's
     subscription. With -DeviceIdPattern, an ADR device matching it whose hub device is gone (a test
-    deleted only that) is selected too, aged by its ADR create or update time.
+    deleted only that) is selected too, aged by its ADR create or update time; only in a namespace
+    linked to nothing else, since another hub's devices could be in a shared one.
 
     Each selected device's DPS registration (-DpsName) is deleted first, then its ADR devices, then
     the device on the hub. The hub is where devices are found, so a device whose DPS registration or
@@ -115,10 +117,12 @@ function Remove-AzIotStaleTestDevices {
     if (-not [string]::IsNullOrWhiteSpace($DpsName)) {
         $LinkedResourceIds += "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/provisioningServices/$DpsName"
     }
-    $AdrNamespaceIds = @(Find-AdrNamespacesLinkedTo -SubscriptionId $SubscriptionId -ResourceIds $LinkedResourceIds)
+    $AdrNamespaces = @(Find-AdrNamespacesLinkedTo -SubscriptionId $SubscriptionId -ResourceIds $LinkedResourceIds)
+    $AdrNamespaceIds = @($AdrNamespaces | %{ $_.Id })
     if ($AdrNamespaceIds.Count -gt 0) {
-        Write-Host "ADR namespace(s) linked to the hub or the DPS: $(($AdrNamespaceIds | %{ ($_ -split '/')[-1] }) -join ', ')."
+        Write-Host "ADR namespace(s) linked to the hub or the DPS: $(($AdrNamespaces | %{ ($_.Id -split '/')[-1] + $(if ($_.LinkedToOthers) { ' (also linked to others)' }) }) -join ', ')."
         Add-AdrDevicesToStaleTestDevices -Devices $Devices -AdrNamespaceIds $AdrNamespaceIds -IotHubHostName $IotHubHostName `
+            -OrphanAdrNamespaceIds @($AdrNamespaces | ?{ -not $_.LinkedToOthers } | %{ $_.Id }) `
             -DeviceIdPattern $(if ($HasPattern) { $DeviceIdPattern }) -Cutoff $Cutoff -MinimumAgeHours $MinimumAgeHours -ExcludeDeviceIds $ExcludeDeviceIds
     }
     $Devices = $Devices.ToArray()
@@ -275,8 +279,9 @@ function Get-IotHubDeviceTwins {
 function Find-AdrNamespacesLinkedTo {
     <#
     .SYNOPSIS
-    Ids of the ADR namespaces in a subscription with a messaging or provisioning endpoint on one of
-    -ResourceIds. None when ADR is not registered on the subscription.
+    The ADR namespaces in a subscription with a messaging or provisioning endpoint on one of
+    -ResourceIds: Id, and LinkedToOthers when an endpoint is on another resource. None when ADR is
+    not registered on the subscription.
     #>
     param(
         [string]$SubscriptionId,
@@ -288,7 +293,11 @@ function Find-AdrNamespacesLinkedTo {
         $Response = Invoke-ServiceRestRequest -Method GET -Uri $Uri -Authorization { Get-EntraAccessToken -Resource $script:ArmEndpoint }
         if ($Response.Status -ne 200) {
             $Code = if ($null -ne $Response.Json -and $Response.Json.PSObject.Properties['error']) { [string]$Response.Json.error.code }
-            if ($Code -in 'MissingSubscriptionRegistration', 'NoRegisteredProviderFound', 'InvalidResourceType') { return }
+            # These codes also mean an unsupported api-version or location: no ADR only when it is unregistered.
+            if ($Code -in 'MissingSubscriptionRegistration', 'NoRegisteredProviderFound', 'InvalidResourceType' -and
+                (Get-ArmResourceProviderRegistrationState -SubscriptionId $SubscriptionId -ProviderNamespace 'Microsoft.DeviceRegistry') -in 'NotRegistered', 'Unregistered') {
+                return
+            }
             throw "Listing the ADR namespaces of subscription $SubscriptionId failed: HTTP $($Response.Status) $($Response.Text)"
         }
         foreach ($Namespace in @($Response.Json.value | ?{ $_ })) {
@@ -296,17 +305,40 @@ function Find-AdrNamespacesLinkedTo {
                 $Group = $Namespace.properties.$Kind.endpoints
                 if ($null -ne $Group) { $Group.PSObject.Properties | %{ [string]$_.Value.resourceId } }
             }
-            if (@($Endpoints | ?{ $_ -and ($ResourceIds -contains $_) }).Count -gt 0) { [string]$Namespace.id }
+            $Endpoints = @($Endpoints | ?{ $_ })
+            if (@($Endpoints | ?{ $ResourceIds -contains $_ }).Count -gt 0) {
+                [pscustomobject]@{ Id = [string]$Namespace.id; LinkedToOthers = @($Endpoints | ?{ $ResourceIds -notcontains $_ }).Count -gt 0 }
+            }
         }
         $Uri = [string]$Response.Json.nextLink
     }
 }
 
+function Get-ArmResourceProviderRegistrationState {
+    <#
+    .SYNOPSIS
+    A resource provider's registration state on a subscription (Registered, NotRegistered, ...);
+    NotRegistered when the cloud has no such provider.
+    #>
+    param(
+        [string]$SubscriptionId,
+        [string]$ProviderNamespace
+    )
+
+    $Response = Invoke-ServiceRestRequest -Method GET -Uri "$($script:ArmEndpoint)/subscriptions/$SubscriptionId/providers/$($ProviderNamespace)?api-version=$($script:ArmProvidersApiVersion)" `
+        -Authorization { Get-EntraAccessToken -Resource $script:ArmEndpoint }
+    if ($Response.Status -eq 404) { return 'NotRegistered' }
+    if ($Response.Status -ne 200) {
+        throw "Reading the registration of $ProviderNamespace on subscription $SubscriptionId failed: HTTP $($Response.Status) $($Response.Text)"
+    }
+    return [string]$Response.Json.registrationState
+}
+
 function Get-AdrRegistryDevices {
     <#
     .SYNOPSIS
-    Every registry device of the ADR namespaces: ResourceId, DeviceId (its externalDeviceId, or its
-    name) and LastChangeUtc (its latest ARM create or update time).
+    Every registry device of the ADR namespaces: NamespaceId, ResourceId, DeviceId (its
+    externalDeviceId, or its name) and LastChangeUtc (its latest ARM create or update time).
     #>
     param([string[]]$AdrNamespaceIds)
 
@@ -322,7 +354,7 @@ function Get-AdrRegistryDevices {
                 if (-not $DeviceId) { $DeviceId = [string]$AdrDevice.name }
                 $LastChangeUtc = @($AdrDevice.systemData.createdAt, $AdrDevice.systemData.lastModifiedAt) |
                     %{ ConvertTo-UtcDateTime -Value $_ } | ?{ $null -ne $_ } | Sort-Object -Descending | Select-Object -First 1
-                [pscustomobject]@{ ResourceId = [string]$AdrDevice.id; DeviceId = $DeviceId; LastChangeUtc = $LastChangeUtc }
+                [pscustomobject]@{ NamespaceId = $NamespaceId; ResourceId = [string]$AdrDevice.id; DeviceId = $DeviceId; LastChangeUtc = $LastChangeUtc }
             }
             $Uri = [string]$Response.Json.nextLink
         }
@@ -333,11 +365,12 @@ function Add-AdrDevicesToStaleTestDevices {
     <#
     .SYNOPSIS
     Sets each test device's AdrDeviceIds and, with -DeviceIdPattern, adds the matching ADR devices
-    whose hub device is gone, with OnHub $false.
+    of -OrphanAdrNamespaceIds whose hub device is gone, with OnHub $false.
     #>
     param(
         [System.Collections.Generic.List[object]]$Devices,
         [string[]]$AdrNamespaceIds,
+        [string[]]$OrphanAdrNamespaceIds,
         [string]$IotHubHostName,
         [string]$DeviceIdPattern,
         [DateTime]$Cutoff,
@@ -358,8 +391,14 @@ function Add-AdrDevicesToStaleTestDevices {
     }
     if ([string]::IsNullOrEmpty($DeviceIdPattern)) { return }
 
+    $InSharedNamespace = 0
     foreach ($DeviceId in @($AdrDevicesById.Keys | Sort-Object)) {
         if ($Known.Contains($DeviceId) -or $DeviceId -cnotmatch $DeviceIdPattern) { continue }
+        # In a namespace also linked to another hub, a 404 here does not make the device an orphan.
+        if (@($AdrDevicesById[$DeviceId] | ?{ $OrphanAdrNamespaceIds -notcontains $_.NamespaceId }).Count -gt 0) {
+            $InSharedNamespace++
+            continue
+        }
         # A device not queried may still be on the hub, without the twin tags asked for.
         $Response = Invoke-ServiceRestRequest -Method GET -Uri "https://$IotHubHostName/devices/$([uri]::EscapeDataString($DeviceId))?api-version=$($script:IotHubServiceApiVersion)" `
             -Authorization { Get-EntraAccessToken -Resource $script:IotHubEntraResource }
@@ -375,6 +414,9 @@ function Add-AdrDevicesToStaleTestDevices {
             OnHub = $false
             AdrDeviceIds = @($AdrDevicesById[$DeviceId] | %{ $_.ResourceId })
         })
+    }
+    if ($InSharedNamespace -gt 0) {
+        Write-Host "$InSharedNamespace ADR device(s) not on the hub left alone: their namespace is also linked to other resources."
     }
 }
 

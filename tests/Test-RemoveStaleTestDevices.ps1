@@ -53,6 +53,8 @@ function Reset-Stub {
         HubUntagged = @()
         Namespaces = @()
         NamespaceListStatus = 200
+        NamespaceListCode = $null
+        ProviderState = 'NotRegistered'
         AdrDevices = @{}
         AdrDeleteStatus = @{}
         AdrStuck = @()
@@ -61,9 +63,10 @@ function Reset-Stub {
 }
 
 $HubId = '/subscriptions/sub-1/resourceGroups/StubRg/providers/Microsoft.Devices/IotHubs/stubhub'
-function New-Namespace([string]$Name, [string]$HubResourceId) {
-    @{ id = "/subscriptions/sub-1/resourceGroups/AdrRg/providers/Microsoft.DeviceRegistry/namespaces/$Name"; name = $Name
-       properties = @{ messaging = @{ endpoints = @{ 'hub-1' = @{ resourceId = $HubResourceId } } } } }
+function New-Namespace([string]$Name, [string]$HubResourceId, [string]$OtherDpsResourceId = $null) {
+    $Properties = @{ messaging = @{ endpoints = @{ 'hub-1' = @{ resourceId = $HubResourceId } } } }
+    if ($OtherDpsResourceId) { $Properties.provisioning = @{ endpoints = @{ 'dps-1' = @{ resourceId = $OtherDpsResourceId } } } }
+    @{ id = "/subscriptions/sub-1/resourceGroups/AdrRg/providers/Microsoft.DeviceRegistry/namespaces/$Name"; name = $Name; properties = $Properties }
 }
 function New-AdrDevice([string]$Namespace, [string]$Name, [string]$ExternalId = $Name, [string]$Changed = $Old) {
     @{ id = "/subscriptions/sub-1/resourceGroups/AdrRg/providers/Microsoft.DeviceRegistry/namespaces/$Namespace/registryDevices/$Name"; name = $Name
@@ -122,7 +125,7 @@ function global:az {
             }
             '^GET https://management\.azure\.com/subscriptions/sub-1/providers/Microsoft\.DeviceRegistry/namespaces\?(.*)$' {
                 if ($global:Stub.NamespaceListStatus -ne 200) {
-                    $Code = if ($global:Stub.NamespaceListStatus -eq 409) { 'MissingSubscriptionRegistration' } else { 'AuthorizationFailed' }
+                    $Code = $global:Stub.NamespaceListCode
                     return @{ Status = $global:Stub.NamespaceListStatus; Text = "{`"error`":{`"code`":`"$Code`"}}" }
                 }
                 # One namespace per page.
@@ -130,6 +133,9 @@ function global:az {
                 $Page = @{ value = @($global:Stub.Namespaces | Select-Object -Skip $Index -First 1) }
                 if ($Index + 1 -lt $global:Stub.Namespaces.Count) { $Page.nextLink = "https://management.azure.com/subscriptions/sub-1/providers/Microsoft.DeviceRegistry/namespaces?page=$($Index + 1)" }
                 return @{ Status = 200; Text = (ConvertTo-Json -Depth 10 -InputObject $Page) }
+            }
+            '^GET https://management\.azure\.com/subscriptions/sub-1/providers/Microsoft\.DeviceRegistry\?' {
+                return @{ Status = 200; Text = "{`"namespace`":`"Microsoft.DeviceRegistry`",`"registrationState`":`"$($global:Stub.ProviderState)`"}" }
             }
             '^GET https://management\.azure\.com(/subscriptions/.+/namespaces/[^/]+)/registryDevices\?(.*)$' {
                 $NamespaceId = $Matches[1]
@@ -308,6 +314,16 @@ foreach ($Expected in @(
     Assert ($null -ne $Device -and $Device.Result -eq $Expected[1] -and $Device.OnHub -eq $Expected[2] -and @($Device.AdrDeviceIds).Count -eq $Expected[3]) "adr results: $($Expected[0]) is '$($Device.Result)' (OnHub $($Device.OnHub), $(@($Device.AdrDeviceIds).Count) ADR device(s)), expected '$($Expected[1])'."
 }
 
+# A namespace also linked to another DPS (or hub) may hold devices of another hub: its devices
+# not on this hub are left alone, those of the devices queried are still deleted.
+Reset-Stub
+$Stub.Namespaces = @(New-Namespace 'ns-linked' $HubId '/subscriptions/sub-1/resourceGroups/StubRg/providers/Microsoft.Devices/provisioningServices/otherdps')
+$Stub.Twins = @(New-Twin 'ci-1-old' -Activity $Old)
+$Stub.AdrDevices[$Ns] = @(New-AdrDevice 'ns-linked' 'ci-1-old'; New-AdrDevice 'ns-linked' 'ci-20-elsewhere')
+$Result = @(Remove-AzIotStaleTestDevices @Common -Confirm:$false)
+$AdrDeleted = Get-Ids (Find-Calls '^DELETE https://management') '/registryDevices/([^?]+)\?'
+Assert ($AdrDeleted -eq 'ci-1-old' -and (Find-Calls '^GET https://stubhub').Count -eq 0 -and @($Result | %{ $_.DeviceId }) -notcontains 'ci-20-elsewhere') "adr shared: ADR deletes were '$AdrDeleted'; a device not on the hub of a shared namespace must be left alone."
+
 # Without -DeviceIdPattern, ADR devices are only those of the hub devices queried.
 Reset-Stub
 $Stub.Namespaces = @(New-Namespace 'ns-linked' $HubId)
@@ -316,16 +332,24 @@ $Stub.AdrDevices[$Ns] = @(New-AdrDevice 'ns-linked' 'ci-20-orphan')
 Remove-AzIotStaleTestDevices -ResourceGroup StubRg -IotHubName stubhub -TwinTags @{ e2eSuite = 'horton' } -Confirm:$false | Out-Null
 Assert ((Find-Calls '^(GET https://stubhub|DELETE)').Count -eq 0) "adr tags: an ADR device must not be selected without -DeviceIdPattern."
 
-# ADR not registered on the subscription: no ADR. Any other failure to list namespaces: nothing deleted.
-foreach ($Case in @(@{ Status = 409; Throws = $false }, @{ Status = 403; Throws = $true })) {
+# ADR not registered on the subscription: no ADR. Any other failure to list namespaces, including an
+# unregistered-like error with ADR registered (e.g. an unsupported api-version): nothing deleted.
+foreach ($Case in @(
+    @{ Status = 409; Code = 'MissingSubscriptionRegistration'; Provider = 'NotRegistered'; Throws = $false }
+    @{ Status = 400; Code = 'NoRegisteredProviderFound'; Provider = 'Unregistered'; Throws = $false }
+    @{ Status = 400; Code = 'NoRegisteredProviderFound'; Provider = 'Registered'; Throws = $true }
+    @{ Status = 403; Code = 'AuthorizationFailed'; Provider = 'NotRegistered'; Throws = $true }
+)) {
     Reset-Stub
     $Stub.NamespaceListStatus = $Case.Status
+    $Stub.NamespaceListCode = $Case.Code
+    $Stub.ProviderState = $Case.Provider
     $Thrown = $null
     try { Remove-AzIotStaleTestDevices @Common -Confirm:$false 2>$null | Out-Null } catch { $Thrown = $_.Exception.Message }
     if ($Case.Throws) {
-        Assert ("$Thrown" -match 'ADR namespaces' -and (Find-Calls '^(DELETE|POST https://stubhub\.azure-devices\.net/devices\?)').Count -eq 0) "adr $($Case.Status): expected a failure before any delete; got '$Thrown'."
+        Assert ("$Thrown" -match 'ADR namespaces' -and (Find-Calls '^(DELETE|POST https://stubhub\.azure-devices\.net/devices\?)').Count -eq 0) "adr $($Case.Code)/$($Case.Provider): expected a failure before any delete; got '$Thrown'."
     } else {
-        Assert ("$Thrown" -match 'ci-6-dps-fails' -and (Find-Calls '^POST https://stubhub\.azure-devices\.net/devices\?').Count -eq 1) "adr $($Case.Status): expected the run to go on without ADR; got '$Thrown'."
+        Assert ("$Thrown" -match 'ci-6-dps-fails' -and (Find-Calls '^POST https://stubhub\.azure-devices\.net/devices\?').Count -eq 1) "adr $($Case.Code)/$($Case.Provider): expected the run to go on without ADR; got '$Thrown'."
     }
 }
 

@@ -124,14 +124,17 @@ Remove-AzIotStaleTestDevices -ResourceGroup <rg> -IotHubName <hub> -DpsName <dps
 * A selected device is kept when it is excluded, connected, active within
   `-MinimumAgeHours`, or has no activity time.
 * With `-DeviceIdPattern`, ADR devices matching it whose hub device is gone
-  (a test deleted only that) are deleted too, aged by their ADR change time.
+  (a test deleted only that) are deleted too, aged by their ADR change time,
+  unless their namespace is also linked to another hub or DPS.
 * The hub and ADR are called with Microsoft Entra ID, so this works with local
   authentication disabled. The DPS is called with its key. Roles: IoT Hub Data
   Contributor on the hub, a role that reads the hub and lists the DPS keys
   (e.g. Contributor), and Azure Device Registry Contributor on linked ADR
   namespaces.
 * ADR namespaces are found in the hub's subscription, through their hub or DPS
-  endpoints.
+  endpoints. ADR is skipped only when `Microsoft.DeviceRegistry` is not
+  registered there; any other failure to list them stops the run before any
+  delete.
 * The DPS registration is deleted first, then the ADR devices, then the hub
   device. A device whose registration or ADR device could not be deleted stays
   on the hub, for the next run to find, and the cmdlet fails.
