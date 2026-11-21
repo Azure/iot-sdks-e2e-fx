@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
 Drives Remove-LeftoverAzureResourceGroups with `az` stubbed, and checks which resource groups it
-deletes, stamps and keeps, permanent ones included.
+deletes, stamps and keeps, permanent ones included; and that updating an existing permanent group
+keeps its tag.
 
 .DESCRIPTION
 Deletes nothing and needs no credentials. `az` is replaced by a stub that lists fixed resource
@@ -49,6 +50,36 @@ $Stamped = @($Calls | ?{ $_ -match '^rest --method PATCH --url \S+/rg/(\S+)/prov
 Assert (($Deleted -join ',') -eq 'ci-not-permanent,ci-old') "deleted '$($Deleted -join ',')', expected 'ci-not-permanent,ci-old'."
 Assert (($Stamped -join ',') -eq 'ci-untagged') "stamped '$($Stamped -join ',')', expected 'ci-untagged': a permanent group must not be stamped."
 Assert ((@($Calls | ?{ $_ -match '^group list' }) -join '') -match 'permanent:tags\.AzIotSdkTestPermanent') "the group list must read the AzIotSdkTestPermanent tag."
+
+# Updating an existing permanent group without -Permanent must keep the tag: the update replaces every tag.
+$global:ExistingGroupTags = @{ AzIotSdkTestPermanent = 'true'; CreatedOn = $Old }
+$global:PatchedTags = $null
+function global:az {
+    $Joined = @($args | %{ "$_" }) -join ' '
+    $global:LASTEXITCODE = 0
+    switch -Regex ($Joined) {
+        '^account show' { return '{"id":"00000000-0000-0000-0000-000000000000","user":{"name":"stub@contoso.com"}}' }
+        '^extension list' { return '[{"name":"azure-iot","version":"0.30.0"}]' }
+        '^group exists' { return 'true' }
+        '^group show' { return (ConvertTo-Json -Depth 3 -InputObject @{ id = '/rg/pinned'; tags = $global:ExistingGroupTags }) }
+        '^rest --method PATCH' {
+            $Body = $args[[array]::IndexOf($args, '--body') + 1].Substring(1)
+            $global:PatchedTags = (Get-Content -Raw -Path $Body | ConvertFrom-Json).tags
+            return '{}'
+        }
+    }
+    return ''
+}
+$Module = Get-Module AzIotSdkTest
+foreach ($Case in @(
+    @{ Name = 'existing permanent'; Tags = @{ AzIotSdkTestPermanent = 'true' }; Expected = 'true' },
+    @{ Name = 'existing not permanent'; Tags = @{ CreatedOn = $Old }; Expected = $null }
+)) {
+    $global:ExistingGroupTags = $Case.Tags
+    $global:PatchedTags = $null
+    & $Module { Initialize-AzIotTestResourceGroup -AzureLocation eastus2euap -ResourceGroup pinned } | Out-Null
+    Assert ($null -ne $global:PatchedTags -and $global:PatchedTags.AzIotSdkTestPermanent -eq $Case.Expected) "$($Case.Name): a rerun without -Permanent patched AzIotSdkTestPermanent='$($global:PatchedTags.AzIotSdkTestPermanent)', expected '$($Case.Expected)'."
+}
 
 if ($Problems.Count -gt 0) {
     $Problems | %{ Write-Host "FAIL: $_" }

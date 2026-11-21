@@ -453,7 +453,8 @@ function Initialize-AzIotTestResourceGroup {
     Tags to apply. CreatedBy/CreatedOn (or UpdatedBy/UpdatedOn) and AzDevOpsRunUrl are added to it.
     .PARAMETER Permanent
     Tags the group 'AzIotSdkTestPermanent=true', which Remove-LeftoverAzureResourceGroups never
-    deletes, and refuses a name starting with Get-AzureResourceGroupNamePrefix.
+    deletes, and refuses a name starting with Get-AzureResourceGroupNamePrefix. An existing group
+    keeps that tag even without -Permanent.
 
     .OUTPUTS
     An object with AzureAccount ('az account show') and SubscriptionId.
@@ -528,6 +529,11 @@ function Initialize-AzIotTestResourceGroup {
         Write-Host "Updating Azure resource group ($ResourceGroup; $ResourceGroupTagsString)"
 
         $AzureResourceGroup = az group show --name "$ResourceGroup" | ConvertFrom-Json
+
+        # The update replaces every tag, so keep the permanent one when a rerun omits -Permanent.
+        if ("$($AzureResourceGroup.tags.$($script:PermanentTagName))" -eq 'true') {
+            $ResourceGroupTags[$script:PermanentTagName] = "true"
+        }
 
         Set-ResourceGroupTags -ResourceGroupId $AzureResourceGroup.id -Tags $ResourceGroupTags
         Stop-OnError -Step "Update Azure resource group tags"
