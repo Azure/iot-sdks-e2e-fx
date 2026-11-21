@@ -4,7 +4,7 @@
     # Bump on every change that consumers can observe. Consumers pin a TAG of
     # this repository, not a branch; this version is what a pipeline log should
     # name when someone asks which code provisioned a run.
-    ModuleVersion     = '1.5.0'
+    ModuleVersion     = '1.6.0'
 
     GUID              = 'b0f3b0b6-6a2f-4b1e-9d7a-8f3f1a6c2d55'
     Author            = 'Microsoft Corporation'
@@ -28,6 +28,7 @@
         'New-AzIotMqttv5TestEnvironment'
         'Add-AzIotEventHubTelemetryRoute'
         'Add-AzIotSharedEnrollmentGroups'
+        'Remove-AzIotStaleTestDevices'
         'Get-AzIotTestEnvironment'
         'ConvertFrom-JsonToTestEnvironmentInfo'
         'New-AzIotCSDKE2ETestConfig'

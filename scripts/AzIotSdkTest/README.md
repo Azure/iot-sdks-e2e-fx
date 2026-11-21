@@ -99,6 +99,33 @@ $Groups = Add-AzIotSharedEnrollmentGroups -ResourceGroup <rg> -DpsName <dps> `
 * An existing symmetric-key group keeps its keys.
 * `-AdrPolicy` adds an ADR certificate policy to both groups, so their devices
   get certificates issued.
+* `-InitialTwinTags` tags the twins of both groups' devices, so their stale
+  devices can be found (below). A rerun without it keeps the tags.
+
+### Stale test devices
+
+Runs that fail or are canceled leave their devices on the environment.
+`Remove-AzIotStaleTestDevices` deletes them from the hub, with their DPS
+registrations. Run it on a schedule:
+[`steps-remove-stale-test-devices.yaml`](../../vsts/templates/steps-remove-stale-test-devices.yaml)
+in Azure Pipelines,
+[`remove-stale-test-devices`](../../actions/remove-stale-test-devices) in
+GitHub Actions.
+
+```powershell
+Remove-AzIotStaleTestDevices -ResourceGroup <rg> -IotHubName <hub> -DpsName <dps> `
+    -TwinTags @{ e2eSuite = 'horton' } [-DeviceIdPattern '^horton-'] `
+    [-ExcludeDeviceIds <pinned device ids>] [-MinimumAgeHours 6] [-WhatIf]
+```
+
+* Devices are selected by id (`-DeviceIdPattern`), by twin tags (`-TwinTags`),
+  or both. Each repository passes its own, so several can share an environment.
+* A selected device is kept when it is excluded, connected, active within
+  `-MinimumAgeHours`, or has no activity time.
+* The hub is called with Microsoft Entra ID, so this works with local
+  authentication disabled. The DPS is called with its key.
+* The DPS registration is deleted first. A device whose registration could not
+  be deleted stays on the hub, for the next run to find, and the cmdlet fails.
 
 ## Windows PowerShell 5.1
 

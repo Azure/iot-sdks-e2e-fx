@@ -17,7 +17,8 @@ function Add-AzIotSharedEnrollmentGroups {
         keeps its keys.
 
     Both assign devices to -IotHubHostName when given, and reference -AdrPolicy when given, so
-    their devices get certificates issued.
+    their devices get certificates issued. With -InitialTwinTags, their devices' twins start with
+    those tags, which Remove-AzIotStaleTestDevices -TwinTags selects them by.
 
     The DPS never holds the CA's private key. Keep the returned CA and pass it back with -GroupCaPem
     on a rerun, which then changes nothing; without it a new CA is created and the X.509 group moves
@@ -37,6 +38,9 @@ function Add-AzIotSharedEnrollmentGroups {
     .PARAMETER AdrPolicy
     ADR certificate policy the groups' devices get certificates from, e.g. the AdrPolicy of
     New-AzIotTestEnvironment -EnableCertificateManagement.
+    .PARAMETER InitialTwinTags
+    Twin tags of the groups' devices, e.g. @{ e2eSuite = 'horton' }. Omitted, an existing group keeps
+    its initial twin. Not verified on MQTT v5 hubs: select their devices by id instead.
     .PARAMETER GroupCaPem
     The group CA to keep: a PEM 'CERTIFICATE' and its PKCS#8 'PRIVATE KEY'.
     .PARAMETER CaValidityDays
@@ -59,6 +63,7 @@ function Add-AzIotSharedEnrollmentGroups {
         [string]$SymmetricKeyEnrollmentGroupId = $null,
         [string]$IotHubHostName = $null,
         [AdrPolicyReference]$AdrPolicy = $null,
+        [Hashtable]$InitialTwinTags = $null,
         [string]$GroupCaPem = $null,
         [ValidateRange(1, 3650)][int]$CaValidityDays = 730
     )
@@ -82,14 +87,14 @@ function Add-AzIotSharedEnrollmentGroups {
         -Certificate $GroupCa.Certificate -PrivateKey $GroupCa.PrivateKey.ToNativeRsaKey()
 
     Set-SharedEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentGroupId $X509EnrollmentGroupId `
-        -IotHubHostName $IotHubHostName -AdrPolicy $AdrPolicy `
+        -IotHubHostName $IotHubHostName -AdrPolicy $AdrPolicy -InitialTwinTags $InitialTwinTags `
         -Attestation @{ type = "x509"; x509 = @{ caReferences = @{ primary = $DpsCertificateName } } } | Out-Null
     Write-Host "Enrollment group $X509EnrollmentGroupId references CA $($GroupCa.Certificate.Subject) ($DpsCertificateName), expiring $($GroupCa.Certificate.NotAfter.ToUniversalTime().ToString('u'))."
 
     $SymmetricKeyEnrollmentGroup = $null
     if (-not [string]::IsNullOrWhiteSpace($SymmetricKeyEnrollmentGroupId)) {
         $Group = Set-SharedEnrollmentGroup -ResourceGroup $ResourceGroup -DpsName $DpsName -EnrollmentGroupId $SymmetricKeyEnrollmentGroupId `
-            -IotHubHostName $IotHubHostName -AdrPolicy $AdrPolicy -Attestation @{ type = "symmetricKey" }
+            -IotHubHostName $IotHubHostName -AdrPolicy $AdrPolicy -InitialTwinTags $InitialTwinTags -Attestation @{ type = "symmetricKey" }
         if ([string]::IsNullOrWhiteSpace($Group.attestation.symmetricKey.primaryKey)) {
             throw "Enrollment group $SymmetricKeyEnrollmentGroupId returned no primary key."
         }
@@ -108,7 +113,7 @@ function Set-SharedEnrollmentGroup {
     <#
     .SYNOPSIS
     Creates or replaces an enabled enrollment group with -Attestation, keeping the symmetric keys of
-    an existing one, and returns it.
+    an existing one, and its initial twin unless -InitialTwinTags is given, and returns it.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$ResourceGroup,
@@ -116,7 +121,8 @@ function Set-SharedEnrollmentGroup {
         [Parameter(Mandatory = $true)][string]$EnrollmentGroupId,
         [Parameter(Mandatory = $true)][Hashtable]$Attestation,
         [string]$IotHubHostName = $null,
-        [AdrPolicyReference]$AdrPolicy = $null
+        [AdrPolicyReference]$AdrPolicy = $null,
+        [Hashtable]$InitialTwinTags = $null
     )
 
     $Existing = Get-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" -EnrollmentId $EnrollmentGroupId
@@ -137,6 +143,13 @@ function Set-SharedEnrollmentGroup {
     if (-not [string]::IsNullOrWhiteSpace($IotHubHostName)) {
         $Body.allocationPolicy = "static"
         $Body.iotHubs = @($IotHubHostName)
+    }
+    if ($null -ne $InitialTwinTags -and $InitialTwinTags.Count -gt 0) {
+        $Properties = if ($null -ne $Existing -and $null -ne $Existing.initialTwin.properties) { $Existing.initialTwin.properties } else { @{ desired = @{} } }
+        $Body.initialTwin = @{ tags = $InitialTwinTags; properties = $Properties }
+    } elseif ($null -ne $Existing -and $null -ne $Existing.initialTwin) {
+        # Otherwise a rerun would drop the tags its devices are cleaned up by.
+        $Body.initialTwin = $Existing.initialTwin
     }
 
     return Set-DpsEnrollment -ResourceGroup $ResourceGroup -DpsName $DpsName -Collection "enrollmentGroups" `

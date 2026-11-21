@@ -1,0 +1,88 @@
+# Deletes the test devices that runs left on a permanent test environment: on its hub, with their
+# registrations on its DPS. See Remove-AzIotStaleTestDevices.
+#
+# The Azure Pipelines face of actions/remove-stale-test-devices. Run it on a schedule, for example
+# nightly. The service connection needs IoT Hub Data Contributor on the hub, and a role that reads
+# the hub and lists the DPS keys, such as Contributor.
+
+parameters:
+  # Azure Resource Manager service connection used to delete.
+  - name: azureSubscription
+    type: string
+  # Resource group of the hub and the DPS.
+  - name: resourceGroupName
+    type: string
+  - name: iotHubName
+    type: string
+  # DPS whose registrations are deleted too; empty for devices created on the hub.
+  - name: dpsName
+    type: string
+    default: ''
+  # Case-sensitive regular expression the device ids must match, e.g. '^horton-'.
+  - name: deviceIdPattern
+    type: string
+    default: ''
+  # Twin tags the devices must have, e.g. { e2eSuite: horton }. Give this, deviceIdPattern or both.
+  - name: twinTags
+    type: object
+    default: {}
+  # Device ids never deleted, e.g. the environment's pinned devices.
+  - name: excludeDeviceIds
+    type: object
+    default: []
+  # Hours since a device's latest activity before it is deleted.
+  - name: minimumAgeHours
+    type: number
+    default: 6
+  # Reports what would be deleted, and deletes nothing.
+  - name: whatIf
+    type: boolean
+    default: false
+  # Checkout of this repository. With more than one checkout step, Azure Pipelines places each
+  # repository under $(Build.SourcesDirectory)/<name> unless the checkout sets a path.
+  - name: frameworkRoot
+    type: string
+    default: $(Build.SourcesDirectory)
+  - name: displayName
+    type: string
+    default: Remove stale test devices
+
+steps:
+- task: AzureCLI@2
+  displayName: ${{ parameters.displayName }}
+  inputs:
+    azureSubscription: ${{ parameters.azureSubscription }}
+    scriptType: pscore
+    scriptLocation: inlineScript
+    visibleAzLogin: false
+    inlineScript: |
+      $ErrorActionPreference = 'Stop'
+
+      Import-Module (Join-Path $env:AZ_IOT_FRAMEWORK_ROOT 'scripts/AzIotSdkTest/AzIotSdkTest.psd1')
+
+      $TwinTags = @{}
+      ($env:AZ_IOT_TWIN_TAGS | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $TwinTags[$_.Name] = [string]$_.Value }
+
+      $Arguments = @{
+          ResourceGroup    = $env:AZ_IOT_RG_NAME
+          IotHubName       = $env:AZ_IOT_HUB_NAME
+          DpsName          = $env:AZ_IOT_DPS_NAME
+          DeviceIdPattern  = $env:AZ_IOT_DEVICE_ID_PATTERN
+          TwinTags         = $TwinTags
+          ExcludeDeviceIds = @("$env:AZ_IOT_EXCLUDE_DEVICE_IDS".Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+          MinimumAgeHours  = $env:AZ_IOT_MINIMUM_AGE_HOURS
+          WhatIf           = $env:AZ_IOT_WHAT_IF -eq 'True'
+      }
+
+      Remove-AzIotStaleTestDevices @Arguments | Format-Table -AutoSize DeviceId, LastActivityUtc, Result | Out-String -Width 300 | Write-Host
+  # Every parameter is passed as env, never expanded into the script, so a value is always data.
+  env:
+    AZ_IOT_FRAMEWORK_ROOT: ${{ parameters.frameworkRoot }}
+    AZ_IOT_RG_NAME: ${{ parameters.resourceGroupName }}
+    AZ_IOT_HUB_NAME: ${{ parameters.iotHubName }}
+    AZ_IOT_DPS_NAME: ${{ parameters.dpsName }}
+    AZ_IOT_DEVICE_ID_PATTERN: ${{ parameters.deviceIdPattern }}
+    AZ_IOT_TWIN_TAGS: ${{ convertToJson(parameters.twinTags) }}
+    AZ_IOT_EXCLUDE_DEVICE_IDS: ${{ join(',', parameters.excludeDeviceIds) }}
+    AZ_IOT_MINIMUM_AGE_HOURS: ${{ parameters.minimumAgeHours }}
+    AZ_IOT_WHAT_IF: ${{ parameters.whatIf }}

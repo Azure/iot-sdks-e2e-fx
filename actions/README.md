@@ -10,6 +10,7 @@
 | --- | --- |
 | [`provision-e2e-resources`](provision-e2e-resources) | [`vsts/templates/steps-provision-e2e-resources.yaml`](../vsts/templates/steps-provision-e2e-resources.yaml) |
 | [`destroy-e2e-resources`](destroy-e2e-resources) | [`vsts/templates/steps-destroy-e2e-resources.yaml`](../vsts/templates/steps-destroy-e2e-resources.yaml) |
+| [`remove-stale-test-devices`](remove-stale-test-devices) | [`vsts/templates/steps-remove-stale-test-devices.yaml`](../vsts/templates/steps-remove-stale-test-devices.yaml) |
 | [`check-submodules`](check-submodules) | `Test-SubmoduleConsistency`, called directly |
 
 `provision-e2e-resources` and its template both call `New-AzIotE2ETestEnvironmentAndConfig`, so
