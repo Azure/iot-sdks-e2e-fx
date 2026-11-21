@@ -1,10 +1,13 @@
 # Deletes the test devices that runs left on a permanent test environment: on its hub, with their
-# registrations on its DPS. See Remove-AzIotStaleTestDevices.
+# registrations on its DPS and their devices in the ADR namespaces linked to them. See
+# Remove-AzIotStaleTestDevices.
 #
 # This is the GitHub Actions face of vsts/templates/steps-remove-stale-test-devices.yaml. Run it on
 # a schedule, for example nightly. The caller must run `azure/login` BEFORE this step, as an
-# identity with IoT Hub Data Contributor on the hub and a role that reads the hub and lists the DPS
-# keys, such as Contributor.
+# identity with IoT Hub Data Contributor on the hub, a role that reads the hub and lists the DPS
+# keys, such as Contributor, and, where ADR is linked, read on its namespaces and read and delete on
+# their registryDevices, such as Azure Device Registry Administrator (Azure Device Registry
+# Contributor does not cover registryDevices).
 #
 # Usage:
 #   - uses: Azure/iot-sdks-e2e-fx/actions/remove-stale-test-devices@<ref>
@@ -14,7 +17,7 @@
 #       dps-name: <dps>
 #       twin-tags: '{"e2eSuite":"horton"}'
 name: Remove stale test devices
-description: Delete the test devices that runs left on a permanent test environment's hub and DPS.
+description: Delete the test devices that runs left on a permanent test environment's hub, DPS and ADR namespaces.
 
 inputs:
   resource-group:
@@ -101,4 +104,4 @@ runs:
               WhatIf           = $WhatIf
           }
 
-          Remove-AzIotStaleTestDevices @Arguments | Format-Table -AutoSize DeviceId, LastActivityUtc, Result | Out-String -Width 300 | Write-Host
+          Remove-AzIotStaleTestDevices @Arguments | Format-Table -AutoSize DeviceId, OnHub, LastActivityUtc, Result | Out-String -Width 300 | Write-Host
