@@ -213,10 +213,11 @@ if ($RunScenario) {
     # ADR and RBAC plumbing is out of scope here; what matters is that the hub is linked, which is
     # what puts properties.deviceRegistry on it.
     & $Module {
+        param([string]$Scenario)
         function script:Start-Sleep { }
         function script:Install-AzureIotCliExtension { }
         function script:Wait-AzRoleAssignment { }
-        if ($RunScenario -ne 'cert-mgmt-adr-namespace-transient') {
+        if ($Scenario -ne 'cert-mgmt-adr-namespace-transient') {
             function script:New-AdrNamespace { [pscustomobject]@{ id = '/adr'; identity = [pscustomobject]@{ principalId = 'adr-principal' } } }
         }
         function script:New-AdrCertificateAuthority { }
@@ -233,7 +234,7 @@ if ($RunScenario) {
                 'changes-storage-account' { $Default.connectionString = $Default.connectionString -replace 'AccountName=[^;]+', 'AccountName=other' }
             }
         }
-    }
+    } $RunScenario
 
     $env:AZ_IOT_MODULE = $ModulePath
     $env:AZ_IOT_RG_NAME = 'StubRg'
