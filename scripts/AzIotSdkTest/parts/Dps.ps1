@@ -163,17 +163,13 @@ function New-AdrNamespace {
     $Url = "https://management.azure.com/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.DeviceRegistry/namespaces/$($NamespaceName)?api-version=$($script:AdrApiVersion)"
 
     Write-Host "Creating ADR namespace ($NamespaceName)"
-    Invoke-AzRest -Method PUT -Url $Url -Body @{
+    # Retries transient ARM failures, e.g. a 500 PolicyEvaluationFailure on the create. The returned
+    # namespace is re-read, so its asynchronously assigned principalId is present.
+    return New-AzArmResource -Url $Url -Step "ADR namespace ($NamespaceName)" -TimeoutSeconds 600 -Body @{
         location = $Location
         identity = @{ type = "SystemAssigned" }
         tags = $script:AdrNamespaceTags
-    } | Out-Null
-
-    Wait-AzProvisioningState -Url $Url -Step "ADR namespace ($NamespaceName)"
-
-    # Re-read rather than use the PUT response: the principalId is assigned asynchronously and can
-    # still be absent from the body the create returned.
-    return Invoke-AzRest -Url $Url
+    }
 }
 
 function Connect-AdrNamespace {

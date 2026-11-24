@@ -130,6 +130,12 @@ if ($RunScenario) {
                     $global:LASTEXITCODE = 1
                     return
                 }
+                if ($Method -eq 'PUT' -and $global:StubState.AdrNamespaceFailures -gt 0 -and $Key -like '*/microsoft.deviceregistry/namespaces/*') {
+                    $global:StubState.AdrNamespaceFailures--
+                    Write-Error -ErrorAction Continue 'Internal Server Error({"error":{"code":"PolicyEvaluationFailure"}})'
+                    $global:LASTEXITCODE = 1
+                    return
+                }
                 if ($Method -eq 'PUT') {
                     $Resource = $Body | ConvertFrom-Json
                     $Resource | Add-Member -Force id ([uri]$Url).AbsolutePath
@@ -207,10 +213,13 @@ if ($RunScenario) {
     # ADR and RBAC plumbing is out of scope here; what matters is that the hub is linked, which is
     # what puts properties.deviceRegistry on it.
     & $Module {
+        param([string]$Scenario)
         function script:Start-Sleep { }
         function script:Install-AzureIotCliExtension { }
         function script:Wait-AzRoleAssignment { }
-        function script:New-AdrNamespace { [pscustomobject]@{ id = '/adr'; identity = [pscustomobject]@{ principalId = 'adr-principal' } } }
+        if ($Scenario -ne 'cert-mgmt-adr-namespace-transient') {
+            function script:New-AdrNamespace { [pscustomobject]@{ id = '/adr'; identity = [pscustomobject]@{ principalId = 'adr-principal' } } }
+        }
         function script:New-AdrCertificateAuthority { }
         function script:Sync-DpsAdrConfiguration { }
         function script:Connect-AdrNamespace {
@@ -225,7 +234,7 @@ if ($RunScenario) {
                 'changes-storage-account' { $Default.connectionString = $Default.connectionString -replace 'AccountName=[^;]+', 'AccountName=other' }
             }
         }
-    }
+    } $RunScenario
 
     $env:AZ_IOT_MODULE = $ModulePath
     $env:AZ_IOT_RG_NAME = 'StubRg'
@@ -234,6 +243,7 @@ if ($RunScenario) {
     $env:AZ_IOT_ENABLE_ADU = 'None'
     $env:AZ_IOT_ENABLE_CERT_MGMT = if ($RunScenario -like 'cert-mgmt*') { 'true' } else { 'false' }
     $global:StubState.LinkChange = if ($RunScenario -like 'cert-mgmt-link-*') { $RunScenario -replace '^cert-mgmt-link-', '' } else { $null }
+    $global:StubState.AdrNamespaceFailures = if ($RunScenario -eq 'cert-mgmt-adr-namespace-transient') { 1 } else { 0 }
     $global:StubState.DpsIdentityFailures = if ($RunScenario -eq 'cert-mgmt-dps-identity-transient') { 1 } else { 0 }
     # Queued failures of the file upload 'az iot hub update'; Thrown as under Windows PowerShell 5.1.
     $global:StubState.HubUpdateFailures = @(switch ($RunScenario) {
@@ -382,6 +392,11 @@ try {
     $Run = Invoke-Scenario 'cert-mgmt-dps-identity-transient'
     $DpsPuts = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^rest --method PUT .*/provisioningServices/stubdps\?' }).Count
     Assert ($Run.ExitCode -eq 0 -and $DpsPuts -eq 2) "cert-mgmt-dps-identity-transient: expected success after 2 DPS PUTs (exit $($Run.ExitCode), $DpsPuts PUTs)."
+
+    # An ADR namespace create failing with a transient ARM error is retried.
+    $Run = Invoke-Scenario 'cert-mgmt-adr-namespace-transient'
+    $NamespacePuts = @($Run.Calls | ?{ ($_.argv -join ' ') -match '^rest --method PUT .*/Microsoft\.DeviceRegistry/namespaces/[^/?]+\?' }).Count
+    Assert ($Run.ExitCode -eq 0 -and $NamespacePuts -eq 2) "cert-mgmt-adr-namespace-transient: expected success after 2 namespace PUTs (exit $($Run.ExitCode), $NamespacePuts PUTs)."
 
     # No certificate management: the CLI calls stay exactly as they were.
     $Run = Invoke-Scenario 'no-cert-mgmt'
